@@ -1,9 +1,8 @@
-// lib/integrations/github/client.ts
 import { Octokit } from "@octokit/rest";
 import { createAppAuth } from "@octokit/auth-app";
 import { db } from "@/lib/db/client";
 import { integrationTokens } from "@/lib/db/schema";
-import { decrypt } from "@/lib/crypto";
+import { decrypt } from "@/lib/utils/crypto";
 import { eq } from "drizzle-orm";
 import fs from "fs";
 import path from "path";

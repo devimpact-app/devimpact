@@ -1,5 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { GitHubPullRequest } from "../types";
+import { GitHubSearchPullRequest } from "../types/PullRequest";
 
 export interface FetchUserPRsOptions {
   octokit: Octokit;
@@ -10,7 +11,7 @@ export interface FetchUserPRsOptions {
 
 export async function fetchUserPRs(
   options: FetchUserPRsOptions,
-): Promise<GitHubPullRequest[]> {
+): Promise<GitHubSearchPullRequest[]> {
   const { octokit, username, since, repos } = options;
 
   const allPRs = [];
@@ -19,25 +20,21 @@ export async function fetchUserPRs(
   for (const repoFullName of repos) {
     const [owner, repo] = repoFullName.split("/");
 
+    const q = `is:pr author:${username} repo:${owner}/${repo} created:>=${since.toISOString()}`;
+
     try {
       // Get all PRs from this repo, then filter by author
-      const iterator = octokit.paginate.iterator(octokit.rest.pulls.list, {
-        owner,
-        repo,
-        state: "all", // Get open, closed, and merged
+      const iterator = octokit.paginate.iterator("GET /search/issues", {
+        q,
         sort: "created",
-        direction: "desc",
+        order: "desc",
         per_page: 100,
-      });
+        // As GitHub rolls out “advanced search”, this flag is accepted on REST:
+        // advanced_search: true,  // (safe to omit; qualifiers already work)
+      } as any);
 
       for await (const response of iterator) {
-        // Filter by author and date
-        const userPRs = response.data.filter((pr) => {
-          const createdAt = new Date(pr.created_at);
-          return pr.user?.login === username && createdAt >= since;
-        });
-
-        allPRs.push(...userPRs);
+        allPRs.push(...response.data);
       }
     } catch (error) {
       console.error(`Error fetching PRs from ${repoFullName}:`, error);

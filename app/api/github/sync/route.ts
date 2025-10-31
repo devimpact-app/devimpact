@@ -84,7 +84,7 @@ export async function POST() {
         title: pr.title,
         state: pr.state,
         created_at: pr.created_at,
-        repo: pr.base.repo.full_name,
+        // repo: pr.base.repo.full_name,
       })),
     });
   } catch (error) {
