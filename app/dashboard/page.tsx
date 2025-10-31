@@ -1,6 +1,7 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import PatInput from "@/components/dashboard/PatInput";
+import SyncButton from "@/components/dashboard/SyncButton";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -47,6 +48,11 @@ export default async function DashboardPage() {
             repos
           </p>
           <PatInput />
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 className="text-lg font-semibold mb-4">Sync GitHub Data</h3>
+          <SyncButton />
         </div>
 
         <p className="text-gray-600">
