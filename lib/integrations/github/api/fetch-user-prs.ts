@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import { GitHubPullRequest } from "../types";
 
 export interface FetchUserPRsOptions {
   token: string;
@@ -7,7 +8,9 @@ export interface FetchUserPRsOptions {
   repos: string[];
 }
 
-export async function fetchUserPRs(options: FetchUserPRsOptions) {
+export async function fetchUserPRs(
+  options: FetchUserPRsOptions,
+): Promise<GitHubPullRequest[]> {
   const { token, username, since, repos } = options;
 
   const octokit = new Octokit({ auth: token });

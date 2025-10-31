@@ -6,7 +6,7 @@ import { decrypt } from "@/lib/utils/crypto";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-const TRACKED_REPOS = ["Test-oauth-org-ian/Test-app"];
+const TRACKED_REPOS = ["eng-coach/eng-coach"];
 
 export async function POST() {
   const session = await auth();
@@ -95,7 +95,7 @@ export async function POST() {
         title: pr.title,
         state: pr.state,
         created_at: pr.created_at,
-        repo: pr.repository_url.split("/").slice(-2).join("/"),
+        // repo: pr.repository_url.split("/").slice(-2).join("/"),
       })),
     });
   } catch (error) {
