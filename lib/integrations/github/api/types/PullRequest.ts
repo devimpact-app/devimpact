@@ -14,6 +14,7 @@ export interface GitHubSearchPullRequest {
   body?: string | null;
   state: string;
   locked: boolean;
+  repoFullName: string;
 
   user: {
     login: string;

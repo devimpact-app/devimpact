@@ -1,8 +1,8 @@
 import { Octokit } from "@octokit/rest";
-import { GitHubPRFile } from "../types";
+import { GitHubPRFile } from "./types";
 
 export interface FetchPRFilesOptions {
-  token: string;
+  octokit: Octokit;
   owner: string;
   repo: string;
   prNumber: number;
@@ -11,9 +11,7 @@ export interface FetchPRFilesOptions {
 export async function fetchPRFiles(
   options: FetchPRFilesOptions,
 ): Promise<GitHubPRFile[]> {
-  const { token, owner, repo, prNumber } = options;
-
-  const octokit = new Octokit({ auth: token });
+  const { octokit, owner, repo, prNumber } = options;
 
   try {
     // GitHub may paginate if PR has 100+ files

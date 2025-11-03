@@ -16,12 +16,12 @@ export async function POST(request: Request) {
 
   const { token } = await request.json();
 
-  if (!token || !token.startsWith("ghp_")) {
-    return NextResponse.json(
-      { error: "Invalid Classic PAT format" },
-      { status: 400 },
-    );
-  }
+  // if (!token || !token.startsWith("ghp_")) {
+  //   return NextResponse.json(
+  //     { error: "Invalid Classic PAT format" },
+  //     { status: 400 },
+  //   );
+  // }
 
   try {
     // Verify token works
@@ -37,14 +37,14 @@ export async function POST(request: Request) {
     }
 
     const scopes = response.headers.get("x-oauth-scopes");
-    if (!scopes?.includes("repo")) {
-      return NextResponse.json(
-        {
-          error: "Token needs 'repo' scope",
-        },
-        { status: 400 },
-      );
-    }
+    // if (!scopes?.includes("repo")) {
+    //   return NextResponse.json(
+    //     {
+    //       error: "Token needs 'repo' scope",
+    //     },
+    //     { status: 400 },
+    //   );
+    // }
 
     // Encrypt and store
     const encryptedToken = encrypt(token);

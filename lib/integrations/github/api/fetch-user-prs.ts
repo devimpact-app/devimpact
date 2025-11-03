@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
-import { GitHubPullRequest } from "../types";
-import { GitHubSearchPullRequest } from "../types/PullRequest";
+import { GitHubPullRequest } from "./types";
+import { GitHubSearchPullRequest } from "./types/PullRequest";
 
 export interface FetchUserPRsOptions {
   octokit: Octokit;
@@ -20,7 +20,7 @@ export async function fetchUserPRs(
   for (const repoFullName of repos) {
     const [owner, repo] = repoFullName.split("/");
 
-    const q = `is:pr author:${username} repo:${owner}/${repo} created:>=${since.toISOString()}`;
+    const q = `is:pr author:${username} repo:${owner}/${repo} updated:>=${since.toISOString()}`;
 
     try {
       // Get all PRs from this repo, then filter by author
@@ -34,7 +34,12 @@ export async function fetchUserPRs(
       } as any);
 
       for await (const response of iterator) {
-        allPRs.push(...response.data);
+        const prsWithRepo = response.data.map((pr) => ({
+          ...pr,
+          repoFullName: `${owner}/${repo}`,
+        }));
+
+        allPRs.push(...prsWithRepo);
       }
     } catch (error) {
       console.error(`Error fetching PRs from ${repoFullName}:`, error);

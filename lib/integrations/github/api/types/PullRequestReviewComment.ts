@@ -12,8 +12,8 @@ export interface GitHubReviewComment {
   pull_request_review_id: number | null; // Links to parent review
   diff_hunk: string; // Snippet of code being commented on
   path: string; // File path like "src/components/Button.tsx"
-  position: number | null; // Position in diff
-  original_position: number;
+  position?: number; // Position in diff
+  original_position?: number;
   commit_id: string;
   original_commit_id: string;
   in_reply_to_id?: number; // If replying to another comment
@@ -44,6 +44,6 @@ export interface GitHubReviewComment {
   original_line?: number; // Original line number
   start_line?: number | null; // For multi-line comments
   original_start_line?: number | null;
-  side: "LEFT" | "RIGHT"; // Which side of diff (old vs new file)
+  side?: "LEFT" | "RIGHT"; // Which side of diff (old vs new file)
   start_side?: "LEFT" | "RIGHT" | null;
 }
