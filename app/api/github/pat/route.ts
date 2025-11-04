@@ -1,10 +1,11 @@
-// app/api/github/pat/route.ts
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 import { integrationTokens } from "@/lib/db/schema";
 import { encrypt } from "@/lib/utils/crypto";
 import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const session = await auth();

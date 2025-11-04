@@ -1,4 +1,3 @@
-// app/api/github/sync/route.ts
 import { auth } from "@/lib/auth";
 import { createGitHubClient } from "@/lib/integrations/github/client";
 import { fetchUserPRs } from "@/lib/integrations/github/api/fetch-user-prs";
@@ -6,6 +5,8 @@ import { db } from "@/lib/db/client";
 import { githubSyncStatus } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 
 const TRACKED_REPOS = ["eng-coach/eng-coach"];
 
