@@ -1,6 +1,5 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import PatInput from "@/components/dashboard/PatInput";
 import SyncButton from "@/components/dashboard/SyncButton";
 
 export default async function DashboardPage() {
@@ -40,15 +39,6 @@ export default async function DashboardPage() {
         <h2 className="text-2xl font-bold mb-4">
           Welcome back, {session.user.name?.split(" ")[0]}! 👋
         </h2>
-
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-2">Connect Org Repos</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Add a Classic PAT to track commits from your organization's private
-            repos
-          </p>
-          <PatInput />
-        </div>
 
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">Sync GitHub Data</h3>

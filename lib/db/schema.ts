@@ -1,3 +1,4 @@
+import { InferSelectModel } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -10,14 +11,29 @@ import {
   boolean,
 } from "drizzle-orm/pg-core";
 
+export type OnboardingState =
+  | "need_data_source" // Haven't chosen GH App or FG PAT
+  | "gh_app_pending" // Installed GH App, waiting for org approval
+  | "gh_app_approved" // GH App approved, need to select repos
+  | "fg_pat_pending" // Created FG PAT, waiting for org approval
+  | "fg_pat_approved" // FG PAT approved, need to select repos
+  | "syncing" // Selected repos, initial sync in progress
+  | "complete";
+
+export type Provider = "github";
+export type TokenType = "oauth" | "pat" | "installation";
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   fullName: text("full_name"),
   githubUsername: text("github_username").notNull().unique(),
+  onboardingState: text("onboarding_state").default("need_data_source"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export type User = InferSelectModel<typeof users>;
 
 export const integrationTokens = pgTable(
   "integration_tokens",
@@ -33,6 +49,7 @@ export const integrationTokens = pgTable(
     expiresAt: timestamp("expires_at"),
     installationId: text("installation_id"), // required for kind='installation'
     orgLogin: text("org_login"),
+    selectedRepos: jsonb("selected_repos").$type<string[] | null>(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -45,6 +62,8 @@ export const integrationTokens = pgTable(
     ),
   }),
 );
+
+export type IntegrationToken = InferSelectModel<typeof integrationTokens>;
 
 export const githubPrs = pgTable(
   "github_prs",

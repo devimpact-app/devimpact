@@ -8,11 +8,10 @@ import {
 import { syncAuthoredPRs } from "./sync-authored-prs";
 import { syncReviewedPRs } from "./sync-reviewed-prs";
 
-const TRACKED_REPOS = ["eng-coach/eng-coach"];
-
 export async function syncUserGitHubData(userId: string) {
   // 1. Setup
-  const { octokit, username, authType } = await createGitHubClient(userId);
+  const { octokit, username, authType, selectedRepos } =
+    await createGitHubClient(userId);
 
   // 2. Get sync status
   const syncStatus = await getSyncStatus(userId);
@@ -25,7 +24,7 @@ export async function syncUserGitHubData(userId: string) {
     octokit,
     username,
     since,
-    repos: TRACKED_REPOS,
+    repos: selectedRepos ?? [],
   });
 
   // 4. Sync reviewed PRs
@@ -34,7 +33,7 @@ export async function syncUserGitHubData(userId: string) {
     octokit,
     username,
     since,
-    repos: TRACKED_REPOS,
+    repos: selectedRepos ?? [],
   });
 
   // 5. Update sync status

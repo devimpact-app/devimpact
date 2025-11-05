@@ -12,16 +12,17 @@ export async function POST(request: NextRequest) {
     const action = payload.action; // 'deleted', 'created'
     const orgLogin = payload.installation?.account?.login;
     const installationId = payload.installation?.id;
-    const requestorLogin = payload.requestor?.login;
+    const requesterLogin = payload.requester?.login;
     const repos = payload.repositories.map((r: any) => r.full_name);
 
+    console.log(payload);
     if (action === "created") {
       const waitingRow = await db
         .select()
         .from(githubPendingRequests)
         .where(
           and(
-            eq(githubPendingRequests.githubUsername, requestorLogin),
+            eq(githubPendingRequests.githubUsername, requesterLogin),
             eq(githubPendingRequests.status, "waiting"),
           ),
         );
@@ -42,11 +43,13 @@ export async function POST(request: NextRequest) {
           orgLogin: orgLogin,
         });
       }
+    } else if (action === "deleted") {
+      // TODO: What to handle?
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.log("Webhook error:", error);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

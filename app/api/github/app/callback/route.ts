@@ -4,71 +4,49 @@ import { githubPendingRequests, integrationTokens } from "@/lib/db/schema";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
-  console.log("params:", params);
-
   const installationId = params.get("installation_id");
   const setupAction = params.get("setup_action");
   const state = params.get("state");
 
-  console.log("GitHub App callback:", {
-    installationId,
-    setupAction,
-    state,
-  });
-
-  if (!state) {
-    return NextResponse.redirect(
-      new URL("/onboarding?error=no_state", request.url),
-    );
-  }
-
-  let userId: string;
-  let githubUsername: string;
+  let userId: string | null = null;
+  let githubUsername: string | null = null;
   try {
-    const decoded = JSON.parse(Buffer.from(state, "base64").toString());
-    userId = decoded.userId;
-    githubUsername = decoded.githubUsername;
+    if (state) {
+      const decoded = JSON.parse(Buffer.from(state, "base64").toString());
+      userId = decoded.userId;
+      githubUsername = decoded.githubUsername;
+    }
   } catch (e) {
     return NextResponse.redirect(
       new URL("/onboarding?error=invalid_state", request.url),
     );
   }
 
-  console.log("Decoded state userId:", userId);
-
-  // Case 1: Immediate installation (no approval needed)
-  if (setupAction === "install" && installationId && userId) {
-    // TODO: insert right into integrations table
-    // await db
-    //   .insert(integrationTokens)
-    //   .values({
-    //     userId,
-    //     provider: "github",
-    //     tokenType: "app",
-    //     installationId,
-    //   })
-    //   .onConflictDoUpdate({
-    //     target: [
-    //       integrationTokens.userId,
-    //       integrationTokens.provider,
-    //       integrationTokens.tokenType,
-    //     ],
-    //     set: {
-    //       installationId,
-    //       updatedAt: new Date(),
-    //     },
-    //   });
-
-    return NextResponse.redirect(
-      new URL("/dashboard?status=connected", request.url),
-    );
+  if (setupAction === "install" && installationId) {
+    if (userId) {
+      // Case 1: Direct installation
+      await db.insert(integrationTokens).values({
+        userId: userId,
+        provider: "github",
+        tokenType: "installation",
+        installationId: installationId,
+        accessToken: "",
+      });
+      return NextResponse.redirect(
+        new URL("/dashboard?status=connected", request.url),
+      );
+    } else {
+      // Case: 1b: Org installation - no userId
+      return NextResponse.redirect(
+        new URL(`/connected?installation_id=${installationId}`, request.url),
+      );
+    }
   }
 
   // Case 2: Approval required
-  if (setupAction === "request") {
-    // TODO: Store pending request in DB
+  if (setupAction === "request" && !!userId && !!githubUsername) {
     await db.insert(githubPendingRequests).values({
-      userId,
+      userId: userId,
       githubUsername,
       status: "waiting",
     });
@@ -80,14 +58,7 @@ export async function GET(request: NextRequest) {
 
   // Case 3: Update to existing installation
   if (setupAction === "update" && installationId) {
-    // await db
-    //   .update(integrationTokens)
-    //   .set({
-    //     installationId,
-    //     updatedAt: new Date(),
-    //   })
-    //   .where(eq(integrationTokens.userId, userId));
-
+    // TODO: update installation
     return NextResponse.redirect(
       new URL("/dashboard?status=updated", request.url),
     );
