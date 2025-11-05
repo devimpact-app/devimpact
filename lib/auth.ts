@@ -1,4 +1,3 @@
-// lib/auth.ts
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import { db } from "./db/client";
@@ -8,8 +7,13 @@ import { eq } from "drizzle-orm";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      clientId: process.env.GITHUB_OAUTH_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: "read:user user:email", // <-- add read:org here
+        },
+      },
     }),
   ],
   callbacks: {
@@ -18,6 +22,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       const userName = user.name || null;
       const userEmail = user.email;
+      const githubLogin = (profile as any).login;
 
       try {
         // Check if user exists
@@ -36,6 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             .values({
               email: userEmail,
               fullName: userName,
+              githubUsername: githubLogin,
             })
             .returning({ id: users.id });
 
@@ -46,6 +52,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             .update(users)
             .set({
               fullName: userName,
+              githubUsername: githubLogin,
               updatedAt: new Date(),
             })
             .where(eq(users.id, existingUser[0].id));
@@ -94,13 +101,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user && session.user.email) {
         const [dbUser] = await db
-          .select({ id: users.id })
+          .select({ id: users.id, githubUsername: users.githubUsername })
           .from(users)
           .where(eq(users.email, session.user.email))
           .limit(1);
 
         if (dbUser) {
           session.user.id = dbUser.id;
+          session.user.githubUsername = dbUser.githubUsername;
         }
       }
       return session;

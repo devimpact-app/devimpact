@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   fullName: text("full_name"),
+  githubUsername: text("github_username").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -26,11 +27,12 @@ export const integrationTokens = pgTable(
       .references(() => users.id)
       .notNull(),
     provider: text("provider").notNull(),
-    tokenType: text("token_type").notNull(), // 'oauth' or 'pat'
+    tokenType: text("token_type").notNull(), // 'oauth' or 'pat' or 'installation
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token"),
     expiresAt: timestamp("expires_at"),
-    classicPat: text("classic_pat"), // Add this
+    installationId: text("installation_id"), // required for kind='installation'
+    orgLogin: text("org_login"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -365,4 +367,20 @@ export const githubSyncStatus = pgTable("github_sync_status", {
   coverageStartDate: timestamp("coverage_start_date"),
   prsCreatedCount: integer("prs_created_count").default(0),
   reviewsGivenCount: integer("reviews_given_count").default(0),
+});
+
+export const githubPendingRequests = pgTable("github_pending_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull()
+    .unique(),
+
+  githubUsername: text("github_username").notNull(),
+
+  // track lifecycle
+  status: text("status").default("waiting"), // waiting, installed, rejected, etc
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
