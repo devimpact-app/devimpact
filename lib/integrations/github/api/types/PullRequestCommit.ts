@@ -10,27 +10,33 @@ export interface GitHubPRCommit {
   commit: {
     message: string;
     author: {
-      name: string;
-      email: string;
-      date: string;
-    };
+      name?: string;
+      email?: string;
+      date?: string;
+    } | null;
     committer: {
-      name: string;
-      email: string;
-      date: string;
-    };
+      name?: string;
+      email?: string;
+      date?: string;
+    } | null;
   };
 
-  author: {
-    login: string;
-    id: number;
-    avatar_url: string;
-  } | null;
+  author:
+    | {
+        login: string;
+        id: number;
+        avatar_url: string;
+      }
+    | null
+    | Record<string, never>;
 
-  committer: {
-    login: string;
-    id: number;
-  } | null;
+  committer:
+    | {
+        login: string;
+        id: number;
+      }
+    | null
+    | Record<string, never>;
 
   html_url: string;
 

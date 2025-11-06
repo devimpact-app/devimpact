@@ -7,6 +7,8 @@ declare module "next-auth" {
       email: string;
       name?: string | null;
       image?: string | null;
+      githubUsername?: string | null;
+      onboardingState?: string | null;
     };
   }
 }

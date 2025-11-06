@@ -16,7 +16,7 @@ export default function LoginPage() {
         <form
           action={async () => {
             "use server";
-            await signIn("github", { redirectTo: "/dashboard" });
+            await signIn("github", { redirectTo: "/onboarding" });
           }}
         >
           <button

@@ -13,6 +13,7 @@ export default function SyncButton() {
     try {
       const response = await fetch("/api/github/sync", {
         method: "POST",
+        body: JSON.stringify({ isInitialSync: false }),
       });
 
       const data = await response.json();

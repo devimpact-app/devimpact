@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { createAppAuth } from "@octokit/auth-app";
 import { db } from "@/lib/db/client";
-import { integrationTokens } from "@/lib/db/schema";
+import { IntegrationToken, integrationTokens } from "@/lib/db/schema";
 import { decrypt } from "@/lib/utils/crypto";
 import { eq } from "drizzle-orm";
 import fs from "fs";
@@ -13,6 +13,30 @@ export interface GitHubClientResult {
   octokit: Octokit;
   username: string;
   authType: GitHubAuthType;
+  orgName: string | null;
+  selectedRepos: string[] | null;
+}
+
+export async function getActiveIntegrationToken(
+  userId: string,
+): Promise<IntegrationToken | null> {
+  const tokens = await db
+    .select()
+    .from(integrationTokens)
+    .where(eq(integrationTokens.userId, userId));
+
+  const patToken = tokens.find((t) => t.tokenType === "pat");
+  const oauthToken = tokens.find((t) => t.tokenType === "oauth");
+  const appInstallation = tokens.find((t) => t.tokenType === "app");
+  if (patToken) {
+    return patToken;
+  } else if (appInstallation) {
+    return appInstallation;
+  } else if (oauthToken) {
+    return oauthToken;
+  } else {
+    return null;
+  }
 }
 
 /**
@@ -23,31 +47,23 @@ export async function createGitHubClient(
   userId: string,
 ): Promise<GitHubClientResult> {
   // Get all tokens for user
-  const tokens = await db
-    .select()
-    .from(integrationTokens)
-    .where(eq(integrationTokens.userId, userId));
-
-  const patToken = tokens.find((t) => t.tokenType === "pat");
-  const oauthToken = tokens.find((t) => t.tokenType === "oauth");
-  const appInstallation = tokens.find((t) => t.tokenType === "app");
+  const activeToken = await getActiveIntegrationToken(userId);
 
   let octokit: Octokit;
   let authType: GitHubAuthType;
+  let orgName: string | null = null;
+  let selectedRepos: string[] | null = activeToken?.selectedRepos || null;
 
   // Priority: PAT > OAuth > GitHub App
-  if (patToken) {
+  if (activeToken && activeToken.tokenType === "pat") {
     // Classic PAT or Fine-grained PAT
-    const token = decrypt(patToken.accessToken);
+    const token = decrypt(activeToken.accessToken);
     octokit = new Octokit({ auth: token });
     authType = "pat";
-  } else if (oauthToken) {
-    // OAuth token from login
-    octokit = new Octokit({ auth: oauthToken.accessToken });
-    authType = "oauth";
-  } else if (appInstallation) {
+    orgName = activeToken.orgLogin || null;
+  } else if (activeToken && activeToken.tokenType === "installation") {
     // GitHub App installation
-    const installationId = appInstallation.accessToken; // Store installation_id here
+    const installationId = activeToken.installationId; // Store installation_id here
 
     // Load private key
     const privateKeyPath = path.join(
@@ -64,10 +80,14 @@ export async function createGitHubClient(
       auth: {
         appId,
         privateKey,
-        installationId: parseInt(installationId, 10),
+        installationId: parseInt(installationId!, 10),
       },
     });
     authType = "app";
+  } else if (activeToken && activeToken.tokenType === "oauth") {
+    // OAuth token from login
+    octokit = new Octokit({ auth: activeToken.accessToken });
+    authType = "oauth";
   } else {
     throw new Error("No GitHub authentication found");
   }
@@ -79,5 +99,7 @@ export async function createGitHubClient(
     octokit,
     username: user.login,
     authType,
+    orgName,
+    selectedRepos,
   };
 }
