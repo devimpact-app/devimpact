@@ -7,6 +7,7 @@ import DataSourceChoice from "./components/DataSourceChoice";
 import WaitingForApproval from "./components/WaitingForApproval";
 import RepoSelector from "./components/RepoSelector";
 import SyncingPage from "./components/SyncingLoader";
+import GridTest from "./components/GridTest";
 
 export default async function OnboardingPage() {
   const session = await auth();
