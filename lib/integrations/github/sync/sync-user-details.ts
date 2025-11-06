@@ -7,6 +7,9 @@ import {
 } from "./sync-status";
 import { syncAuthoredPRs } from "./sync-authored-prs";
 import { syncReviewedPRs } from "./sync-reviewed-prs";
+import { db } from "@/lib/db/client";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function syncUserGitHubData(userId: string) {
   // 1. Setup
@@ -41,6 +44,11 @@ export async function syncUserGitHubData(userId: string) {
     prsCreatedCount: authoredResult.count,
     reviewsGivenCount: reviewedResult.count,
   });
+
+  await db
+    .update(users)
+    .set({ onboardingState: "complete" })
+    .where(eq(users.id, userId));
 
   return {
     sync_type: initialSync ? "initial" : "incremental",

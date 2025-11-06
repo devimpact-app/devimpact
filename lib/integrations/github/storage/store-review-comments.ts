@@ -22,7 +22,7 @@ export async function storeReviewComments(
         const [review] = await db
           .select({ id: githubReviews.id })
           .from(githubReviews)
-          .where(eq(githubReviews.reviewId, c.pull_request_review_id))
+          .where(eq(githubReviews.reviewId, String(c.pull_request_review_id)))
           .limit(1);
 
         reviewDbId = review?.id || null;
@@ -32,8 +32,10 @@ export async function storeReviewComments(
         prId,
         reviewId: reviewDbId,
         userId,
-        commentId: c.id,
-        pullRequestReviewId: c.pull_request_review_id || null,
+        commentId: String(c.id),
+        pullRequestReviewId: c.pull_request_review_id
+          ? String(c.pull_request_review_id)
+          : null,
         body: c.body,
         path: c.path,
         line: c.line || null,
@@ -41,7 +43,7 @@ export async function storeReviewComments(
         side: c.side || null,
         githubLogin: username,
         authorAssociation: c.author_association || null,
-        inReplyToId: c.in_reply_to_id || null,
+        inReplyToId: c.in_reply_to_id ? String(c.in_reply_to_id) : null,
         commitId: c.commit_id,
         diffHunk: c.diff_hunk || null, // Optional: can skip if too large
         createdAt: new Date(c.created_at),

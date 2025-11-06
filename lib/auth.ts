@@ -101,7 +101,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user && session.user.email) {
         const [dbUser] = await db
-          .select({ id: users.id, githubUsername: users.githubUsername })
+          .select({
+            id: users.id,
+            githubUsername: users.githubUsername,
+            onboardingState: users.onboardingState,
+          })
           .from(users)
           .where(eq(users.email, session.user.email))
           .limit(1);
@@ -109,6 +113,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (dbUser) {
           session.user.id = dbUser.id;
           session.user.githubUsername = dbUser.githubUsername;
+          session.user.onboardingState = dbUser.onboardingState;
         }
       }
       return session;

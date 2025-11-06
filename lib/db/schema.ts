@@ -188,6 +188,7 @@ export const githubPrFiles = pgTable(
       table.fileExtension,
     ),
     testFileIdx: index("github_pr_files_test_file_idx").on(table.isTestFile),
+    uniquePrFile: unique().on(table.prId, table.filename),
   }),
 );
 
@@ -351,6 +352,17 @@ export const githubTimelineEvents = pgTable(
     ),
     createdAtIdx: index("github_timeline_events_created_at_idx").on(
       table.createdAt,
+    ),
+
+    uniqueEventId: unique().on(table.prId, table.eventId),
+
+    // For events without an eventId (fallback):
+    // Use eventType + createdAt + githubLogin as a near-unique fingerprint.
+    uniqueFallback: unique().on(
+      table.prId,
+      table.eventType,
+      table.createdAt,
+      table.githubLogin,
     ),
   }),
 );

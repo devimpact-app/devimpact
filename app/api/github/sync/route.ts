@@ -5,7 +5,20 @@ import { getActiveIntegrationToken } from "@/lib/integrations/github/client";
 import { db } from "@/lib/db/client";
 import { integrationTokens, users } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
-s;
+
+export async function GET(request: Request) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return NextResponse.json({
+    userId: session.user.id,
+    onboardingState: session.user.onboardingState,
+  });
+}
+
 export async function POST(request: Request) {
   const session = await auth();
 
@@ -25,15 +38,17 @@ export async function POST(request: Request) {
 
   try {
     // Update repos on token
-    await db
-      .update(integrationTokens)
-      .set({ selectedRepos })
-      .where(
-        and(
-          eq(integrationTokens.userId, session.user.id),
-          eq(integrationTokens.id, activeToken.id),
-        ),
-      );
+    if (selectedRepos) {
+      await db
+        .update(integrationTokens)
+        .set({ selectedRepos })
+        .where(
+          and(
+            eq(integrationTokens.userId, session.user.id),
+            eq(integrationTokens.id, activeToken.id),
+          ),
+        );
+    }
 
     // If initial sync, also update user
     if (isInitialSync) {
@@ -44,11 +59,11 @@ export async function POST(request: Request) {
     }
 
     // Trigger sync
-    // const result = await syncUserGitHubData(session.user.id);
+    const result = await syncUserGitHubData(session.user.id);
 
     return NextResponse.json({
       success: true,
-      // ...result,
+      ...result,
     });
   } catch (error) {
     console.error("Sync error:", error);

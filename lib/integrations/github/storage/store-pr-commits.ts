@@ -16,7 +16,7 @@ export async function storePRCommits(
         prId,
         sha: c.sha,
         message: c.commit.message,
-        committerDate: c.commit.committer?.date
+        committedAt: c.commit.committer?.date
           ? new Date(c.commit.committer.date)
           : null,
         htmlUrl: c.html_url,

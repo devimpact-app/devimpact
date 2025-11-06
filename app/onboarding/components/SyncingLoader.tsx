@@ -3,14 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-type SyncStatus = "pending" | "syncing" | "ready" | "error";
-
-type StatusPayload = {
-  status: SyncStatus;
-  progress?: number; // 0..100
-  message?: string; // optional detail
-};
-
 const POLL_MS = 10_000;
 
 export default function SyncingPage() {
@@ -19,11 +11,7 @@ export default function SyncingPage() {
   // If you scope sync by approvalId/source, thread it through the URL:
   const approvalId = params.get("approvalId") ?? undefined;
 
-  const [payload, setPayload] = useState<StatusPayload>({
-    status: "pending",
-    progress: 0,
-  });
-  const [error, setError] = useState<string | null>(null);
+  const [onboardingState, setOnboardingState] = useState<string>("syncing");
   const [since, setSince] = useState<number>(0); // ms elapsed
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
@@ -41,28 +29,19 @@ export default function SyncingPage() {
 
     async function hit() {
       try {
-        // const url = new URL("/api/sync/status", window.location.origin);
-        // if (approvalId) url.searchParams.set("approvalId", approvalId);
-        // const res = await fetch(url.toString(), { cache: "no-store" });
-        // if (!res.ok) throw new Error(`Status ${res.status}`);
-        // const data: StatusPayload = await res.json();
-        // if (!mountedRef.current) return;
-        // setPayload(data);
-        // setError(null);
-        // if (data.status === "ready") {
-        //   // tiny delay to let users see 100% tick
-        //   setTimeout(() => router.push("/dashboard"), 400);
-        //   return; // stop polling
-        // }
-        // if (data.status === "error") {
-        //   // stop polling on error; show retry button
-        //   return;
-        // }
-        // // schedule next poll
-        // timerRef.current = setTimeout(hit, POLL_MS);
+        const res = await fetch("/api/github/sync");
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const { onboardingState } = await res.json();
+        setOnboardingState(onboardingState);
+        if (!mountedRef.current) return;
+        if (onboardingState === "complete") {
+          // tiny delay to let users see 100% tick
+          setTimeout(() => router.push("/dashboard"), 400);
+          return; // stop polling
+        }
+        timerRef.current = setTimeout(hit, POLL_MS);
       } catch (e: any) {
         if (!mountedRef.current) return;
-        setError(e?.message ?? "Failed to check sync");
         // keep polling even on transient errors
         timerRef.current = setTimeout(hit, POLL_MS);
       }
@@ -77,7 +56,6 @@ export default function SyncingPage() {
     };
   }, [approvalId, router]);
 
-  const pct = Math.min(100, Math.max(0, payload.progress ?? 0));
   const seconds = Math.floor(since / 1000);
 
   return (
@@ -99,36 +77,13 @@ export default function SyncingPage() {
 
           {/* Progress bar */}
           <div className="mb-3">
-            <div className="h-3 w-full overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-3 bg-blue-600 transition-[width] duration-500"
-                style={{ width: `${pct}%` }}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={pct}
-                role="progressbar"
-              />
-            </div>
             <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
               <span>
                 Status:{" "}
-                {payload.status === "ready" ? "Complete" : payload.status}
+                {onboardingState === "complete" ? "Complete" : "Syncing"}
               </span>
-              <span>{pct}%</span>
             </div>
           </div>
-
-          {/* Message / errors */}
-          {payload.message && (
-            <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
-              {payload.message}
-            </div>
-          )}
-          {error && (
-            <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
 
           {/* Hints */}
           <div className="mt-4 text-xs text-gray-500">
