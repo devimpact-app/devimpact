@@ -41,7 +41,7 @@ export async function storeReviewComments(
         line: c.line || null,
         startLine: c.start_line || null,
         side: c.side || null,
-        githubLogin: username,
+        githubLogin: c.user?.login || username,
         authorAssociation: c.author_association || null,
         inReplyToId: c.in_reply_to_id ? String(c.in_reply_to_id) : null,
         commitId: c.commit_id,
