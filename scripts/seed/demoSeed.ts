@@ -1,6 +1,15 @@
 import "dotenv/config";
 import { closeDb, db } from "@/lib/db/client";
-import { githubPrs, githubReviews, repositories, users } from "@/lib/db/schema";
+import {
+  githubPrCommits,
+  githubPrFiles,
+  githubPrs,
+  githubReviewComments,
+  githubReviews,
+  githubTimelineEvents,
+  repositories,
+  users,
+} from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { seedRepositories } from "./helpers/seedRepositories";
 import { seedAuthoredPRs } from "./helpers/seedAuthoredPRs";
@@ -15,6 +24,16 @@ const hasFlag = (f: string) => argv.includes(f);
 
 async function resetTenantData(tenantId: string) {
   // delete child tables first
+  await db
+    .delete(githubPrCommits)
+    .where(eq(githubPrCommits.tenantId, tenantId));
+  await db.delete(githubPrFiles).where(eq(githubPrFiles.tenantId, tenantId));
+  await db
+    .delete(githubTimelineEvents)
+    .where(eq(githubTimelineEvents.tenantId, tenantId));
+  await db
+    .delete(githubReviewComments)
+    .where(eq(githubReviewComments.tenantId, tenantId));
   await db.delete(githubReviews).where(eq(githubReviews.tenantId, tenantId));
   await db.delete(githubPrs).where(eq(githubPrs.tenantId, tenantId));
   await db.delete(repositories).where(eq(repositories.tenantId, tenantId));

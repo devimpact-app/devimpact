@@ -2,7 +2,8 @@
 import { db } from "@/lib/db/client";
 import { githubPrs } from "@/lib/db/schema";
 import { seedPrReview } from "./seedPrReview";
-import { randomTeammates } from "./teammates";
+import { randomTeammates, teamOf } from "./teammates";
+import { seedPrTimelineEvents } from "./seedPrTimelineEvents";
 
 // ---------- tiny helpers ----------
 const rand = (min: number, max: number) =>
@@ -33,13 +34,6 @@ const fakeIds = (repoFullName: string, prNumber: number) => {
     externalNodeId: `PR_node_${base}`,
   };
 };
-function prStats() {
-  const files = rand(2, 12);
-  const commits = Math.max(1, Math.floor(files / rand(2, 4)));
-  const additions = files * rand(15, 55);
-  const deletions = Math.floor(additions * Math.random() * 0.4);
-  return { changedFiles: files, commitsCount: commits, additions, deletions };
-}
 function titleFor(repo: string) {
   const map: Record<string, string[]> = {
     "acme/frontend": [
@@ -111,7 +105,6 @@ export async function seedReviewedPRs(params: {
     const author = randomTeammates(1)[0]; // teammate, not you
     const prNumber = ++perRepoNumber[repo.fullName];
     const ids = fakeIds(repo.fullName, prNumber);
-    const stats = prStats();
 
     // states: mostly merged
     const r = Math.random();
@@ -145,14 +138,9 @@ export async function seedReviewedPRs(params: {
       state,
       draft: Math.random() < 0.1,
       authorGithubLogin: author,
-      additions: stats.additions,
-      deletions: stats.deletions,
-      changedFiles: stats.changedFiles,
-      commitsCount: stats.commitsCount,
       createdAt,
       updatedAt,
       closedAt,
-      mergedAt,
       htmlUrl: `https://github.com/${repo.fullName}/pull/${prNumber}`,
     };
 
@@ -173,14 +161,9 @@ export async function seedReviewedPRs(params: {
           body: row.body,
           state: row.state,
           draft: row.draft,
-          additions: row.additions,
-          deletions: row.deletions,
-          changedFiles: row.changedFiles,
-          commitsCount: row.commitsCount,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           closedAt: row.closedAt,
-          mergedAt: row.mergedAt,
           htmlUrl: row.htmlUrl,
         },
       })
@@ -188,7 +171,7 @@ export async function seedReviewedPRs(params: {
 
     createdRows.push({ prId: prRec.id });
 
-    await seedPrReview({
+    const review = await seedPrReview({
       db, // pass your tx if inside a transaction
       pr: prRec,
       tenantId,
@@ -196,7 +179,18 @@ export async function seedReviewedPRs(params: {
       prNumber, // the PR number you generated
       repoFullName: repo.fullName,
       submittedAt: reviewedAt, // when you reviewed
-      // preferredState: "APPROVED",      // optional override
+    });
+
+    const requestedTeam = teamOf(reviewerGithubLogin);
+
+    await seedPrTimelineEvents({
+      db, // tx or db
+      pr: prRec,
+      tenantId,
+      authorGithubLogin: author,
+      requestedTeam: { slug: requestedTeam, org: repo.owner },
+      reviews: [review],
+      generateRequestsFromReviews: true,
     });
   }
 

@@ -6,8 +6,6 @@ export async function storePR(
   userId: string,
   pr: GitHubSearchPullRequest,
   repoFullName: string,
-  files: any[],
-  commits: any[],
 ): Promise<string> {
   const [repoOwner, repoName] = repoFullName.split("/");
 
@@ -33,14 +31,9 @@ export async function storePR(
       state: pr.state,
       draft: pr.draft || false,
       authorGithubLogin: pr.user?.login || "unknown",
-      additions: files.reduce((sum, f) => sum + f.additions, 0),
-      deletions: files.reduce((sum, f) => sum + f.deletions, 0),
-      changedFiles: files.length,
-      commitsCount: commits.length,
       createdAt: new Date(pr.created_at),
       updatedAt: new Date(pr.updated_at),
       closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
-      mergedAt,
       htmlUrl: pr.html_url,
     })
     .onConflictDoUpdate({
@@ -48,7 +41,6 @@ export async function storePR(
       set: {
         state: pr.state,
         updatedAt: new Date(pr.updated_at),
-        mergedAt,
         fetchedAt: new Date(),
       },
     })

@@ -88,7 +88,7 @@ export async function seedPrFiles(params: {
   const defaultBranch = params.repoDefaultBranch ?? "main";
 
   // how many files?
-  const fileCount = Math.max(1, pr.changedFiles ?? rand(3, 8));
+  const fileCount = rand(3, 8);
   const exts = extWeight(pr.repoFullName);
 
   // statuses
@@ -134,11 +134,8 @@ export async function seedPrFiles(params: {
   }
 
   // distribute totals
-  const totalAdds = Math.max(0, pr.additions ?? rand(30, 300));
-  const totalDels = Math.max(
-    0,
-    pr.deletions ?? rand(10, Math.floor(totalAdds * 0.6)),
-  );
+  const totalAdds = rand(30, 300);
+  const totalDels = rand(5, Math.floor(totalAdds * 0.6));
   const adds = splitTotals(totalAdds, files.length);
   const dels = splitTotals(totalDels, files.length);
 

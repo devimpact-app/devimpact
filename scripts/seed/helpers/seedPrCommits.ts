@@ -78,21 +78,13 @@ export async function seedPrCommits(params: {
 
   const start = pr.createdAt ?? new Date();
   const end =
-    pr.mergedAt ??
-    pr.closedAt ??
-    pr.updatedAt ??
-    new Date(start.getTime() + 24 * 3600 * 1000); // +1 day fallback
+    pr.closedAt ?? pr.updatedAt ?? new Date(start.getTime() + 24 * 3600 * 1000); // +1 day fallback
 
   // decide commit count
-  const baseCount =
-    pr.commitsCount && pr.commitsCount > 0
-      ? pr.commitsCount
-      : pr.changedFiles
-        ? Math.max(1, Math.round(pr.changedFiles / rand(3, 6)))
-        : rand(1, 6);
+  const baseCount = rand(1, 6);
 
   // add a tiny chance of an extra "address review" commit if PR merged
-  const extra = pr.mergedAt ? (Math.random() < 0.35 ? 1 : 0) : 0;
+  const extra = pr.closedAt ? (Math.random() < 0.35 ? 1 : 0) : 0;
   const total = Math.max(1, baseCount + extra);
 
   // generate commits
@@ -101,7 +93,7 @@ export async function seedPrCommits(params: {
     const sha = makeSha();
     const committedAt = timeBetween(start, end, 8);
     const message =
-      extra && i === total - 1 && pr.mergedAt
+      extra && i === total - 1 && pr.closedAt
         ? reviewFollowupMessage()
         : conventionalMessage(pr.repoFullName);
 

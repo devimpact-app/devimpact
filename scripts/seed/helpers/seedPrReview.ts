@@ -123,12 +123,7 @@ export async function seedPrReview(params: {
         htmlUrl,
       },
     })
-    .returning({
-      id: githubReviews.id,
-      reviewId: githubReviews.reviewId,
-      state: githubReviews.state,
-      submittedAt: githubReviews.submittedAt,
-    });
+    .returning();
 
   // ~70% chance to add inline comments; tweak as you like
   if (Math.random() < 0.7) {

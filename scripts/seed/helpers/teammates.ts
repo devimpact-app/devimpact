@@ -17,7 +17,7 @@ export const TEAMMATES: Teammate[] = [
 ];
 
 // helpers
-export function teamOf(login: string): TeamSlug | null {
+export function teamOf(login: string): TeamSlug {
   return TEAMMATES.find((t) => t.login === login)?.team ?? "platform";
 }
 export function teammatesIn(team: TeamSlug, exclude?: string[]): string[] {

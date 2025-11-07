@@ -5,6 +5,7 @@ import { seedPrFiles } from "./seedPrFiles";
 import { seedPrCommits } from "./seedPrCommits";
 import { seedPrReview } from "./seedPrReview";
 import { weekdayNear } from "./seedReviewedPRs";
+import { seedPrTimelineEvents } from "./seedPrTimelineEvents";
 
 // ---- tiny helpers -----------------------------------------------------------
 
@@ -85,18 +86,6 @@ function prBody(repo: string) {
   return `This PR updates ${repo}.\n\n${choice(lines)}\n`;
 }
 
-// Stats that roughly correlate (files -> commits -> loC)
-function prStats() {
-  const changedFiles = rand(2, 14);
-  const commitsCount = Math.max(
-    1,
-    Math.floor(changedFiles / rand(2, 4)) + (Math.random() < 0.3 ? 1 : 0),
-  );
-  const additions = changedFiles * rand(20, 60);
-  const deletions = Math.floor(additions * Math.random() * 0.4);
-  return { changedFiles, commitsCount, additions, deletions };
-}
-
 // ---- main seeder ------------------------------------------------------------
 
 export async function seedAuthoredPRs(params: {
@@ -115,7 +104,6 @@ export async function seedAuthoredPRs(params: {
   // Target: ~2–4 PRs per week, over `lookbackDays`.
   const weeks = Math.ceil(lookbackDays / 7);
   const totalTarget = rand(2, 4) * weeks; // e.g., ~ 20–30 PRs
-  const startDate = daysAgo(lookbackDays);
 
   // Start pseudo “PR numbers” per repo so they don’t collide within a repo
   // (If you already have real PRs, you could query max(pr_number) per repo here)
@@ -147,7 +135,7 @@ export async function seedAuthoredPRs(params: {
 
     // Status mix: ~80% merged, 10% still open, 10% closed without merge
     const r = Math.random();
-    const state: "open" | "closed" = r < 0.9 ? "closed" : "open";
+    const state = "closed";
     const merged = r < 0.8; // of the closed ones, most are merged
     const draft = Math.random() < 0.12; // ~12% drafts
 
@@ -173,7 +161,6 @@ export async function seedAuthoredPRs(params: {
 
     const title = prTitle(repo.fullName);
     const body = prBody(repo.fullName);
-    const stats = prStats();
     const ids = fakeExternalIds(repo.fullName, prNumber);
 
     const htmlUrl = `https://github.com/${repo.fullName}/pull/${prNumber}`;
@@ -194,15 +181,9 @@ export async function seedAuthoredPRs(params: {
 
       authorGithubLogin,
 
-      additions: stats.additions,
-      deletions: stats.deletions,
-      changedFiles: stats.changedFiles,
-      commitsCount: stats.commitsCount,
-
       createdAt,
       updatedAt,
       closedAt,
-      mergedAt,
 
       htmlUrl,
       // fetchedAt defaults to now via schema
@@ -233,14 +214,9 @@ export async function seedAuthoredPRs(params: {
           body: row.body,
           state: row.state,
           draft: row.draft,
-          additions: row.additions,
-          deletions: row.deletions,
-          changedFiles: row.changedFiles,
-          commitsCount: row.commitsCount,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           closedAt: row.closedAt,
-          mergedAt: row.mergedAt,
           htmlUrl: row.htmlUrl,
         },
       })
@@ -254,7 +230,7 @@ export async function seedAuthoredPRs(params: {
       1,
     );
 
-    await seedPrReview({
+    const review = await seedPrReview({
       db, // pass your tx if inside a transaction
       pr: rec,
       tenantId,
@@ -275,6 +251,15 @@ export async function seedAuthoredPRs(params: {
       pr: rec,
       tenantId,
       authorGithubLogin: row.authorGithubLogin, // for authored PRs
+    });
+
+    await seedPrTimelineEvents({
+      db, // tx or db
+      pr: rec,
+      tenantId,
+      authorGithubLogin: row.authorGithubLogin,
+      reviews: [review],
+      generateRequestsFromReviews: true,
     });
   }
 

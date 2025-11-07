@@ -53,7 +53,7 @@ export async function syncPRDetails(options: SyncPRDetailsOptions) {
       });
 
       // Store normalized data
-      const prId = await storePR(userId, pr, repoFullName, files, commits);
+      const prId = await storePR(userId, pr, repoFullName);
       await storePRFiles(prId, userId, files, username);
       await storePRCommits(prId, userId, commits, username);
       await storeReviews(prId, userId, reviews, username);
@@ -82,7 +82,7 @@ export async function syncPRDetails(options: SyncPRDetailsOptions) {
       });
 
       // Store normalized data (lightweight PR, no files/commits)
-      const prId = await storePR(userId, pr, repoFullName, [], []);
+      const prId = await storePR(userId, pr, repoFullName);
       await storeReviews(prId, userId, userReviews, username);
       await storeReviewComments(prId, userId, userReviewComments);
       await storeTimelineEvents(prId, userId, timeline);
