@@ -8,8 +8,9 @@ import {
 import { syncAuthoredPRs } from "./sync-authored-prs";
 import { syncReviewedPRs } from "./sync-reviewed-prs";
 import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
+import { githubPrs, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { normalizePullRequest } from "@/lib/analysis/normalizers/pr-normalizer";
 
 export async function syncUserGitHubData(userId: string) {
   // 1. Setup
@@ -39,6 +40,9 @@ export async function syncUserGitHubData(userId: string) {
     repos: selectedRepos ?? [],
   });
 
+  console.log("Normalizing PRs...");
+  const normalizedCount = await normalizeUserPRs(userId, username);
+
   // 5. Update sync status
   await updateSyncStatus(userId);
 
@@ -53,9 +57,43 @@ export async function syncUserGitHubData(userId: string) {
     username,
     prs_authored: authoredResult.count,
     prs_reviewed: reviewedResult.count,
+    prs_normalized: normalizedCount,
     date_range: {
       from: since.toISOString(),
       to: new Date().toISOString(),
     },
   };
+}
+
+export async function normalizeUserPRs(
+  userId: string,
+  username: string,
+): Promise<number> {
+  // Get all PRs that need normalization
+  // (either new or older than current normalization version)
+  const prs = await db
+    .select({ id: githubPrs.id })
+    .from(githubPrs)
+    .where(eq(githubPrs.tenantId, userId));
+
+  console.log(`Normalizing ${prs.length} PRs for user ${userId}`);
+
+  let normalizedCount = 0;
+
+  for (const pr of prs) {
+    try {
+      await normalizePullRequest(pr.id, username);
+      normalizedCount++;
+
+      if (normalizedCount % 10 === 0) {
+        console.log(`  Normalized ${normalizedCount}/${prs.length} PRs`);
+      }
+    } catch (error) {
+      console.error(`Failed to normalize PR ${pr.id}:`, error);
+      // Continue with other PRs
+    }
+  }
+
+  console.log(`✓ Normalized ${normalizedCount} PRs`);
+  return normalizedCount;
 }

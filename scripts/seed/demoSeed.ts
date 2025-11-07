@@ -7,6 +7,7 @@ import {
   githubReviewComments,
   githubReviews,
   githubTimelineEvents,
+  pullRequests,
   repositories,
   users,
 } from "@/lib/db/schema";
@@ -14,6 +15,7 @@ import { eq } from "drizzle-orm";
 import { seedRepositories } from "./helpers/seedRepositories";
 import { seedAuthoredPRs } from "./helpers/seedAuthoredPRs";
 import { seedReviewedPRs } from "./helpers/seedReviewedPRs";
+import { normalizeUserPRs } from "@/lib/integrations/github/sync/sync-user-details";
 
 const argv = process.argv.slice(2);
 const hasFlag = (f: string) => argv.includes(f);
@@ -24,6 +26,7 @@ const hasFlag = (f: string) => argv.includes(f);
 
 async function resetTenantData(tenantId: string) {
   // delete child tables first
+  await db.delete(pullRequests).where(eq(pullRequests.tenantId, tenantId));
   await db
     .delete(githubPrCommits)
     .where(eq(githubPrCommits.tenantId, tenantId));
@@ -65,6 +68,8 @@ async function seedGithubActivity(
     repos: repoInputs,
     lookbackDays: 90,
   });
+
+  await normalizeUserPRs(tenantId, githubUsername);
 }
 
 async function main() {
