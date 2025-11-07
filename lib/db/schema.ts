@@ -372,7 +372,10 @@ export const githubTimelineEvents = pgTable(
     eventData: jsonb("event_data"), // Store full event details here
 
     // Common extracted fields (for easier querying)
-    requestedReviewerLogin: text("requested_reviewer_login"), // For review_requested
+    requestedTargetType: text("requested_target_type"), // "user" | "team" (null for other event types)
+    requestedReviewerLogin: text("requested_reviewer_login"), // user target
+    requestedTeamSlug: text("requested_team_slug"), // team target
+    requestedTeamOrg: text("requested_team_org"),
     assigneeLogin: text("assignee_login"), // For assigned
     labelName: text("label_name"), // For labeled/unlabeled
 

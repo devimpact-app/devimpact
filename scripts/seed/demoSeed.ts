@@ -1,9 +1,10 @@
 import "dotenv/config";
 import { closeDb, db } from "@/lib/db/client";
-import { githubPrs, repositories, users } from "@/lib/db/schema";
+import { githubPrs, githubReviews, repositories, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { seedRepositories } from "./helpers/seedRepositories";
 import { seedAuthoredPRs } from "./helpers/seedAuthoredPRs";
+import { seedReviewedPRs } from "./helpers/seedReviewedPRs";
 
 const argv = process.argv.slice(2);
 const hasFlag = (f: string) => argv.includes(f);
@@ -14,12 +15,14 @@ const hasFlag = (f: string) => argv.includes(f);
 
 async function resetTenantData(tenantId: string) {
   // delete child tables first
+  await db.delete(githubReviews).where(eq(githubReviews.tenantId, tenantId));
   await db.delete(githubPrs).where(eq(githubPrs.tenantId, tenantId));
   await db.delete(repositories).where(eq(repositories.tenantId, tenantId));
 }
 
 async function seedGithubActivity(
   tenantId: string,
+  githubUsername: string,
   opts: { verbose?: boolean } = {},
 ) {
   const repos = await seedRepositories(tenantId);
@@ -32,7 +35,14 @@ async function seedGithubActivity(
 
   await seedAuthoredPRs({
     tenantId,
-    authorGithubLogin: "irichard620",
+    authorGithubLogin: githubUsername,
+    repos: repoInputs,
+    lookbackDays: 90,
+  });
+
+  await seedReviewedPRs({
+    tenantId,
+    reviewerGithubLogin: githubUsername,
     repos: repoInputs,
     lookbackDays: 90,
   });
@@ -57,7 +67,7 @@ async function main() {
     }
 
     await db.transaction(async (tx) => {
-      await seedGithubActivity(tenantId, { verbose: true });
+      await seedGithubActivity(tenantId, me.githubUsername, { verbose: true });
     });
   } catch (err) {
     console.error("❌ Seed failed:", err);

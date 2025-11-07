@@ -1,7 +1,10 @@
 /* eslint-disable no-console */
 import { db } from "@/lib/db/client";
 import { githubPrs } from "@/lib/db/schema";
-import { sql, and, eq } from "drizzle-orm";
+import { seedPrFiles } from "./seedPrFiles";
+import { seedPrCommits } from "./seedPrCommits";
+import { seedPrReview } from "./seedPrReview";
+import { weekdayNear } from "./seedReviewedPRs";
 
 // ---- tiny helpers -----------------------------------------------------------
 
@@ -210,7 +213,7 @@ export async function seedAuthoredPRs(params: {
   rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
   // Insert/upsert
-  const inserted = [];
+  const inserted: any[] = [];
   for (const row of rows) {
     const [rec] = await db
       .insert(githubPrs)
@@ -241,15 +244,38 @@ export async function seedAuthoredPRs(params: {
           htmlUrl: row.htmlUrl,
         },
       })
-      .returning({
-        id: githubPrs.id,
-        repoFullName: githubPrs.repoFullName,
-        prNumber: githubPrs.prNumber,
-        state: githubPrs.state,
-        mergedAt: githubPrs.mergedAt,
-      });
+      .returning();
 
     inserted.push(rec);
+
+    const reviewLagDays = rand(0, 2); // you review within ~0-2 days
+    const reviewedAt = weekdayNear(
+      new Date(row.createdAt.getTime() + reviewLagDays * 864e5),
+      1,
+    );
+
+    await seedPrReview({
+      db, // pass your tx if inside a transaction
+      pr: rec,
+      tenantId,
+      prNumber: row.prNumber, // the PR number you generated
+      repoFullName: row.repoFullName,
+      submittedAt: reviewedAt, // when you reviewed
+    });
+
+    await seedPrFiles({
+      db, // or tx if you're inside a transaction
+      pr: rec,
+      tenantId,
+      authorGithubLogin: row.authorGithubLogin, // for authored PRs
+    });
+
+    await seedPrCommits({
+      db, // or tx if you're inside a transaction
+      pr: rec,
+      tenantId,
+      authorGithubLogin: row.authorGithubLogin, // for authored PRs
+    });
   }
 
   return inserted;
