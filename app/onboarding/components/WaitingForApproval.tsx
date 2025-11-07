@@ -3,14 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function WaitingForApproval({
-  type,
-}: {
-  type: "github_app" | "fine_grained_pat";
-}) {
-  const [checking, setChecking] = useState(false);
-  const [message, setMessage] = useState("");
+export default function WaitingForApproval({ orgSlug }: { orgSlug?: string }) {
   const router = useRouter();
+  const [checking, setChecking] = useState(false);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [message, setMessage] = useState("");
+
+  async function onCheck() {
+    try {
+      setChecking(true);
+      await handleCheckStatus();
+      setLastChecked(new Date());
+    } finally {
+      setChecking(false);
+    }
+  }
 
   const handleCheckStatus = async () => {
     setChecking(true);
@@ -37,73 +44,127 @@ export default function WaitingForApproval({
     }
   };
 
-  const isGitHubApp = type === "github_app";
-
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg border border-gray-200 p-8">
-          {/* Icon */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
-              <span className="text-3xl">⏳</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Waiting for Organization Approval
-            </h1>
-            <p className="text-gray-600">
-              Your GitHub organization admin needs to approve{" "}
-              {isGitHubApp ? "the app installation" : "your PAT access"}.
-            </p>
-          </div>
+    <div className="min-h-screen bg-background text-text-primary px-4 py-12">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-xl border border-border bg-surface-alt p-8 shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+          {/* Header */}
+          <h1 className="text-2xl font-semibold">Waiting for org approval</h1>
+          <p className="mt-2 text-text-secondary">
+            We’re waiting for an organization admin to approve your{" "}
+            <span className="font-medium">
+              Fine-Grained Personal Access Token
+            </span>
+            {orgSlug ? (
+              <>
+                {" "}
+                for <span className="font-mono">{orgSlug}</span>.
+              </>
+            ) : (
+              "."
+            )}{" "}
+            You’ll get access to your organization repos once it’s approved.
+          </p>
 
-          {/* Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <h2 className="font-semibold text-gray-900 mb-3">
-              What to do next:
-            </h2>
-            <ol className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start">
-                <span className="font-semibold mr-2">1.</span>
-                Contact your GitHub organization admin
+          {/* Status panel */}
+          <div className="mt-6 rounded-xl border border-border bg-surface p-4">
+            <div className="flex items-center gap-3">
+              {/* status dot */}
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-warning ring-4 ring-warning/10" />
+              <div>
+                <div className="font-medium">Approval pending</div>
+                <div className="text-sm text-text-secondary">
+                  {lastChecked
+                    ? `Last checked ${lastChecked.toLocaleTimeString()}`
+                    : "We’ll keep your setup ready to go."}
+                </div>
+                <div className="font-medium">{message}</div>
+              </div>
+            </div>
+
+            {/* Helpful steps */}
+            <ol className="mt-4 list-decimal space-y-2 pl-6 text-sm text-text-secondary">
+              <li>
+                Ask an org admin to approve your token request in GitHub’s{" "}
+                <span className="font-medium">
+                  “Organization access requests”
+                </span>
+                .
               </li>
-              <li className="flex items-start">
-                <span className="font-semibold mr-2">2.</span>
-                Ask them to approve DevImpact access in{" "}
-                {isGitHubApp
-                  ? "GitHub Settings → Applications"
-                  : "GitHub Settings → Personal Access Tokens"}
-              </li>
-              <li className="flex items-start">
-                <span className="font-semibold mr-2">3.</span>
-                Come back here and click "Check Status"
-              </li>
+              <li>Once approved, return here and click “Check status”.</li>
             </ol>
+
+            {/* Actions */}
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={onCheck}
+                className={[
+                  "inline-flex items-center justify-center rounded-xl px-4 py-3 font-semibold transition",
+                  checking
+                    ? "bg-accent/60 text-white opacity-60 cursor-not-allowed pointer-events-none"
+                    : "bg-accent text-white hover:bg-[var(--color-accent-hover)]",
+                ].join(" ")}
+              >
+                {checking ? (
+                  <span className="inline-flex items-center gap-2">
+                    <svg
+                      className="h-4 w-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                    Checking…
+                  </span>
+                ) : (
+                  "Check status"
+                )}
+              </button>
+
+              <a
+                href="https://github.com/settings/personal-access-tokens/requests"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-text-primary hover:bg-background/60"
+              >
+                Open approval page ↗
+              </a>
+            </div>
           </div>
 
-          {/* Status message */}
-          {message && (
-            <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700">
-              {message}
-            </div>
-          )}
+          {/* Divider */}
+          <div className="mt-8 border-t border-border pt-6" />
 
-          {/* Actions */}
-          <div className="space-y-3">
+          {/* Alternative path */}
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="mb-2 font-medium">Waiting for org approval?</div>
+            <p className="text-sm text-text-secondary">
+              While you wait, you can use a{" "}
+              <span className="font-medium">Classic PAT</span> for immediate
+              access:
+            </p>
+
             <button
-              onClick={handleCheckStatus}
-              disabled={checking}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition"
+              onClick={() => {
+                router.push("/onboarding/pat/classic");
+              }}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm text-text-primary hover:bg-background/60"
             >
-              {checking ? "Checking..." : "Check Approval Status"}
+              <span>Use Classic PAT instead</span>
+              <span>→</span>
             </button>
-
-            <a
-              href="/dashboard"
-              className="block w-full text-center text-gray-600 hover:text-gray-900 py-2"
-            >
-              I'll finish this later →
-            </a>
           </div>
         </div>
       </div>

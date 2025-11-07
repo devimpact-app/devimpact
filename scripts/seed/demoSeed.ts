@@ -1,0 +1,71 @@
+import "dotenv/config";
+import { closeDb, db } from "@/lib/db/client";
+import { githubPrs, repositories, users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { seedRepositories } from "./helpers/seedRepositories";
+import { seedAuthoredPRs } from "./helpers/seedAuthoredPRs";
+
+const argv = process.argv.slice(2);
+const hasFlag = (f: string) => argv.includes(f);
+// const getArg = (name: string) => {
+//   const i = argv.indexOf(`--${name}`);
+//   return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : undefined;
+// };
+
+async function resetTenantData(tenantId: string) {
+  // delete child tables first
+  await db.delete(githubPrs).where(eq(githubPrs.tenantId, tenantId));
+  await db.delete(repositories).where(eq(repositories.tenantId, tenantId));
+}
+
+async function seedGithubActivity(
+  tenantId: string,
+  opts: { verbose?: boolean } = {},
+) {
+  const repos = await seedRepositories(tenantId);
+  // Map to the shape the PR seeder expects
+  const repoInputs = repos.map((r) => ({
+    fullName: r.fullName, // ensure you returned this from seedRepositories
+    owner: r.fullName.split("/")[0],
+    name: r.fullName.split("/")[1],
+  }));
+
+  await seedAuthoredPRs({
+    tenantId,
+    authorGithubLogin: "irichard620",
+    repos: repoInputs,
+    lookbackDays: 90,
+  });
+}
+
+async function main() {
+  try {
+    const reset = hasFlag("--reset");
+    const [me] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, "iwrichard@proton.me"))
+      .limit(1);
+
+    if (!me) throw new Error("Seed needs an existing user with that email");
+
+    const tenantId = me.id;
+
+    if (reset) {
+      console.log("🔄 Resetting existing seed data for tenant:", tenantId);
+      await resetTenantData(tenantId);
+    }
+
+    await db.transaction(async (tx) => {
+      await seedGithubActivity(tenantId, { verbose: true });
+    });
+  } catch (err) {
+    console.error("❌ Seed failed:", err);
+    process.exitCode = 1; // mark failure
+  } finally {
+    await closeDb(); // <-- important
+    process.exit(); // ensures process ends even if something else kept a handle open
+  }
+}
+
+main();

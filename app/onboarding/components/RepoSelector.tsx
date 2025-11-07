@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { isInitialSync } from "@/lib/integrations/github/sync/sync-status";
 
 type FetchState = "idle" | "loading" | "error" | "ready" | "submitting";
 

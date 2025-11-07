@@ -3,11 +3,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
 import { integrationTokens, users } from "@/lib/db/schema";
 import { and, eq, not } from "drizzle-orm";
-import DataSourceChoice from "./components/DataSourceChoice";
 import WaitingForApproval from "./components/WaitingForApproval";
 import RepoSelector from "./components/RepoSelector";
 import SyncingPage from "./components/SyncingLoader";
-import GridTest from "./components/GridTest";
 
 export default async function OnboardingPage() {
   const session = await auth();
@@ -28,23 +26,14 @@ export default async function OnboardingPage() {
   }
 
   switch (user.onboardingState) {
-    case "need_data_source":
-    case null:
-    case undefined:
-      return (
-        <DataSourceChoice
-          userId={user.id}
-          githubUsername={session.user.githubUsername}
-        />
-      );
-
-    case "gh_app_pending":
-      return <WaitingForApproval type="github_app" />;
+    // case "need_data_source":
+    // case null:
+    // case undefined:
+    //   redirect("/onboarding/pat");
 
     case "fg_pat_pending":
-      return <WaitingForApproval type="fine_grained_pat" />;
+      return <WaitingForApproval />;
 
-    case "gh_app_approved":
     case "fg_pat_approved":
       return <RepoSelector />;
 
@@ -55,12 +44,7 @@ export default async function OnboardingPage() {
       redirect("/dashboard");
 
     default:
-      // Fallback to data source choice if unknown state
-      return (
-        <DataSourceChoice
-          userId={user.id}
-          githubUsername={session.user.githubUsername}
-        />
-      );
+      // redirect("/onboarding/pat");
+      return <WaitingForApproval />;
   }
 }

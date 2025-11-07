@@ -21,7 +21,9 @@ export async function storePR(
   const [insertedPR] = await db
     .insert(githubPrs)
     .values({
-      userId,
+      externalId: pr.id.toString(),
+      externalNodeId: pr.node_id,
+      tenantId: userId,
       prNumber: pr.number,
       repoFullName,
       repoOwner,
@@ -30,7 +32,7 @@ export async function storePR(
       body: pr.body,
       state: pr.state,
       draft: pr.draft || false,
-      githubLogin: pr.user?.login || "unknown",
+      authorGithubLogin: pr.user?.login || "unknown",
       additions: files.reduce((sum, f) => sum + f.additions, 0),
       deletions: files.reduce((sum, f) => sum + f.deletions, 0),
       changedFiles: files.length,
@@ -42,7 +44,7 @@ export async function storePR(
       htmlUrl: pr.html_url,
     })
     .onConflictDoUpdate({
-      target: [githubPrs.userId, githubPrs.repoFullName, githubPrs.prNumber],
+      target: [githubPrs.tenantId, githubPrs.repoFullName, githubPrs.prNumber],
       set: {
         state: pr.state,
         updatedAt: new Date(pr.updated_at),

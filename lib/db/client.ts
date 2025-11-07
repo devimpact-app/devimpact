@@ -9,3 +9,7 @@ const queryClient = postgres(process.env.DATABASE_URL!, {
 
 export const db = drizzle(queryClient, { schema });
 export const sql = queryClient; // Keep for raw queries
+
+export async function closeDb() {
+  await queryClient.end({ timeout: 1 });
+}

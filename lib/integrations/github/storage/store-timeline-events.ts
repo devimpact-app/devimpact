@@ -41,10 +41,10 @@ export async function storeTimelineEvents(
 
           return {
             prId,
-            userId,
+            tenantId: userId,
             eventId: e.id ? String(e.id) : null, // Some events don't have IDs
             eventType: e.event || "unknown",
-            githubLogin: e.actor?.login || e.user?.login || null,
+            actorGithubLogin: e.actor?.login || e.user?.login || null,
             eventData: e, // Store full event for flexibility
             requestedReviewerLogin,
             assigneeLogin,

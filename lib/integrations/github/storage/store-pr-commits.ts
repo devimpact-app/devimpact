@@ -4,6 +4,7 @@ import { GitHubPRCommit } from "../api/types";
 
 export async function storePRCommits(
   prId: string,
+  userId: string,
   commits: GitHubPRCommit[],
   username: string,
 ): Promise<void> {
@@ -13,6 +14,7 @@ export async function storePRCommits(
     .insert(githubPrCommits)
     .values(
       commits.map((c) => ({
+        tenantId: userId,
         prId,
         sha: c.sha,
         message: c.commit.message,
@@ -20,7 +22,7 @@ export async function storePRCommits(
           ? new Date(c.commit.committer.date)
           : null,
         htmlUrl: c.html_url,
-        githubLogin: username,
+        authorGithubLogin: username,
       })),
     )
     .onConflictDoNothing();

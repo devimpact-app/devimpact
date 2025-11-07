@@ -40,10 +40,7 @@ export async function syncUserGitHubData(userId: string) {
   });
 
   // 5. Update sync status
-  await updateSyncStatus(userId, {
-    prsCreatedCount: authoredResult.count,
-    reviewsGivenCount: reviewedResult.count,
-  });
+  await updateSyncStatus(userId);
 
   await db
     .update(users)

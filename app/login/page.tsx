@@ -37,7 +37,7 @@ export default function LoginPage() {
           className="mt-8"
           action={async () => {
             "use server";
-            await signIn("github", { redirectTo: "/onboarding" });
+            await signIn("github", { redirectTo: "/onboarding/pat" });
           }}
         >
           <button

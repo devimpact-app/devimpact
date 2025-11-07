@@ -16,11 +16,11 @@ export async function storeReviews(
     .values(
       reviews.map((r) => ({
         prId,
-        userId,
+        tenantId: userId,
         reviewId: String(r.id), // GitHub's review ID (for linking review comments)
         state: r.state,
         body: r.body || null,
-        githubLogin: r.user?.login || username,
+        reviewerGithubLogin: r.user?.login || username,
         commitId: r.commit_id || null,
         authorAssociation: r.author_association || null,
         submittedAt: r.submitted_at ? new Date(r.submitted_at) : null,

@@ -1,4 +1,4 @@
-import { InferSelectModel } from "drizzle-orm";
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -43,15 +43,18 @@ export const integrationTokens = pgTable(
       .references(() => users.id)
       .notNull(),
     provider: text("provider").notNull(),
-    tokenType: text("token_type").notNull(), // 'oauth' or 'pat' or 'installation
+    tokenType: text("token_type").notNull(), // 'oauth' or 'pat' or 'classic_pat'
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token"),
     expiresAt: timestamp("expires_at"),
-    installationId: text("installation_id"), // required for kind='installation'
     orgLogin: text("org_login"),
-    selectedRepos: jsonb("selected_repos").$type<string[] | null>(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    coverageStartDate: timestamp("coverage_start_date", { withTimezone: true }), // ← add this
+    lastSyncStatus: text("last_sync_status")
+      .$type<"ok" | "partial" | "error">()
+      .default("ok"),
   },
   (table) => ({
     // Composite unique constraint
@@ -65,16 +68,47 @@ export const integrationTokens = pgTable(
 
 export type IntegrationToken = InferSelectModel<typeof integrationTokens>;
 
+export const repositories = pgTable(
+  "repositories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    externalId: text("external_id").notNull(), // GitHub's PR ID
+    externalNodeId: text("external_node_id").notNull(), // GitHub's PR Node ID
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }), // tenant=user for now
+    provider: text("provider").notNull(), // 'github'
+    fullName: text("full_name").notNull(), // 'owner/repo'
+    name: text("name").notNull(),
+    owner: text("owner").notNull(), // org or username
+    isPrivate: boolean("is_private").notNull().default(true),
+
+    // minimal per-repo state you’ll need immediately
+    selected: boolean("selected").notNull().default(true),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    syncCursor: text("sync_cursor"),
+    syncError: text("sync_error"),
+  },
+  (t) => ({
+    uniqPerTenant: unique().on(t.tenantId, t.provider, t.fullName), // start with fullName; upgrade to providerRepoId later
+    idxTenant: index("repos_tenant_idx").on(t.tenantId),
+  }),
+);
+
+export type RepositoryCreateInput = InferInsertModel<typeof repositories>;
+
 export const githubPrs = pgTable(
   "github_prs",
   {
     // Identity
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
+    tenantId: uuid("tenant_id")
       .references(() => users.id)
       .notNull(),
 
     // PR identification
+    externalId: text("external_id").notNull(), // GitHub's PR ID
+    externalNodeId: text("external_node_id").notNull(), // GitHub's PR Node ID
     prNumber: integer("pr_number").notNull(),
     repoFullName: text("repo_full_name").notNull(), // "eng-coach/eng-coach"
     repoOwner: text("repo_owner").notNull(), // "eng-coach"
@@ -87,7 +121,7 @@ export const githubPrs = pgTable(
     draft: boolean("draft").default(false),
 
     // Author info
-    githubLogin: text("github_login").notNull(),
+    authorGithubLogin: text("author_github_login").notNull(),
 
     // Stats (calculated from files/commits)
     additions: integer("additions"),
@@ -109,9 +143,9 @@ export const githubPrs = pgTable(
   },
   (table) => ({
     // Unique: user can't have duplicate PRs
-    uniquePr: unique().on(table.userId, table.repoFullName, table.prNumber),
+    uniquePr: unique().on(table.tenantId, table.repoFullName, table.prNumber),
     // Indexes for queries
-    userIdIdx: index("github_prs_user_id_idx").on(table.userId),
+    byTenant: index("github_prs_tenant_idx").on(table.tenantId),
     repoIdx: index("github_prs_repo_idx").on(table.repoFullName),
     createdAtIdx: index("github_prs_created_at_idx").on(table.createdAt),
   }),
@@ -122,6 +156,9 @@ export const githubPrCommits = pgTable(
   {
     // Identity
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => users.id)
+      .notNull(),
     prId: uuid("pr_id")
       .references(() => githubPrs.id)
       .notNull(),
@@ -134,7 +171,7 @@ export const githubPrCommits = pgTable(
     committedAt: timestamp("committed_at"),
 
     // GitHub user (if commit author has GitHub account)
-    githubLogin: text("github_login").notNull(),
+    authorGithubLogin: text("author_github_login").notNull(),
 
     // URLs
     htmlUrl: text("html_url").notNull(),
@@ -146,6 +183,7 @@ export const githubPrCommits = pgTable(
     // Unique: one commit per PR
     uniqueCommit: unique().on(table.prId, table.sha),
     // Index for queries
+    byTenant: index("github_pr_commits_tenant_idx").on(table.tenantId),
     prIdIdx: index("github_pr_commits_pr_id_idx").on(table.prId),
   }),
 );
@@ -155,10 +193,13 @@ export const githubPrFiles = pgTable(
   {
     // Identity
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => users.id)
+      .notNull(),
     prId: uuid("pr_id")
       .references(() => githubPrs.id)
       .notNull(),
-    githubLogin: text("github_login").notNull(),
+    authorGithubLogin: text("author_github_login").notNull(),
 
     // File identification
     filename: text("filename").notNull(), // "src/components/Button.tsx"
@@ -183,6 +224,7 @@ export const githubPrFiles = pgTable(
   },
   (table) => ({
     // Index for queries
+    byTenant: index("github_pr_files_tenant_idx").on(table.tenantId),
     prIdIdx: index("github_pr_files_pr_id_idx").on(table.prId),
     extensionIdx: index("github_pr_files_extension_idx").on(
       table.fileExtension,
@@ -200,7 +242,7 @@ export const githubReviews = pgTable(
     prId: uuid("pr_id")
       .references(() => githubPrs.id)
       .notNull(),
-    userId: uuid("user_id")
+    tenantId: uuid("tenant_id")
       .references(() => users.id)
       .notNull(),
 
@@ -212,7 +254,7 @@ export const githubReviews = pgTable(
     body: text("body"), // Overall review comment (optional)
 
     // Reviewer info
-    githubLogin: text("github_login").notNull(),
+    reviewerGithubLogin: text("reviewer_github_login").notNull(),
 
     // Context
     commitId: text("commit_id"), // Which commit was reviewed
@@ -232,8 +274,10 @@ export const githubReviews = pgTable(
     uniqueReview: unique().on(table.reviewId),
     // Indexes for queries
     prIdIdx: index("github_reviews_pr_id_idx").on(table.prId),
-    userIdIdx: index("github_reviews_user_id_idx").on(table.userId),
-    reviewerIdx: index("github_reviews_reviewer_idx").on(table.githubLogin),
+    byTenant: index("github_reviews_tenant_idx").on(table.tenantId),
+    reviewerIdx: index("github_reviews_reviewer_idx").on(
+      table.reviewerGithubLogin,
+    ),
   }),
 );
 
@@ -248,7 +292,7 @@ export const githubReviewComments = pgTable(
       .references(() => githubPrs.id)
       .notNull(),
     reviewId: uuid("review_id").references(() => githubReviews.id), // Nullable (standalone comments)
-    userId: uuid("user_id")
+    tenantId: uuid("tenant_id")
       .references(() => users.id)
       .notNull(), // Whose data this is
 
@@ -266,7 +310,7 @@ export const githubReviewComments = pgTable(
     side: text("side"), // "LEFT" or "RIGHT"
 
     // Author
-    githubLogin: text("github_login").notNull(), // ✅ Standardized
+    authorGithubLogin: text("author_github_login").notNull(), // ✅ Standardized
     authorAssociation: text("author_association"),
 
     // Threading
@@ -294,9 +338,9 @@ export const githubReviewComments = pgTable(
     reviewIdIdx: index("github_review_comments_review_id_idx").on(
       table.reviewId,
     ),
-    userIdIdx: index("github_review_comments_user_id_idx").on(table.userId),
+    byTenant: index("github_review_comments_tenant_idx").on(table.tenantId),
     githubLoginIdx: index("github_review_comments_github_login_idx").on(
-      table.githubLogin,
+      table.authorGithubLogin,
     ),
   }),
 );
@@ -311,7 +355,7 @@ export const githubTimelineEvents = pgTable(
     prId: uuid("pr_id")
       .references(() => githubPrs.id)
       .notNull(),
-    userId: uuid("user_id")
+    tenantId: uuid("tenant_id")
       .references(() => users.id)
       .notNull(),
 
@@ -322,7 +366,7 @@ export const githubTimelineEvents = pgTable(
     eventType: text("event_type").notNull(), // "review_requested", "merged", etc.
 
     // Actor (who triggered the event)
-    githubLogin: text("github_login"), // Can be null for some automated events
+    actorGithubLogin: text("actor_github_login"), // Can be null for some automated events
 
     // Event-specific data (JSONB for flexibility)
     eventData: jsonb("event_data"), // Store full event details here
@@ -348,11 +392,12 @@ export const githubTimelineEvents = pgTable(
       table.eventType,
     ),
     githubLoginIdx: index("github_timeline_events_github_login_idx").on(
-      table.githubLogin,
+      table.actorGithubLogin,
     ),
     createdAtIdx: index("github_timeline_events_created_at_idx").on(
       table.createdAt,
     ),
+    byTenant: index("github_timeline_events_tenant_idx").on(table.tenantId),
 
     uniqueEventId: unique().on(table.prId, table.eventId),
 
@@ -362,7 +407,7 @@ export const githubTimelineEvents = pgTable(
       table.prId,
       table.eventType,
       table.createdAt,
-      table.githubLogin,
+      table.actorGithubLogin,
     ),
   }),
 );
@@ -372,7 +417,7 @@ export const githubRawData = pgTable(
   "github_raw_data",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
+    tenantId: uuid("tenant_id")
       .references(() => users.id)
       .notNull(),
     dataType: text("data_type").notNull(), // 'pr', 'review'
@@ -384,34 +429,10 @@ export const githubRawData = pgTable(
     fetchedAt: timestamp("fetched_at").defaultNow(),
   },
   (table) => ({
-    uniqueRawData: unique().on(table.userId, table.dataType, table.externalId),
+    uniqueRawData: unique().on(
+      table.tenantId,
+      table.dataType,
+      table.externalId,
+    ),
   }),
 );
-
-export const githubSyncStatus = pgTable("github_sync_status", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .references(() => users.id)
-    .notNull()
-    .unique(),
-  lastSyncedAt: timestamp("last_synced_at"),
-  coverageStartDate: timestamp("coverage_start_date"),
-  prsCreatedCount: integer("prs_created_count").default(0),
-  reviewsGivenCount: integer("reviews_given_count").default(0),
-});
-
-export const githubPendingRequests = pgTable("github_pending_requests", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .references(() => users.id)
-    .notNull()
-    .unique(),
-
-  githubUsername: text("github_username").notNull(),
-
-  // track lifecycle
-  status: text("status").default("waiting"), // waiting, installed, rejected, etc
-
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});

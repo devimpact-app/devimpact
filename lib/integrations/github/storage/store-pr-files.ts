@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 
 export async function storePRFiles(
   prId: string,
+  userId: string,
   files: GitHubPRFile[],
   username: string,
 ): Promise<void> {
@@ -25,6 +26,7 @@ export async function storePRFiles(
       dir.includes("__tests__");
 
     return {
+      tenantId: userId,
       prId,
       filename: f.filename,
       previousFilename: f.previous_filename ?? null,
@@ -36,7 +38,7 @@ export async function storePRFiles(
       directory: dir,
       isTestFile: isTest,
       blobUrl: f.blob_url ?? null,
-      githubLogin: username,
+      authorGithubLogin: username,
       fetchedAt: new Date(),
     };
   });
