@@ -10,7 +10,10 @@ import { syncReviewedPRs } from "./sync-reviewed-prs";
 import { db } from "@/lib/db/client";
 import { githubPrs, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { normalizePullRequest } from "@/lib/analysis/normalizers/pr-normalizer";
+import {
+  batchNormalizeUserPRs,
+  normalizePullRequest,
+} from "@/lib/analysis/normalizers/pr-normalizer";
 
 export async function syncUserGitHubData(userId: string) {
   // 1. Setup
@@ -76,24 +79,7 @@ export async function normalizeUserPRs(
     .from(githubPrs)
     .where(eq(githubPrs.tenantId, userId));
 
-  console.log(`Normalizing ${prs.length} PRs for user ${userId}`);
+  const normalizedCount = await batchNormalizeUserPRs(userId, username);
 
-  let normalizedCount = 0;
-
-  for (const pr of prs) {
-    try {
-      await normalizePullRequest(pr.id, username);
-      normalizedCount++;
-
-      if (normalizedCount % 10 === 0) {
-        console.log(`  Normalized ${normalizedCount}/${prs.length} PRs`);
-      }
-    } catch (error) {
-      console.error(`Failed to normalize PR ${pr.id}:`, error);
-      // Continue with other PRs
-    }
-  }
-
-  console.log(`✓ Normalized ${normalizedCount} PRs`);
   return normalizedCount;
 }

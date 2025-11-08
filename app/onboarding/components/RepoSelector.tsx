@@ -5,15 +5,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 type FetchState = "idle" | "loading" | "error" | "ready" | "submitting";
 
+interface RepoInfo {
+  id: string;
+  node_id: string;
+  full_name: string;
+  private: boolean;
+}
+
 export default function RepoSelector() {
   const router = useRouter();
   const search = useSearchParams();
 
   const [status, setStatus] = useState<FetchState>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [repos, setRepos] = useState<string[]>([]);
+  const [repos, setRepos] = useState<RepoInfo[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
+
+  const reposByFullName = useMemo(
+    () => new Map(repos.map((repo) => [repo.full_name, repo])),
+    [repos],
+  );
 
   // Fetch accessible repos once connected
   useEffect(() => {
@@ -24,13 +36,14 @@ export default function RepoSelector() {
         const url = new URL("/api/github/repos", window.location.origin);
         const res = await fetch(url.toString(), { method: "GET" });
         if (!res.ok) throw new Error(`Failed to load repos (${res.status})`);
-        // expected shape: { repos: string[] }
         const data = await res.json();
-        const list: string[] = Array.isArray(data) ? data : (data.repos ?? []);
+        const list: RepoInfo[] = Array.isArray(data)
+          ? data
+          : (data.repos ?? []);
         setRepos(list);
         // default: preselect all (flip to false if you prefer)
         const def: Record<string, boolean> = {};
-        for (const r of list) def[r] = true;
+        for (const r of list) def[r.full_name] = true;
         setSelected(def);
         setStatus("ready");
       } catch (e: any) {
@@ -44,18 +57,18 @@ export default function RepoSelector() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return repos;
-    return repos.filter((r) => r.toLowerCase().includes(q));
+    return repos.filter((r) => r.full_name.toLowerCase().includes(q));
   }, [repos, query]);
 
   const allOn = useMemo(
-    () => filtered.length > 0 && filtered.every((r) => selected[r]),
+    () => filtered.length > 0 && filtered.every((r) => selected[r.full_name]),
     [filtered, selected],
   );
 
   const toggleAll = () => {
     const next = { ...selected };
     const target = !allOn;
-    for (const r of filtered) next[r] = target;
+    for (const r of filtered) next[r.full_name] = target;
     setSelected(next);
   };
 
@@ -63,10 +76,13 @@ export default function RepoSelector() {
     setSelected((old) => ({ ...old, [repo]: !old[repo] }));
   };
 
-  const chosen = useMemo(
-    () => Object.keys(selected).filter((r) => selected[r]),
-    [selected],
-  );
+  // Get selected repos
+  const chosen = useMemo(() => {
+    return Object.keys(selected)
+      .filter((fullName) => selected[fullName])
+      .map((fullName) => reposByFullName.get(fullName))
+      .filter(Boolean) as RepoInfo[];
+  }, [selected, reposByFullName]);
 
   const startSync = async () => {
     setStatus("submitting");
@@ -76,7 +92,7 @@ export default function RepoSelector() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          selectedRepos: chosen, // array of "owner/name"
+          selectedRepos: chosen,
           isInitialSync: true,
         }),
       });
@@ -157,25 +173,25 @@ export default function RepoSelector() {
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
-                {filtered.map((fullName) => (
+                {filtered.map((repo) => (
                   <li
-                    key={fullName}
+                    key={repo.full_name}
                     className="flex items-center justify-between p-3"
                   >
                     <label className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300"
-                        checked={!!selected[fullName]}
-                        onChange={() => toggleOne(fullName)}
+                        checked={!!selected[repo.full_name]}
+                        onChange={() => toggleOne(repo.full_name)}
                       />
                       <span className="text-sm font-medium text-gray-900">
-                        {fullName}
+                        {repo.full_name}
                       </span>
                     </label>
                     {/* optional: org badge */}
                     <span className="text-xs text-gray-500">
-                      {fullName.split("/")[0]}
+                      {repo.full_name.split("/")[0]}
                     </span>
                   </li>
                 ))}

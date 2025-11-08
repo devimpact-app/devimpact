@@ -38,20 +38,22 @@ export async function POST(request: Request) {
 
   try {
     // Update repos on token
-    const repoValues: RepositoryCreateInput[] = selectedRepos.map(
-      (repo: any) => ({
-        tenantId: session.user.id,
-        provider: "github",
-        fullName: repo.full_name,
-        name: repo.full_name.split("/")[1],
-        owner: repo.full_name.split("/")[0],
-        externalId: repo.id,
-        externalNodeId: repo.node_id,
-        isPrivate: repo.private,
-        selected: true,
-      }),
-    );
-    await db.insert(repositories).values(repoValues).onConflictDoNothing();
+    if (selectedRepos) {
+      const repoValues: RepositoryCreateInput[] = selectedRepos.map(
+        (repo: any) => ({
+          tenantId: session.user.id,
+          provider: "github",
+          fullName: repo.full_name,
+          name: repo.full_name.split("/")[1],
+          owner: repo.full_name.split("/")[0],
+          externalId: repo.id,
+          externalNodeId: repo.node_id,
+          isPrivate: repo.private,
+          selected: true,
+        }),
+      );
+      await db.insert(repositories).values(repoValues).onConflictDoNothing();
+    }
 
     // If initial sync, also update user
     if (isInitialSync) {

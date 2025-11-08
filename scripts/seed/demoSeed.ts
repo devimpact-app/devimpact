@@ -90,9 +90,9 @@ async function main() {
       await resetTenantData(tenantId);
     }
 
-    await db.transaction(async (tx) => {
-      await seedGithubActivity(tenantId, me.githubUsername, { verbose: true });
-    });
+    // await db.transaction(async (tx) => {
+    //   await seedGithubActivity(tenantId, me.githubUsername, { verbose: true });
+    // });
   } catch (err) {
     console.error("❌ Seed failed:", err);
     process.exitCode = 1; // mark failure

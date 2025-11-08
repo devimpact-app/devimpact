@@ -8,7 +8,124 @@ import {
   githubPrFiles,
 } from "@/lib/db/schema/github-raw";
 import { pullRequests } from "@/lib/db/schema/github-normalized";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
+
+// Helper: Group array by key
+function groupBy<T extends Record<string, any>>(
+  array: T[],
+  key: keyof T,
+): Record<string, T[]> {
+  return array.reduce(
+    (acc, item) => {
+      const groupKey = String(item[key]);
+      if (!acc[groupKey]) {
+        acc[groupKey] = [];
+      }
+      acc[groupKey].push(item);
+      return acc;
+    },
+    {} as Record<string, T[]>,
+  );
+}
+
+export async function batchNormalizeUserPRs(
+  userId: string,
+  username: string,
+): Promise<number> {
+  // 1. Get all PRs for user
+  const prs = await db
+    .select()
+    .from(githubPrs)
+    .where(eq(githubPrs.tenantId, userId));
+
+  if (prs.length === 0) return 0;
+
+  console.log(`Normalizing ${prs.length} PRs for user ${userId}`);
+
+  const prIds = prs.map((pr) => pr.id);
+
+  // 2. Fetch ALL related data in one go (5 queries, not 5 * N)
+  console.log("Fetching related data...");
+  const [allFiles, allCommits, allReviews, allReviewComments, allTimeline] =
+    await Promise.all([
+      db.select().from(githubPrFiles).where(inArray(githubPrFiles.prId, prIds)),
+      db
+        .select()
+        .from(githubPrCommits)
+        .where(inArray(githubPrCommits.prId, prIds)),
+      db.select().from(githubReviews).where(inArray(githubReviews.prId, prIds)),
+      db
+        .select()
+        .from(githubReviewComments)
+        .where(inArray(githubReviewComments.prId, prIds)),
+      db
+        .select()
+        .from(githubTimelineEvents)
+        .where(inArray(githubTimelineEvents.prId, prIds)),
+    ]);
+
+  console.log(
+    `Fetched: ${allFiles.length} files, ${allCommits.length} commits, ${allReviews.length} reviews`,
+  );
+
+  // 3. Group by PR ID
+  const filesByPrId = groupBy(allFiles, "prId");
+  const commitsByPrId = groupBy(allCommits, "prId");
+  const reviewsByPrId = groupBy(allReviews, "prId");
+  const commentsByPrId = groupBy(allReviewComments, "prId");
+  const timelineByPrId = groupBy(allTimeline, "prId");
+
+  // 4. Calculate metrics for all PRs (in memory)
+  console.log("Calculating metrics...");
+  const normalizedData = prs.map((pr) => {
+    return calculateMetrics({
+      pr,
+      timeline: timelineByPrId[pr.id] || [],
+      userCommits: (commitsByPrId[pr.id] || []).filter(
+        (c) => c.authorGithubLogin === username,
+      ),
+      reviews: reviewsByPrId[pr.id] || [],
+      reviewComments: commentsByPrId[pr.id] || [],
+      userGithubLogin: username,
+      prFiles: filesByPrId[pr.id] || [],
+    });
+  });
+
+  // 5. Batch upsert
+  console.log("Saving normalized data...");
+  const existingPRs = await db
+    .select({ githubPrId: pullRequests.githubPrId })
+    .from(pullRequests)
+    .where(
+      inArray(
+        pullRequests.githubPrId,
+        normalizedData.map((d) => d.githubPrId),
+      ),
+    );
+
+  const existingIds = new Set(existingPRs.map((pr) => pr.githubPrId));
+
+  // Split
+  const toInsert = normalizedData.filter((d) => !existingIds.has(d.githubPrId));
+  const toUpdate = normalizedData.filter((d) => existingIds.has(d.githubPrId));
+
+  // Batch insert new
+  if (toInsert.length > 0) {
+    await db.insert(pullRequests).values(toInsert);
+  }
+
+  // Update existing (loop is fine, it's fast)
+  for (const data of toUpdate) {
+    const { githubPrId, tenantId, ...updateFields } = data;
+    await db
+      .update(pullRequests)
+      .set(updateFields)
+      .where(eq(pullRequests.githubPrId, githubPrId));
+  }
+
+  console.log(`✓ Normalized ${normalizedData.length} PRs`);
+  return normalizedData.length;
+}
 
 export async function normalizePullRequest(
   githubPrId: string,
@@ -95,7 +212,7 @@ function calculateMetrics(input: CalculateMetricsInput) {
   } = input;
 
   // Find merged_at from timeline
-  const mergeEvent = timeline.find((e) => e.event === "merged");
+  const mergeEvent = timeline.find((e) => e.eventType === "merged");
   const mergedAt = mergeEvent?.createdAt || null;
 
   // Determine state
@@ -106,11 +223,11 @@ function calculateMetrics(input: CalculateMetricsInput) {
   const firstReviewAt = firstReview?.submittedAt || null;
 
   const timeToFirstReview = firstReviewAt
-    ? (firstReviewAt.getTime() - pr.createdAt.getTime()) / (1000 * 60 * 60)
+    ? Math.round((firstReviewAt.getTime() - pr.createdAt.getTime()) / 1000)
     : null;
 
   const timeToMerge = mergedAt
-    ? (mergedAt.getTime() - pr.createdAt.getTime()) / (1000 * 60 * 60)
+    ? Math.round((mergedAt.getTime() - pr.createdAt.getTime()) / 1000)
     : null;
 
   // Calculate code metrics (user's commits only)
