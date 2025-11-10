@@ -7,7 +7,7 @@ export default function Footer() {
             DevImpact
           </a>
           <p className="mt-1 text-sm text-text-secondary">
-            Built for engineers who want to grow — privately and purposefully.
+            Your work. Your data. Your story.
           </p>
         </div>
 

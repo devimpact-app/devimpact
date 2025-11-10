@@ -24,9 +24,7 @@ export default function LoginPage() {
           >
             DevImpact
           </a>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight">
-            Welcome back
-          </h1>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight">Welcome!</h1>
           <p className="mt-2 text-text-secondary">
             Sign in to your private impact workspace
           </p>
@@ -37,7 +35,7 @@ export default function LoginPage() {
           className="mt-8"
           action={async () => {
             "use server";
-            await signIn("github", { redirectTo: "/onboarding/pat" });
+            await signIn("github", { redirectTo: "/onboarding" });
           }}
         >
           <button

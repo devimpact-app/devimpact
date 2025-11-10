@@ -24,11 +24,7 @@ export async function GET(req: NextRequest) {
     .from(users)
     .where(eq(users.id, session.user.id))
     .limit(1);
-  if (
-    !user ||
-    (user.onboardingState !== "fg_pat_approved" &&
-      user.onboardingState !== "gh_app_approved")
-  ) {
+  if (!user || user.onboardingState !== "token_provided") {
     return NextResponse.json(
       { error: "No approved access found" },
       { status: 400 },
@@ -41,12 +37,6 @@ export async function GET(req: NextRequest) {
 
   let repoNames: RepoInfo[] = [];
 
-  // if (authType === "app") {
-  //   const repos = await octokit.paginate("GET /installation/repositories", {
-  //     per_page: 100,
-  //   });
-  //   repoNames = repos.map((repo) => repo.full_name);
-  // } else
   if (authType === "pat") {
     if (orgName) {
       const { data: orgRepos } = await octokit.rest.repos.listForOrg({

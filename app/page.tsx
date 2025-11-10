@@ -1,3 +1,4 @@
+import FAQ from "@/components/landing/Faq";
 import Footer from "@/components/landing/Footer";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
@@ -9,6 +10,7 @@ export default function LandingPage() {
       <TopBar />
       <Hero />
       <HowItWorks />
+      <FAQ />
       <Footer />
     </div>
   );

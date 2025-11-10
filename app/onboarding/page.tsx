@@ -1,10 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
-import { integrationTokens, users } from "@/lib/db/schema";
-import { and, eq, not } from "drizzle-orm";
-import WaitingForApproval from "./components/WaitingForApproval";
-import RepoSelector from "./components/RepoSelector";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import SyncingPage from "./components/SyncingLoader";
 
 export default async function OnboardingPage() {
@@ -26,16 +24,13 @@ export default async function OnboardingPage() {
   }
 
   switch (user.onboardingState) {
-    // case "need_data_source":
-    // case null:
-    // case undefined:
-    //   redirect("/onboarding/pat");
+    case "need_data_source":
+    case null:
+    case undefined:
+      redirect("/onboarding/setup");
 
-    case "fg_pat_pending":
-      return <WaitingForApproval />;
-
-    case "fg_pat_approved":
-      return <RepoSelector />;
+    case "token_provided":
+      redirect("/onboarding/repos");
 
     case "syncing":
       return <SyncingPage />;
@@ -44,7 +39,6 @@ export default async function OnboardingPage() {
       redirect("/dashboard");
 
     default:
-      // redirect("/onboarding/pat");
-      return <WaitingForApproval />;
+      redirect("/onboarding/setup");
   }
 }
