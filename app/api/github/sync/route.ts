@@ -6,6 +6,7 @@ import { repositories, RepositoryCreateInput, users } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { runSync } from "@/lib/integrations/github/sync/orchestrator";
 
+// TODO: add zod types
 export async function GET(request: Request) {
   const session = await auth();
 
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
   });
 }
 
+// TODO: add zod types
 export async function POST(request: Request) {
   const session = await auth();
 

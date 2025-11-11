@@ -4,24 +4,25 @@ import { integrationTokens, users } from "@/lib/db/schema";
 import { encrypt } from "@/lib/utils/crypto";
 import { Octokit } from "@octokit/rest";
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
+import {
+  jsonBadRequest,
+  jsonOK,
+  jsonServerError,
+  jsonUnauthorized,
+} from "../../_lib/http";
 
-export const dynamic = "force-dynamic";
-
+// TODO: add zod types
 export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonUnauthorized();
   }
 
   const { token, orgName } = await request.json();
 
   if (!token || !token.startsWith("ghp_")) {
-    return NextResponse.json(
-      { error: "Invalid token format. Must start with 'ghp_'" },
-      { status: 400 },
-    );
+    return jsonBadRequest("Invalid token format. Must start with 'ghp_'");
   }
 
   const octokit = new Octokit({ auth: token });
@@ -93,8 +94,7 @@ export async function POST(request: Request) {
           })
           .where(eq(users.id, session.user.id));
 
-        return NextResponse.json({
-          success: true,
+        return jsonOK({
           state: "token_provided",
           message: "Token connected successfully!",
           organization: orgName,
@@ -105,11 +105,8 @@ export async function POST(request: Request) {
 
         // If 404, org doesn't exist or token can't see it
         if (orgError.status === 404) {
-          return NextResponse.json(
-            {
-              error: `Organization "${orgName}" not found. Please check the name and try again.`,
-            },
-            { status: 400 },
+          return jsonBadRequest(
+            `Organization "${orgName}" not found. Please check the name and try again.`,
           );
         }
 
@@ -168,8 +165,7 @@ export async function POST(request: Request) {
         })
         .where(eq(users.id, session.user.id));
 
-      return NextResponse.json({
-        success: true,
+      return jsonOK({
         state: "token_provided",
         message: "Token connected successfully!",
         repoCount: repos.length,
@@ -180,19 +176,10 @@ export async function POST(request: Request) {
 
     // Check if it's a 401 (invalid token)
     if (apiError.status === 401) {
-      return NextResponse.json(
-        { error: "Invalid token. Please check and try again." },
-        { status: 400 },
-      );
+      return jsonBadRequest("Invalid token. Please check and try again.");
     }
 
     // Other errors
-    return NextResponse.json(
-      {
-        error: "Failed to validate token",
-        details: apiError.message,
-      },
-      { status: 500 },
-    );
+    return jsonServerError("Failed to validate token");
   }
 }
