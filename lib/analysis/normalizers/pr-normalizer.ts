@@ -127,69 +127,6 @@ export async function batchNormalizeUserPRs(
   return normalizedData.length;
 }
 
-export async function normalizePullRequest(
-  githubPrId: string,
-  userGithubLogin: string,
-): Promise<void> {
-  // 1. Get raw PR data
-  const [pr] = await db
-    .select()
-    .from(githubPrs)
-    .where(eq(githubPrs.id, githubPrId))
-    .limit(1);
-
-  if (!pr) throw new Error("PR not found");
-
-  // 2. Get timeline events
-  const timeline = await db
-    .select()
-    .from(githubTimelineEvents)
-    .where(eq(githubTimelineEvents.prId, githubPrId))
-    .orderBy(githubTimelineEvents.createdAt);
-
-  // 3. Get user's commits only
-  const userCommits = await db
-    .select()
-    .from(githubPrCommits)
-    .where(and(eq(githubPrCommits.prId, githubPrId)))
-    .orderBy(githubPrCommits.committedAt);
-
-  const prFiles = await db
-    .select()
-    .from(githubPrFiles)
-    .where(eq(githubPrFiles.prId, githubPrId));
-
-  // 4. Get reviews
-  const reviews = await db
-    .select()
-    .from(githubReviews)
-    .where(eq(githubReviews.prId, githubPrId))
-    .orderBy(githubReviews.submittedAt);
-
-  // 5. Get review comments
-  const reviewComments = await db
-    .select()
-    .from(githubReviewComments)
-    .where(eq(githubReviewComments.prId, githubPrId));
-
-  // 6. Calculate metrics
-  const normalized = calculateMetrics({
-    pr,
-    timeline,
-    userCommits,
-    reviews,
-    reviewComments,
-    userGithubLogin,
-    prFiles,
-  });
-
-  // 7. Upsert normalized data
-  await db.insert(pullRequests).values(normalized).onConflictDoUpdate({
-    target: pullRequests.githubPrId,
-    set: normalized,
-  });
-}
-
 interface CalculateMetricsInput {
   pr: any;
   timeline: any[];

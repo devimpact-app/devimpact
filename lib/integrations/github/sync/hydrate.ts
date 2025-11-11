@@ -1,36 +1,29 @@
 import { Octokit } from "@octokit/rest";
+import type { PRIngestBundle } from "../ingest/bundle";
 import { fetchPRFiles } from "../api/fetch-pr-files";
 import { fetchPRCommits } from "../api/fetch-pr-commits";
 import { fetchPRReviews } from "../api/fetch-pr-reviews";
 import { fetchPRReviewComments } from "../api/fetch-pr-review-comments";
 import { fetchPRTimeline } from "../api/fetch-pr-timeline";
-import { storePR } from "../storage/store-pr";
-import { storePRFiles } from "../storage/store-pr-files";
-import { storePRCommits } from "../storage/store-pr-commits";
-import { storeReviews } from "../storage/store-reviews";
-import { storeReviewComments } from "../storage/store-review-comments";
-import { storeTimelineEvents } from "../storage/store-timeline-events";
-import { storeRawData } from "../storage/store-raw-data";
 import { GitHubSearchPullRequest } from "../api/types/PullRequest";
 
-export interface SyncPRDetailsOptions {
-  userId: string;
-  octokit: Octokit;
-  owner: string;
-  repo: string;
-  prNumber: number;
-  pr: GitHubSearchPullRequest; // Basic PR from list
+export interface HydrateOptions {
+  pr: GitHubSearchPullRequest;
   mode: "authored" | "reviewed";
-  username: string; // For filtering reviews
+  octokit: Octokit;
+  username: string;
 }
 
-export async function syncPRDetails(options: SyncPRDetailsOptions) {
-  const { userId, octokit, owner, repo, prNumber, pr, mode, username } =
-    options;
-
+export async function hydrateOne({
+  pr,
+  mode,
+  octokit,
+  username,
+}: HydrateOptions): Promise<PRIngestBundle | null> {
+  const repoFullName = pr.repoFullName;
+  const prNumber = pr.number;
+  const [owner, repo] = repoFullName.split("/");
   try {
-    const repoFullName = `${owner}/${repo}`;
-
     if (mode === "authored") {
       // AUTHORED: Fetch everything
       const [files, commits, reviews, reviewComments, timeline] =
@@ -42,23 +35,15 @@ export async function syncPRDetails(options: SyncPRDetailsOptions) {
           fetchPRTimeline({ octokit, owner, repo, prNumber }),
         ]);
 
-      // Store raw data
-      await storeRawData(userId, repoFullName, prNumber, {
+      return {
+        repo: { fullName: repoFullName, owner, name: repo },
         pr,
         files,
         commits,
-        reviews,
-        reviewComments,
+        reviews: reviews,
+        reviewComments: reviewComments,
         timeline,
-      });
-
-      // Store normalized data
-      const prId = await storePR(userId, pr, repoFullName);
-      await storePRFiles(prId, userId, files, username);
-      await storePRCommits(prId, userId, commits, username);
-      await storeReviews(prId, userId, reviews, username);
-      await storeReviewComments(prId, userId, reviewComments);
-      await storeTimelineEvents(prId, userId, timeline);
+      };
     } else {
       // REVIEWED: Only fetch review activity
       const [allReviews, reviewComments, timeline] = await Promise.all([
@@ -73,22 +58,17 @@ export async function syncPRDetails(options: SyncPRDetailsOptions) {
         (c) => c.user.login === username,
       );
 
-      // Store raw data
-      await storeRawData(userId, repoFullName, prNumber, {
+      return {
+        repo: { fullName: repoFullName, owner, name: repo },
         pr,
         reviews: userReviews,
         reviewComments: userReviewComments,
         timeline,
-      });
-
-      // Store normalized data (lightweight PR, no files/commits)
-      const prId = await storePR(userId, pr, repoFullName);
-      await storeReviews(prId, userId, userReviews, username);
-      await storeReviewComments(prId, userId, userReviewComments);
-      await storeTimelineEvents(prId, userId, timeline);
+      };
     }
   } catch (error) {
     console.error(`Error syncing PR ${owner}/${repo}#${prNumber}:`, error);
     // Don't throw - continue with other PRs
   }
+  return null;
 }

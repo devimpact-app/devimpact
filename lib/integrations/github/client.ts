@@ -59,7 +59,6 @@ export async function createGitHubClient(
     .where(eq(repositories.tenantId, userId));
   const selectedRepos =
     tenantRepos.length > 0 ? tenantRepos.map((r) => r.fullName) : null;
-  // Priority: PAT > OAuth > GitHub App
   if (
     activeToken &&
     (activeToken.tokenType === "pat" || activeToken.tokenType === "classic_pat")
@@ -69,30 +68,6 @@ export async function createGitHubClient(
     octokit = new Octokit({ auth: token });
     authType = "pat";
     orgName = activeToken.orgLogin || null;
-    // } else if (activeToken && activeToken.tokenType === "installation") {
-    //   // GitHub App installation
-    //   const installationId = activeToken.installationId; // Store installation_id here
-
-    //   // Load private key
-    //   const privateKeyPath = path.join(
-    //     process.cwd(),
-    //     "github-app-private-key.pem",
-    //   );
-    //   const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-
-    //   // Get app ID from env
-    //   const appId = process.env.GITHUB_APP_ID!;
-
-    //   octokit = new Octokit({
-    //     authStrategy: createAppAuth,
-    //     auth: {
-    //       appId,
-    //       privateKey,
-    //       installationId: parseInt(installationId!, 10),
-    //     },
-    //   });
-    //   authType = "app";
-    // }
   } else if (activeToken && activeToken.tokenType === "oauth") {
     // OAuth token from login
     octokit = new Octokit({ auth: activeToken.accessToken });
