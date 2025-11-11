@@ -8,7 +8,6 @@ export async function storeReviewComments(
   prId: string,
   userId: string,
   comments: GitHubReviewComment[],
-  username: string,
 ): Promise<void> {
   if (comments.length === 0) return;
 
@@ -31,7 +30,7 @@ export async function storeReviewComments(
       return {
         prId,
         reviewId: reviewDbId,
-        userId,
+        tenantId: userId,
         commentId: String(c.id),
         pullRequestReviewId: c.pull_request_review_id
           ? String(c.pull_request_review_id)
@@ -41,7 +40,7 @@ export async function storeReviewComments(
         line: c.line || null,
         startLine: c.start_line || null,
         side: c.side || null,
-        githubLogin: c.user?.login || username,
+        authorGithubLogin: c.user.login,
         authorAssociation: c.author_association || null,
         inReplyToId: c.in_reply_to_id ? String(c.in_reply_to_id) : null,
         commitId: c.commit_id,

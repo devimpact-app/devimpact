@@ -1,4 +1,3 @@
-// lib/integrations/github/api/fetch-pr-timeline.ts
 import { Octokit } from "@octokit/rest";
 import { GitHubTimelineEvent } from "./types";
 

@@ -12,7 +12,7 @@ export interface RawDataPayload {
 }
 
 export async function storeRawData(
-  userId: string,
+  tenantId: string,
   repoFullName: string,
   prNumber: number,
   data: RawDataPayload,
@@ -24,7 +24,7 @@ export async function storeRawData(
   // Store PR data
   if (data.pr) {
     entries.push({
-      userId,
+      tenantId,
       dataType: "pr",
       repoFullName,
       repoOwner,
@@ -37,7 +37,7 @@ export async function storeRawData(
   // Store files data
   if (data.files && data.files.length > 0) {
     entries.push({
-      userId,
+      tenantId,
       dataType: "pr_files",
       repoFullName,
       repoOwner,
@@ -50,7 +50,7 @@ export async function storeRawData(
   // Store commits data
   if (data.commits && data.commits.length > 0) {
     entries.push({
-      userId,
+      tenantId,
       dataType: "pr_commits",
       repoFullName,
       repoOwner,
@@ -63,7 +63,7 @@ export async function storeRawData(
   // Store reviews data
   if (data.reviews && data.reviews.length > 0) {
     entries.push({
-      userId,
+      tenantId,
       dataType: "pr_reviews",
       repoFullName,
       repoOwner,
@@ -76,7 +76,7 @@ export async function storeRawData(
   // Store review comments data
   if (data.reviewComments && data.reviewComments.length > 0) {
     entries.push({
-      userId,
+      tenantId,
       dataType: "pr_review_comments",
       repoFullName,
       repoOwner,
@@ -89,7 +89,7 @@ export async function storeRawData(
   // Store timeline data
   if (data.timeline && data.timeline.length > 0) {
     entries.push({
-      userId,
+      tenantId,
       dataType: "pr_timeline",
       repoFullName,
       repoOwner,
@@ -106,7 +106,7 @@ export async function storeRawData(
       .values(entries)
       .onConflictDoUpdate({
         target: [
-          githubRawData.userId,
+          githubRawData.tenantId,
           githubRawData.dataType,
           githubRawData.externalId,
         ],

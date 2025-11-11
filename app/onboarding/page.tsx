@@ -1,11 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
-import { integrationTokens, users } from "@/lib/db/schema";
-import { and, eq, not } from "drizzle-orm";
-import DataSourceChoice from "./components/DataSourceChoice";
-import WaitingForApproval from "./components/WaitingForApproval";
-import RepoSelector from "./components/RepoSelector";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import SyncingPage from "./components/SyncingLoader";
 
 export default async function OnboardingPage() {
@@ -30,22 +27,10 @@ export default async function OnboardingPage() {
     case "need_data_source":
     case null:
     case undefined:
-      return (
-        <DataSourceChoice
-          userId={user.id}
-          githubUsername={session.user.githubUsername}
-        />
-      );
+      redirect("/onboarding/setup");
 
-    case "gh_app_pending":
-      return <WaitingForApproval type="github_app" />;
-
-    case "fg_pat_pending":
-      return <WaitingForApproval type="fine_grained_pat" />;
-
-    case "gh_app_approved":
-    case "fg_pat_approved":
-      return <RepoSelector />;
+    case "token_provided":
+      redirect("/onboarding/repos");
 
     case "syncing":
       return <SyncingPage />;
@@ -54,12 +39,6 @@ export default async function OnboardingPage() {
       redirect("/dashboard");
 
     default:
-      // Fallback to data source choice if unknown state
-      return (
-        <DataSourceChoice
-          userId={user.id}
-          githubUsername={session.user.githubUsername}
-        />
-      );
+      redirect("/onboarding/setup");
   }
 }

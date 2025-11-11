@@ -1,12 +1,12 @@
 import { db } from "@/lib/db/client";
-import { githubSyncStatus } from "@/lib/db/schema";
+import { integrationTokens } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getActiveIntegrationToken } from "../client";
 
 export interface SyncStatus {
   lastSyncedAt: Date | null;
   coverageStartDate: Date | null;
-  prsCreatedCount: number | null;
-  reviewsGivenCount: number | null;
+  lastSyncStatus?: "ok" | "partial" | "error" | null;
 }
 
 /**
@@ -15,13 +15,14 @@ export interface SyncStatus {
 export async function getSyncStatus(
   userId: string,
 ): Promise<SyncStatus | null> {
-  const [status] = await db
-    .select()
-    .from(githubSyncStatus)
-    .where(eq(githubSyncStatus.userId, userId))
-    .limit(1);
+  const token = await getActiveIntegrationToken(userId);
+  if (!token) return null;
 
-  return status || null;
+  return {
+    lastSyncedAt: token.lastSyncedAt ?? null,
+    coverageStartDate: token.coverageStartDate ?? null,
+    lastSyncStatus: token.lastSyncStatus ?? null,
+  };
 }
 
 /**
@@ -29,14 +30,16 @@ export async function getSyncStatus(
  */
 export function determineSyncDate(syncStatus: SyncStatus | null): Date {
   if (syncStatus?.lastSyncedAt) {
-    // Incremental sync: 5 min buffer to catch delayed updates
+    // Incremental sync: 5-minute buffer to catch delayed updates
     return new Date(syncStatus.lastSyncedAt.getTime() - 5 * 60 * 1000);
-  } else {
-    // Initial sync: last 90 days
-    const date = new Date();
-    date.setDate(date.getDate() - 90);
-    return date;
   }
+  if (syncStatus?.coverageStartDate) {
+    return syncStatus.coverageStartDate;
+  }
+  // Initial sync: last 90 days
+  const d = new Date();
+  d.setDate(d.getDate() - 90);
+  return d;
 }
 
 /**
@@ -44,44 +47,35 @@ export function determineSyncDate(syncStatus: SyncStatus | null): Date {
  */
 export async function updateSyncStatus(
   userId: string,
-  counts: {
-    prsCreatedCount?: number;
-    reviewsGivenCount?: number;
-  },
+  opts?: { status?: "ok" | "partial" | "error"; coverageStartDate?: Date },
 ) {
+  const token = await getActiveIntegrationToken(userId);
+  if (!token) return; // no GitHub token to update
+
   const now = new Date();
-  const existingStatus = await getSyncStatus(userId);
+  const status = opts?.status ?? "ok";
 
-  if (existingStatus) {
-    // Update existing status
-    await db
-      .update(githubSyncStatus)
-      .set({
-        lastSyncedAt: now,
-        prsCreatedCount:
-          (existingStatus.prsCreatedCount || 0) + (counts.prsCreatedCount || 0),
-        reviewsGivenCount:
-          (existingStatus.reviewsGivenCount || 0) +
-          (counts.reviewsGivenCount || 0),
-      })
-      .where(eq(githubSyncStatus.userId, userId));
-  } else {
-    // Create new status
-    const coverageStartDate = determineSyncDate(null);
+  const coverage =
+    token.coverageStartDate ??
+    opts?.coverageStartDate ??
+    (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - 90);
+      return d;
+    })();
 
-    await db.insert(githubSyncStatus).values({
-      userId,
+  await db
+    .update(integrationTokens)
+    .set({
       lastSyncedAt: now,
-      coverageStartDate,
-      prsCreatedCount: counts.prsCreatedCount || 0,
-      reviewsGivenCount: counts.reviewsGivenCount || 0,
-    });
-  }
+      lastSyncStatus: status,
+      coverageStartDate: coverage,
+      updatedAt: now,
+    })
+    .where(eq(integrationTokens.id, token.id));
 }
 
-/**
- * Check if this is the initial sync for a user
- */
+/** Initial if we have no token or no recorded last sync. */
 export function isInitialSync(syncStatus: SyncStatus | null): boolean {
-  return !syncStatus;
+  return !syncStatus || !syncStatus.lastSyncedAt;
 }

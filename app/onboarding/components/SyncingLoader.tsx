@@ -8,8 +8,6 @@ const POLL_MS = 10_000;
 export default function SyncingPage() {
   const router = useRouter();
   const params = useSearchParams();
-  // If you scope sync by approvalId/source, thread it through the URL:
-  const approvalId = params.get("approvalId") ?? undefined;
 
   const [onboardingState, setOnboardingState] = useState<string>("syncing");
   const [since, setSince] = useState<number>(0); // ms elapsed
@@ -54,7 +52,7 @@ export default function SyncingPage() {
       mountedRef.current = false;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [approvalId, router]);
+  }, [router]);
 
   const seconds = Math.floor(since / 1000);
 

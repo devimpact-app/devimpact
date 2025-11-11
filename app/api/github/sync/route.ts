@@ -1,10 +1,10 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { syncUserGitHubData } from "@/lib/integrations/github/sync/sync-user-details";
 import { getActiveIntegrationToken } from "@/lib/integrations/github/client";
 import { db } from "@/lib/db/client";
-import { integrationTokens, users } from "@/lib/db/schema";
+import { repositories, RepositoryCreateInput, users } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
+import { runSync } from "@/lib/integrations/github/sync/orchestrator";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await auth();
 
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !session.user.githubUsername) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -39,15 +39,20 @@ export async function POST(request: Request) {
   try {
     // Update repos on token
     if (selectedRepos) {
-      await db
-        .update(integrationTokens)
-        .set({ selectedRepos })
-        .where(
-          and(
-            eq(integrationTokens.userId, session.user.id),
-            eq(integrationTokens.id, activeToken.id),
-          ),
-        );
+      const repoValues: RepositoryCreateInput[] = selectedRepos.map(
+        (repo: any) => ({
+          tenantId: session.user.id,
+          provider: "github",
+          fullName: repo.full_name,
+          name: repo.full_name.split("/")[1],
+          owner: repo.full_name.split("/")[0],
+          externalId: repo.id,
+          externalNodeId: repo.node_id,
+          isPrivate: repo.private,
+          selected: true,
+        }),
+      );
+      await db.insert(repositories).values(repoValues).onConflictDoNothing();
     }
 
     // If initial sync, also update user
@@ -59,7 +64,11 @@ export async function POST(request: Request) {
     }
 
     // Trigger sync
-    const result = await syncUserGitHubData(session.user.id);
+    const result = await runSync({
+      tenantId: session.user.id,
+      githubLogin: session.user.githubUsername,
+      scope: "all",
+    });
 
     return NextResponse.json({
       success: true,

@@ -17,9 +17,9 @@ export async function POST(request: Request) {
 
   const { token, orgName } = await request.json();
 
-  if (!token || !token.startsWith("github_pat_")) {
+  if (!token || !token.startsWith("ghp_")) {
     return NextResponse.json(
-      { error: "Invalid token format. Must start with 'github_pat_'" },
+      { error: "Invalid token format. Must start with 'ghp_'" },
       { status: 400 },
     );
   }
@@ -55,47 +55,8 @@ export async function POST(request: Request) {
         // If 0 returned - pending state
         if (orgRepos.length === 0) {
           // Go to unauthorized state
-          console.log(
-            `⏳ 403 error accessing org "${orgName}" - pending approval`,
-          );
-
-          const encryptedToken = encrypt(token);
-
-          await db
-            .insert(integrationTokens)
-            .values({
-              userId: session.user.id,
-              provider: "github",
-              tokenType: "pat",
-              accessToken: encryptedToken,
-              createdAt: new Date(),
-              orgLogin: orgName,
-            })
-            .onConflictDoUpdate({
-              target: [
-                integrationTokens.userId,
-                integrationTokens.provider,
-                integrationTokens.tokenType,
-              ],
-              set: {
-                accessToken: encryptedToken,
-                updatedAt: new Date(),
-              },
-            });
-
-          await db
-            .update(users)
-            .set({
-              onboardingState: "fg_pat_pending",
-            })
-            .where(eq(users.id, session.user.id));
-
-          return NextResponse.json({
-            success: true,
-            state: "fg_pat_pending",
-            message: `Token saved. Waiting for approval from "${orgName}" organization.`,
-            organization: orgName,
-          });
+          console.log(`⏳ 403 error accessing org "${orgName}"`);
+          throw new Error("No access to org");
         }
 
         console.log(`✅ Can list org repos: ${orgRepos.length} repos found`);
@@ -128,13 +89,13 @@ export async function POST(request: Request) {
         await db
           .update(users)
           .set({
-            onboardingState: "fg_pat_approved",
+            onboardingState: "token_provided",
           })
           .where(eq(users.id, session.user.id));
 
         return NextResponse.json({
           success: true,
-          state: "fg_pat_approved",
+          state: "token_provided",
           message: "Token connected successfully!",
           organization: orgName,
           repoCount: orgRepos.length,
@@ -159,97 +120,60 @@ export async function POST(request: Request) {
       // No org name provided - testing personal account access
       console.log("No org name provided - checking personal repos");
 
-      try {
-        // List personal repos
-        const { data: repos } =
-          await octokit.rest.repos.listForAuthenticatedUser({
-            per_page: 1,
-            affiliation: "owner",
-          });
+      // List personal repos
+      const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser(
+        {
+          per_page: 1,
+          affiliation: "owner",
+        },
+      );
 
-        console.log(
-          `✅ Can access personal repos: ${repos.length > 0 ? "yes" : "no"}`,
-        );
-
-        const encryptedToken = encrypt(token);
-
-        await db
-          .insert(integrationTokens)
-          .values({
-            userId: session.user.id,
-            provider: "github",
-            tokenType: "pat",
-            accessToken: encryptedToken,
-            createdAt: new Date(),
-          })
-          .onConflictDoUpdate({
-            target: [
-              integrationTokens.userId,
-              integrationTokens.provider,
-              integrationTokens.tokenType,
-            ],
-            set: {
-              accessToken: encryptedToken,
-              updatedAt: new Date(),
-            },
-          });
-
-        await db
-          .update(users)
-          .set({
-            onboardingState: "fg_pat_approved",
-          })
-          .where(eq(users.id, session.user.id));
-
-        return NextResponse.json({
-          success: true,
-          state: "fg_pat_approved",
-          message: "Token connected successfully!",
-          repoCount: repos.length,
-        });
-      } catch (repoError: any) {
-        if (repoError.status === 403) {
-          console.log("⏳ 403 error - pending approval");
-
-          const encryptedToken = encrypt(token);
-
-          await db
-            .insert(integrationTokens)
-            .values({
-              userId: session.user.id,
-              provider: "github",
-              tokenType: "pat",
-              accessToken: encryptedToken,
-              createdAt: new Date(),
-            })
-            .onConflictDoUpdate({
-              target: [
-                integrationTokens.userId,
-                integrationTokens.provider,
-                integrationTokens.tokenType,
-              ],
-              set: {
-                accessToken: encryptedToken,
-                updatedAt: new Date(),
-              },
-            });
-
-          await db
-            .update(users)
-            .set({
-              onboardingState: "fg_pat_pending",
-            })
-            .where(eq(users.id, session.user.id));
-
-          return NextResponse.json({
-            success: true,
-            state: "fg_pat_pending",
-            message: "Token saved. Waiting for approval.",
-          });
-        }
-
-        throw repoError;
+      // If 0 returned - pending state
+      if (repos.length === 0) {
+        // Go to unauthorized state
+        throw new Error("No access to repos");
       }
+
+      console.log(
+        `✅ Can access personal repos: ${repos.length > 0 ? "yes" : "no"}`,
+      );
+
+      const encryptedToken = encrypt(token);
+
+      await db
+        .insert(integrationTokens)
+        .values({
+          userId: session.user.id,
+          provider: "github",
+          tokenType: "pat",
+          accessToken: encryptedToken,
+          createdAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [
+            integrationTokens.userId,
+            integrationTokens.provider,
+            integrationTokens.tokenType,
+          ],
+          set: {
+            accessToken: encryptedToken,
+            updatedAt: new Date(),
+          },
+        });
+
+      await db
+        .update(users)
+        .set({
+          onboardingState: "token_provided",
+        })
+        .where(eq(users.id, session.user.id));
+
+      return NextResponse.json({
+        success: true,
+        state: "token_provided",
+        message: "Token connected successfully!",
+        repoCount: repos.length,
+      });
     }
   } catch (apiError: any) {
     console.error("GitHub API error:", apiError);

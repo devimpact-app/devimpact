@@ -5,6 +5,13 @@ import { createGitHubClient } from "@/lib/integrations/github/client";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/client";
 
+export interface RepoInfo {
+  id: string;
+  node_id: string;
+  full_name: string;
+  private: boolean;
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth();
 
@@ -17,11 +24,7 @@ export async function GET(req: NextRequest) {
     .from(users)
     .where(eq(users.id, session.user.id))
     .limit(1);
-  if (
-    !user ||
-    (user.onboardingState !== "fg_pat_approved" &&
-      user.onboardingState !== "gh_app_approved")
-  ) {
+  if (!user || user.onboardingState !== "token_provided") {
     return NextResponse.json(
       { error: "No approved access found" },
       { status: 400 },
@@ -32,27 +35,32 @@ export async function GET(req: NextRequest) {
     session.user.id,
   );
 
-  let repoNames: string[] = [];
+  let repoNames: RepoInfo[] = [];
 
-  if (authType === "app") {
-    const repos = await octokit.paginate("GET /installation/repositories", {
-      per_page: 100,
-    });
-    repoNames = repos.map((repo) => repo.full_name);
-  } else if (authType === "pat") {
+  if (authType === "pat") {
     if (orgName) {
       const { data: orgRepos } = await octokit.rest.repos.listForOrg({
         org: orgName,
         per_page: 100,
       });
-      repoNames = orgRepos.map((r: any) => r.full_name);
+      repoNames = orgRepos.map((r: any) => ({
+        id: String(r.id),
+        node_id: r.node_id,
+        full_name: r.full_name,
+        private: r.private,
+      }));
     } else {
       const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser(
         {
           per_page: 100,
         },
       );
-      repoNames = repos.map((r: any) => r.full_name);
+      repoNames = repos.map((r: any) => ({
+        id: String(r.id),
+        node_id: r.node_id,
+        full_name: r.full_name,
+        private: r.private,
+      }));
     }
   } else {
     return NextResponse.json(
