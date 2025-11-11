@@ -15,6 +15,7 @@ import { hydrateOne } from "./hydrate";
 import { batchNormalizeUserPRs } from "@/lib/analysis/normalizers/pr-normalizer";
 import { persistBundles, PRIngestBundle } from "./persist-bundle";
 import { inferTeamMemberships } from "./enrichment/inferTeamMemberships/inferTeamMemberships";
+import { batchNormalizeUserReviews } from "@/lib/analysis/normalizers/review-normalizer";
 
 export async function runSync({
   tenantId,
@@ -86,7 +87,11 @@ export async function runSync({
     username,
   });
 
-  const normalizedCount = await batchNormalizeUserPRs(tenantId, username);
+  const normalizedPRCount = await batchNormalizeUserPRs(tenantId, username);
+  const normalizedReviewCount = await batchNormalizeUserReviews(
+    tenantId,
+    username,
+  );
 
   // TODO: PR summarization - queue in background or do here?
 
@@ -103,7 +108,8 @@ export async function runSync({
     errors,
     username,
     discoveredCount: targets.size,
-    normalizedCount,
+    normalizedPRCount,
+    normalizedReviewCount,
     date_range: {
       from: since.toISOString(),
       to: new Date().toISOString(),

@@ -10,6 +10,7 @@ import {
   inferredTeamMemberships,
   pullRequests,
   repositories,
+  reviews,
   users,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -18,6 +19,7 @@ import { seedAuthoredPRs } from "./helpers/seedAuthoredPRs";
 import { seedReviewedPRs } from "./helpers/seedReviewedPRs";
 import { inferTeamMemberships } from "@/lib/integrations/github/sync/enrichment/inferTeamMemberships/inferTeamMemberships";
 import { batchNormalizeUserPRs } from "@/lib/analysis/normalizers/pr-normalizer";
+import { batchNormalizeUserReviews } from "@/lib/analysis/normalizers/review-normalizer";
 
 const argv = process.argv.slice(2);
 const hasFlag = (f: string) => argv.includes(f);
@@ -31,6 +33,7 @@ async function resetTenantData(tenantId: string) {
   await db
     .delete(inferredTeamMemberships)
     .where(eq(inferredTeamMemberships.tenantId, tenantId));
+  await db.delete(reviews).where(eq(reviews.tenantId, tenantId));
   await db.delete(pullRequests).where(eq(pullRequests.tenantId, tenantId));
   await db
     .delete(githubPrCommits)
@@ -85,8 +88,9 @@ async function seedGithubActivity(
     username: githubUsername,
   });
 
-  console.log("Normalizing PRs");
+  console.log("Normalizing PRs and reviews");
   await batchNormalizeUserPRs(tenantId, githubUsername);
+  await batchNormalizeUserReviews(tenantId, githubUsername);
 }
 
 async function main() {

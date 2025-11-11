@@ -35,6 +35,7 @@ export const pullRequests = pgTable(
     prAuthorLogin: text("pr_author_login").notNull(),
     htmlUrl: text("html_url"),
     body: text("body"),
+    authorIsTenant: boolean("author_is_tenant"),
 
     // Key timestamps
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
@@ -161,6 +162,12 @@ export const reviews = pgTable(
     wasDirectlyRequested: boolean("was_directly_requested").default(false),
     wasFirstReview: boolean("was_first_review").default(false),
     reviewCommentsCount: integer("review_comments_count"), // number of code comments in this review
+
+    // TODO: add later
+    // - suggestion count
+    // - feedbackStyle (LLM)
+    // - feedback themes (LLM)
+    // - code areas (directories/extensions)
 
     // Metadata
     normalizedAt: timestamp("normalized_at", {
