@@ -6,27 +6,16 @@ import {
   githubReviewComments,
   githubTimelineEvents,
   githubPrFiles,
+  GithubPR,
+  GithubTimelineEvent,
+  GithubPRFile,
+  GithubPRCommit,
+  GithubReview,
+  GithubReviewComment,
 } from "@/lib/db/schema/github-raw";
 import { pullRequests } from "@/lib/db/schema/github-normalized";
 import { eq, and, inArray } from "drizzle-orm";
-
-// Helper: Group array by key
-function groupBy<T extends Record<string, any>>(
-  array: T[],
-  key: keyof T,
-): Record<string, T[]> {
-  return array.reduce(
-    (acc, item) => {
-      const groupKey = String(item[key]);
-      if (!acc[groupKey]) {
-        acc[groupKey] = [];
-      }
-      acc[groupKey].push(item);
-      return acc;
-    },
-    {} as Record<string, T[]>,
-  );
-}
+import { diffSecondsRounded, groupBy } from "./helpers";
 
 export async function batchNormalizeUserPRs(
   userId: string,
@@ -128,12 +117,12 @@ export async function batchNormalizeUserPRs(
 }
 
 interface CalculateMetricsInput {
-  pr: any;
-  timeline: any[];
-  prFiles: any[];
-  userCommits: any[];
-  reviews: any[];
-  reviewComments: any[];
+  pr: GithubPR;
+  timeline: GithubTimelineEvent[];
+  prFiles: GithubPRFile[];
+  userCommits: GithubPRCommit[];
+  reviews: GithubReview[];
+  reviewComments: GithubReviewComment[];
   userGithubLogin: string;
 }
 
@@ -154,18 +143,6 @@ function calculateMetrics(input: CalculateMetricsInput) {
 
   // Determine state
   const state = pr.state === "closed" && mergedAt ? "merged" : pr.state;
-
-  // Calculate timing metrics
-  const firstReview = reviews[0];
-  const firstReviewAt = firstReview?.submittedAt || null;
-
-  const timeToFirstReview = firstReviewAt
-    ? Math.round((firstReviewAt.getTime() - pr.createdAt.getTime()) / 1000)
-    : null;
-
-  const timeToMerge = mergedAt
-    ? Math.round((mergedAt.getTime() - pr.createdAt.getTime()) / 1000)
-    : null;
 
   // Calculate code metrics (user's commits only)
   const linesAdded = prFiles.reduce((sum, f) => sum + f.additions, 0);
@@ -193,7 +170,8 @@ function calculateMetrics(input: CalculateMetricsInput) {
   const commitsCount = userCommits.length;
 
   // Calculate review metrics
-  const uniqueReviewers = new Set(reviews.map((r) => r.reviewerLogin)).size;
+  const uniqueReviewers = new Set(reviews.map((r) => r.reviewerGithubLogin))
+    .size;
   const approvalsCount = reviews.filter((r) => r.state === "APPROVED").length;
   const changesRequestedCount = reviews.filter(
     (r) => r.state === "CHANGES_REQUESTED",
@@ -201,7 +179,10 @@ function calculateMetrics(input: CalculateMetricsInput) {
 
   // Was it approved before merge?
   const wasApprovedBeforeMerge = mergedAt
-    ? reviews.some((r) => r.state === "APPROVED" && r.submittedAt < mergedAt)
+    ? reviews.some(
+        (r) =>
+          r.state === "APPROVED" && r.submittedAt && r.submittedAt < mergedAt,
+      )
     : false;
 
   // Calculate review rounds
@@ -211,21 +192,63 @@ function calculateMetrics(input: CalculateMetricsInput) {
     userGithubLogin,
   );
 
-  // Check for merge conflicts and force pushes
-  const hadMergeConflicts = timeline.some(
-    (e) =>
-      e.event === "head_ref_force_pushed" ||
-      (e.event === "review_requested" && e.body?.includes("conflict")),
-  );
-
   const hadForcePushes = timeline.some(
-    (e) => e.event === "head_ref_force_pushed",
+    (e) => e.eventType === "head_ref_force_pushed",
   );
 
   // Data availability flags
   const hadTimelineData = timeline.length > 0;
   const hadReviewData = reviews.length > 0;
   const hadCommitData = userCommits.length > 0;
+
+  // Timeline
+  const validCommitTimes = userCommits
+    .map((c) => (c.committedAt ? new Date(c.committedAt).getTime() : null))
+    .filter((t): t is number => t !== null && !isNaN(t));
+  const firstCommitAt = validCommitTimes.length
+    ? new Date(Math.min(...validCommitTimes))
+    : pr.createdAt;
+  const { readyAt: lastReadyForReviewAt } = computeReadyAnchor({
+    pr,
+    timeline,
+  });
+  const reviewsAfterLastReady = reviews
+    .filter(
+      (r) =>
+        r.submittedAt! >= lastReadyForReviewAt &&
+        r.submittedAt! <= (pr.closedAt ?? new Date()),
+    )
+    .filter((r) => r.reviewerGithubLogin !== pr.authorGithubLogin)
+    .sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime());
+  const approvalsAfterLastReady = reviewsAfterLastReady.filter(
+    (r) => r.state.toLowerCase() === "approved",
+  );
+  const firstReviewAtForCycle =
+    reviewsAfterLastReady.length > 0
+      ? (reviewsAfterLastReady[0].submittedAt ?? null)
+      : null;
+  const firstApprovalAtAfterCycle =
+    approvalsAfterLastReady.length > 0
+      ? (approvalsAfterLastReady[0].submittedAt ?? null)
+      : null;
+
+  const authoringLeadSeconds = diffSecondsRounded(
+    firstCommitAt,
+    lastReadyForReviewAt,
+  );
+  const timeToFirstReviewSeconds = diffSecondsRounded(
+    lastReadyForReviewAt,
+    firstReviewAtForCycle,
+  );
+  const reviewToMergeSeconds = diffSecondsRounded(
+    firstReviewAtForCycle,
+    mergedAt,
+  );
+  const leadTimeSeconds = diffSecondsRounded(firstCommitAt, mergedAt);
+  const timeToFirstApprovalSeconds = diffSecondsRounded(
+    lastReadyForReviewAt,
+    firstApprovalAtAfterCycle,
+  );
 
   return {
     githubPrId: pr.id,
@@ -234,14 +257,22 @@ function calculateMetrics(input: CalculateMetricsInput) {
     repoFullName: pr.repoFullName,
     title: pr.title,
     state,
+    htmlUrl: pr.htmlUrl,
+    body: pr.body,
+    prAuthorLogin: pr.authorGithubLogin,
 
     createdAt: pr.createdAt,
     mergedAt,
     closedAt: pr.closedAt,
-    firstReviewAt,
+    firstCommitAt,
+    lastReadyForReviewAt,
+    firstReviewAtForCycle,
 
-    timeToFirstReview,
-    timeToMerge,
+    authoringLeadSeconds,
+    timeToFirstReviewSeconds,
+    reviewToMergeSeconds,
+    leadTimeSeconds,
+    timeToFirstApprovalSeconds,
 
     linesAdded,
     linesDeleted,
@@ -265,7 +296,6 @@ function calculateMetrics(input: CalculateMetricsInput) {
     reviewRounds,
     wasApprovedBeforeMerge,
 
-    hadMergeConflicts,
     hadForcePushes,
 
     hadTimelineData,
@@ -274,6 +304,83 @@ function calculateMetrics(input: CalculateMetricsInput) {
 
     normalizedAt: new Date(),
     normalizationVersion: 1,
+  };
+}
+
+export function computeReadyAnchor(opts: {
+  pr: GithubPR;
+  timeline: GithubTimelineEvent[];
+}): {
+  readyAt: Date; // authoritative “ready” for the PR
+  firstReadyEventAt?: Date; // earliest ready/review_requested ever
+  cycles: Array<{ start: Date; end: Date }>;
+} {
+  const { pr, timeline } = opts;
+  const endAt = pr.closedAt ?? new Date();
+
+  // all timeline events sorted
+  const events = timeline
+    .filter((e) => e && e.createdAt && e.createdAt <= endAt)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  // Draft timestamps
+  const draftCuts = events
+    .filter((e) => e.eventType === "convert_to_draft")
+    .map((e) => e.createdAt);
+
+  // Cycles - PR created, draft conversions, end of PR
+  const cycleStarts: Date[] = [pr.createdAt, ...draftCuts];
+  const cycles = cycleStarts.map((start, i) => ({
+    start,
+    end: i < draftCuts.length ? draftCuts[i] : endAt,
+  }));
+
+  // Sort all ready events
+  const allReadyish = events
+    .filter(
+      (e) =>
+        e.eventType === "ready_for_review" ||
+        e.eventType === "review_requested",
+    )
+    .map((e) => e.createdAt)
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  // Get ready event after last cycle (PR open or last draft conversion)
+  const last = cycles[cycles.length - 1];
+  const readyInLast = events
+    .filter(
+      (e) =>
+        (e.eventType === "ready_for_review" ||
+          e.eventType === "review_requested") &&
+        e.createdAt >= last.start &&
+        e.createdAt <= last.end,
+    )
+    .map((e) => e.createdAt)
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  // Decision tree
+  if (readyInLast.length > 0) {
+    return {
+      readyAt: readyInLast[0],
+      firstReadyEventAt: allReadyish[0],
+      cycles,
+    };
+  }
+
+  // If there have never been any ready-ish events, use PR creation
+  if (allReadyish.length === 0) {
+    return {
+      readyAt: pr.createdAt,
+      firstReadyEventAt: undefined,
+      cycles,
+    };
+  }
+
+  // Otherwise fallback to earliest ready-ish seen anywhere (incomplete timeline)
+  return {
+    readyAt: allReadyish[0],
+    firstReadyEventAt: allReadyish[0],
+    cycles,
   };
 }
 
