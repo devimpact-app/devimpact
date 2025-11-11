@@ -81,6 +81,8 @@ export async function runSync({
 
   const normalizedCount = await batchNormalizeUserPRs(tenantId, username);
 
+  // TODO: PR summarization - queue in background or do here?
+
   await updateSyncStatus(tenantId);
 
   await db
