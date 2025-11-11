@@ -1,11 +1,11 @@
 import { Octokit } from "@octokit/rest";
-import type { PRIngestBundle } from "../ingest/bundle";
 import { fetchPRFiles } from "../api/fetch-pr-files";
 import { fetchPRCommits } from "../api/fetch-pr-commits";
 import { fetchPRReviews } from "../api/fetch-pr-reviews";
 import { fetchPRReviewComments } from "../api/fetch-pr-review-comments";
 import { fetchPRTimeline } from "../api/fetch-pr-timeline";
 import { GitHubSearchPullRequest } from "../api/types/PullRequest";
+import { PRIngestBundle } from "./persist-bundle";
 
 export interface HydrateOptions {
   pr: GitHubSearchPullRequest;

@@ -222,7 +222,7 @@ export async function seedAuthoredPRs(params: {
       })
       .returning();
 
-    inserted.push(rec);
+    inserted.push({ prId: rec.id });
 
     const reviewLagDays = rand(0, 2); // you review within ~0-2 days
     const reviewedAt = weekdayNear(

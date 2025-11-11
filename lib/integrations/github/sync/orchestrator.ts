@@ -12,9 +12,9 @@ import {
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { hydrateOne } from "./hydrate";
-import { PRIngestBundle } from "../ingest/bundle";
 import { batchNormalizeUserPRs } from "@/lib/analysis/normalizers/pr-normalizer";
-import { persistBundles } from "../ingest/persistBundle";
+import { persistBundles, PRIngestBundle } from "./persist-bundle";
+import { inferTeamMemberships } from "./enrichment/inferTeamMemberships/inferTeamMemberships";
 
 export async function runSync({
   tenantId,
@@ -77,7 +77,14 @@ export async function runSync({
 
   // TODO: if bundles coming from CLI, can skip to next part
 
-  const { errors } = await persistBundles(tenantId, bundles);
+  const { prIds, errors } = await persistBundles(tenantId, bundles);
+
+  await inferTeamMemberships({
+    tenantId,
+    prIdsChanged: prIds,
+    since,
+    username,
+  });
 
   const normalizedCount = await batchNormalizeUserPRs(tenantId, username);
 

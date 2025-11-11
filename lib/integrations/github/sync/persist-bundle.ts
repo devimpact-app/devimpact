@@ -5,7 +5,24 @@ import { storeReviews } from "../storage/store-reviews";
 import { storeReviewComments } from "../storage/store-review-comments";
 import { storeTimelineEvents } from "../storage/store-timeline-events";
 import { storeRawData } from "../storage/store-raw-data";
-import type { PRIngestBundle } from "./bundle";
+import {
+  GitHubPRCommit,
+  GitHubPRFile,
+  GitHubReview,
+  GitHubReviewComment,
+  GitHubTimelineEvent,
+} from "../api/types";
+import { GitHubSearchPullRequest } from "../api/types/PullRequest";
+
+export type PRIngestBundle = {
+  repo: { fullName: string; owner: string; name: string };
+  pr: GitHubSearchPullRequest;
+  files?: Array<GitHubPRFile>;
+  commits?: Array<GitHubPRCommit>;
+  reviews?: Array<GitHubReview>;
+  reviewComments?: Array<GitHubReviewComment>;
+  timeline?: Array<GitHubTimelineEvent>;
+};
 
 export async function persistBundles(
   userId: string,
@@ -27,6 +44,7 @@ export async function persistBundles(
     events: 0,
   };
   const errors: string[] = [];
+  const prIds: string[] = [];
 
   for (const b of bundles) {
     try {
@@ -44,6 +62,7 @@ export async function persistBundles(
 
       // PR first → get internal prId
       const prId = await storePR(userId, b.pr, b.repo.fullName);
+      prIds.push(prId);
 
       // Files
       if (b.files?.length) {
@@ -92,5 +111,5 @@ export async function persistBundles(
     }
   }
 
-  return { counts, errors };
+  return { prIds, counts, errors };
 }

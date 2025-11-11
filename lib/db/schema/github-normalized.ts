@@ -2,11 +2,14 @@ import {
   pgTable,
   uuid,
   text,
-  integer,
-  real,
-  boolean,
+  jsonb,
   timestamp,
+  real,
+  unique,
   index,
+  pgEnum,
+  integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { githubPrs } from "./github-raw";
@@ -130,3 +133,76 @@ export const pullRequests = pgTable(
     mergedAtIdx: index("pull_requests_merged_at_idx").on(table.mergedAt),
   }),
 );
+
+// Enums
+export const teamConfidenceEnum = pgEnum("team_confidence", [
+  "low",
+  "medium",
+  "high",
+]);
+export const membershipSourceEnum = pgEnum("membership_source", [
+  "heuristic",
+  "api",
+]);
+
+export const inferredTeamMemberships = pgTable(
+  "inferred_team_memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    // ownership (tenant=user for now)
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // identity
+    githubLogin: text("github_login").notNull(),
+    org: text("org").notNull(), // GitHub org login
+    teamSlug: text("team_slug").notNull(), // team slug within org
+
+    // provenance
+    source: membershipSourceEnum("source").notNull().default("heuristic"),
+    algoVersion: text("algo_version").notNull().default("v1"),
+
+    // scoring
+    score: real("score").notNull(), // 0..1 normalized
+    confidence: teamConfidenceEnum("confidence").notNull(), // 'low'|'medium'|'high'
+
+    // evidence snapshot (counts we used to compute score)
+    evidenceCounts: jsonb("evidence_counts").notNull().$type<{
+      req_to_review: number; // user reviewed when this team was requested
+      user_direct_requests: number; // user was individually requested on those PRs
+      all_team_requested_reviews_for_login: number; // denominator across all teams
+    }>(),
+
+    // timestamps
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    // One row per (tenant, login, org, team, source)
+    uniqPerSource: unique("itm_unique_per_source").on(
+      t.tenantId,
+      t.githubLogin,
+      t.org,
+      t.teamSlug,
+      t.source,
+    ),
+
+    // Helpful indexes
+    byTenantLogin: index("itm_tenant_login_idx").on(t.tenantId, t.githubLogin),
+    byTenantTeam: index("itm_tenant_team_idx").on(
+      t.tenantId,
+      t.org,
+      t.teamSlug,
+    ),
+    byTenantScore: index("itm_tenant_score_idx").on(t.tenantId, t.score),
+  }),
+);
+
+// Optional: Type helper
+export type InferredTeamMembership =
+  typeof inferredTeamMemberships.$inferSelect;
+export type NewInferredTeamMembership =
+  typeof inferredTeamMemberships.$inferInsert;

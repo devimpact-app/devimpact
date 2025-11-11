@@ -7,6 +7,7 @@ import {
   githubReviewComments,
   githubReviews,
   githubTimelineEvents,
+  inferredTeamMemberships,
   pullRequests,
   repositories,
   users,
@@ -15,7 +16,8 @@ import { eq } from "drizzle-orm";
 import { seedRepositories } from "./helpers/seedRepositories";
 import { seedAuthoredPRs } from "./helpers/seedAuthoredPRs";
 import { seedReviewedPRs } from "./helpers/seedReviewedPRs";
-import { normalizeUserPRs } from "@/lib/integrations/github/sync/sync-user-details";
+import { inferTeamMemberships } from "@/lib/integrations/github/sync/enrichment/inferTeamMemberships/inferTeamMemberships";
+import { batchNormalizeUserPRs } from "@/lib/analysis/normalizers/pr-normalizer";
 
 const argv = process.argv.slice(2);
 const hasFlag = (f: string) => argv.includes(f);
@@ -26,6 +28,9 @@ const hasFlag = (f: string) => argv.includes(f);
 
 async function resetTenantData(tenantId: string) {
   // delete child tables first
+  await db
+    .delete(inferredTeamMemberships)
+    .where(eq(inferredTeamMemberships.tenantId, tenantId));
   await db.delete(pullRequests).where(eq(pullRequests.tenantId, tenantId));
   await db
     .delete(githubPrCommits)
@@ -47,6 +52,7 @@ async function seedGithubActivity(
   githubUsername: string,
   opts: { verbose?: boolean } = {},
 ) {
+  console.log("Seeding repos");
   const repos = await seedRepositories(tenantId);
   // Map to the shape the PR seeder expects
   const repoInputs = repos.map((r) => ({
@@ -55,21 +61,32 @@ async function seedGithubActivity(
     name: r.fullName.split("/")[1],
   }));
 
-  await seedAuthoredPRs({
+  console.log("Seeding authored PRs");
+  const prs = await seedAuthoredPRs({
     tenantId,
     authorGithubLogin: githubUsername,
     repos: repoInputs,
     lookbackDays: 90,
   });
 
-  await seedReviewedPRs({
+  console.log("Seeding reviewed PRs");
+  const prs2 = await seedReviewedPRs({
     tenantId,
     reviewerGithubLogin: githubUsername,
     repos: repoInputs,
     lookbackDays: 90,
   });
 
-  await normalizeUserPRs(tenantId, githubUsername);
+  console.log("Inferring team memberships");
+  await inferTeamMemberships({
+    tenantId,
+    prIdsChanged: [...prs, ...prs2].map((pr) => pr.prId),
+    since: new Date(Date.now() - 90 * 864e5),
+    username: githubUsername,
+  });
+
+  console.log("Normalizing PRs");
+  await batchNormalizeUserPRs(tenantId, githubUsername);
 }
 
 async function main() {
@@ -90,9 +107,9 @@ async function main() {
       await resetTenantData(tenantId);
     }
 
-    // await db.transaction(async (tx) => {
-    //   await seedGithubActivity(tenantId, me.githubUsername, { verbose: true });
-    // });
+    await db.transaction(async (tx) => {
+      await seedGithubActivity(tenantId, me.githubUsername, { verbose: true });
+    });
   } catch (err) {
     console.error("❌ Seed failed:", err);
     process.exitCode = 1; // mark failure
