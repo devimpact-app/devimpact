@@ -1,3 +1,5 @@
+import { DB } from "@/lib/db/client";
+
 export type ResultShape =
   | "stat" // single number (optionally with comparison)
   | "timeseries"; // points over time
@@ -10,10 +12,9 @@ export type Breakdown = {
   order?: "asc" | "desc";
 };
 
-export type Comparison =
+export type ComparisonSpec =
   | { kind: "none" }
   | { kind: "previous_period" } // same length window prior to {start,end}
-  | { kind: "yoy" } // year-over-year
   | { kind: "custom"; start: Date; end: Date }; // explicit
 
 export type MetricInput = {
@@ -26,7 +27,7 @@ export type MetricInput = {
   shape: ResultShape;
   granularity?: Granularity; // for timeseries
   breakdowns?: Breakdown[]; // e.g., top repos
-  comparison?: Comparison; // add baseline
+  comparison?: ComparisonSpec; // add baseline
 
   // optional filters (server-validated)
   filters?: Record<string, string | number | boolean | null>;
@@ -43,3 +44,5 @@ export type MetricsBatchInput = {
     input: MetricInput; // per-metric input
   }>;
 };
+
+export type MetricContext = { db: DB; tz?: string; now?: Date };

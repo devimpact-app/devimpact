@@ -9,13 +9,8 @@ export const PR_LEAD_TIME_SECONDS_V1: MetricDefinition = {
   entity: "pr",
   unit: "seconds",
   source: {
-    table: "pull_requests",
-    columns: [
-      "tenant_id",
-      "author_is_tenant",
-      "merged_at",
-      "lead_time_seconds",
-    ],
+    table: "pullRequests",
+    columns: ["tenantId", "authorIsTenant", "mergedAt", "leadTimeSeconds"],
   },
   display: {
     kind: "stat",
@@ -27,16 +22,18 @@ export const PR_LEAD_TIME_SECONDS_V1: MetricDefinition = {
   cacheTtlSeconds: 300,
   formula: {
     kind: "plan",
-    source: "pull_requests",
+    source: "pullRequests",
     operation: "avg",
-    column: "lead_time_seconds",
+    column: "leadTimeSeconds",
     where: [
-      { col: "tenant_id", op: "eq", valRef: "tenantId" },
-      { col: "author_is_tenant", op: "eq", val: true },
-      { col: "merged_at", op: "between", startRef: "start", endRef: "end" },
-      { col: "lead_time_seconds", op: "is_not_null" },
+      { col: "authorIsTenant", op: "eq", val: true },
+      { col: "mergedAt", op: "between", startRef: "start", endRef: "end" },
+      { col: "leadTimeSeconds", op: "is_not_null" },
     ],
   },
 };
 
 export const ALL_METRICS: MetricDefinition[] = [PR_LEAD_TIME_SECONDS_V1];
+export const METRIC_CATALOG_MAP = {
+  [PR_LEAD_TIME_SECONDS_V1.id]: PR_LEAD_TIME_SECONDS_V1,
+};

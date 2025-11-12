@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 
 const queryClient = postgres(process.env.DATABASE_URL!, {
@@ -8,9 +8,13 @@ const queryClient = postgres(process.env.DATABASE_URL!, {
   idle_timeout: 10,
 });
 
-export const db = drizzle(queryClient, { schema });
+export const db: PostgresJsDatabase<typeof schema> = drizzle(queryClient, {
+  schema,
+});
 export const sql = queryClient; // Keep for raw queries
 
 export async function closeDb() {
   await queryClient.end({ timeout: 1 });
 }
+
+export type DB = typeof db;

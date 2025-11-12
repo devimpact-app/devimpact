@@ -1,19 +1,12 @@
-import { signIn } from "@/lib/auth";
+import { auth, signIn } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await auth();
+  if (session) redirect("/onboarding");
+
   return (
     <div className="min-h-screen bg-background text-text-primary flex items-center justify-center relative overflow-hidden px-4">
-      {/* soft accent glow */}
-      {/* <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div
-          className="absolute left-1/2 top-1/3 h-152 w-152 -translate-x-1/2 rounded-full blur-3xl opacity-25"
-          style={{
-            background:
-              "radial-gradient(closest-side, var(--color-accent), transparent 70%)",
-          }}
-        />
-      </div> */}
-
       {/* card */}
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface-alt backdrop-blur p-8 shadow-xl">
         {/* brand / heading */}

@@ -3,9 +3,9 @@ import { useState } from "react";
 import { signOutAction } from "../actions";
 import { Menu } from "lucide-react";
 
-export function SimpleMenu({ user }) {
+export function SimpleMenu({ name }: { name: string }) {
   const [open, setOpen] = useState(false);
-  const initials = (user.name?.split(" ") || [])
+  const initials = (name?.split(" ") || [])
     .map((n) => n[0])
     .slice(0, 2)
     .join("")

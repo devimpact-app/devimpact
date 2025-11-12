@@ -39,7 +39,7 @@ export const MetricsAPI = {
 
   async runBatch(input: z.infer<typeof MetricsBatchInput>) {
     return fetchJSON(
-      "/api/metrics/batch",
+      "/api/metrics/query",
       { method: "POST", body: JSON.stringify(input) },
       MetricsBatchResult,
     );

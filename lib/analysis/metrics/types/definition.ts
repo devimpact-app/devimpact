@@ -29,7 +29,7 @@ export type WhereOp =
 
 export type PlanFormula = {
   kind: "plan";
-  source: "pull_requests" | "reviews"; // extend as needed
+  source: "pullRequests" | "reviews"; // extend as needed
   operation: "avg" | "sum" | "count";
   column?: string;
   where?: WhereOp[];
@@ -86,7 +86,7 @@ export interface MetricDefinition {
   entity: MetricEntity;
   unit: MetricUnit;
   source: {
-    table: "pull_requests" | "reviews";
+    table: "pullRequests" | "reviews";
     columns: string[];
   };
   display: MetricDisplay;

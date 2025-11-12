@@ -15,7 +15,6 @@ export const Breakdown = z.object({
 export const Comparison = z.union([
   z.object({ kind: z.literal("none") }),
   z.object({ kind: z.literal("previous_period") }),
-  z.object({ kind: z.literal("yoy") }),
   z.object({
     kind: z.literal("custom"),
     start: z.string(), // ISO from FE
@@ -24,7 +23,6 @@ export const Comparison = z.union([
 ]);
 
 export const MetricInput = z.object({
-  tenantId: z.string().uuid(),
   start: z.string(), // ISO
   end: z.string(), // ISO
   shape: ResultShape,
@@ -58,7 +56,7 @@ export const CatalogItem = z.object({
   entity: z.enum(["pr", "review", "repo", "tenant"]),
   unit: z.enum(["seconds", "count", "ratio", "percent", "files", "lines"]),
   source: z.object({
-    table: z.enum(["pull_requests", "reviews"]),
+    table: z.enum(["pullRequests", "reviews"]),
     columns: z.array(z.string()),
   }),
   display: z.object({
