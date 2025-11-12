@@ -6,6 +6,10 @@ import { MetricsAPI } from "@/lib/analysis/metrics/client";
 import { useEffect, useMemo, useState } from "react";
 import { StatResult } from "@/lib/analysis/metrics/types/output";
 import { formatSeconds } from "@/lib/utils/date";
+import {
+  StoryCardSkeleton,
+  StoryCardView,
+} from "@/components/stories/StoryCardView";
 
 type Props = {
   user: {
@@ -21,6 +25,7 @@ export default function DashboardClient({ user }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [leadTimeStat, setLeadTimeStat] = useState<StatResult | null>(null);
+  const [story, setStory] = useState<any | null>(null);
 
   const { startISO, endISO } = useMemo(() => {
     const end = new Date();
@@ -40,6 +45,13 @@ export default function DashboardClient({ user }: Props) {
     }
 
     loadCatalog();
+
+    async function loadStory() {
+      const res = await fetch(`/api/stories/invisible-load`);
+      const { data } = await res.json();
+      setStory(data);
+    }
+    loadStory();
   }, []);
 
   useEffect(() => {
@@ -82,6 +94,8 @@ export default function DashboardClient({ user }: Props) {
     leadTimeStat?.data?.find((d) => d.kind === "current")?.value ?? null;
   const comparisonValue =
     leadTimeStat?.data?.find((d) => d.kind === "comparison")?.value ?? null;
+
+  console.log("story", story);
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
@@ -127,6 +141,7 @@ export default function DashboardClient({ user }: Props) {
               First commit → merge (merged PRs only)
             </div>
           </div>
+          {story ? <StoryCardView story={story} /> : <StoryCardSkeleton />}
         </div>
       </main>
     </div>

@@ -1,8 +1,6 @@
 import { MetricInput } from "./input";
 import { MetricResult } from "./output";
 
-export type MetricId = "pr.lead_time_seconds.v1";
-
 export type MetricEntity =
   | "pr" // authored PRs (your normalized `pull_requests`)
   | "review" // normalized `reviews`
@@ -80,7 +78,7 @@ export type MetricDisplay = {
 };
 
 export interface MetricDefinition {
-  id: MetricId;
+  id: string;
   name: string;
   description: string;
   entity: MetricEntity;

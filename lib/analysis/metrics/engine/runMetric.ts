@@ -1,6 +1,5 @@
-import { DB } from "@/lib/db/client";
 import { METRIC_CATALOG_MAP } from "../catalog";
-import { MetricDefinition, MetricId } from "../types/definition";
+import { MetricDefinition } from "../types/definition";
 import { MetricContext, MetricInput } from "../types/input";
 import { MetricResult } from "../types/output";
 import { computeComparisonWindow } from "./comparisonWindow";
@@ -13,10 +12,7 @@ export async function runMetric(
   input: MetricInput,
   ctx: MetricContext,
 ): Promise<MetricResult> {
-  const def =
-    typeof metric === "string"
-      ? METRIC_CATALOG_MAP[metric as MetricId]
-      : metric;
+  const def = typeof metric === "string" ? METRIC_CATALOG_MAP[metric] : metric;
 
   if (!def)
     throw new Error(
