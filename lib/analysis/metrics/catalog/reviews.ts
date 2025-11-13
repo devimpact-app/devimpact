@@ -96,3 +96,40 @@ export const REVIEW_FIRST_RESPONDER_COUNT_V1: MetricDefinition = {
     ],
   },
 };
+
+export const REVIEW_SUBSTANTIVE_COUNT_V1: MetricDefinition = {
+  id: "review.substantive_count.v1",
+  name: "Substantive reviews (count)",
+  description:
+    "Number of reviews you submitted in this period that included at least one code comment.",
+  entity: "review",
+  unit: "count",
+  source: {
+    table: "reviews",
+    columns: [
+      "tenantId",
+      "reviewerIsTenant",
+      "submittedAt",
+      "reviewCommentsCount",
+    ],
+  },
+  display: {
+    kind: "stat",
+    label: "Substantive reviews",
+    description: "Reviews with code comments",
+    decimals: 0,
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: "plan",
+    source: "reviews",
+    operation: "count",
+    // TODO: also count reviews where body length significant
+    where: [
+      { col: "reviewerIsTenant", op: "eq", val: true },
+      { col: "submittedAt", op: "between", startRef: "start", endRef: "end" },
+      { col: "submittedAt", op: "is_not_null" },
+      { col: "reviewCommentsCount", op: "gt", val: 0 },
+    ],
+  },
+};

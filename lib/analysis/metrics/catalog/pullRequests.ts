@@ -60,3 +60,36 @@ export const AUTHORED_PRS_COUNT_V1: MetricDefinition = {
     ],
   },
 };
+
+export const PR_SIZE_LINES_CHANGED_MEDIAN_V1: MetricDefinition = {
+  id: "pr.size_lines_changed_median.v1",
+  name: "PR size (median lines changed)",
+  description:
+    "Median number of lines changed per merged PR you authored in the selected window.",
+  entity: "pr",
+  unit: "lines",
+  source: {
+    table: "pullRequests",
+    columns: ["tenantId", "authorIsTenant", "mergedAt", "linesChanged"],
+  },
+  display: {
+    kind: "stat",
+    label: "Typical PR size",
+    description: "Median lines changed per merged PR you authored",
+    decimals: 0,
+    // you can either render the unit yourself or:
+    unitSuffix: " lines",
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: "plan",
+    source: "pullRequests",
+    operation: "avg", // TODO: switch to "median" when available
+    column: "linesChanged",
+    where: [
+      { col: "authorIsTenant", op: "eq", val: true },
+      { col: "mergedAt", op: "between", startRef: "start", endRef: "end" },
+      { col: "linesChanged", op: "is_not_null" },
+    ],
+  },
+};

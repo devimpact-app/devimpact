@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { auth } from "@/lib/auth"; // your NextAuth server helper
 import { redirect } from "next/navigation";
 import { Sidebar } from "./Sidebar";
-import { SimpleMenu } from "./dashboard/components/Menu";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await auth();
