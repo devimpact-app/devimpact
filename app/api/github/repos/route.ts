@@ -12,6 +12,7 @@ export interface RepoInfo {
   private: boolean;
 }
 
+// TODO: add zod types
 export async function GET(req: NextRequest) {
   const session = await auth();
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     session.user.id,
   );
 
-  let repoNames: RepoInfo[] = [];
+  let repos: RepoInfo[] = [];
 
   if (authType === "pat") {
     if (orgName) {
@@ -43,19 +44,18 @@ export async function GET(req: NextRequest) {
         org: orgName,
         per_page: 100,
       });
-      repoNames = orgRepos.map((r: any) => ({
+      repos = orgRepos.map((r: any) => ({
         id: String(r.id),
         node_id: r.node_id,
         full_name: r.full_name,
         private: r.private,
       }));
     } else {
-      const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser(
-        {
+      const { data: personalRepos } =
+        await octokit.rest.repos.listForAuthenticatedUser({
           per_page: 100,
-        },
-      );
-      repoNames = repos.map((r: any) => ({
+        });
+      repos = personalRepos.map((r: any) => ({
         id: String(r.id),
         node_id: r.node_id,
         full_name: r.full_name,
@@ -68,5 +68,5 @@ export async function GET(req: NextRequest) {
       { status: 400 },
     );
   }
-  return NextResponse.json({ repos: repoNames });
+  return NextResponse.json({ repos });
 }

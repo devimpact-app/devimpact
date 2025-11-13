@@ -127,18 +127,6 @@ export async function seedPrTimelineEvents(params: {
     pr.closedAt ??
     new Date((pr.updatedAt ?? pr.createdAt).getTime() + rand(1, 5) * 864e5);
 
-  // 0) PR opened
-  await upsertEvent(db, {
-    prId: pr.id,
-    tenantId,
-    eventId: fakeEventId(pr, "pr_opened"),
-    eventType: "pr_opened",
-    actorGithubLogin: authorGithubLogin,
-    eventData: null,
-    createdAt: pr.createdAt,
-    url: prUrl(pr),
-  });
-
   // 1) Optional: review_requested generated from actual reviewers (keeps timeline coherent)
   if (generateRequestsFromReviews && reviews.length) {
     for (const r of reviews) {
@@ -272,8 +260,8 @@ export async function seedPrTimelineEvents(params: {
   await upsertEvent(db, {
     prId: pr.id,
     tenantId,
-    eventId: fakeEventId(pr, "pr_merged"),
-    eventType: "pr_merged",
+    eventId: fakeEventId(pr, "merged"),
+    eventType: "merged",
     actorGithubLogin: merger,
     eventData: { merger, method: pick(["squash", "merge", "rebase"]) },
     createdAt: mergedAt,

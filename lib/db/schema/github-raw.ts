@@ -59,6 +59,8 @@ export const githubPrs = pgTable(
   }),
 );
 
+export type GithubPR = typeof githubPrs.$inferSelect;
+
 export const githubPrCommits = pgTable(
   "github_pr_commits",
   {
@@ -95,6 +97,8 @@ export const githubPrCommits = pgTable(
     prIdIdx: index("github_pr_commits_pr_id_idx").on(table.prId),
   }),
 );
+
+export type GithubPRCommit = typeof githubPrCommits.$inferSelect;
 
 export const githubPrFiles = pgTable(
   "github_pr_files",
@@ -142,6 +146,8 @@ export const githubPrFiles = pgTable(
   }),
 );
 
+export type GithubPRFile = typeof githubPrFiles.$inferSelect;
+
 export const githubReviews = pgTable(
   "github_reviews",
   {
@@ -188,6 +194,8 @@ export const githubReviews = pgTable(
     ),
   }),
 );
+
+export type GithubReview = typeof githubReviews.$inferSelect;
 
 export const githubReviewComments = pgTable(
   "github_review_comments",
@@ -252,6 +260,8 @@ export const githubReviewComments = pgTable(
     ),
   }),
 );
+
+export type GithubReviewComment = typeof githubReviewComments.$inferSelect;
 
 export const githubTimelineEvents = pgTable(
   "github_timeline_events",
@@ -322,6 +332,8 @@ export const githubTimelineEvents = pgTable(
     ),
   }),
 );
+
+export type GithubTimelineEvent = typeof githubTimelineEvents.$inferSelect;
 
 // Raw responses
 export const githubRawData = pgTable(

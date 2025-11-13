@@ -12,9 +12,10 @@ import {
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { hydrateOne } from "./hydrate";
-import { PRIngestBundle } from "../ingest/bundle";
 import { batchNormalizeUserPRs } from "@/lib/analysis/normalizers/pr-normalizer";
-import { persistBundles } from "../ingest/persistBundle";
+import { persistBundles, PRIngestBundle } from "./persist-bundle";
+import { inferTeamMemberships } from "./enrichment/inferTeamMemberships/inferTeamMemberships";
+import { batchNormalizeUserReviews } from "@/lib/analysis/normalizers/review-normalizer";
 
 export async function runSync({
   tenantId,
@@ -77,9 +78,20 @@ export async function runSync({
 
   // TODO: if bundles coming from CLI, can skip to next part
 
-  const { errors } = await persistBundles(tenantId, bundles);
+  const { prIds, errors } = await persistBundles(tenantId, bundles);
 
-  const normalizedCount = await batchNormalizeUserPRs(tenantId, username);
+  await inferTeamMemberships({
+    tenantId,
+    prIdsChanged: prIds,
+    since,
+    username,
+  });
+
+  const normalizedPRCount = await batchNormalizeUserPRs(tenantId, username);
+  const normalizedReviewCount = await batchNormalizeUserReviews(
+    tenantId,
+    username,
+  );
 
   // TODO: PR summarization - queue in background or do here?
 
@@ -96,7 +108,8 @@ export async function runSync({
     errors,
     username,
     discoveredCount: targets.size,
-    normalizedCount,
+    normalizedPRCount,
+    normalizedReviewCount,
     date_range: {
       from: since.toISOString(),
       to: new Date().toISOString(),

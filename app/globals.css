@@ -25,6 +25,16 @@
   --radius-2xl: 1rem; /* 16px */
 }
 
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 /* Global baseline */
 html {
   background: var(--color-background);

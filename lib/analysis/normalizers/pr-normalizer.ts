@@ -6,33 +6,29 @@ import {
   githubReviewComments,
   githubTimelineEvents,
   githubPrFiles,
+  GithubPR,
+  GithubTimelineEvent,
+  GithubPRFile,
+  GithubPRCommit,
+  GithubReview,
+  GithubReviewComment,
 } from "@/lib/db/schema/github-raw";
 import { pullRequests } from "@/lib/db/schema/github-normalized";
 import { eq, and, inArray } from "drizzle-orm";
-
-// Helper: Group array by key
-function groupBy<T extends Record<string, any>>(
-  array: T[],
-  key: keyof T,
-): Record<string, T[]> {
-  return array.reduce(
-    (acc, item) => {
-      const groupKey = String(item[key]);
-      if (!acc[groupKey]) {
-        acc[groupKey] = [];
-      }
-      acc[groupKey].push(item);
-      return acc;
-    },
-    {} as Record<string, T[]>,
-  );
-}
+import {
+  computeCycles,
+  diffSecondsRounded,
+  firstInCycle,
+  groupBy,
+  normState,
+  readyish,
+  sortAndBound,
+} from "./helpers";
 
 export async function batchNormalizeUserPRs(
   userId: string,
   username: string,
 ): Promise<number> {
-  // 1. Get all PRs for user
   const prs = await db
     .select()
     .from(githubPrs)
@@ -91,49 +87,55 @@ export async function batchNormalizeUserPRs(
     });
   });
 
-  // 5. Batch upsert
+  // Batch upsert
   console.log("Saving normalized data...");
-  const existingPRs = await db
-    .select({ githubPrId: pullRequests.githubPrId })
-    .from(pullRequests)
-    .where(
-      inArray(
-        pullRequests.githubPrId,
-        normalizedData.map((d) => d.githubPrId),
-      ),
+  await db.transaction(async (tx) => {
+    const existingPRs = await tx
+      .select({ githubPrId: pullRequests.githubPrId })
+      .from(pullRequests)
+      .where(
+        inArray(
+          pullRequests.githubPrId,
+          normalizedData.map((d) => d.githubPrId),
+        ),
+      );
+
+    const existingIds = new Set(existingPRs.map((pr) => pr.githubPrId));
+
+    // Split
+    const toInsert = normalizedData.filter(
+      (d) => !existingIds.has(d.githubPrId),
+    );
+    const toUpdate = normalizedData.filter((d) =>
+      existingIds.has(d.githubPrId),
     );
 
-  const existingIds = new Set(existingPRs.map((pr) => pr.githubPrId));
+    // Batch insert new
+    if (toInsert.length > 0) {
+      await tx.insert(pullRequests).values(toInsert);
+    }
 
-  // Split
-  const toInsert = normalizedData.filter((d) => !existingIds.has(d.githubPrId));
-  const toUpdate = normalizedData.filter((d) => existingIds.has(d.githubPrId));
-
-  // Batch insert new
-  if (toInsert.length > 0) {
-    await db.insert(pullRequests).values(toInsert);
-  }
-
-  // Update existing (loop is fine, it's fast)
-  for (const data of toUpdate) {
-    const { githubPrId, tenantId, ...updateFields } = data;
-    await db
-      .update(pullRequests)
-      .set(updateFields)
-      .where(eq(pullRequests.githubPrId, githubPrId));
-  }
+    // Update existing (loop is fine, it's fast)
+    for (const data of toUpdate) {
+      const { githubPrId, tenantId, ...updateFields } = data;
+      await tx
+        .update(pullRequests)
+        .set(updateFields)
+        .where(eq(pullRequests.githubPrId, githubPrId));
+    }
+  });
 
   console.log(`✓ Normalized ${normalizedData.length} PRs`);
   return normalizedData.length;
 }
 
 interface CalculateMetricsInput {
-  pr: any;
-  timeline: any[];
-  prFiles: any[];
-  userCommits: any[];
-  reviews: any[];
-  reviewComments: any[];
+  pr: GithubPR;
+  timeline: GithubTimelineEvent[];
+  prFiles: GithubPRFile[];
+  userCommits: GithubPRCommit[];
+  reviews: GithubReview[];
+  reviewComments: GithubReviewComment[];
   userGithubLogin: string;
 }
 
@@ -153,19 +155,10 @@ function calculateMetrics(input: CalculateMetricsInput) {
   const mergedAt = mergeEvent?.createdAt || null;
 
   // Determine state
-  const state = pr.state === "closed" && mergedAt ? "merged" : pr.state;
-
-  // Calculate timing metrics
-  const firstReview = reviews[0];
-  const firstReviewAt = firstReview?.submittedAt || null;
-
-  const timeToFirstReview = firstReviewAt
-    ? Math.round((firstReviewAt.getTime() - pr.createdAt.getTime()) / 1000)
-    : null;
-
-  const timeToMerge = mergedAt
-    ? Math.round((mergedAt.getTime() - pr.createdAt.getTime()) / 1000)
-    : null;
+  const state =
+    normState(pr.state) === "closed" && mergedAt
+      ? "merged"
+      : normState(pr.state);
 
   // Calculate code metrics (user's commits only)
   const linesAdded = prFiles.reduce((sum, f) => sum + f.additions, 0);
@@ -193,39 +186,82 @@ function calculateMetrics(input: CalculateMetricsInput) {
   const commitsCount = userCommits.length;
 
   // Calculate review metrics
-  const uniqueReviewers = new Set(reviews.map((r) => r.reviewerLogin)).size;
-  const approvalsCount = reviews.filter((r) => r.state === "APPROVED").length;
+  const uniqueReviewers = new Set(reviews.map((r) => r.reviewerGithubLogin))
+    .size;
+  const approvalsCount = reviews.filter(
+    (r) => normState(r.state) === "approved",
+  ).length;
   const changesRequestedCount = reviews.filter(
-    (r) => r.state === "CHANGES_REQUESTED",
+    (r) => normState(r.state) === "changes_requested",
   ).length;
 
   // Was it approved before merge?
   const wasApprovedBeforeMerge = mergedAt
-    ? reviews.some((r) => r.state === "APPROVED" && r.submittedAt < mergedAt)
+    ? reviews.some(
+        (r) =>
+          r.state === "APPROVED" && r.submittedAt && r.submittedAt < mergedAt,
+      )
     : false;
 
-  // Calculate review rounds
-  const reviewRounds = calculateReviewRounds(
-    reviews,
-    userCommits,
-    userGithubLogin,
-  );
-
-  // Check for merge conflicts and force pushes
-  const hadMergeConflicts = timeline.some(
-    (e) =>
-      e.event === "head_ref_force_pushed" ||
-      (e.event === "review_requested" && e.body?.includes("conflict")),
-  );
-
   const hadForcePushes = timeline.some(
-    (e) => e.event === "head_ref_force_pushed",
+    (e) => e.eventType === "head_ref_force_pushed",
   );
 
   // Data availability flags
   const hadTimelineData = timeline.length > 0;
   const hadReviewData = reviews.length > 0;
   const hadCommitData = userCommits.length > 0;
+
+  // Timeline
+  const validCommitTimes = userCommits
+    .map((c) => (c.committedAt ? new Date(c.committedAt).getTime() : null))
+    .filter((t): t is number => t !== null && !isNaN(t));
+  const firstCommitAt = validCommitTimes.length
+    ? new Date(Math.min(...validCommitTimes))
+    : pr.createdAt;
+  const { readyAt: lastReadyForReviewAt } = computeReadyAnchor({
+    pr,
+    timeline,
+  });
+  const reviewsAfterLastReady = reviews
+    .filter(
+      (r) =>
+        r.submittedAt &&
+        r.submittedAt >= lastReadyForReviewAt &&
+        r.submittedAt <= (pr.closedAt ?? new Date()),
+    )
+    .filter((r) => r.reviewerGithubLogin !== pr.authorGithubLogin)
+    .sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime());
+  const approvalsAfterLastReady = reviewsAfterLastReady.filter(
+    (r) => normState(r.state) === "approved",
+  );
+
+  const firstReviewAtForCycle =
+    reviewsAfterLastReady.length > 0
+      ? (reviewsAfterLastReady[0].submittedAt ?? null)
+      : null;
+  const firstApprovalAtAfterCycle =
+    approvalsAfterLastReady.length > 0
+      ? (approvalsAfterLastReady[0].submittedAt ?? null)
+      : null;
+
+  const authoringLeadSeconds = diffSecondsRounded(
+    firstCommitAt,
+    lastReadyForReviewAt,
+  );
+  const timeToFirstReviewSeconds = diffSecondsRounded(
+    lastReadyForReviewAt,
+    firstReviewAtForCycle,
+  );
+  const reviewToMergeSeconds = diffSecondsRounded(
+    firstReviewAtForCycle,
+    mergedAt,
+  );
+  const leadTimeSeconds = diffSecondsRounded(firstCommitAt, mergedAt);
+  const timeToFirstApprovalSeconds = diffSecondsRounded(
+    lastReadyForReviewAt,
+    firstApprovalAtAfterCycle,
+  );
 
   return {
     githubPrId: pr.id,
@@ -234,14 +270,23 @@ function calculateMetrics(input: CalculateMetricsInput) {
     repoFullName: pr.repoFullName,
     title: pr.title,
     state,
+    htmlUrl: pr.htmlUrl,
+    body: pr.body,
+    prAuthorLogin: pr.authorGithubLogin,
+    authorIsTenant: pr.authorGithubLogin === userGithubLogin,
 
     createdAt: pr.createdAt,
     mergedAt,
     closedAt: pr.closedAt,
-    firstReviewAt,
+    firstCommitAt,
+    lastReadyForReviewAt,
+    firstReviewAtForCycle,
 
-    timeToFirstReview,
-    timeToMerge,
+    authoringLeadSeconds,
+    timeToFirstReviewSeconds,
+    reviewToMergeSeconds,
+    leadTimeSeconds,
+    timeToFirstApprovalSeconds,
 
     linesAdded,
     linesDeleted,
@@ -262,10 +307,8 @@ function calculateMetrics(input: CalculateMetricsInput) {
     reviewCommentsCount: reviewComments.length,
     approvalsCount,
     changesRequestedCount,
-    reviewRounds,
     wasApprovedBeforeMerge,
 
-    hadMergeConflicts,
     hadForcePushes,
 
     hadTimelineData,
@@ -277,30 +320,46 @@ function calculateMetrics(input: CalculateMetricsInput) {
   };
 }
 
-function calculateReviewRounds(
-  reviews: any[],
-  prCommits: any[],
-  authorLogin: string,
-): number {
-  if (reviews.length === 0) return 0;
+export function computeReadyAnchor(opts: {
+  pr: GithubPR;
+  timeline: GithubTimelineEvent[];
+}): {
+  readyAt: Date; // authoritative “ready” for the PR
+  firstReadyEventAt?: Date; // earliest ready/review_requested ever
+  cycles: Array<{ start: Date; end: Date }>;
+} {
+  const { pr, timeline } = opts;
+  const endAt = pr.closedAt ?? new Date();
 
-  const authorCommits = prCommits.filter((c) => c.authorLogin === authorLogin);
+  // all timeline events sorted
+  const events = sortAndBound(timeline, endAt);
+  // Cycles - PR created, draft conversions, end of PR
+  const cycles = computeCycles(pr.createdAt, events, endAt);
 
-  // Create timeline of events
-  const events = [
-    ...reviews.map((r) => ({ type: "review", time: r.submittedAt })),
-    ...authorCommits.map((c) => ({ type: "commit", time: c.committedAt })),
-  ].sort((a, b) => a.time.getTime() - b.time.getTime());
+  // Sort all ready events
+  const firstReadyEvent = events.find(readyish)?.createdAt;
 
-  let rounds = 0;
-  let lastEventType: string | null = null;
+  // Get ready event after last cycle (PR open or last draft conversion)
+  const last = cycles[cycles.length - 1];
+  const readyInLast = firstInCycle(
+    events,
+    last.start,
+    last.end,
+    readyish,
+  )?.createdAt;
 
-  for (const event of events) {
-    if (event.type === "commit" && lastEventType === "review") {
-      rounds++;
-    }
-    lastEventType = event.type;
+  if (readyInLast) {
+    return { readyAt: readyInLast, firstReadyEventAt: firstReadyEvent, cycles };
   }
 
-  return rounds;
+  if (!firstReadyEvent) {
+    return { readyAt: pr.createdAt, cycles };
+  }
+
+  // Otherwise fallback to earliest ready-ish seen anywhere (incomplete timeline)
+  return {
+    readyAt: firstReadyEvent,
+    firstReadyEventAt: firstReadyEvent,
+    cycles,
+  };
 }

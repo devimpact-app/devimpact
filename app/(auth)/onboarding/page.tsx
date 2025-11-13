@@ -4,41 +4,48 @@ import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import SyncingPage from "./components/SyncingLoader";
+import { unstable_noStore as noStore } from "next/cache";
+
+function assertNever(x: never): never {
+  throw new Error(`Unhandled onboarding state: ${x}`);
+}
 
 export default async function OnboardingPage() {
-  const session = await auth();
+  noStore();
 
-  if (!session?.user?.id || !session.user.githubUsername) {
+  const session = await auth();
+  const userFromSession = session?.user;
+
+  if (!userFromSession?.id || !userFromSession.githubUsername) {
     redirect("/login");
   }
 
-  // Fetch user with onboarding state
   const [user] = await db
-    .select()
+    .select({
+      id: users.id,
+      onboardingState: users.onboardingState,
+    })
     .from(users)
-    .where(eq(users.id, session.user.id))
+    .where(eq(users.id, userFromSession.id))
     .limit(1);
 
   if (!user) {
     redirect("/login");
   }
 
-  switch (user.onboardingState) {
-    case "need_data_source":
-    case null:
-    case undefined:
-      redirect("/onboarding/setup");
+  const state = user.onboardingState ?? "need_data_source";
 
+  switch (state) {
+    case "need_data_source":
+      redirect("/onboarding/setup");
     case "token_provided":
       redirect("/onboarding/repos");
-
     case "syncing":
       return <SyncingPage />;
-
     case "complete":
       redirect("/dashboard");
-
     default:
-      redirect("/onboarding/setup");
+      // Ensure we catch new states at build time
+      assertNever(state as never);
   }
 }
