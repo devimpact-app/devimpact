@@ -13,6 +13,11 @@ import {
   Target,
   Focus,
   LogOut,
+  Sparkle,
+  Orbit,
+  Lightbulb,
+  CalendarClock,
+  Icon,
 } from "lucide-react";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
@@ -25,9 +30,9 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", Icon: Home },
-  { href: "/timeline", label: "Timeline", Icon: FolderKanban },
-  { href: "/growth", label: "Growth & Habits", Icon: Focus },
-  { href: "/insights", label: "Insights", Icon: LineChart },
+  { href: "/insights", label: "Insights", Icon: Lightbulb },
+  { href: "/timeline", label: "Timeline", Icon: CalendarClock },
+  { href: "/growth", label: "Growth & Patterns", Icon: LineChart },
 ];
 
 type SidebarProps = {
@@ -69,10 +74,13 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
       .join("")
       .toUpperCase() || "U";
 
+  const settingsHref = "/settings";
+  const settingsActive = pathname === settingsHref;
+
   return (
     <nav className="relative flex flex-col bg-gradient-to-b from-indigo-950/40 via-indigo-950/30 to-indigo-950/20 backdrop-blur border-r border-white/15 text-white w-[90px] p-4">
-      <div className="relative mx-auto mt-1 mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-blue-100">
-        <Compass className="h-7 w-7 text-blue-950" />
+      <div className="relative mx-auto mt-1 mb-6 flex h-11 w-11 items-center justify-center">
+        <Orbit className="h-7 w-7 text-indigo-400" />
       </div>
 
       {/* Links */}
@@ -100,8 +108,7 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
                     : "text-blue-200 group-hover:text-white",
                 )}
               />
-              {/* tooltip on hover (small) */}
-              <span className="pointer-events-none absolute left-[84px] z-10 hidden rounded-md bg-blue-900 px-2 py-1 text-xs text-white shadow group-hover:block">
+              <span className="pointer-events-none absolute left-[84px] z-10 hidden rounded-md bg-indigo-900 px-2 py-1 text-xs text-white shadow group-hover:block">
                 {label}
               </span>
             </Link>
@@ -111,11 +118,28 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
 
       <div className="mt-auto space-y-2 pt-4">
         <Link
-          href="/settings"
-          className="group relative grid place-items-center rounded-xl py-3 hover:bg-white/[0.04]"
+          key={settingsHref}
+          href={settingsHref}
+          className={clsx(
+            "group relative grid place-items-center rounded-xl py-3 transition",
+            settingsActive
+              ? "bg-white/15 ring-1 ring-white/20 shadow"
+              : "hover:bg-white/10",
+          )}
           aria-label="Settings"
+          title="Settings"
         >
-          <Settings className="h-5 w-5 text-white/50 group-hover:text-white/80" />
+          <Settings
+            className={clsx(
+              "h-5 w-5 transition",
+              settingsActive
+                ? "text-white"
+                : "text-blue-200 group-hover:text-white",
+            )}
+          />
+          <span className="pointer-events-none absolute left-[84px] z-10 hidden rounded-md bg-indigo-900 px-2 py-1 text-xs text-white shadow group-hover:block">
+            Settings
+          </span>
         </Link>
 
         <div className="relative flex  justify-center items-center">

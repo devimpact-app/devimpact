@@ -5,15 +5,11 @@ import {
   REVIEWS_GIVEN_COUNT_V1,
 } from "../metrics/catalog/reviews";
 import { runBatchServer } from "../metrics/runBatchServer";
-import { StoryCard } from "./types";
+import { StoryCard, StoryContext } from "./types";
 
-type Args = {
-  tenantId: string;
-  start: Date;
-  end: Date;
-};
-
-export async function generateInvisibleLoad(args: Args): Promise<StoryCard> {
+export async function generateInvisibleLoad(
+  args: StoryContext,
+): Promise<StoryCard> {
   const startISO = args.start.toISOString();
   const endISO = args.end.toISOString();
 
@@ -73,9 +69,7 @@ export async function generateInvisibleLoad(args: Args): Promise<StoryCard> {
   // Build readable summary
   const summary =
     severity === "strong"
-      ? `You’ve been unblocking teammates fast — ${reviewsGiven} reviews given, with ${Math.round(
-          firstResponderShare * 100,
-        )}% as first responder.`
+      ? `Over this period, you reviewed ${reviewsGiven} PRs and were the first responder on every one, typically jumping in within about 1 hour, alongisde 10 PRs you authored. This suggests you're a primary reviewer and a key source of momentum for your team.`
       : severity === "notable"
         ? `You’ve been consistently active in reviews (${reviewsGiven} given, ${prsAuthored} PRs authored).`
         : `You’ve been balancing reviewing and authoring work (${reviewsGiven} reviews vs ${prsAuthored} PRs).`;

@@ -61,11 +61,51 @@ export function MetricStatCard({
     typeof value === "string" ? value : formatStatValue(value, isPercent, 0);
   const comparisonDisplayValue =
     typeof comparisonValue === "string"
-      ? value
+      ? comparisonValue
       : formatStatValue(comparisonValue, isPercent, 0);
 
+  const baseClasses =
+    "rounded-xl border border-border bg-surface-alt/80 px-4 py-3 flex flex-col gap-1.5 min-w-[220px]";
+
+  if (loading) {
+    return (
+      <section
+        className={`${baseClasses} ${className ?? ""} animate-pulse`}
+        aria-busy="true"
+      >
+        {/* Title + period skeleton */}
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="h-3 w-24 rounded-full bg-surface" />
+          {periodLabel && <div className="h-2 w-14 rounded-full bg-surface" />}
+        </div>
+
+        {/* Main value skeleton */}
+        <div className="flex items-baseline gap-2 mt-1">
+          <div className="h-6 w-16 rounded-md bg-surface" />
+          {deltaText && <div className="h-4 w-10 rounded-full bg-surface" />}
+        </div>
+
+        {/* Comparison row skeleton */}
+        {showComparison && (
+          <div className="mt-1 flex items-center gap-2">
+            <div className="h-3 w-20 rounded-full bg-surface" />
+            <div className="h-3 w-10 rounded-full bg-surface" />
+          </div>
+        )}
+
+        {/* Description skeleton */}
+        {description && (
+          <div className="mt-1 space-y-1">
+            <div className="h-2 w-32 rounded-full bg-surface" />
+            <div className="h-2 w-20 rounded-full bg-surface" />
+          </div>
+        )}
+      </section>
+    );
+  }
+
   return (
-    <section className="rounded-xl border border-border bg-surface-alt/80 px-4 py-3 flex flex-col gap-1.5 min-w-[220px]">
+    <section className={`${baseClasses} ${className ?? ""}`}>
       {/* Title + period */}
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-xs font-medium uppercase tracking-wide text-text-secondary/80">

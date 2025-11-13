@@ -54,3 +54,16 @@ export function formatSeconds(s: number | null | undefined) {
   const remHrs = hrs % 24;
   return `${days}d ${remHrs}h`;
 }
+
+export function formatRange(start: Date, end: Date) {
+  const fmt = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  const ySame = start.getFullYear() === end.getFullYear();
+  const y = (d: Date) =>
+    new Intl.DateTimeFormat(undefined, { year: "numeric" }).format(d);
+  return ySame
+    ? `${fmt.format(start)}–${fmt.format(end)}, ${y(end)}`
+    : `${fmt.format(start)} ${y(start)}–${fmt.format(end)} ${y(end)}`;
+}
