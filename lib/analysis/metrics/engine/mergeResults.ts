@@ -1,4 +1,9 @@
 import {
+  TMetricResult,
+  TStatResult,
+  TTimeseriesResult,
+} from "@/types/api/metrics";
+import {
   MetricResult,
   StatResult,
   TimeseriesResult,
@@ -13,10 +18,10 @@ type MergeOptions = {
 };
 
 export function mergePrimaryAndComparison(
-  primary: MetricResult,
-  comparison?: MetricResult | null,
+  primary: TMetricResult,
+  comparison?: TMetricResult | null,
   opts: MergeOptions = {},
-): MetricResult {
+): TMetricResult {
   if (!comparison) return primary;
 
   // Guard: must be the same shape & metricId to merge meaningfully
@@ -29,18 +34,18 @@ export function mergePrimaryAndComparison(
   }
 
   if (primary.shape === "stat") {
-    return mergeStat(primary as StatResult, comparison as StatResult);
+    return mergeStat(primary as TStatResult, comparison as TStatResult);
   }
 
   // timeseries
   return mergeTimeseries(
-    primary as TimeseriesResult,
-    comparison as TimeseriesResult,
+    primary as TTimeseriesResult,
+    comparison as TTimeseriesResult,
     opts,
   );
 }
 
-function mergeStat(primary: StatResult, comparison: StatResult): StatResult {
+function mergeStat(primary: TStatResult, comparison: TStatResult): TStatResult {
   const cur = valueOf(primary);
   const cmp = valueOf(comparison);
 
@@ -64,7 +69,7 @@ function mergeStat(primary: StatResult, comparison: StatResult): StatResult {
   };
 }
 
-function valueOf(s: StatResult): { value: number | null } {
+function valueOf(s: TStatResult): { value: number | null } {
   // Expect one dataset in simple runners; otherwise pick the first "current"
   const current = s.data.find((d) => d.kind === "current") ??
     s.data[0] ?? { value: null };
@@ -72,10 +77,10 @@ function valueOf(s: StatResult): { value: number | null } {
 }
 
 function mergeTimeseries(
-  primary: TimeseriesResult,
-  comparison: TimeseriesResult,
+  primary: TTimeseriesResult,
+  comparison: TTimeseriesResult,
   opts: MergeOptions,
-): TimeseriesResult {
+): TTimeseriesResult {
   // Default: return two labeled series, untouched
   if (!opts.alignTimeseries) {
     return {

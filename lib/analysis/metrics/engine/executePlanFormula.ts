@@ -2,8 +2,8 @@ import { and, between, eq, gt, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import type { MetricDefinition } from "../types/definition";
 import { MetricInput } from "../types/input";
 import { DB } from "@/lib/db/client";
-import { MetricResult } from "../types/output";
 import { pullRequests, reviews } from "@/lib/db/schema";
+import { TMetricResult } from "@/types/api/metrics";
 
 export const TABLES = {
   pullRequests,
@@ -86,7 +86,7 @@ export async function executePlanFormula(
   def: MetricDefinition,
   input: MetricInput,
   ctx: { db: DB },
-): Promise<MetricResult> {
+): Promise<TMetricResult> {
   if (input.shape !== "stat" || def.formula.kind !== "plan") {
     throw new Error("Plan executor currently supports only 'stat' shape");
   }
@@ -134,6 +134,10 @@ export async function executePlanFormula(
     shape: "stat",
     title: def.display?.label ?? def.name,
     unit: def.unit,
+    window: {
+      start: input.start.toISOString(),
+      end: input.end.toISOString(),
+    },
     data: [{ kind: "current", value: value === null ? null : Number(value) }],
   };
 }

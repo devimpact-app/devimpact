@@ -1,3 +1,4 @@
+import { TMetricResult } from "@/types/api/metrics";
 import { MetricDefinition } from "../types/definition";
 import { MetricContext, MetricInput } from "../types/input";
 import { MetricResult } from "../types/output";
@@ -7,7 +8,7 @@ export async function executeMetric(
   def: MetricDefinition,
   input: MetricInput,
   ctx: MetricContext,
-): Promise<MetricResult> {
+): Promise<TMetricResult> {
   switch (def.formula.kind) {
     case "plan":
       return executePlanFormula(def, input, ctx);

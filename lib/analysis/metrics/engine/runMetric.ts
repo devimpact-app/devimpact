@@ -6,12 +6,13 @@ import { computeComparisonWindow } from "./comparisonWindow";
 import { toDate } from "@/lib/utils/date";
 import { mergePrimaryAndComparison } from "./mergeResults";
 import { executeMetric } from "./executeMetric";
+import { TMetricResult } from "@/types/api/metrics";
 
 export async function runMetric(
   metric: string | MetricDefinition,
   input: MetricInput,
   ctx: MetricContext,
-): Promise<MetricResult> {
+): Promise<TMetricResult> {
   const def = typeof metric === "string" ? METRIC_CATALOG_MAP[metric] : metric;
 
   if (!def)
@@ -26,7 +27,7 @@ async function runMetricWithDefinition(
   def: MetricDefinition,
   input: MetricInput,
   ctx: MetricContext,
-): Promise<MetricResult> {
+): Promise<TMetricResult> {
   // TODO: check cache - return if valid
 
   const primary = await executeMetric(def, input, ctx);

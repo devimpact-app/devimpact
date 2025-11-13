@@ -31,6 +31,8 @@ export default function DashboardClient({ user }: Props) {
   const [linesChangedStat, setLinesChangedStat] = useState<StatResult | null>(
     null,
   );
+  const [substantiveReviewStat, setSubstantiveReviewStat] =
+    useState<StatResult | null>(null);
 
   const [story, setStory] = useState<any | null>(null);
 
@@ -96,15 +98,15 @@ export default function DashboardClient({ user }: Props) {
                 comparison: { kind: "previous_period" },
               },
             },
-            // {
-            //   metricId: "review.substantive_count.v1",
-            //   input: {
-            //     start: startISO,
-            //     end: endISO,
-            //     shape: "stat",
-            //     comparison: { kind: "previous_period" },
-            //   },
-            // },
+            {
+              metricId: "review.substantive_rate.v1",
+              input: {
+                start: startISO,
+                end: endISO,
+                shape: "stat",
+                comparison: { kind: "previous_period" },
+              },
+            },
           ],
         });
 
@@ -124,6 +126,11 @@ export default function DashboardClient({ user }: Props) {
             r.shape === "stat",
         ) as StatResult | undefined;
         setLinesChangedStat(linesChanged ?? null);
+        const substantiveReviewRate = batch.results.find(
+          (r) =>
+            r.metricId === "review.substantive_rate.v1" && r.shape === "stat",
+        ) as StatResult | undefined;
+        setSubstantiveReviewStat(substantiveReviewRate ?? null);
       } catch {
         setError("Failed to load metrics");
       } finally {
@@ -149,6 +156,12 @@ export default function DashboardClient({ user }: Props) {
     linesChangedStat?.data?.find((d) => d.kind === "current")?.value ?? null;
   const linesComparisonValue =
     linesChangedStat?.data?.find((d) => d.kind === "comparison")?.value ?? null;
+  const subValue =
+    substantiveReviewStat?.data?.find((d) => d.kind === "current")?.value ??
+    null;
+  const subComparisonValue =
+    substantiveReviewStat?.data?.find((d) => d.kind === "comparison")?.value ??
+    null;
 
   console.log("story", story);
 
@@ -202,18 +215,12 @@ export default function DashboardClient({ user }: Props) {
               description="Median lines changed per merged PR you authored"
             />
             <MetricStatCard
-              title="Typical PR Size"
+              title="Substantive Review ratio"
               periodLabel="Last 30 days"
-              value={
-                loadingMetrics ? null : `${Math.round(linesValue || 0)} lines`
-              }
+              value={loadingMetrics ? null : subValue}
               comparisonLabel="Last period"
-              comparisonValue={
-                loadingMetrics
-                  ? null
-                  : `${Math.round(linesComparisonValue || 0)} lines`
-              }
-              description="Median lines changed per merged PR you authored"
+              comparisonValue={loadingMetrics ? null : subComparisonValue}
+              description="Ratio of reviews you authored where you left comments"
             />
           </div>
         </div>

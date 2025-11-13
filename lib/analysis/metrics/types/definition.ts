@@ -34,6 +34,14 @@ export type PlanFormula = {
   groupBy?: string[]; // future use
 };
 
+type DerivedFormula = {
+  kind: "derived";
+  dependsOn: string[]; // metricIds
+  compute: "ratio"; // you can expand later
+  numerator: string; // metricId
+  denominator: string; // metricId
+};
+
 /** Programmatic formula */
 export type FunctionFormula = {
   kind: "function";
@@ -46,7 +54,11 @@ export type SqlFormula = {
   text: (input: MetricInput) => { sql: string; params: any[] };
 };
 
-export type MetricFormula = PlanFormula | FunctionFormula | SqlFormula;
+export type MetricFormula =
+  | PlanFormula
+  | DerivedFormula
+  | FunctionFormula
+  | SqlFormula;
 
 export type MetricUnit =
   | "seconds"

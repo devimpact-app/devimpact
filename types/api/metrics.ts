@@ -88,6 +88,7 @@ const BaseResult = z.object({
   title: z.string().optional(),
   unit: z.string().optional(),
   meta: z.record(z.string(), z.any()).optional(),
+  window: z.object({ start: z.string(), end: z.string() }),
   error: z.object({ code: z.string(), message: z.string() }).optional(),
 });
 const StatDataset = z.object({
@@ -114,6 +115,8 @@ export const MetricsBatchResult = z.object({
 export type TMetricInput = z.infer<typeof MetricInput>;
 export type TMetricsBatchInput = z.infer<typeof MetricsBatchInput>;
 export type TMetricResult = z.infer<typeof MetricResult>;
+export type TStatResult = z.infer<typeof StatResult>;
+export type TTimeseriesResult = z.infer<typeof TimeseriesResult>;
 export type TMetricsBatchResult = z.infer<typeof MetricsBatchResult>;
 export type TCatalogItem = z.infer<typeof CatalogItem>;
 export type TCatalogResponse = z.infer<typeof CatalogResponse>;

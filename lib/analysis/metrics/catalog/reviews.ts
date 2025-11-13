@@ -133,3 +133,31 @@ export const REVIEW_SUBSTANTIVE_COUNT_V1: MetricDefinition = {
     ],
   },
 };
+
+export const REVIEW_SUBSTANTIVE_RATE_V1: MetricDefinition = {
+  id: "review.substantive_rate.v1",
+  name: "Substantive review rate",
+  description:
+    "Percentage of your reviews that included code comments during the selected window.",
+  entity: "review",
+  unit: "percent",
+  source: {
+    table: "reviews",
+    columns: [],
+  },
+  display: {
+    kind: "stat",
+    label: "Substantive reviews",
+    description: "Share of your reviews that had code comments",
+    decimals: 0,
+    unitSuffix: "%",
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: "derived",
+    dependsOn: ["review.substantive_count.v1", "review.given_count.v1"],
+    compute: "ratio",
+    numerator: "review.substantive_count.v1",
+    denominator: "review.given_count.v1",
+  },
+};
