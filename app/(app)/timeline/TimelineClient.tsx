@@ -89,6 +89,7 @@ export default function TimelineClient({ user }: Props) {
       </main>
       {selectedEvent && (
         <EventInspectorPanel
+          key={selectedEvent.id}
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
         />

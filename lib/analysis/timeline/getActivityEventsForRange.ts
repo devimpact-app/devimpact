@@ -27,6 +27,7 @@ export async function getActivityEventsForRange(
     .where(
       and(
         eq(pullRequests.tenantId, tenantId),
+        eq(pullRequests.authorIsTenant, true),
         or(
           between(pullRequests.createdAt, start, end),
           between(pullRequests.mergedAt, start, end),
@@ -41,6 +42,7 @@ export async function getActivityEventsForRange(
     .where(
       and(
         eq(reviews.tenantId, tenantId),
+        eq(reviews.reviewerIsTenant, true),
         isNotNull(reviews.submittedAt),
         between(reviews.submittedAt, start, end),
       ),
@@ -59,6 +61,7 @@ export async function getActivityEventsForRange(
     .where(
       and(
         eq(githubPrCommits.tenantId, tenantId),
+        eq(pullRequests.authorIsTenant, true),
         isNotNull(githubPrCommits.committedAt),
         between(githubPrCommits.committedAt, start, end),
       ),
