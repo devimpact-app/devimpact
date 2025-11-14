@@ -67,3 +67,78 @@ export function formatRange(start: Date, end: Date) {
     ? `${fmt.format(start)}–${fmt.format(end)}, ${y(end)}`
     : `${fmt.format(start)} ${y(start)}–${fmt.format(end)} ${y(end)}`;
 }
+
+export type TimelineRangeKey = "this_week" | "last_week" | "2w" | "4w";
+
+export function getDefaultTimelineRange(): TimelineRangeKey {
+  const today = new Date();
+  const day = today.getDay(); // 0 = Sun, 1 = Mon, ... 4 = Thu, 5 = Fri
+
+  // If it's Thu or Fri, show "This week" by default.
+  if (day === 4 || day === 5) {
+    return "this_week";
+  }
+
+  // Otherwise, default to "Last week"
+  return "last_week";
+}
+
+export function startOfWeek(date: Date): Date {
+  // Treat Monday as the first day of week
+  const d = new Date(date);
+  const day = d.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const diffToMonday = (day + 6) % 7; // 0 if Mon, 1 if Tue, ..., 6 if Sun
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - diffToMonday);
+  return d;
+}
+
+export function endOfWeek(date: Date): Date {
+  const start = startOfWeek(date);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
+export function getTimelineRangeBounds(range: TimelineRangeKey): {
+  start: Date;
+  end: Date;
+} {
+  const today = new Date();
+  today.setHours(12, 0, 0, 0); // avoid DST weirdness a bit
+
+  if (range === "this_week") {
+    const start = startOfWeek(today);
+    const end = new Date(today); // "so far" this week
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  }
+
+  if (range === "last_week") {
+    const thisWeekStart = startOfWeek(today);
+    const lastWeekEnd = new Date(thisWeekStart);
+    lastWeekEnd.setMilliseconds(-1); // one ms before this week
+    const lastWeekStart = startOfWeek(lastWeekEnd);
+    lastWeekEnd.setHours(23, 59, 59, 999);
+    return { start: lastWeekStart, end: lastWeekEnd };
+  }
+
+  if (range === "2w") {
+    // Simple trailing 14 days including today
+    const end = new Date(today);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - 13);
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+  }
+
+  // "4w" (28 days trailing)
+  const end = new Date(today);
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(end);
+  start.setDate(end.getDate() - 27);
+  start.setHours(0, 0, 0, 0);
+  return { start, end };
+}

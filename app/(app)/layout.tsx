@@ -19,7 +19,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="h-screen w-screen flex bg-background text-text-primary overflow-x-hidden">
       <Sidebar userName={sessionUser.name} avatarUrl={sessionUser.image} />
       <div className="flex flex-col flex-1">
-        <main className="flex-1 overflow-y-auto no-scrollbar">{children}</main>
+        <main className="flex-1 overflow-y-auto no-scrollbar">
+          <div className="min-h-screen bg-background text-text-primary">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
