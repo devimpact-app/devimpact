@@ -38,8 +38,11 @@ export function TimelineHero({
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
             Explore a chronological view of your recent work{" "}
-            <span className="text-text-primary/80">({periodLabel})</span>. Zoom
-            in on a single week or step back to see how your patterns evolve.
+            <span className="text-text-primary/80">({periodLabel})</span>.
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Zoom in on a single week or step back to see how your patterns
+            evolve.
           </p>
         </div>
 

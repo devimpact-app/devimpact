@@ -8,8 +8,13 @@ import {
 } from "@/lib/utils/date";
 import { useEffect, useMemo, useState } from "react";
 import { TimelineHero } from "./components/Hero";
-import { ActivityEvent } from "@/lib/analysis/timeline/types";
-import { TimelineHeatmapSkeleton } from "./components/TimelineHeatmap";
+import {
+  TimelineHeatmap,
+  TimelineHeatmapLoadingSkeleton,
+} from "./components/TimelineHeatmap";
+import { ActivityEvent } from "@/types/api/timeline";
+import { EventInspectorPanel } from "./components/EventInspectorPanel";
+import { cn } from "@/lib/utils";
 
 type Props = {
   user: {
@@ -21,6 +26,10 @@ type Props = {
 };
 
 export default function TimelineClient({ user }: Props) {
+  const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(
+    null,
+  );
+
   const [range, setRange] = useState<TimelineRangeKey>(() =>
     getDefaultTimelineRange(),
   );
@@ -45,21 +54,45 @@ export default function TimelineClient({ user }: Props) {
       setTimelineLoading(false);
     }
     loadStory();
-  }, []);
+  }, [range]);
+
+  const panelOpen = !!selectedEvent;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <TimelineHero
-        userName={user.name}
-        range={range}
-        periodLabel={periodLabel}
-        onRangeChange={setRange}
-      />
-      <TimelineHeatmapSkeleton
-        range={range}
-        start={new Date(startISO)}
-        end={new Date(endISO)}
-      />
-    </main>
+    <>
+      <main
+        className={cn(
+          "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8 transition-[padding-right] duration-200",
+          panelOpen && "lg:pr-[280px]", // make room for the drawer on large screens
+        )}
+      >
+        <TimelineHero
+          userName={user.name}
+          range={range}
+          periodLabel={periodLabel}
+          onRangeChange={setRange}
+        />
+        {timelineLoading ? (
+          <TimelineHeatmapLoadingSkeleton range={range} />
+        ) : (
+          <TimelineHeatmap
+            range={range}
+            start={new Date(startISO)}
+            end={new Date(endISO)}
+            events={timeline}
+            onEventClick={(event) => {
+              console.log("Clicked event:", event);
+              setSelectedEvent(event);
+            }}
+          />
+        )}
+      </main>
+      {selectedEvent && (
+        <EventInspectorPanel
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
+    </>
   );
 }

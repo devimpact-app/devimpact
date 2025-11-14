@@ -1,10 +1,11 @@
-// app/api/timeline/route.ts
-
 import { NextResponse } from "next/server";
 import { getActivityEventsForRange } from "@/lib/analysis/timeline/getActivityEventsForRange";
-import { ActivityEvent } from "@/lib/analysis/timeline/types";
 import { auth } from "@/lib/auth"; // if using NextAuth
 import { jsonOK, jsonUnauthorized } from "../_lib/http";
+import {
+  ActivityEvent,
+  ActivityEventsResponseSchema,
+} from "@/types/api/timeline";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -43,5 +44,9 @@ export async function GET(req: Request) {
     limit,
   });
 
-  return jsonOK({ events });
+  const parsed = ActivityEventsResponseSchema.parse({
+    events,
+  });
+
+  return jsonOK({ events: parsed.events });
 }

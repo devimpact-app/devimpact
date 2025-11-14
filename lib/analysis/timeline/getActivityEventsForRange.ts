@@ -1,5 +1,4 @@
 import { and, between, eq, isNotNull, or } from "drizzle-orm";
-import { ActivityEvent } from "./types";
 import {
   githubPrCommits,
   githubPrs,
@@ -7,6 +6,7 @@ import {
   reviews,
 } from "@/lib/db/schema";
 import { db } from "@/lib/db/client";
+import { ActivityEvent } from "@/types/api/timeline";
 
 type ActivityQueryParams = {
   tenantId: string;

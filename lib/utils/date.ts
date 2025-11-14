@@ -125,20 +125,42 @@ export function getTimelineRangeBounds(range: TimelineRangeKey): {
   }
 
   if (range === "2w") {
-    // Simple trailing 14 days including today
-    const end = new Date(today);
-    end.setHours(23, 59, 59, 999);
-    const start = new Date(end);
-    start.setDate(end.getDate() - 13);
-    start.setHours(0, 0, 0, 0);
+    // Start of *this* week (Monday)
+    const thisWeekStart = startOfWeek(today);
+
+    // Start of last week = thisWeekStart - 7 days
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+
+    const start = lastWeekStart;
+    const end = endOfWeek(thisWeekStart); // Sunday of this week
+
     return { start, end };
   }
 
   // "4w" (28 days trailing)
-  const end = new Date(today);
-  end.setHours(23, 59, 59, 999);
-  const start = new Date(end);
-  start.setDate(end.getDate() - 27);
-  start.setHours(0, 0, 0, 0);
+  // Start of *this* week (Monday)
+  const thisWeekStart = startOfWeek(today);
+
+  // Start of last week = thisWeekStart - 7 days
+  const fourWeeksStart = new Date(thisWeekStart);
+  fourWeeksStart.setDate(thisWeekStart.getDate() - 21);
+
+  const start = fourWeeksStart;
+  const end = endOfWeek(thisWeekStart); // Sunday of this week
+
   return { start, end };
+}
+
+export function formatTimeIso(iso: string) {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function truncateToDay(d: Date) {
+  const nd = new Date(d);
+  nd.setHours(0, 0, 0, 0);
+  return nd;
 }
