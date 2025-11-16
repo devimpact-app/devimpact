@@ -68,7 +68,14 @@ export function formatRange(start: Date, end: Date) {
     : `${fmt.format(start)} ${y(start)}–${fmt.format(end)} ${y(end)}`;
 }
 
-export type TimelineRangeKey = "this_week" | "last_week" | "2w" | "4w";
+export type TimelineRangeKey =
+  | "this_week"
+  | "last_week"
+  | "2w"
+  | "4w"
+  | "7d"
+  | "14d"
+  | "30d";
 
 export function getDefaultTimelineRange(): TimelineRangeKey {
   const today = new Date();
@@ -101,12 +108,25 @@ export function endOfWeek(date: Date): Date {
   return end;
 }
 
+export const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
 export function getTimelineRangeBounds(range: TimelineRangeKey): {
   start: Date;
   end: Date;
 } {
   const today = new Date();
   today.setHours(12, 0, 0, 0); // avoid DST weirdness a bit
+
+  if (range === "7d" || range === "14d" || range === "30d") {
+    const days = range === "7d" ? 7 : range === "14d" ? 14 : 30;
+    const end = new Date(today);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - (days - 1));
+    start.setHours(0, 0, 0, 0);
+
+    return { start, end };
+  }
 
   if (range === "this_week") {
     const start = startOfWeek(today);

@@ -3,14 +3,23 @@
 import { MetricsAPI } from "@/lib/analysis/metrics/client";
 import { useEffect, useMemo, useState } from "react";
 import { StatResult } from "@/lib/analysis/metrics/types/output";
-import { formatRange, formatSeconds } from "@/lib/utils/date";
+import {
+  formatRange,
+  formatSeconds,
+  getTimelineRangeBounds,
+  TimelineRangeKey,
+} from "@/lib/utils/date";
 import {
   StoryCardSkeleton,
   StoryCardView,
 } from "@/components/stories/StoryCardView";
-import { DashboardHero } from "./components/Hero";
+import { DashboardHero, RANGE_OPTIONS } from "./components/Hero";
 import { MetricStatCard } from "./components/MetricStatCard";
 import { RecentActivitySummaryCard } from "./components/WeeklyReviewCard";
+import { WorkRhythmCard } from "./components/WorkRythmCard";
+import { ActivityEvent } from "@/types/api/timeline";
+import { WorkRhythmCardSkeleton } from "./components/WorkRythmCardSkeleton";
+import { useRouter } from "next/navigation";
 
 type Props = {
   user: {
@@ -22,6 +31,7 @@ type Props = {
 };
 
 export default function DashboardClient({ user }: Props) {
+  const router = useRouter();
   const [catalog, setCatalog] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
@@ -37,18 +47,28 @@ export default function DashboardClient({ user }: Props) {
 
   const [loadingStories, setLoadingStories] = useState(false);
 
+  const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+
   const [story1, setStory1] = useState<any | null>(null);
   const [story2, setStory2] = useState<any | null>(null);
   const [story3, setStory3] = useState<any | null>(null);
 
-  const { startISO, endISO } = useMemo(() => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(end.getDate() - 14);
-    return { startISO: start.toISOString(), endISO: end.toISOString() };
-  }, []);
+  const [range, setRange] = useState<TimelineRangeKey>("7d");
+  const { startISO, endISO, periodLabel, rangeLabel } = useMemo(() => {
+    const { start, end } = getTimelineRangeBounds(range);
+    return {
+      startISO: start.toISOString(),
+      endISO: end.toISOString(),
+      periodLabel: formatRange(start, end),
+      rangeLabel: RANGE_OPTIONS.find((r) => r.key === range)?.label || "",
+    };
+  }, [range]);
 
   useEffect(() => {
+    setLoadingActivity(true);
+    setLoadingStories(true);
+    setLoadingMetrics(true);
     async function loadCatalog() {
       try {
         const data = await MetricsAPI.getCatalog();
@@ -59,19 +79,6 @@ export default function DashboardClient({ user }: Props) {
     }
 
     loadCatalog();
-
-    setLoadingStories(true);
-    async function loadStory() {
-      const res = await fetch(
-        `/api/stories/query?start=${startISO}&end=${endISO}&id=invisible_load.v1&id=productive_windows.v1&id=collaboration_patterns.v1`,
-      );
-      const { data } = await res.json();
-      setStory1(data.stories[0]);
-      setStory2(data.stories[1]);
-      setStory3(data.stories[2]);
-      setLoadingStories(false);
-    }
-    loadStory();
   }, []);
 
   useEffect(() => {
@@ -79,6 +86,8 @@ export default function DashboardClient({ user }: Props) {
     (async () => {
       try {
         setLoadingMetrics(true);
+        setLoadingStories(true);
+        setLoadingActivity(true);
 
         const batch = await MetricsAPI.runBatch({
           requests: [
@@ -147,6 +156,26 @@ export default function DashboardClient({ user }: Props) {
       } finally {
         setLoadingMetrics(false);
       }
+      async function loadStory() {
+        const res = await fetch(
+          `/api/stories/query?start=${startISO}&end=${endISO}&id=invisible_load.v1&id=collaboration_patterns.v1`,
+        );
+        const { data } = await res.json();
+        setStory1(data.stories[0]);
+        setStory2(data.stories[1]);
+        setLoadingStories(false);
+      }
+      loadStory();
+
+      async function loadActivity() {
+        const res = await fetch(
+          `/api/activity?start=${startISO}&end=${endISO}`,
+        );
+        const { data } = await res.json();
+        setActivity(data.events);
+        setLoadingActivity(false);
+      }
+      loadActivity();
     })();
   }, [catalog, startISO, endISO]);
 
@@ -178,8 +207,9 @@ export default function DashboardClient({ user }: Props) {
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <DashboardHero
         userName={user.name}
-        range="14d"
-        periodLabel={formatRange(new Date(startISO), new Date(endISO))}
+        range={range}
+        periodLabel={periodLabel}
+        onRangeChange={setRange}
       />
 
       <div>
@@ -188,7 +218,7 @@ export default function DashboardClient({ user }: Props) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricStatCard
             title="Your Review Latency"
-            periodLabel="Last 14 days"
+            periodLabel={rangeLabel}
             value={loadingMetrics ? null : formatSeconds(latencyValue)}
             comparisonLabel="Last period"
             comparisonValue={
@@ -201,7 +231,7 @@ export default function DashboardClient({ user }: Props) {
           />
           <MetricStatCard
             title="Your PR cycle time"
-            periodLabel="Last 14 days"
+            periodLabel={rangeLabel}
             value={loadingMetrics ? null : formatSeconds(leadValue)}
             comparisonLabel="Last period"
             comparisonValue={
@@ -212,7 +242,7 @@ export default function DashboardClient({ user }: Props) {
           />
           <MetricStatCard
             title="Your typical PR Size"
-            periodLabel="Last 14 days"
+            periodLabel={rangeLabel}
             value={
               loadingMetrics ? null : `${Math.round(linesValue || 0)} lines`
             }
@@ -227,7 +257,7 @@ export default function DashboardClient({ user }: Props) {
           />
           <MetricStatCard
             title="Substantive Review ratio"
-            periodLabel="Last 14 days"
+            periodLabel={rangeLabel}
             value={loadingMetrics ? null : subValue}
             comparisonLabel="Last period"
             comparisonValue={loadingMetrics ? null : subComparisonValue}
@@ -237,34 +267,48 @@ export default function DashboardClient({ user }: Props) {
         </div>
       </div>
 
-      {/* Stories section - with header */}
+      {loadingActivity ? (
+        <WorkRhythmCardSkeleton
+          rangeDays={range === "7d" ? 7 : range === "14d" ? 14 : 30}
+        />
+      ) : (
+        <WorkRhythmCard
+          loading={loadingActivity}
+          events={activity}
+          rangeDays={range === "7d" ? 7 : range === "14d" ? 14 : 30}
+          onViewTimelineClick={() => {
+            router.push("/timeline");
+          }}
+        />
+      )}
+
       <div>
         <h2 className="text-lg font-semibold mb-4">
-          Hightlights from this period
+          Hightlights from {rangeLabel}
         </h2>
         <div className="grid grid-cols-3 gap-4">
-          {!loadingStories ? (
+          {!loadingStories && story1 ? (
             <StoryCardView story={story1} />
           ) : (
             <StoryCardSkeleton />
           )}
-          {!loadingStories ? (
+          {!loadingStories && story2 ? (
             <StoryCardView story={story2} />
           ) : (
             <StoryCardSkeleton />
           )}
-          {!loadingStories ? (
+          {/* {!loadingStories && story3 ? (
             <StoryCardView story={story3} />
           ) : (
             <StoryCardSkeleton />
-          )}
+          )} */}
         </div>
       </div>
 
       {/* Recent work - with header */}
       <div>
         <RecentActivitySummaryCard
-          periodLabel="Last 14 days"
+          periodLabel={rangeLabel}
           summary="Over the last two weeks, you merged 5 PRs and reviewed 11 others, with most work happening mid-week..."
           prSummary={{
             title: "PRs you touched",

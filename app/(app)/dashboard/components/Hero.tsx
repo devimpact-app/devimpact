@@ -1,21 +1,23 @@
 "use client";
 
+import { TimelineRangeKey } from "@/lib/utils/date";
 import { Calendar, MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type RangeKey = "14d" | "30d" | "90d";
-
-const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
+export const RANGE_OPTIONS: {
+  key: Partial<TimelineRangeKey>;
+  label: string;
+}[] = [
+  { key: "7d", label: "Last 7 days" },
   { key: "14d", label: "Last 14 days" },
   { key: "30d", label: "Last 30 days" },
-  { key: "90d", label: "Last 90 days" },
 ];
 
 type Props = {
   userName?: string | null;
   periodLabel: string; // e.g. "Oct 13 – Nov 12, 2025"
-  range: RangeKey;
-  onRangeChange?: (range: RangeKey) => void;
+  range: TimelineRangeKey;
+  onRangeChange?: (range: TimelineRangeKey) => void;
   onSyncClick?: () => void;
   onPrepareReviewClick?: () => void;
 };
@@ -67,7 +69,9 @@ export function DashboardHero({
             <select
               className="bg-transparent text-xs sm:text-sm text-text-primary outline-none border-none focus:ring-0 cursor-pointer pr-1"
               value={range}
-              onChange={(e) => onRangeChange?.(e.target.value as RangeKey)}
+              onChange={(e) =>
+                onRangeChange?.(e.target.value as TimelineRangeKey)
+              }
             >
               {RANGE_OPTIONS.map((opt) => (
                 <option

@@ -48,7 +48,7 @@ export default function TimelineClient({ user }: Props) {
   useEffect(() => {
     setTimelineLoading(true);
     async function loadStory() {
-      const res = await fetch(`/api/timeline?start=${startISO}&end=${endISO}`);
+      const res = await fetch(`/api/activity?start=${startISO}&end=${endISO}`);
       const { data } = await res.json();
       setTimeline(data.events);
       setTimelineLoading(false);
