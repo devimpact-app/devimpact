@@ -9,13 +9,6 @@ import {
   boolean,
 } from "drizzle-orm/pg-core";
 
-export type OnboardingState =
-  | "account_created"
-  | "cli_pending"
-  | "cli_linked"
-  | "syncing"
-  | "synced";
-
 export type Provider = "github";
 export type TokenType = "oauth";
 
@@ -29,8 +22,10 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
   cliLinkedAt: timestamp("cli_linked_at", { withTimezone: true }),
   cliLastSyncAt: timestamp("cli_last_sync_at", { withTimezone: true }),
-  coverageStartDate: timestamp("coverage_start_date", { withTimezone: true }), // ← add this
   cliTokenHash: text("cli_token_hash"),
+  // When did our syncs pull from original date
+  coverageStartDate: timestamp("coverage_start_date", { withTimezone: true }),
+  // Are they an approved user
   betaAllowed: boolean("beta_allowed").default(false),
 });
 
