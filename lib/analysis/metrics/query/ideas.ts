@@ -1,36 +1,50 @@
-// Instead of showing the what (activity), tell the why and how it matters.
+// authored PRs metrics
+// Time to merge
+// Feedback turnaround - how long spent addressing feedback
+// Fist review speed
+// Approval patterns - approved on first review, average review rounds, avg unique reviewers
+// Risk PRs? Sat a long time before being merged
+// Hygiene - percent PRs with no description, no linked issue, no tests
+// Composition - file type breakdown, language breakdown, additions vs deletions, parts of codebase
 
-// 1. Personal growth lens (career + mastery)
-// 	•	“You’ve been reviewing more than coding this sprint — you might be taking on a mentorship pattern.”
-// 	•	“Your average lead time dropped 30% over 3 months — your iteration speed is improving.”
-// 	•	“You’ve consistently been the first responder for teammates’ PRs — that’s leadership signal.”
+// Review metrics
+// Time to first review
+// Patters - respond faster to X than Y
+// Depth - # comments left, body of review
+// Category of comments (AI)
+// Trustworthiness - % that led to follow up fixes?
+// Consistency - consistent across weeks or bursty?
 
-// ➡️ This is a narrative of growth and career trajectory — something Swarmia doesn’t even attempt.
+// Story
+// Collaboration - identify recurring duos/trios that close lots of PRs
+// Collaboration - You're first responder for the team
+// Collaboration - you unblock others within X hours on avg
+// Leadership - high quality reviews, helping others reduce cycle time, approving more PRs on first pass
+// This week you were a force multiplier for others
+// This week you battled chaos - fragmented time, meetings, lack of deep work
+// this week you moved mountains - largest PR of quarter, unblocked work, improved cycle time
+// This week your coding style has shifted - architectural/quality improvements over time
 
-// ⸻
+// Work rythm
+// Time of day productivity
+// Context switch recovery (from meetings)
+// Flow state per session
+// Meeting kill zones
+// Deep work per day
+// Fragmentation score (Ex: day broken into <90 min chunks)
+// Meeting toxicity score - inside peak hours for you, close to deep work
+// Burnout - late night spikes, weekend pushes, decreasing activity but more time online, high PR churn (switching between), high review w/o coding, no deep work
 
-// 2. Work habits and rhythm
-// 	•	Identify productive windows (“you code most between 9 am–11 am and 8 pm–10 pm”).
-// 	•	Highlight burnout patterns (review load spiking, weekend pushes).
-// 	•	Summarize flow consistency over weeks (“you tend to finish in bursts vs steady daily commits”).
+// Career growth
+// Skills - languages you're coding in, PR size and review depth evolution, feedback style
+// AI categories review comments, PR changes, files touched -> generate strongest areas and growth opportunities
+// Promotion - alignment to a competency matrix, evidence bundle
 
-// ➡️ This feels more like a mirror than a dashboard — introspective analytics.
+// AI
+// Month in review w/ narrative summary, highlights, bottlenecks, wins, collabs, risks
+// PR autopsy - why got stuck, what slowed it down, what helped it get merged
+// Collaboration - what kind of teammate you are, who you unblock, who unblocks you, who trusts you
 
-// ⸻
-
-// 3. Collaboration depth
-// Swarmia counts “who you collaborated with.”
-// You could show how — tone, timing, feedback loops:
-// 	•	“You tend to unblock others within 4 hours.”
-// 	•	“You receive fewer review comments than average — signal of trust or under-reviewing?”
-// 	•	“You’re part of this recurring trio that closes 70% of merged PRs.”
-
-// ➡️ This becomes a “social graph of effectiveness,” not just a roster.
-
-// ⸻
-
-// 4. Narrative and storytelling
-// Swarmia’s UI is tables and charts. Yours could be stories:
-// 	•	“In October, your average PR size dropped by 20%, and your reviews got 40% faster.”
-// 	•	“You collaborated most with Mia and Alex — 6 shared PRs.”
-// 	•	“You closed 3 long-running tasks — the biggest improvements were in onboarding flow.”
+// Executive summary
+// Deep work hours, flow sessions
+// Shipped and reviewed PRs
