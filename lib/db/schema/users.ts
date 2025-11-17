@@ -29,6 +29,9 @@ export const users = pgTable("users", {
   onboardingState: text("onboarding_state").default("need_data_source"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  cliLinkedAt: timestamp("cli_linked_at", { withTimezone: true }),
+  cliLastSyncAt: timestamp("cli_last_sync_at", { withTimezone: true }),
+  cliTokenHash: text("cli_token_hash"),
 });
 
 export type User = InferSelectModel<typeof users>;

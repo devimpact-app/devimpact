@@ -37,9 +37,9 @@ export default async function OnboardingPage() {
 
   switch (state) {
     case "need_data_source":
-      redirect("/onboarding/setup");
-    case "token_provided":
-      redirect("/onboarding/repos");
+      redirect("/onboarding/cli");
+    // case "token_provided":
+    //   redirect("/onboarding/repos");
     case "syncing":
       return <SyncingPage />;
     case "complete":
