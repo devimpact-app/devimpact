@@ -1,32 +1,16 @@
 "use client";
 
-import { TimelineRangeKey } from "@/lib/utils/date";
 import { Calendar, MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export const RANGE_OPTIONS: {
-  key: Partial<TimelineRangeKey>;
-  label: string;
-}[] = [
-  { key: "7d", label: "Last 7 days" },
-  { key: "14d", label: "Last 14 days" },
-  { key: "30d", label: "Last 30 days" },
-];
-
 type Props = {
   userName?: string | null;
-  periodLabel: string; // e.g. "Oct 13 – Nov 12, 2025"
-  range: TimelineRangeKey;
-  onRangeChange?: (range: TimelineRangeKey) => void;
   onSyncClick?: () => void;
   onPrepareReviewClick?: () => void;
 };
 
-export function DashboardHero({
+export function PrepHero({
   userName,
-  periodLabel,
-  range,
-  onRangeChange,
   onSyncClick,
   onPrepareReviewClick,
 }: Props) {
@@ -55,36 +39,15 @@ export function DashboardHero({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
-            Welcome back, {firstName}!
+            Prepare for reviews and growth
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Here&apos;s what&apos;s happening with your work{" "}
-            <span className="text-text-primary/80">({periodLabel})</span>.
+            Your centralized space for review packets, 1:1 preparation, career
+            narratives, and job-search readiness.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-[6px] text-xs sm:text-sm">
-            <Calendar className="h-3.5 w-3.5 text-text-secondary" />
-            <select
-              className="bg-transparent text-xs sm:text-sm text-text-primary outline-none border-none focus:ring-0 cursor-pointer pr-1"
-              value={range}
-              onChange={(e) =>
-                onRangeChange?.(e.target.value as TimelineRangeKey)
-              }
-            >
-              {RANGE_OPTIONS.map((opt) => (
-                <option
-                  key={opt.key}
-                  value={opt.key}
-                  className="bg-[#050608] text-text-primary"
-                >
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        {/* <div className="flex items-center">
           <div className="relative" ref={menuRef}>
             <button
               type="button"
@@ -120,7 +83,7 @@ export function DashboardHero({
               </div>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
     </header>
   );

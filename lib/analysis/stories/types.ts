@@ -1,7 +1,4 @@
-export type StoryId =
-  | "invisible_load.v1"
-  | "productive_windows.v1"
-  | "collaboration_patterns.v1";
+export type StoryId = "invisible_load.v1" | "collaboration_patterns.v1";
 export type StorySeverity = "info" | "notable" | "strong";
 export type StoryIntent = "recognition" | "insight" | "suggestion";
 

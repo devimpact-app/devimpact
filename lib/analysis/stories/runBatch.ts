@@ -1,11 +1,9 @@
 import { generateCollaborationPatternsStory } from "./generateCollaborationPatterns";
 import { generateInvisibleLoad } from "./generateInvisibleLoad";
-import { generateProductiveWindowsStory } from "./generateProductiveWindows";
 import { StoryCard, StoryContext, StoryGenerator, StoryId } from "./types";
 
 const storyRegistry: Record<StoryId, StoryGenerator> = {
   "invisible_load.v1": generateInvisibleLoad,
-  "productive_windows.v1": generateProductiveWindowsStory,
   "collaboration_patterns.v1": generateCollaborationPatternsStory,
 };
 
