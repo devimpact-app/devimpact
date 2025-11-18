@@ -1,120 +1,60 @@
-import { db } from "@/lib/db/client";
-import { fetchUserPRs } from "../api/fetch-user-prs";
-import { fetchReviewedPRs } from "../api/fetch-user-reviewed-prs";
-import { GitHubSearchPullRequest } from "../api/types/PullRequest";
-import { createGitHubClient } from "../client";
-// import {
-//   determineSyncDate,
-//   getSyncStatus,
-//   isInitialSync,
-//   updateSyncStatus,
-// } from "./sync-status";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { hydrateOne } from "./hydrate";
 import { batchNormalizeUserPRs } from "@/lib/analysis/normalizers/pr-normalizer";
-import { persistBundles, PRIngestBundle } from "./persist-bundle";
+import { persistBundles } from "./persist-bundle";
 import { inferTeamMemberships } from "./enrichment/inferTeamMemberships/inferTeamMemberships";
 import { batchNormalizeUserReviews } from "@/lib/analysis/normalizers/review-normalizer";
+import { RepoSyncPayload } from "@/types/api/sync";
+import { getSyncStatus, isInitialSync, updateSyncStatus } from "./sync-status";
+import { upsertGithubRepoForTenant } from "./upsert-repo";
 
 export async function runSync({
   tenantId,
-  githubLogin,
-  scope,
+  payload,
 }: {
   tenantId: string;
-  githubLogin: string;
-  scope: "all" | "authored" | "reviewed";
+  payload: RepoSyncPayload;
 }) {
-  const { octokit, username, authType, selectedRepos } =
-    await createGitHubClient(tenantId);
+  const username = payload.githubLogin;
+  const syncStatus = await getSyncStatus(tenantId);
+  const initialSync = isInitialSync(syncStatus);
+  const since = new Date(payload.syncWindow.startISO);
 
-  // const syncStatus = await getSyncStatus(tenantId);
-  // const since = determineSyncDate(syncStatus);
-  // const initialSync = isInitialSync(syncStatus);
-  const since = new Date(0); // TODO: replace
-  const initialSync = true; // TODO: replace
+  // Save repo info if needed
+  await upsertGithubRepoForTenant(tenantId, payload.repo);
 
-  const targets = new Map<string, GitHubSearchPullRequest>();
-
-  // TODO: API calls in future should be in separate public repo
-
-  let authoredPrTargets: GitHubSearchPullRequest[] = [];
-  if (scope === "all" || scope === "authored") {
-    authoredPrTargets = await fetchUserPRs({
-      repos: selectedRepos || [],
-      username: githubLogin,
-      since,
-      octokit,
-    });
-  }
-  let reviewedPrTargets: GitHubSearchPullRequest[] = [];
-  if (scope === "all" || scope === "reviewed") {
-    reviewedPrTargets = await fetchReviewedPRs({
-      repos: selectedRepos || [],
-      username: githubLogin,
-      since,
-      octokit,
-    });
-  }
-
-  const bundles: PRIngestBundle[] = [];
-  for (const pr of authoredPrTargets) {
-    const bundle = await hydrateOne({
-      pr,
-      mode: "authored",
-      octokit,
-      username,
-    });
-    if (bundle) bundles.push(bundle);
-  }
-  for (const pr of reviewedPrTargets) {
-    const bundle = await hydrateOne({
-      pr,
-      mode: "reviewed",
-      octokit,
-      username,
-    });
-    if (bundle) bundles.push(bundle);
-  }
-
-  // TODO: if bundles coming from CLI, can skip to next part
-
-  const { prIds, errors } = await persistBundles(tenantId, bundles);
-
-  await inferTeamMemberships({
+  const { prIds, errors } = await persistBundles(
     tenantId,
-    prIdsChanged: prIds,
-    since,
-    username,
-  });
-
-  const normalizedPRCount = await batchNormalizeUserPRs(tenantId, username);
-  const normalizedReviewCount = await batchNormalizeUserReviews(
-    tenantId,
-    username,
+    {
+      fullName: payload.repo.fullName,
+      owner: payload.repo.ownerLogin,
+      name: payload.repo.name,
+    },
+    payload.pulls,
   );
+
+  // Normalization and enrichment
+  if (payload.isLastBatch) {
+    await inferTeamMemberships({
+      tenantId,
+      prIdsChanged: prIds,
+      since,
+      username,
+    });
+    await batchNormalizeUserPRs(tenantId, username);
+    await batchNormalizeUserReviews(tenantId, username);
+
+    await updateSyncStatus({
+      tenantId,
+      syncWindow: payload.syncWindow,
+      userLastSyncAt: syncStatus?.lastSyncAt,
+    });
+  }
 
   // TODO: PR summarization - queue in background or do here?
 
-  // await updateSyncStatus(tenantId);
-
-  await db
-    .update(users)
-    .set({ onboardingState: "complete" })
-    .where(eq(users.id, tenantId));
-
   return {
     sync_type: initialSync ? "initial" : "incremental",
-    auth_type: authType,
     errors,
     username,
-    discoveredCount: targets.size,
-    normalizedPRCount,
-    normalizedReviewCount,
-    date_range: {
-      from: since.toISOString(),
-      to: new Date().toISOString(),
-    },
+    date_range: payload.syncWindow,
   };
 }

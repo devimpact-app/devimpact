@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import SyncingPage from "./components/SyncingLoader";
 import { unstable_noStore as noStore } from "next/cache";
 
 function assertNever(x: never): never {

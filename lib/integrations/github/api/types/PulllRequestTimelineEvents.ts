@@ -1,5 +1,3 @@
-// lib/integrations/github/types.ts
-
 /**
  * GitHub Timeline Event
  * Timeline includes ALL events on a PR (review requests, assignments, labels, etc.)

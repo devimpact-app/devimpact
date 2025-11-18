@@ -11,6 +11,7 @@ import { RepoSyncPayloadSchema } from "@/types/api/sync";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { runSync } from "@/lib/integrations/github/sync/orchestrator";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +27,8 @@ export async function POST(req: NextRequest) {
 
     const json = await req.json();
     const payload = RepoSyncPayloadSchema.parse(json);
+    // Some things like updating statuses we only want to do on last batch received
+    const isLastBatch = payload.isLastBatch;
 
     if (user.githubUsername && user.githubUsername !== payload.githubLogin) {
       return jsonBadRequest("GitHub username mismatch");
@@ -45,11 +48,14 @@ export async function POST(req: NextRequest) {
       prs: payload.pulls.length,
     });
 
-    // TODO: trigger sync orchestrator
+    const results = await runSync({
+      tenantId: user.id,
+      payload,
+    });
 
     return jsonOK({
-      ok: true,
       userId: user.id,
+      ...results,
     });
   } catch (err: any) {
     if (err instanceof z.ZodError) {

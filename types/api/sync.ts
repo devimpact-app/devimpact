@@ -27,6 +27,8 @@ export const RepoMetadataSchema = z.object({
   pushedAt: z.string().nullable(),
 });
 
+export type RepoMetadata = z.infer<typeof RepoMetadataSchema>;
+
 export const HydratedPrSchema = z.object({
   pr: z.custom<GitHubSearchPullRequest>(),
 
@@ -45,4 +47,7 @@ export const RepoSyncPayloadSchema = z.object({
     endISO: z.string(),
   }),
   githubLogin: z.string(),
+  isLastBatch: z.boolean(),
 });
+
+export type RepoSyncPayload = z.infer<typeof RepoSyncPayloadSchema>;
