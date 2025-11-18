@@ -6,18 +6,7 @@ import { eq } from "drizzle-orm";
 import { jsonOK, jsonUnauthorized } from "../../_lib/http";
 import { NextRequest } from "next/server";
 import { hashCliToken } from "@/lib/utils/crypto";
-
-async function getUserFromCliToken(rawToken: string): Promise<User | null> {
-  const hashed = hashCliToken(rawToken);
-
-  const rows = await db
-    .select()
-    .from(users)
-    .where(eq(users.cliTokenHash, hashed))
-    .limit(1);
-
-  return rows[0] ?? null;
-}
+import { getUserFromCliToken } from "../utils";
 
 export async function GET(req: NextRequest) {
   const cliToken = req.headers.get("x-devimpact-cli-token");
