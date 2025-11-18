@@ -11,7 +11,16 @@ export default function TopBar() {
       <nav className="flex items-center gap-4">
         <a
           href="/login"
-          className="rounded-xl bg-accent hover:bg-accent-hover text-white px-4 py-2 font-semibold transition-colors"
+          className="
+    rounded-xl 
+    border border-[#283047] 
+    bg-transparent 
+    px-4 py-2 
+    text-sm font-medium text-[#E2E6FF]
+    hover:bg-[#0E1220]
+    hover:border-[#3B4A78]
+    transition
+  "
         >
           Log in
         </a>

@@ -8,33 +8,27 @@ export default function FAQ() {
   const faqs = [
     {
       question: "Is this a surveillance tool?",
-      answer:
-        "No. DevImpact is built FOR engineers, not to monitor them. Your data is private by default. You control what to share and when. We don't build team rankings, productivity scores, or manager-only dashboards.",
-    },
-    {
-      question: "Can my manager see my data?",
-      answer:
-        "Only what you choose to share. By default, everything in DevImpact is private to you. You can export summaries to share during reviews, but nothing is automatically visible to managers.",
+      answer: `No. DevImpact is for you, not your manager.
+  Only you can see your dashboard unless you choose to share exports.`,
     },
     {
       question: "How much does it cost?",
-      answer:
-        "DevImpact is free during beta. After launch, we'll offer a free tier (basic features) and Pro tier (~$10/month) with better summaries, unlimited history, and advanced insights. Beta users get 50% off forever.",
+      answer: "DevImpact is free during private beta. Later pricing TBD",
     },
     {
       question: "What data do you collect?",
-      answer:
-        "We sync GitHub metadata (PR titles, reviews, commits - not code) and optionally Google Calendar events (meeting titles, duration). Just enough to track your contributions and understand your time. Everything is encrypted and private to you. Your code and meeting details stay private. Always.",
+      answer: `Right now: PR metadata, commits, reviews, and comments from the repos you 
+  point the CLI at. No code content is analyzed or stored in this alpha.`,
     },
     {
       question: "How long does setup take?",
-      answer:
-        "30 seconds to connect. Depending on your company's GitHub settings, you may need org admin approval to access private repos. We'll let you know during setup if approval is required.",
+      answer: `About 1–2 minutes. Sign in with GitHub, run one CLI command, and select your repos.`,
     },
     {
       question: "Do I need to use it every day?",
-      answer:
-        "No. DevImpact works in the background. Check it when you need it—during review prep, promotion packet writing, or updating your resume. Most engineers use it quarterly.",
+      answer: `No. DevImpact isn’t something you need to check every day. A good baseline would be to use it once a week — usually before a 1:1 or when preparing a review packet. 
+        Your data updates whenever you run the CLI sync. You can run it daily, weekly, or
+just when you want an updated view of your recent work. Up to you.`,
     },
   ];
 
@@ -50,7 +44,7 @@ export default function FAQ() {
         />
       </div>
 
-      <div className="relative mx-auto max-w-4xl px-6 py-24">
+      <div className="relative mx-auto max-w-4xl px-6 pb-20">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-extrabold tracking-tight text-text-primary">
             Frequently Asked Questions
@@ -103,7 +97,7 @@ export default function FAQ() {
         <div className="mt-16 text-center">
           <p className="text-text-secondary mb-4">Have more questions?</p>
           <a
-            href="mailto:hello@devimpact.app"
+            href="mailto:ian@devimpact.app"
             className="inline-flex items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 font-medium text-text-primary hover:border-[oklch(0.65_0.05_255)] transition-colors"
           >
             Get in touch
