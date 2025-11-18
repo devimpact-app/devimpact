@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       .update(users)
       .set({
         cliLinkedAt: new Date(),
+        onboardingState: "cli_linked",
       })
       .where(eq(users.id, user.id));
 

@@ -18,8 +18,8 @@ export const githubPrs = pgTable(
     // Identity
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: uuid("tenant_id")
-      .references(() => users.id)
-      .notNull(),
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
 
     // PR identification
     externalId: text("external_id").notNull(), // GitHub's PR ID
@@ -67,8 +67,8 @@ export const githubPrCommits = pgTable(
     // Identity
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: uuid("tenant_id")
-      .references(() => users.id)
-      .notNull(),
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     prId: uuid("pr_id")
       .references(() => githubPrs.id)
       .notNull(),
@@ -106,8 +106,8 @@ export const githubPrFiles = pgTable(
     // Identity
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: uuid("tenant_id")
-      .references(() => users.id)
-      .notNull(),
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     prId: uuid("pr_id")
       .references(() => githubPrs.id)
       .notNull(),
@@ -157,8 +157,8 @@ export const githubReviews = pgTable(
       .references(() => githubPrs.id)
       .notNull(),
     tenantId: uuid("tenant_id")
-      .references(() => users.id)
-      .notNull(),
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
 
     // GitHub's review ID (used to link review comments)
     reviewId: text("review_id").notNull(), // ✅ This is what review_comments references
@@ -209,8 +209,8 @@ export const githubReviewComments = pgTable(
       .notNull(),
     reviewId: uuid("review_id").references(() => githubReviews.id), // Nullable (standalone comments)
     tenantId: uuid("tenant_id")
-      .references(() => users.id)
-      .notNull(), // Whose data this is
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
 
     // GitHub IDs
     commentId: text("comment_id").notNull(), // GitHub's comment ID
@@ -274,8 +274,8 @@ export const githubTimelineEvents = pgTable(
       .references(() => githubPrs.id)
       .notNull(),
     tenantId: uuid("tenant_id")
-      .references(() => users.id)
-      .notNull(),
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
 
     // GitHub ID
     eventId: text("event_id"), // GitHub's event ID (nullable - some events don't have it)
@@ -375,8 +375,8 @@ export const githubRawData = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: uuid("tenant_id")
-      .references(() => users.id)
-      .notNull(),
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     dataType: text("data_type").notNull(), // 'pr', 'review'
     externalId: text("external_id").notNull(),
     repoFullName: text("repo_full_name").notNull(), // "eng-coach/eng-coach"

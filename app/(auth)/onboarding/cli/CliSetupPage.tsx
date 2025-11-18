@@ -16,17 +16,18 @@ import useSWR from "swr";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function CliSetupPageShell({ userName }: { userName?: string | null }) {
-  const { data: status, isLoading } = useSWR<CliStatus>(
+  const { data: res, isLoading } = useSWR<{ data: CliStatus }>(
     "/api/cli/status",
     fetcher,
     {
       // don't start polling until we have data
-      refreshInterval(data) {
-        if (!data) return 0;
-        return data.onboardingState === "synced" ? 0 : 10_000;
+      refreshInterval(res) {
+        if (!res) return 0;
+        return res.data.onboardingState === "synced" ? 0 : 10_000;
       },
     },
   );
+  const status = res?.data;
 
   if (isLoading || !status) {
     return (
@@ -62,6 +63,8 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  console.log("Status:", status);
 
   const firstName = userName ? userName.split(" ")[0] : "there";
 

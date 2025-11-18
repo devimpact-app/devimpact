@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   await db
     .update(users)
-    .set({ cliTokenHash: tokenHash })
+    .set({ cliTokenHash: tokenHash, onboardingState: "cli_pending" })
     .where(eq(users.id, session.user.id));
 
   return NextResponse.json({ cliToken: plainToken });
