@@ -1,7 +1,6 @@
 export default function TopBar() {
   return (
     <header className="w-full flex items-center justify-between px-6 py-4">
-      {/* Brand */}
       <a
         href="/"
         className="text-lg font-semibold text-text-primary tracking-tight"
@@ -9,7 +8,6 @@ export default function TopBar() {
         DevImpact
       </a>
 
-      {/* Right Side */}
       <nav className="flex items-center gap-4">
         <a
           href="/login"

@@ -56,32 +56,3 @@ export const integrationTokens = pgTable(
 );
 
 export type IntegrationToken = InferSelectModel<typeof integrationTokens>;
-
-export const repositories = pgTable(
-  "repositories",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    externalId: text("external_id").notNull(), // GitHub's PR ID
-    externalNodeId: text("external_node_id").notNull(), // GitHub's PR Node ID
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }), // tenant=user for now
-    provider: text("provider").notNull(), // 'github'
-    fullName: text("full_name").notNull(), // 'owner/repo'
-    name: text("name").notNull(),
-    owner: text("owner").notNull(), // org or username
-    isPrivate: boolean("is_private").notNull().default(true),
-
-    // minimal per-repo state you’ll need immediately
-    selected: boolean("selected").notNull().default(true),
-    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
-    syncCursor: text("sync_cursor"),
-    syncError: text("sync_error"),
-  },
-  (t) => ({
-    uniqPerTenant: unique().on(t.tenantId, t.provider, t.fullName), // start with fullName; upgrade to providerRepoId later
-    idxTenant: index("repos_tenant_idx").on(t.tenantId),
-  }),
-);
-
-export type RepositoryCreateInput = InferInsertModel<typeof repositories>;

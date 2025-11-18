@@ -65,7 +65,6 @@ export function EventInspectorPanel({
     "
     >
       <header className="flex items-start justify-between">
-        {/* Left: Kind + Time */}
         <div className="flex flex-col gap-1">
           <div className="inline-flex items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full border border-border py-[2px] text-[11px] text-text-secondary bg-surface/80">
@@ -80,7 +79,6 @@ export function EventInspectorPanel({
           </span>
         </div>
 
-        {/* Right: Close button */}
         <button
           onClick={onClose}
           className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border text-text-secondary hover:text-text-primary hover:bg-surface/80 ml-2"
@@ -90,7 +88,6 @@ export function EventInspectorPanel({
         </button>
       </header>
 
-      {/* Title + Subtitle */}
       <div className="mt-6 space-y-0.5">
         <h2 className="text-sm font-semibold text-text-primary line-clamp-2">
           {event.title}
@@ -100,9 +97,7 @@ export function EventInspectorPanel({
         )}
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto mt-4 space-y-4">
-        {/* Actor / who did this */}
         <div className="flex items-center gap-2 text-xs text-text-secondary">
           {event.actor.avatarUrl && (
             <img
@@ -135,7 +130,6 @@ export function EventInspectorPanel({
           </a>
         ) : null}
 
-        {/* Summary stub (later can be AI-generated) */}
         <section>
           <h3 className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-1.5">
             Summary
@@ -152,7 +146,6 @@ export function EventInspectorPanel({
           </p>
         </section>
 
-        {/* Meta metrics */}
         {hasMeta && (
           <section>
             <h3 className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-1.5">
@@ -213,7 +206,6 @@ export function EventInspectorPanel({
           </section>
         )}
 
-        {/* Repo / PR identifiers */}
         {(event.meta?.repoFullName || event.meta?.prNumber) && (
           <section>
             <h3 className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-1.5">

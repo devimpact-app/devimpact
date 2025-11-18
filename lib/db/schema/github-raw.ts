@@ -335,6 +335,40 @@ export const githubTimelineEvents = pgTable(
 
 export type GithubTimelineEvent = typeof githubTimelineEvents.$inferSelect;
 
+export const githubRepos = pgTable(
+  "github_repos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    isSelected: boolean("is_selected").notNull().default(true),
+
+    githubRepoId: text("github_repo_id").notNull(),
+    owner: text("owner").notNull(), // org or username
+    name: text("name").notNull(),
+    fullName: text("full_name").notNull(), // 'owner/repo'
+    isPrivate: boolean("is_private").notNull().default(true),
+    isArchived: boolean("is_archived").notNull().default(false),
+    visibility: text("visibility").notNull().default("private"),
+
+    defaultBranch: text("default_branch").notNull().default("main"),
+    primaryLanguage: text("primary_language"),
+    createdAtGitHub: timestamp("created_at_github", {
+      withTimezone: true,
+    }),
+    pushedAtGitHub: timestamp("pushed_at_github", {
+      withTimezone: true,
+    }),
+  },
+  (t) => ({
+    uniqPerTenant: unique().on(t.tenantId, t.githubRepoId),
+    idxTenant: index("repos_tenant_idx").on(t.tenantId),
+  }),
+);
+
+export type RepositoryCreateInput = InferInsertModel<typeof githubRepos>;
+
 // Raw responses
 export const githubRawData = pgTable(
   "github_raw_data",

@@ -3,9 +3,8 @@ import { db } from "@/lib/db/client";
 import {
   IntegrationToken,
   integrationTokens,
-  repositories,
+  githubRepos,
 } from "@/lib/db/schema";
-import { decrypt } from "@/lib/utils/crypto";
 import { and, desc, eq, or } from "drizzle-orm";
 
 export type GitHubAuthType = "pat" | "oauth" | "app";
@@ -55,20 +54,21 @@ export async function createGitHubClient(
 
   const tenantRepos = await db
     .select()
-    .from(repositories)
-    .where(eq(repositories.tenantId, userId));
+    .from(githubRepos)
+    .where(eq(githubRepos.tenantId, userId));
   const selectedRepos =
     tenantRepos.length > 0 ? tenantRepos.map((r) => r.fullName) : null;
-  if (
-    activeToken &&
-    (activeToken.tokenType === "pat" || activeToken.tokenType === "classic_pat")
-  ) {
-    // Classic PAT or Fine-grained PAT
-    const token = decrypt(activeToken.accessToken);
-    octokit = new Octokit({ auth: token });
-    authType = "pat";
-    orgName = activeToken.orgLogin || null;
-  } else if (activeToken && activeToken.tokenType === "oauth") {
+  // if (
+  //   activeToken &&
+  //   (activeToken.tokenType === "pat" || activeToken.tokenType === "classic_pat")
+  // ) {
+  //   // Classic PAT or Fine-grained PAT
+  //   const token = decrypt(activeToken.accessToken);
+  //   octokit = new Octokit({ auth: token });
+  //   authType = "pat";
+  //   orgName = activeToken.orgLogin || null;
+  // } else
+  if (activeToken && activeToken.tokenType === "oauth") {
     // OAuth token from login
     octokit = new Octokit({ auth: activeToken.accessToken });
     authType = "oauth";

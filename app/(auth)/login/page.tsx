@@ -7,9 +7,7 @@ export default async function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-text-primary flex items-center justify-center relative overflow-hidden px-4">
-      {/* card */}
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface-alt backdrop-blur p-8 shadow-xl">
-        {/* brand / heading */}
         <div className="text-center">
           <a
             href="/"
@@ -23,7 +21,6 @@ export default async function LoginPage() {
           </p>
         </div>
 
-        {/* sign-in */}
         <form
           className="mt-8"
           action={async () => {
@@ -52,12 +49,10 @@ export default async function LoginPage() {
           </button>
         </form>
 
-        {/* secondary / reassurance */}
         <div className="mt-6 text-center text-sm text-text-secondary">
           Private by default. You control integrations and sharing.
         </div>
 
-        {/* tiny links */}
         <div className="mt-3 flex justify-center gap-4 text-xs text-text-secondary">
           <a href="/privacy" className="hover:text-text-primary">
             Privacy

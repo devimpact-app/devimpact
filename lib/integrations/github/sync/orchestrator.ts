@@ -3,12 +3,12 @@ import { fetchUserPRs } from "../api/fetch-user-prs";
 import { fetchReviewedPRs } from "../api/fetch-user-reviewed-prs";
 import { GitHubSearchPullRequest } from "../api/types/PullRequest";
 import { createGitHubClient } from "../client";
-import {
-  determineSyncDate,
-  getSyncStatus,
-  isInitialSync,
-  updateSyncStatus,
-} from "./sync-status";
+// import {
+//   determineSyncDate,
+//   getSyncStatus,
+//   isInitialSync,
+//   updateSyncStatus,
+// } from "./sync-status";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { hydrateOne } from "./hydrate";
@@ -29,9 +29,11 @@ export async function runSync({
   const { octokit, username, authType, selectedRepos } =
     await createGitHubClient(tenantId);
 
-  const syncStatus = await getSyncStatus(tenantId);
-  const since = determineSyncDate(syncStatus);
-  const initialSync = isInitialSync(syncStatus);
+  // const syncStatus = await getSyncStatus(tenantId);
+  // const since = determineSyncDate(syncStatus);
+  // const initialSync = isInitialSync(syncStatus);
+  const since = new Date(0); // TODO: replace
+  const initialSync = true; // TODO: replace
 
   const targets = new Map<string, GitHubSearchPullRequest>();
 
@@ -95,7 +97,7 @@ export async function runSync({
 
   // TODO: PR summarization - queue in background or do here?
 
-  await updateSyncStatus(tenantId);
+  // await updateSyncStatus(tenantId);
 
   await db
     .update(users)

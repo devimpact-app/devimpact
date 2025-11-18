@@ -305,7 +305,6 @@ export default function DashboardClient({ user }: Props) {
         </div>
       </div>
 
-      {/* Recent work - with header */}
       <div>
         <RecentActivitySummaryCard
           periodLabel={rangeLabel}

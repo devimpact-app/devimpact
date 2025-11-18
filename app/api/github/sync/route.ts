@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getActiveIntegrationToken } from "@/lib/integrations/github/client";
 import { db } from "@/lib/db/client";
-import { repositories, RepositoryCreateInput, users } from "@/lib/db/schema";
+import { githubRepos, RepositoryCreateInput, users } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { runSync } from "@/lib/integrations/github/sync/orchestrator";
 
@@ -43,17 +43,15 @@ export async function POST(request: Request) {
       const repoValues: RepositoryCreateInput[] = selectedRepos.map(
         (repo: any) => ({
           tenantId: session.user.id,
-          provider: "github",
           fullName: repo.full_name,
           name: repo.full_name.split("/")[1],
           owner: repo.full_name.split("/")[0],
           externalId: repo.id,
-          externalNodeId: repo.node_id,
           isPrivate: repo.private,
           selected: true,
         }),
       );
-      await db.insert(repositories).values(repoValues).onConflictDoNothing();
+      await db.insert(githubRepos).values(repoValues).onConflictDoNothing();
     }
 
     // If initial sync, also update user

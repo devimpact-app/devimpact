@@ -23,7 +23,6 @@ export function WorkRhythmCardSkeleton({
         animate-pulse
       "
     >
-      {/* Header */}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -46,7 +45,6 @@ export function WorkRhythmCardSkeleton({
         </div>
       </header>
 
-      {/* Heatmap skeleton */}
       <div className="relative flex flex-col gap-2">
         <div
           className="
@@ -58,7 +56,6 @@ export function WorkRhythmCardSkeleton({
             relative
           "
         >
-          {/* bands + columns as grey pills */}
           <div className="absolute inset-1 flex">
             <div className="flex flex-col justify-between mr-1">
               {["Early", "AM", "PM", "Eve"].map((t) => (
@@ -73,7 +70,6 @@ export function WorkRhythmCardSkeleton({
           </div>
         </div>
 
-        {/* weekday labels skeleton */}
         <div className="flex justify-between px-1">
           {Array.from({ length: 7 }).map((_, i) => (
             <span key={i} className="h-2 w-6 rounded bg-[#151A28]" />
@@ -81,7 +77,6 @@ export function WorkRhythmCardSkeleton({
         </div>
       </div>
 
-      {/* Text skeleton */}
       <div className="mt-3 space-y-2">
         <p className="text-[11px] text-[#4C5B86]">
           Building your typical week based on {windowLabel}…

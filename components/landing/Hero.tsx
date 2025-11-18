@@ -38,7 +38,6 @@ export default function Hero() {
           </a>
         </div>
 
-        {/* tiny trust row */}
         <p className="mt-6 text-sm text-text-secondary">
           Private by default · You control what’s shared. No team access
           required.

@@ -10,7 +10,7 @@ import {
   Copy,
   RefreshCw,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -55,6 +55,8 @@ type CliSetupPageProps = {
   status: CliStatus;
 };
 
+const STORAGE_KEY = "devimpact_cli_token";
+
 export function CliSetupPage({ userName, status }: CliSetupPageProps) {
   const [cliToken, setCliToken] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -62,6 +64,20 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
   const [copied, setCopied] = useState(false);
 
   const firstName = userName ? userName.split(" ")[0] : "there";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setCliToken(stored);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status?.onboardingState === "synced" && typeof window !== "undefined") {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }, [status?.onboardingState]);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -71,6 +87,8 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
       if (!res.ok) throw new Error("Failed to generate CLI token");
       const data = await res.json();
       setCliToken(data.cliToken);
+      // Save in browser memory so lasts across refresh
+      sessionStorage.setItem(STORAGE_KEY, data.cliToken);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -109,7 +127,14 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
             CLI Status
           </div>
           <div className="mt-1 text-sm flex items-center gap-2">
-            {status.hasCliToken ? (
+            {status.cliLinkedAt ? (
+              <>
+                <AlertCircle className="h-4 w-4 text-amber-400" />
+                <span className="text-text-primary">
+                  CLI linked to your account
+                </span>
+              </>
+            ) : status.hasCliToken ? (
               <>
                 <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                 <span className="text-text-primary">CLI key issued</span>

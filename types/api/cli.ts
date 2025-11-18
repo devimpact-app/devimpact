@@ -11,4 +11,5 @@ export type CliStatus = {
   cliLinkedAt?: string | null;
   hasActivity: boolean;
   lastSyncAt?: string | null;
+  recommendedStartISO: string;
 };
