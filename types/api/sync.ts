@@ -1,12 +1,12 @@
 import {
-  GitHubPRCommit,
-  GitHubPRFile,
-  GitHubReview,
-  GitHubReviewComment,
-  GitHubTimelineEvent,
-} from "@/lib/integrations/github/api/types";
-import { GitHubSearchPullRequest } from "@/lib/integrations/github/api/types/PullRequest";
-import z from "zod";
+  SanitizedPR,
+  SanitizedPRCommit,
+  SanitizedPRFile,
+  SanitizedPRReview,
+  SanitizedPRReviewComment,
+  SanitizedPRTimelineEvent,
+} from '@/lib/integrations/github/types'
+import z from 'zod'
 
 export const RepoMetadataSchema = z.object({
   id: z.number(),
@@ -18,26 +18,26 @@ export const RepoMetadataSchema = z.object({
   private: z.boolean(),
   fork: z.boolean(),
   archived: z.boolean(),
-  visibility: z.enum(["public", "private", "internal"]),
+  visibility: z.enum(['public', 'private', 'internal']),
 
   defaultBranch: z.string(),
   primaryLanguage: z.string().nullable(),
 
   createdAt: z.string().nullable(),
   pushedAt: z.string().nullable(),
-});
+})
 
-export type RepoMetadata = z.infer<typeof RepoMetadataSchema>;
+export type RepoMetadata = z.infer<typeof RepoMetadataSchema>
 
 export const HydratedPrSchema = z.object({
-  pr: z.custom<GitHubSearchPullRequest>(),
+  pr: z.custom<SanitizedPR>(),
 
-  commits: z.array(z.custom<GitHubPRCommit>()),
-  files: z.array(z.custom<GitHubPRFile>()),
-  reviews: z.array(z.custom<GitHubReview>()),
-  reviewComments: z.array(z.custom<GitHubReviewComment>()),
-  timelineEvents: z.array(z.custom<GitHubTimelineEvent>()),
-});
+  commits: z.array(z.custom<SanitizedPRCommit>()),
+  files: z.array(z.custom<SanitizedPRFile>()),
+  reviews: z.array(z.custom<SanitizedPRReview>()),
+  reviewComments: z.array(z.custom<SanitizedPRReviewComment>()),
+  timelineEvents: z.array(z.custom<SanitizedPRTimelineEvent>()),
+})
 
 export const RepoSyncPayloadSchema = z.object({
   repo: RepoMetadataSchema,
@@ -48,6 +48,6 @@ export const RepoSyncPayloadSchema = z.object({
   }),
   githubLogin: z.string(),
   isLastBatch: z.boolean(),
-});
+})
 
-export type RepoSyncPayload = z.infer<typeof RepoSyncPayloadSchema>;
+export type RepoSyncPayload = z.infer<typeof RepoSyncPayloadSchema>

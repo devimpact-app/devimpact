@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { CliStatus } from "@/types/api/cli";
+import { CliStatus } from '@/types/api/cli'
 import {
   Terminal,
   KeyRound,
@@ -11,25 +11,42 @@ import {
   RefreshCw,
   Loader2,
   Check,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import useSWR from "swr";
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export function CliSetupPageShell({ userName }: { userName?: string | null }) {
+  const router = useRouter()
+  const [hasRedirected, setHasRedirected] = useState(false)
+
   const { data: res, isLoading } = useSWR<{ data: CliStatus }>(
-    "/api/cli/status",
+    '/api/cli/status',
     fetcher,
     {
       // don't start polling until we have data
       refreshInterval(res) {
-        if (!res) return 0;
-        return res.data.onboardingState === "synced" ? 0 : 5_000;
+        if (!res) return 0
+        return res.data.onboardingState === 'synced' ? 0 : 5_000
       },
-    },
-  );
-  const status = res?.data;
+    }
+  )
+  const status = res?.data
+
+  useEffect(() => {
+    if (!status) return
+    if (status.onboardingState !== 'synced') return
+    if (hasRedirected) return
+
+    setHasRedirected(true)
+    const timeout = setTimeout(() => {
+      router.push('/dashboard')
+    }, 1500)
+
+    return () => clearTimeout(timeout)
+  }, [status, hasRedirected, router])
 
   if (isLoading || !status) {
     return (
@@ -47,89 +64,98 @@ export function CliSetupPageShell({ userName }: { userName?: string | null }) {
           <div className="h-14 rounded-xl border border-white/10 bg-[#11151F] animate-pulse" />
         </div>
       </div>
-    );
+    )
   }
 
-  return <CliSetupPage status={status} userName={userName} />;
+  return <CliSetupPage status={status} userName={userName} />
 }
 
 type CliSetupPageProps = {
-  userName?: string | null;
-  status: CliStatus;
-};
+  userName?: string | null
+  status: CliStatus
+}
 
-const STORAGE_KEY = "devimpact_cli_token";
+const STORAGE_KEY = 'devimpact_cli_token'
 
 export function CliSetupPage({ userName, status }: CliSetupPageProps) {
-  const [cliToken, setCliToken] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [cliToken, setCliToken] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  const firstName = userName ? userName.split(" ")[0] : "there";
+  const firstName = userName ? userName.split(' ')[0] : 'there'
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (typeof window === 'undefined') return
+    const stored = sessionStorage.getItem(STORAGE_KEY)
     if (stored) {
-      setCliToken(stored);
+      setCliToken(stored)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    if (status?.onboardingState === "synced" && typeof window !== "undefined") {
-      sessionStorage.removeItem(STORAGE_KEY);
+    if (status?.onboardingState === 'synced' && typeof window !== 'undefined') {
+      sessionStorage.removeItem(STORAGE_KEY)
     }
-  }, [status?.onboardingState]);
+  }, [status?.onboardingState])
 
   async function handleGenerate() {
-    setGenerating(true);
-    setError(null);
+    setGenerating(true)
+    setError(null)
     try {
-      const res = await fetch("/api/cli/token", { method: "POST" });
-      if (!res.ok) throw new Error("Failed to generate CLI token");
-      const data = await res.json();
-      setCliToken(data.cliToken);
+      const res = await fetch('/api/cli/token', { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to generate CLI token')
+      const data = await res.json()
+      setCliToken(data.cliToken)
       // Save in browser memory so lasts across refresh
-      sessionStorage.setItem(STORAGE_KEY, data.cliToken);
+      sessionStorage.setItem(STORAGE_KEY, data.cliToken)
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || 'Something went wrong')
     } finally {
-      setGenerating(false);
+      setGenerating(false)
     }
   }
 
   async function handleCopy() {
-    if (!cliToken) return;
+    if (!cliToken) return
     try {
-      await navigator.clipboard.writeText(cliToken);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(cliToken)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
     } catch {}
   }
 
-  const hasCliToken = !!cliToken || status.hasCliToken;
-  const state = status.onboardingState;
+  const hasCliToken = !!cliToken || status.hasCliToken
+  const state = status.onboardingState
 
-  const step1Expanded = state === "account_created" || state === "cli_pending";
-  const step1Completed = hasCliToken;
+  const step1Expanded = state === 'account_created' || state === 'cli_pending'
+  const step1Completed = hasCliToken
 
-  const step2Enabled = step1Completed;
-  const step2Expanded = step2Enabled && state === "cli_pending";
+  const step2Enabled = step1Completed
+  const step2Expanded = step2Enabled && state === 'cli_pending'
 
-  const step3Enabled = state === "cli_linked" || state === "syncing";
-  const step3Expanded = state === "cli_linked" || state === "syncing";
-  const isSyncing = state === "syncing";
+  const step3Enabled = state === 'cli_linked' || state === 'syncing'
+  const step3Expanded = state === 'cli_linked' || state === 'syncing'
+  const isSyncing = state === 'syncing'
 
   return (
     <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      {status.onboardingState === 'synced' && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs text-emerald-50">
+          <CheckCircle2 className="h-4 w-4" />
+          <span>
+            Your first sync is complete. Redirecting you to your dashboard…
+          </span>
+        </div>
+      )}
+
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
             Welcome, {firstName}.
           </h1>
           <p className="mt-2 text-sm text-text-secondary max-w-xl">
-            DevImpact runs as a CLI on{" "}
+            DevImpact runs as a CLI on{' '}
             <span className="text-text-primary/90">your</span> machine, using
             the official GitHub CLI under your account. You stay in control of
             your code and permissions&mdash;we only see the activity data you
@@ -144,7 +170,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
             className={`
       rounded-2xl border px-5 py-4 flex flex-col gap-3
       bg-surface-alt border-border
-      ${!step1Expanded ? "opacity-80" : ""}
+      ${!step1Expanded ? 'opacity-80' : ''}
     `}
           >
             <div className="flex items-center justify-between gap-2">
@@ -188,7 +214,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
                         className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#111520] px-2.5 py-1.5 text-[11px] text-white/80 hover:bg-[#171C2B]"
                       >
                         <Copy className="h-3.5 w-3.5" />
-                        {copied ? "Copied" : "Copy"}
+                        {copied ? 'Copied' : 'Copy'}
                       </button>
                     </div>
                     <button
@@ -198,7 +224,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
                       className="inline-flex items-center gap-1 text-[11px] text-text-secondary hover:text-text-primary mt-1"
                     >
                       <RefreshCw className="h-3.5 w-3.5" />
-                      {generating ? "Rotating key…" : "Rotate key"}
+                      {generating ? 'Rotating key…' : 'Rotate key'}
                     </button>
                   </div>
                 ) : (
@@ -235,7 +261,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
             className={`
       rounded-2xl border px-5 py-4 flex flex-col gap-3
       bg-surface-alt border-border
-      ${!step2Enabled ? "opacity-40 pointer-events-none" : ""}
+      ${!step2Enabled ? 'opacity-40 pointer-events-none' : ''}
     `}
           >
             <div className="flex items-center justify-between gap-2">
@@ -249,7 +275,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
                   </h2>
                   <p className="text-[11px] text-text-secondary mt-0.5">
                     DevImpact piggybacks on your existing GitHub auth. We never
-                    see your PAT or password — we only talk to{" "}
+                    see your PAT or password — we only talk to{' '}
                     <code className="text-[10px]">gh api</code>.
                   </p>
                 </div>
@@ -276,7 +302,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
                   </p>
                   <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-[11px] text-[#D0E1FF] overflow-x-auto">
                     <code>
-                      brew install gh{"\n"}
+                      brew install gh{'\n'}
                       gh auth login
                     </code>
                   </pre>
@@ -311,8 +337,8 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
           <section
             className={`
     rounded-2xl border px-5 py-4 flex flex-col gap-3
-    ${isSyncing ? "border-[#4F46E5] bg-[#111728] animate-pulse" : "bg-surface-alt border-border"}
-    ${!step3Enabled ? "opacity-40 pointer-events-none" : ""}
+    ${isSyncing ? 'border-[#4F46E5] bg-[#111728] animate-pulse' : 'bg-surface-alt border-border'}
+    ${!step3Enabled ? 'opacity-40 pointer-events-none' : ''}
   `}
           >
             <div className="flex items-center justify-between gap-2">
@@ -326,7 +352,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
                 </p>
                 {isSyncing && (
                   <p className="mt-1 text-[10px] text-text-secondary">
-                    A basic sync usually takes{" "}
+                    A basic sync usually takes{' '}
                     <span className="font-medium">20–60 seconds</span>,
                     depending on repo size.
                   </p>
@@ -374,8 +400,8 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
                     </p>
 
                     <p className="text-[11px] text-text-secondary leading-snug">
-                      Once this finishes, your dashboard will unlock with your{" "}
-                      <span className="font-medium">weekly pulse</span>,{" "}
+                      Once this finishes, your dashboard will unlock with your{' '}
+                      <span className="font-medium">weekly pulse</span>,{' '}
                       <span className="font-medium">work rhythm heatmap</span>,
                       and <span className="font-medium">1:1 prep view</span>.
                     </p>
@@ -389,7 +415,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
                       <code>devimpact sync --repo my-org/my-service</code>
                     </pre>
                     <p className="text-[11px] text-text-secondary leading-snug">
-                      DevImpact will use{" "}
+                      DevImpact will use{' '}
                       <code className="text-[10px]">gh api</code> to read your
                       PRs, reviews, and commits and attach them to your account.
                       You stay in control of your GitHub auth and can revoke
@@ -414,7 +440,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
             <ul className="space-y-2 text-[11px] text-text-secondary leading-relaxed">
               <li>
                 • We never see your GitHub password or PAT. All API calls go
-                through your local <code className="text-[10px]">gh</code>{" "}
+                through your local <code className="text-[10px]">gh</code>{' '}
                 session.
               </li>
               <li>
@@ -424,7 +450,7 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
               </li>
               <li>
                 • You can rotate your CLI key or stop syncing at any time.
-                Removing <code className="text-[10px]">gh auth</code>{" "}
+                Removing <code className="text-[10px]">gh auth</code>{' '}
                 immediately cuts off access.
               </li>
             </ul>
@@ -432,5 +458,5 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
         </aside>
       </section>
     </main>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import { db } from "@/lib/db/client";
+import { db } from '@/lib/db/client'
 import {
   githubPrs,
   githubReviews,
@@ -8,9 +8,9 @@ import {
   GithubTimelineEvent,
   GithubReview,
   GithubReviewComment,
-} from "@/lib/db/schema/github-raw";
-import { reviews } from "@/lib/db/schema/github-normalized";
-import { eq, and, inArray } from "drizzle-orm";
+} from '@/lib/db/schema/github-raw'
+import { reviews } from '@/lib/db/schema/github-normalized'
+import { eq, and, inArray, or, isNull, gt } from 'drizzle-orm'
 import {
   computeCycles,
   diffSecondsRounded,
@@ -19,22 +19,51 @@ import {
   lastBefore,
   normState,
   sortAndBound,
-} from "./helpers";
+} from './helpers'
 
 export async function batchNormalizeUserReviews(
   userId: string,
   username: string,
+  normalizedPrIds: string[]
 ): Promise<number> {
   const rawReviews = await db
     .select()
     .from(githubReviews)
-    .where(eq(githubReviews.tenantId, userId));
+    .where(
+      and(
+        eq(githubReviews.tenantId, userId),
+        inArray(githubReviews.prId, normalizedPrIds)
+      )
+    )
+  const reviewsNeedingNormalization = await db
+    .select({
+      raw: githubReviews,
+      norm: reviews,
+    })
+    .from(githubReviews)
+    .leftJoin(
+      reviews,
+      and(
+        eq(reviews.tenantId, githubReviews.tenantId),
+        eq(reviews.githubReviewId, githubReviews.reviewId)
+      )
+    )
+    .where(
+      and(
+        eq(githubReviews.tenantId, userId),
+        inArray(githubReviews.prId, normalizedPrIds)
+      )
+    )
 
-  if (rawReviews.length === 0) return 0;
+  if (reviewsNeedingNormalization.length === 0) return 0
 
-  console.log(`Normalizing ${rawReviews.length} reviews for user ${userId}`);
+  console.log(
+    `Normalizing ${reviewsNeedingNormalization.length} reviews for user ${userId}`
+  )
 
-  const prIds = Array.from(new Set(rawReviews.map((r) => r.prId)));
+  const prIds = Array.from(
+    new Set(reviewsNeedingNormalization.map((r) => r.raw.prId))
+  )
 
   // Fetch supporting data in bulk
   const [prs, timeline, comments] = await Promise.all([
@@ -49,20 +78,22 @@ export async function batchNormalizeUserReviews(
       .select()
       .from(githubReviewComments)
       .where(inArray(githubReviewComments.prId, prIds)),
-  ]);
+  ])
 
-  const prById = new Map(prs.map((p) => [p.id, p]));
-  const reviewsByPrId = groupBy(rawReviews, "prId");
-  const timelineByPrId = groupBy(timeline, "prId");
-  const commentsByReviewId = groupBy(comments, "reviewId");
+  const prById = new Map(prs.map((p) => [p.id, p]))
+  const reviewsByPrId = groupBy(rawReviews, 'prId')
+  const timelineByPrId = groupBy(timeline, 'prId')
+  const commentsByReviewId = groupBy(comments, 'reviewId')
 
-  // 4. Calculate metrics for all PRs (in memory)
-  console.log("Calculating metrics...");
-  const normalizedData = rawReviews
-    .map((review) => {
-      const pr = prById.get(review.prId);
-      if (!pr) return null;
-      return calculateMetrics({
+  await db.transaction(async (tx) => {
+    for (const row of reviewsNeedingNormalization) {
+      const review = row.raw
+      const existingNorm = row.norm
+
+      const pr = prById.get(review.prId)
+      if (!pr) break
+
+      const metrics = calculateMetrics({
         pr,
         timeline: timelineByPrId[review.prId] || [],
         review,
@@ -71,80 +102,52 @@ export async function batchNormalizeUserReviews(
         userGithubLogin: username,
         // TODO: add if we have it
         inferredTeamSlug: null,
-      });
-    })
-    .filter((d) => !!d);
+      })
 
-  // Batch upsert
-  console.log("Saving normalized data...");
-  await db.transaction(async (tx) => {
-    const existingReviews = await tx
-      .select({ githubReviewId: reviews.githubReviewId })
-      .from(reviews)
-      .where(
-        inArray(
-          reviews.githubReviewId,
-          normalizedData.map((d) => d.githubReviewId),
-        ),
-      );
-
-    const existingIds = new Set(existingReviews.map((r) => r.githubReviewId));
-
-    // Split
-    const toInsert = normalizedData.filter(
-      (d) => !existingIds.has(d.githubReviewId),
-    );
-    const toUpdate = normalizedData.filter((d) =>
-      existingIds.has(d.githubReviewId),
-    );
-
-    // Batch insert new
-    if (toInsert.length > 0) {
-      await tx.insert(reviews).values(toInsert);
+      if (!existingNorm) {
+        await tx.insert(reviews).values(metrics)
+      } else {
+        const { githubReviewId, tenantId, ...updateFields } = metrics
+        await tx
+          .update(reviews)
+          .set(updateFields)
+          .where(eq(reviews.id, existingNorm.id))
+      }
     }
+  })
 
-    // Update existing (loop is fine, it's fast)
-    for (const data of toUpdate) {
-      const { githubReviewId, tenantId, ...updateFields } = data;
-      await tx
-        .update(reviews)
-        .set(updateFields)
-        .where(eq(reviews.githubReviewId, githubReviewId));
-    }
-  });
-
-  console.log(`✓ Normalized ${normalizedData.length} reviews`);
-  return normalizedData.length;
+  console.log(`✓ Normalized ${reviewsNeedingNormalization.length} reviews`)
+  return reviewsNeedingNormalization.length
 }
 
 interface CalculateMetricsInput {
-  pr: GithubPR;
-  timeline: GithubTimelineEvent[];
-  review: GithubReview;
-  allReviews: GithubReview[];
-  reviewComments: GithubReviewComment[];
-  userGithubLogin: string;
-  inferredTeamSlug: string | null;
+  pr: GithubPR
+  timeline: GithubTimelineEvent[]
+  review: GithubReview
+  allReviews: GithubReview[]
+  reviewComments: GithubReviewComment[]
+  userGithubLogin: string
+  inferredTeamSlug: string | null
 }
 
 function calculateMetrics(input: CalculateMetricsInput) {
-  const { pr, review, reviewComments, allReviews, userGithubLogin } = input;
+  const { pr, review, reviewComments, allReviews, userGithubLogin } = input
 
-  const { anchorAt, anchorType, anchorTeamSlug } = computeReviewAnchorAt(input);
+  const { anchorAt, anchorType, anchorTeamSlug } = computeReviewAnchorAt(input)
 
-  const reviewLatencySeconds = diffSecondsRounded(anchorAt, review.submittedAt);
+  const reviewLatencySeconds = diffSecondsRounded(anchorAt, review.submittedAt)
 
   const nonAuthorReviews = allReviews
     .filter(
       (r) =>
         r.reviewerGithubLogin !== pr.authorGithubLogin &&
         r.submittedAt &&
-        r.submittedAt >= anchorAt,
+        r.submittedAt >= anchorAt
     )
-    .sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime());
+    .sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime())
 
-  const first = nonAuthorReviews[0];
-  const wasFirstReview = !!first && first.id === review.id;
+  const first = nonAuthorReviews[0]
+  const wasFirstReview = !!first && first.id === review.id
 
   return {
     githubReviewId: review.id,
@@ -169,26 +172,27 @@ function calculateMetrics(input: CalculateMetricsInput) {
     reviewAnchorType: anchorType,
     anchorTeamSlug: anchorTeamSlug,
 
-    isApproval: normState(review.state) === "approved",
-    isChangeRequest: normState(review.state) === "changes_requested",
-    isCommentOnly: normState(review.state) === "commented",
+    isApproval: normState(review.state) === 'approved',
+    isChangeRequest: normState(review.state) === 'changes_requested',
+    isCommentOnly: normState(review.state) === 'commented',
     reviewCommentsCount: reviewComments.length,
 
-    wasDirectlyRequested: anchorType === "direct_request",
+    wasDirectlyRequested: anchorType === 'direct_request',
     wasFirstReview,
 
     normalizedAt: new Date(),
+    sourceUpdatedAt: review.submittedAt,
     normalizationVersion: 1,
-  };
+  }
 }
 
 type AnchorType =
-  | "direct_request"
-  | "team_request"
-  | "ready_for_review"
-  | "first_request_in_cycle"
-  | "cycle_start"
-  | "pr_open";
+  | 'direct_request'
+  | 'team_request'
+  | 'ready_for_review'
+  | 'first_request_in_cycle'
+  | 'cycle_start'
+  | 'pr_open'
 
 export function computeReviewAnchorAt({
   pr,
@@ -196,17 +200,17 @@ export function computeReviewAnchorAt({
   review,
   inferredTeamSlug,
 }: CalculateMetricsInput): {
-  anchorAt: Date;
-  anchorType: AnchorType;
-  anchorTeamSlug: string | null;
+  anchorAt: Date
+  anchorType: AnchorType
+  anchorTeamSlug: string | null
 } {
-  const cutoff = review.submittedAt ?? new Date();
-  const events = sortAndBound(timeline, cutoff);
-  const cycles = computeCycles(pr.createdAt, events, cutoff);
+  const cutoff = review.submittedAt ?? new Date()
+  const events = sortAndBound(timeline, cutoff)
+  const cycles = computeCycles(pr.createdAt, events, cutoff)
 
   const cycle = review.submittedAt
     ? findCycleForTimestamp(cycles, review.submittedAt)
-    : cycles[cycles.length - 1];
+    : cycles[cycles.length - 1]
 
   // If direct request to this reviewer, always use that as anchor
   const directReq = lastBefore(
@@ -215,10 +219,10 @@ export function computeReviewAnchorAt({
     (e) =>
       e.createdAt >= cycle.start &&
       e.createdAt <= cycle.end &&
-      e.eventType === "review_requested" &&
-      e.requestedTargetType === "user" &&
-      e.requestedReviewerLogin === review.reviewerGithubLogin,
-  );
+      e.eventType === 'review_requested' &&
+      e.requestedTargetType === 'user' &&
+      e.requestedReviewerLogin === review.reviewerGithubLogin
+  )
   if (directReq) {
     const laterRemoval = lastBefore(
       events,
@@ -226,18 +230,18 @@ export function computeReviewAnchorAt({
       (e) =>
         e.createdAt >= directReq.createdAt &&
         e.createdAt <= cycle.end &&
-        e.eventType === "review_request_removed" &&
-        e.requestedTargetType === "user" &&
-        e.requestedReviewerLogin === review.reviewerGithubLogin,
-    );
+        e.eventType === 'review_request_removed' &&
+        e.requestedTargetType === 'user' &&
+        e.requestedReviewerLogin === review.reviewerGithubLogin
+    )
 
-    const requestStillActive = !laterRemoval;
+    const requestStillActive = !laterRemoval
     if (requestStillActive) {
       return {
         anchorAt: directReq.createdAt,
-        anchorType: "direct_request",
+        anchorType: 'direct_request',
         anchorTeamSlug: null,
-      };
+      }
     }
   }
 
@@ -248,10 +252,10 @@ export function computeReviewAnchorAt({
     (e) =>
       e.createdAt >= cycle.start &&
       e.createdAt <= cycle.end &&
-      e.eventType === "review_requested" &&
-      e.requestedTargetType === "team" &&
-      (!inferredTeamSlug || e.requestedTeamSlug === inferredTeamSlug),
-  );
+      e.eventType === 'review_requested' &&
+      e.requestedTargetType === 'team' &&
+      (!inferredTeamSlug || e.requestedTeamSlug === inferredTeamSlug)
+  )
   if (teamReq) {
     const laterRemoval = lastBefore(
       events,
@@ -259,18 +263,18 @@ export function computeReviewAnchorAt({
       (e) =>
         e.createdAt >= teamReq.createdAt &&
         e.createdAt <= cycle.end &&
-        e.eventType === "review_request_removed" &&
-        e.requestedTargetType === "team" &&
-        e.requestedTeamSlug === teamReq.requestedTeamSlug,
-    );
+        e.eventType === 'review_request_removed' &&
+        e.requestedTargetType === 'team' &&
+        e.requestedTeamSlug === teamReq.requestedTeamSlug
+    )
 
-    const requestStillActive = !laterRemoval;
+    const requestStillActive = !laterRemoval
     if (requestStillActive) {
       return {
         anchorAt: teamReq.createdAt,
-        anchorType: "team_request",
+        anchorType: 'team_request',
         anchorTeamSlug: teamReq.requestedTeamSlug ?? null,
-      };
+      }
     }
   }
 
@@ -281,14 +285,14 @@ export function computeReviewAnchorAt({
     (e) =>
       e.createdAt >= cycle.start &&
       e.createdAt <= cycle.end &&
-      e.eventType === "ready_for_review",
-  );
+      e.eventType === 'ready_for_review'
+  )
   if (ready) {
     return {
       anchorAt: ready.createdAt,
-      anchorType: "ready_for_review",
+      anchorType: 'ready_for_review',
       anchorTeamSlug: null,
-    };
+    }
   }
 
   // Otherwise, use any generic review request
@@ -297,21 +301,21 @@ export function computeReviewAnchorAt({
       e.createdAt >= cycle.start &&
       e.createdAt <= cycle.end &&
       e.createdAt <= cutoff &&
-      e.eventType === "review_requested",
-  );
+      e.eventType === 'review_requested'
+  )
   if (anyReq) {
     return {
       anchorAt: anyReq.createdAt,
-      anchorType: "first_request_in_cycle",
+      anchorType: 'first_request_in_cycle',
       anchorTeamSlug: anyReq.requestedTeamSlug ?? null,
-    };
+    }
   }
 
   // finnlly, fall back to start of cycle or pr open
-  const isPrOpen = cycle.start.getTime() === pr.createdAt.getTime();
+  const isPrOpen = cycle.start.getTime() === pr.createdAt.getTime()
   return {
     anchorAt: cycle.start,
-    anchorType: isPrOpen ? "pr_open" : "cycle_start",
+    anchorType: isPrOpen ? 'pr_open' : 'cycle_start',
     anchorTeamSlug: null,
-  };
+  }
 }

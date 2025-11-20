@@ -1,73 +1,125 @@
-import { db } from "@/lib/db/client";
-import { EvidenceRow } from "./computeEvidenceCounts";
-import { inferredTeamMemberships } from "@/lib/db/schema";
+import { db } from '@/lib/db/client'
+import { EvidenceRow } from './computeEvidenceCounts'
+import { inferredTeamMemberships } from '@/lib/db/schema'
+import { and, eq } from 'drizzle-orm'
 
-type Confidence = "low" | "medium" | "high";
+type Confidence = 'low' | 'medium' | 'high'
 
 function clamp01(x: number) {
-  return Math.max(0, Math.min(1, x));
+  return Math.max(0, Math.min(1, x))
 }
 
-function computeScore(e: EvidenceRow): number {
-  const denom = Math.max(1, e.all_team_requested_reviews_for_login);
-  const followShare = e.req_to_review / denom; // 0..1
-  const directBoost = Math.min(
-    1,
-    e.user_direct_requests / Math.max(1, e.req_to_review),
-  ); // 0..1
-  // weights: 80% behavior, 20% direct requests
-  return clamp01(0.8 * followShare + 0.2 * directBoost);
+function computeScore({
+  reqToReview,
+  userDirectRequests,
+  totalDirectRequestsAfterTeamRequest,
+  totalReviewsAfterAnyTeamRequest,
+}: {
+  reqToReview: number
+  userDirectRequests: number
+  totalReviewsAfterAnyTeamRequest: number
+  totalDirectRequestsAfterTeamRequest: number
+}): number {
+  const reviewDenom = Math.max(1, totalReviewsAfterAnyTeamRequest)
+  const followShare = reqToReview / reviewDenom
+
+  const directDenom = Math.max(1, totalDirectRequestsAfterTeamRequest)
+  const directShare = userDirectRequests / directDenom // 0..1
+
+  // weights: mostly behavior, some boost for direct requests
+  return clamp01(0.8 * followShare + 0.2 * directShare)
 }
 
 function toConfidence(score: number): Confidence {
-  if (score >= 0.7) return "high";
-  if (score >= 0.4) return "medium";
-  return "low";
+  if (score >= 0.7) return 'high'
+  if (score >= 0.4) return 'medium'
+  return 'low'
 }
 
 export async function upsertTeamMemberships(opts: {
-  tenantId: string;
-  evidence: EvidenceRow[]; // self-only rows (one login)
-  algoVersion?: string;
-  source?: "heuristic" | "api";
+  tenantId: string
+  evidenceDeltas: EvidenceRow[]
+  totalReviewsAfterAnyTeamRequestDelta: number
+  totalDirectRequestsAfterTeamRequestDelta: number
+  algoVersion?: string
+  source?: 'heuristic' | 'api'
+  username: string
 }) {
-  const { tenantId, evidence, algoVersion = "v1", source = "heuristic" } = opts;
-  if (!evidence?.length) return;
+  const {
+    tenantId,
+    evidenceDeltas,
+    algoVersion = 'v1',
+    source = 'heuristic',
+    totalDirectRequestsAfterTeamRequestDelta,
+    totalReviewsAfterAnyTeamRequestDelta,
+    username,
+  } = opts
+  if (!evidenceDeltas?.length) return
 
-  const now = new Date();
+  const now = new Date()
 
-  for (const e of evidence) {
-    const score = computeScore(e);
-    const confidence = toConfidence(score);
+  const existingRows = await db
+    .select()
+    .from(inferredTeamMemberships)
+    .where(
+      and(
+        eq(inferredTeamMemberships.tenantId, tenantId),
+        eq(inferredTeamMemberships.githubLogin, username),
+        eq(inferredTeamMemberships.source, source)
+      )
+    )
 
-    const row = {
-      tenantId,
-      githubLogin: e.githubLogin, // self login
-      org: e.org,
-      teamSlug: e.teamSlug,
-      source,
-      algoVersion,
-      score,
-      confidence,
-      evidenceCounts: {
-        // keep only what we actually use now (add more if you want later)
-        req_to_review: e.req_to_review,
-        user_direct_requests: e.user_direct_requests,
-        all_team_requested_reviews_for_login:
-          e.all_team_requested_reviews_for_login,
-        // optional, if you kept it in compute:
-        ...(typeof (e as any).first_responder_count === "number"
-          ? { first_responder_count: (e as any).first_responder_count }
-          : {}),
-      },
-      lastSeenAt: now,
-      updatedAt: now,
-      // firstSeenAt: leave to DB default on initial insert
-    };
+  const existingByKey = new Map<string, (typeof existingRows)[number]>()
+  for (const r of existingRows) {
+    const key = `${r.org}::${r.teamSlug}`
+    existingByKey.set(key, r)
+  }
+
+  const prevGlobalTotal =
+    existingRows[0]?.evidenceCounts.totalReviewsAfterAnyTeamRequest ?? 0
+
+  const newGlobalTotal = prevGlobalTotal + totalReviewsAfterAnyTeamRequestDelta
+  const prevDirectTotal =
+    existingRows[0]?.evidenceCounts.totalDirectRequestsAfterTeamRequest ?? 0
+  const newDirectTotal =
+    prevDirectTotal + totalDirectRequestsAfterTeamRequestDelta
+
+  for (const delta of evidenceDeltas) {
+    const key = `${delta.org}::${delta.teamSlug}`
+    const existing = existingByKey.get(key)
+
+    const prevCounts = existing?.evidenceCounts ?? {
+      reqToReview: 0,
+      userDirectRequests: 0,
+      totalDirectRequestsAfterTeamRequest: prevDirectTotal,
+      totalReviewsAfterAnyTeamRequest: prevGlobalTotal,
+    }
+
+    const mergedCounts = {
+      reqToReview: prevCounts.reqToReview + delta.reqToReview,
+      userDirectRequests:
+        prevCounts.userDirectRequests + delta.userDirectRequests,
+      totalReviewsAfterAnyTeamRequest: newGlobalTotal,
+      totalDirectRequestsAfterTeamRequest: newDirectTotal,
+    }
+    const score = computeScore(mergedCounts)
+    const confidence = toConfidence(score)
 
     await db
       .insert(inferredTeamMemberships)
-      .values(row)
+      .values({
+        tenantId,
+        githubLogin: username,
+        org: delta.org,
+        teamSlug: delta.teamSlug,
+        source,
+        algoVersion,
+        score,
+        confidence,
+        evidenceCounts: mergedCounts,
+        lastSeenAt: now,
+        updatedAt: now,
+      })
       .onConflictDoUpdate({
         target: [
           inferredTeamMemberships.tenantId,
@@ -77,13 +129,13 @@ export async function upsertTeamMemberships(opts: {
           inferredTeamMemberships.source,
         ],
         set: {
-          algoVersion: row.algoVersion,
-          score: row.score,
-          confidence: row.confidence,
-          evidenceCounts: row.evidenceCounts, // Drizzle will JSON-encode for jsonb
-          lastSeenAt: row.lastSeenAt,
-          updatedAt: row.updatedAt,
+          algoVersion,
+          score,
+          confidence,
+          evidenceCounts: mergedCounts,
+          lastSeenAt: now,
+          updatedAt: now,
         },
-      });
+      })
   }
 }

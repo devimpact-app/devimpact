@@ -1,30 +1,30 @@
-import { db } from "@/lib/db/client";
-import { githubReviewComments, githubReviews } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { sql } from "drizzle-orm";
-import { GitHubReviewComment } from "../api/types";
+import { db } from '@/lib/db/client'
+import { githubReviewComments, githubReviews } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
+import { SanitizedPRReviewComment } from '../types'
 
 export async function storeReviewComments(
   prId: string,
   userId: string,
-  comments: GitHubReviewComment[],
+  comments: SanitizedPRReviewComment[]
 ): Promise<void> {
-  if (comments.length === 0) return;
+  if (comments.length === 0) return
 
   // Process each comment and link to review if possible
   const commentValues = await Promise.all(
     comments.map(async (c) => {
       // Find our internal review ID from GitHub's review ID
-      let reviewDbId = null;
+      let reviewDbId = null
 
       if (c.pull_request_review_id) {
         const [review] = await db
           .select({ id: githubReviews.id })
           .from(githubReviews)
           .where(eq(githubReviews.reviewId, String(c.pull_request_review_id)))
-          .limit(1);
+          .limit(1)
 
-        reviewDbId = review?.id || null;
+        reviewDbId = review?.id || null
       }
 
       return {
@@ -37,20 +37,14 @@ export async function storeReviewComments(
           : null,
         body: c.body,
         path: c.path,
-        line: c.line || null,
-        startLine: c.start_line || null,
-        side: c.side || null,
         authorGithubLogin: c.user.login,
-        authorAssociation: c.author_association || null,
         inReplyToId: c.in_reply_to_id ? String(c.in_reply_to_id) : null,
-        commitId: c.commit_id,
-        diffHunk: c.diff_hunk || null, // Optional: can skip if too large
         createdAt: new Date(c.created_at),
         updatedAt: c.updated_at ? new Date(c.updated_at) : null,
         htmlUrl: c.html_url,
-      };
-    }),
-  );
+      }
+    })
+  )
 
   await db
     .insert(githubReviewComments)
@@ -62,5 +56,5 @@ export async function storeReviewComments(
         updatedAt: sql`excluded.updated_at`,
         fetchedAt: new Date(),
       },
-    });
+    })
 }

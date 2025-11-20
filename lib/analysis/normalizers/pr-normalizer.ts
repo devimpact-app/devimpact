@@ -1,4 +1,4 @@
-import { db } from "@/lib/db/client";
+import { db } from '@/lib/db/client'
 import {
   githubPrs,
   githubPrCommits,
@@ -12,9 +12,9 @@ import {
   GithubPRCommit,
   GithubReview,
   GithubReviewComment,
-} from "@/lib/db/schema/github-raw";
-import { pullRequests } from "@/lib/db/schema/github-normalized";
-import { eq, and, inArray } from "drizzle-orm";
+} from '@/lib/db/schema/github-raw'
+import { pullRequests } from '@/lib/db/schema/github-normalized'
+import { eq, and, inArray, isNull, or, gt } from 'drizzle-orm'
 import {
   computeCycles,
   diffSecondsRounded,
@@ -23,25 +23,45 @@ import {
   normState,
   readyish,
   sortAndBound,
-} from "./helpers";
+} from './helpers'
 
 export async function batchNormalizeUserPRs(
   userId: string,
-  username: string,
-): Promise<number> {
-  const prs = await db
-    .select()
+  username: string
+): Promise<string[]> {
+  const prsNeedingNormalization = await db
+    .select({
+      raw: githubPrs,
+      norm: pullRequests,
+    })
     .from(githubPrs)
-    .where(eq(githubPrs.tenantId, userId));
+    .leftJoin(
+      pullRequests,
+      and(
+        eq(githubPrs.tenantId, pullRequests.tenantId),
+        eq(githubPrs.id, pullRequests.githubPrId)
+      )
+    )
+    .where(
+      and(
+        eq(githubPrs.tenantId, userId),
+        or(
+          isNull(githubPrs.id),
+          gt(githubPrs.updatedAt, pullRequests.sourceUpdatedAt)
+        )
+      )
+    )
 
-  if (prs.length === 0) return 0;
+  if (prsNeedingNormalization.length === 0) return []
 
-  console.log(`Normalizing ${prs.length} PRs for user ${userId}`);
+  console.log(
+    `Normalizing ${prsNeedingNormalization.length} PRs for user ${userId}`
+  )
 
-  const prIds = prs.map((pr) => pr.id);
+  const prIds = prsNeedingNormalization.map((pr) => pr.raw.id)
 
-  // 2. Fetch ALL related data in one go (5 queries, not 5 * N)
-  console.log("Fetching related data...");
+  // Fetch ALL related data in one go (5 queries, not 5 * N)
+  console.log('Fetching related data...')
   const [allFiles, allCommits, allReviews, allReviewComments, allTimeline] =
     await Promise.all([
       db.select().from(githubPrFiles).where(inArray(githubPrFiles.prId, prIds)),
@@ -58,85 +78,60 @@ export async function batchNormalizeUserPRs(
         .select()
         .from(githubTimelineEvents)
         .where(inArray(githubTimelineEvents.prId, prIds)),
-    ]);
+    ])
 
   console.log(
-    `Fetched: ${allFiles.length} files, ${allCommits.length} commits, ${allReviews.length} reviews`,
-  );
+    `Fetched: ${allFiles.length} files, ${allCommits.length} commits, ${allReviews.length} reviews`
+  )
 
-  // 3. Group by PR ID
-  const filesByPrId = groupBy(allFiles, "prId");
-  const commitsByPrId = groupBy(allCommits, "prId");
-  const reviewsByPrId = groupBy(allReviews, "prId");
-  const commentsByPrId = groupBy(allReviewComments, "prId");
-  const timelineByPrId = groupBy(allTimeline, "prId");
+  const filesByPrId = groupBy(allFiles, 'prId')
+  const commitsByPrId = groupBy(allCommits, 'prId')
+  const reviewsByPrId = groupBy(allReviews, 'prId')
+  const commentsByPrId = groupBy(allReviewComments, 'prId')
+  const timelineByPrId = groupBy(allTimeline, 'prId')
 
-  // 4. Calculate metrics for all PRs (in memory)
-  console.log("Calculating metrics...");
-  const normalizedData = prs.map((pr) => {
-    return calculateMetrics({
-      pr,
-      timeline: timelineByPrId[pr.id] || [],
-      userCommits: (commitsByPrId[pr.id] || []).filter(
-        (c) => c.authorGithubLogin === username,
-      ),
-      reviews: reviewsByPrId[pr.id] || [],
-      reviewComments: commentsByPrId[pr.id] || [],
-      userGithubLogin: username,
-      prFiles: filesByPrId[pr.id] || [],
-    });
-  });
-
-  // Batch upsert
-  console.log("Saving normalized data...");
+  console.log('Calculating metrics...')
   await db.transaction(async (tx) => {
-    const existingPRs = await tx
-      .select({ githubPrId: pullRequests.githubPrId })
-      .from(pullRequests)
-      .where(
-        inArray(
-          pullRequests.githubPrId,
-          normalizedData.map((d) => d.githubPrId),
+    for (const row of prsNeedingNormalization) {
+      const pr = row.raw
+      const existingNorm = row.norm
+
+      const metrics = calculateMetrics({
+        pr,
+        timeline: timelineByPrId[pr.id] || [],
+        userCommits: (commitsByPrId[pr.id] || []).filter(
+          (c) => c.authorGithubLogin === username
         ),
-      );
+        reviews: reviewsByPrId[pr.id] || [],
+        reviewComments: commentsByPrId[pr.id] || [],
+        userGithubLogin: username,
+        prFiles: filesByPrId[pr.id] || [],
+      })
 
-    const existingIds = new Set(existingPRs.map((pr) => pr.githubPrId));
-
-    // Split
-    const toInsert = normalizedData.filter(
-      (d) => !existingIds.has(d.githubPrId),
-    );
-    const toUpdate = normalizedData.filter((d) =>
-      existingIds.has(d.githubPrId),
-    );
-
-    // Batch insert new
-    if (toInsert.length > 0) {
-      await tx.insert(pullRequests).values(toInsert);
+      if (!existingNorm) {
+        await tx.insert(pullRequests).values(metrics)
+      } else {
+        const { githubPrId, tenantId, ...updateFields } = metrics
+        await tx
+          .update(pullRequests)
+          .set(updateFields)
+          .where(eq(pullRequests.id, existingNorm.id))
+      }
     }
+  })
 
-    // Update existing (loop is fine, it's fast)
-    for (const data of toUpdate) {
-      const { githubPrId, tenantId, ...updateFields } = data;
-      await tx
-        .update(pullRequests)
-        .set(updateFields)
-        .where(eq(pullRequests.githubPrId, githubPrId));
-    }
-  });
-
-  console.log(`✓ Normalized ${normalizedData.length} PRs`);
-  return normalizedData.length;
+  console.log(`✓ Normalized ${prsNeedingNormalization.length} PRs`)
+  return prIds
 }
 
 interface CalculateMetricsInput {
-  pr: GithubPR;
-  timeline: GithubTimelineEvent[];
-  prFiles: GithubPRFile[];
-  userCommits: GithubPRCommit[];
-  reviews: GithubReview[];
-  reviewComments: GithubReviewComment[];
-  userGithubLogin: string;
+  pr: GithubPR
+  timeline: GithubTimelineEvent[]
+  prFiles: GithubPRFile[]
+  userCommits: GithubPRCommit[]
+  reviews: GithubReview[]
+  reviewComments: GithubReviewComment[]
+  userGithubLogin: string
 }
 
 function calculateMetrics(input: CalculateMetricsInput) {
@@ -148,120 +143,120 @@ function calculateMetrics(input: CalculateMetricsInput) {
     reviews,
     reviewComments,
     userGithubLogin,
-  } = input;
+  } = input
 
   // Find merged_at from timeline
-  const mergeEvent = timeline.find((e) => e.eventType === "merged");
-  const mergedAt = mergeEvent?.createdAt || null;
+  const mergeEvent = timeline.find((e) => e.eventType === 'merged')
+  const mergedAt = mergeEvent?.createdAt || null
 
   // Determine state
   const state =
-    normState(pr.state) === "closed" && mergedAt
-      ? "merged"
-      : normState(pr.state);
+    normState(pr.state) === 'closed' && mergedAt
+      ? 'merged'
+      : normState(pr.state)
 
   // Calculate code metrics (user's commits only)
-  const linesAdded = prFiles.reduce((sum, f) => sum + f.additions, 0);
-  const linesDeleted = prFiles.reduce((sum, f) => sum + f.deletions, 0);
-  const linesChanged = linesAdded + linesDeleted;
-  const filesChanged = prFiles.length;
+  const linesAdded = prFiles.reduce((sum, f) => sum + f.additions, 0)
+  const linesDeleted = prFiles.reduce((sum, f) => sum + f.deletions, 0)
+  const linesChanged = linesAdded + linesDeleted
+  const filesChanged = prFiles.length
 
-  const filesAdded = prFiles.filter((f) => f.status === "added").length;
-  const filesModified = prFiles.filter((f) => f.status === "modified").length;
-  const filesDeleted = prFiles.filter((f) => f.status === "deleted").length;
-  const filesRenamed = prFiles.filter((f) => f.status === "renamed").length;
+  const filesAdded = prFiles.filter((f) => f.status === 'added').length
+  const filesModified = prFiles.filter((f) => f.status === 'modified').length
+  const filesDeleted = prFiles.filter((f) => f.status === 'deleted').length
+  const filesRenamed = prFiles.filter((f) => f.status === 'renamed').length
 
   // Test coverage
-  const testFiles = prFiles.filter((f) => f.isTestFile);
-  const touchedTests = testFiles.length > 0;
-  const testFilesChanged = testFiles.length;
+  const testFiles = prFiles.filter((f) => f.isTestFile)
+  const touchedTests = testFiles.length > 0
+  const testFilesChanged = testFiles.length
 
   // Complexity indicators
   const largestFileChanged =
-    prFiles.length > 0 ? Math.max(...prFiles.map((f) => f.changes)) : 0;
+    prFiles.length > 0 ? Math.max(...prFiles.map((f) => f.changes)) : 0
 
-  const avgChangesPerFile = filesChanged > 0 ? linesChanged / filesChanged : 0;
+  const avgChangesPerFile = filesChanged > 0 ? linesChanged / filesChanged : 0
 
   // Commit count
-  const commitsCount = userCommits.length;
+  const commitsCount = userCommits.length
 
   // Calculate review metrics
   const uniqueReviewers = new Set(reviews.map((r) => r.reviewerGithubLogin))
-    .size;
+    .size
   const approvalsCount = reviews.filter(
-    (r) => normState(r.state) === "approved",
-  ).length;
+    (r) => normState(r.state) === 'approved'
+  ).length
   const changesRequestedCount = reviews.filter(
-    (r) => normState(r.state) === "changes_requested",
-  ).length;
+    (r) => normState(r.state) === 'changes_requested'
+  ).length
 
   // Was it approved before merge?
   const wasApprovedBeforeMerge = mergedAt
     ? reviews.some(
         (r) =>
-          r.state === "APPROVED" && r.submittedAt && r.submittedAt < mergedAt,
+          r.state === 'APPROVED' && r.submittedAt && r.submittedAt < mergedAt
       )
-    : false;
+    : false
 
   const hadForcePushes = timeline.some(
-    (e) => e.eventType === "head_ref_force_pushed",
-  );
+    (e) => e.eventType === 'head_ref_force_pushed'
+  )
 
   // Data availability flags
-  const hadTimelineData = timeline.length > 0;
-  const hadReviewData = reviews.length > 0;
-  const hadCommitData = userCommits.length > 0;
+  const hadTimelineData = timeline.length > 0
+  const hadReviewData = reviews.length > 0
+  const hadCommitData = userCommits.length > 0
 
   // Timeline
   const validCommitTimes = userCommits
     .map((c) => (c.committedAt ? new Date(c.committedAt).getTime() : null))
-    .filter((t): t is number => t !== null && !isNaN(t));
+    .filter((t): t is number => t !== null && !isNaN(t))
   const firstCommitAt = validCommitTimes.length
     ? new Date(Math.min(...validCommitTimes))
-    : pr.createdAt;
+    : pr.createdAt
   const { readyAt: lastReadyForReviewAt } = computeReadyAnchor({
     pr,
     timeline,
-  });
+  })
   const reviewsAfterLastReady = reviews
     .filter(
       (r) =>
         r.submittedAt &&
         r.submittedAt >= lastReadyForReviewAt &&
-        r.submittedAt <= (pr.closedAt ?? new Date()),
+        r.submittedAt <= (pr.closedAt ?? new Date())
     )
     .filter((r) => r.reviewerGithubLogin !== pr.authorGithubLogin)
-    .sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime());
+    .sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime())
   const approvalsAfterLastReady = reviewsAfterLastReady.filter(
-    (r) => normState(r.state) === "approved",
-  );
+    (r) => normState(r.state) === 'approved'
+  )
 
   const firstReviewAtForCycle =
     reviewsAfterLastReady.length > 0
       ? (reviewsAfterLastReady[0].submittedAt ?? null)
-      : null;
+      : null
   const firstApprovalAtAfterCycle =
     approvalsAfterLastReady.length > 0
       ? (approvalsAfterLastReady[0].submittedAt ?? null)
-      : null;
+      : null
 
   const authoringLeadSeconds = diffSecondsRounded(
     firstCommitAt,
-    lastReadyForReviewAt,
-  );
+    lastReadyForReviewAt
+  )
   const timeToFirstReviewSeconds = diffSecondsRounded(
     lastReadyForReviewAt,
-    firstReviewAtForCycle,
-  );
+    firstReviewAtForCycle
+  )
   const reviewToMergeSeconds = diffSecondsRounded(
     firstReviewAtForCycle,
-    mergedAt,
-  );
-  const leadTimeSeconds = diffSecondsRounded(firstCommitAt, mergedAt);
+    mergedAt
+  )
+  const leadTimeSeconds = diffSecondsRounded(firstCommitAt, mergedAt)
   const timeToFirstApprovalSeconds = diffSecondsRounded(
     lastReadyForReviewAt,
-    firstApprovalAtAfterCycle,
-  );
+    firstApprovalAtAfterCycle
+  )
 
   return {
     githubPrId: pr.id,
@@ -316,44 +311,45 @@ function calculateMetrics(input: CalculateMetricsInput) {
     hadCommitData,
 
     normalizedAt: new Date(),
+    sourceUpdatedAt: pr.updatedAt,
     normalizationVersion: 1,
-  };
+  }
 }
 
 export function computeReadyAnchor(opts: {
-  pr: GithubPR;
-  timeline: GithubTimelineEvent[];
+  pr: GithubPR
+  timeline: GithubTimelineEvent[]
 }): {
-  readyAt: Date; // authoritative “ready” for the PR
-  firstReadyEventAt?: Date; // earliest ready/review_requested ever
-  cycles: Array<{ start: Date; end: Date }>;
+  readyAt: Date // authoritative “ready” for the PR
+  firstReadyEventAt?: Date // earliest ready/review_requested ever
+  cycles: Array<{ start: Date; end: Date }>
 } {
-  const { pr, timeline } = opts;
-  const endAt = pr.closedAt ?? new Date();
+  const { pr, timeline } = opts
+  const endAt = pr.closedAt ?? new Date()
 
   // all timeline events sorted
-  const events = sortAndBound(timeline, endAt);
+  const events = sortAndBound(timeline, endAt)
   // Cycles - PR created, draft conversions, end of PR
-  const cycles = computeCycles(pr.createdAt, events, endAt);
+  const cycles = computeCycles(pr.createdAt, events, endAt)
 
   // Sort all ready events
-  const firstReadyEvent = events.find(readyish)?.createdAt;
+  const firstReadyEvent = events.find(readyish)?.createdAt
 
   // Get ready event after last cycle (PR open or last draft conversion)
-  const last = cycles[cycles.length - 1];
+  const last = cycles[cycles.length - 1]
   const readyInLast = firstInCycle(
     events,
     last.start,
     last.end,
-    readyish,
-  )?.createdAt;
+    readyish
+  )?.createdAt
 
   if (readyInLast) {
-    return { readyAt: readyInLast, firstReadyEventAt: firstReadyEvent, cycles };
+    return { readyAt: readyInLast, firstReadyEventAt: firstReadyEvent, cycles }
   }
 
   if (!firstReadyEvent) {
-    return { readyAt: pr.createdAt, cycles };
+    return { readyAt: pr.createdAt, cycles }
   }
 
   // Otherwise fallback to earliest ready-ish seen anywhere (incomplete timeline)
@@ -361,5 +357,5 @@ export function computeReadyAnchor(opts: {
     readyAt: firstReadyEvent,
     firstReadyEventAt: firstReadyEvent,
     cycles,
-  };
+  }
 }

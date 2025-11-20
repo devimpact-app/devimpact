@@ -1,67 +1,65 @@
-import { NextRequest } from "next/server";
-import { getUserFromCliToken } from "../utils";
+import { NextRequest } from 'next/server'
+import { getUserFromCliToken } from '../utils'
 import {
   jsonBadRequest,
   jsonOK,
   jsonServerError,
   jsonUnauthorized,
-} from "../../_lib/http";
-import z from "zod";
-import { RepoSyncPayloadSchema } from "@/types/api/sync";
-import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { runSync } from "@/lib/integrations/github/sync/orchestrator";
+} from '../../_lib/http'
+import z from 'zod'
+import { RepoSyncPayloadSchema } from '@/types/api/sync'
+import { db } from '@/lib/db/client'
+import { users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
+import { runSync } from '@/lib/integrations/github/sync/orchestrator'
 
 export async function POST(req: NextRequest) {
   try {
-    const cliToken = req.headers.get("x-devimpact-cli-token");
+    const cliToken = req.headers.get('x-devimpact-cli-token')
     if (!cliToken) {
-      return jsonUnauthorized("Unauthorized");
+      return jsonUnauthorized('Unauthorized')
     }
 
-    const user = await getUserFromCliToken(cliToken);
+    const user = await getUserFromCliToken(cliToken)
     if (!user) {
-      return jsonUnauthorized("Unauthorized");
+      return jsonUnauthorized('Unauthorized')
     }
 
-    const json = await req.json();
-    const payload = RepoSyncPayloadSchema.parse(json);
-    // Some things like updating statuses we only want to do on last batch received
-    const isLastBatch = payload.isLastBatch;
+    const json = await req.json()
+    const payload = RepoSyncPayloadSchema.parse(json)
 
     if (user.githubUsername && user.githubUsername !== payload.githubLogin) {
-      return jsonBadRequest("GitHub username mismatch");
+      return jsonBadRequest('GitHub username mismatch')
     }
 
-    if (user.onboardingState === "cli_linked") {
+    if (user.onboardingState === 'cli_linked') {
       // Update onboarding state if first sync
       await db
         .update(users)
         .set({
-          onboardingState: "syncing",
+          onboardingState: 'syncing',
         })
-        .where(eq(users.id, user.id));
+        .where(eq(users.id, user.id))
     }
 
-    console.log("CLI sync from user", user.id, {
+    console.log('CLI sync from user', user.id, {
       prs: payload.pulls.length,
-    });
+    })
 
     const results = await runSync({
       tenantId: user.id,
       payload,
-    });
+    })
 
     return jsonOK({
       userId: user.id,
       ...results,
-    });
+    })
   } catch (err: any) {
     if (err instanceof z.ZodError) {
-      return jsonBadRequest("Invalid payload");
+      return jsonBadRequest('Invalid payload')
     }
 
-    return jsonServerError("Internal server error");
+    return jsonServerError('Internal server error')
   }
 }
