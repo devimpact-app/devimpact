@@ -13,15 +13,15 @@ export async function runSync({
   tenantId: string
   payload: RepoSyncPayload
 }) {
-  const username = payload.githubLogin
   const syncStatus = await getSyncStatus(tenantId)
   const initialSync = isInitialSync(syncStatus)
   const since = new Date(payload.syncWindow.startISO)
+  const username = payload.githubLogin
 
   // Save repo info if needed
   await upsertGithubRepoForTenant(tenantId, payload.repo)
 
-  const { prIds, errors } = await persistBundles(
+  const { errors } = await persistBundles(
     tenantId,
     {
       fullName: payload.repo.fullName,
@@ -35,7 +35,6 @@ export async function runSync({
   if (payload.isLastBatch) {
     await inferTeamMemberships({
       tenantId,
-      prIdsChanged: prIds,
       since,
       username,
     })

@@ -13,14 +13,14 @@ import {
   Check,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export function CliSetupPageShell({ userName }: { userName?: string | null }) {
   const router = useRouter()
-  const [hasRedirected, setHasRedirected] = useState(false)
+  const hasRedirectedRef = useRef(false)
 
   const { data: res, isLoading } = useSWR<{ data: CliStatus }>(
     '/api/cli/status',
@@ -38,15 +38,15 @@ export function CliSetupPageShell({ userName }: { userName?: string | null }) {
   useEffect(() => {
     if (!status) return
     if (status.onboardingState !== 'synced') return
-    if (hasRedirected) return
+    if (hasRedirectedRef.current) return
 
-    setHasRedirected(true)
+    hasRedirectedRef.current = true
     const timeout = setTimeout(() => {
       router.push('/dashboard')
     }, 1500)
 
     return () => clearTimeout(timeout)
-  }, [status, hasRedirected, router])
+  }, [status?.onboardingState, router])
 
   if (isLoading || !status) {
     return (

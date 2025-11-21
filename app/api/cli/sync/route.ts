@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       return jsonBadRequest('Invalid payload')
     }
 
+    console.log('server err', err)
     return jsonServerError('Internal server error')
   }
 }

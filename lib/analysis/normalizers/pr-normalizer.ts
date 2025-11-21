@@ -14,7 +14,7 @@ import {
   GithubReviewComment,
 } from '@/lib/db/schema/github-raw'
 import { pullRequests } from '@/lib/db/schema/github-normalized'
-import { eq, and, inArray, isNull, or, gt } from 'drizzle-orm'
+import { eq, and, inArray, isNull, or, gt, not } from 'drizzle-orm'
 import {
   computeCycles,
   diffSecondsRounded,
@@ -46,7 +46,7 @@ export async function batchNormalizeUserPRs(
       and(
         eq(githubPrs.tenantId, userId),
         or(
-          isNull(githubPrs.id),
+          isNull(pullRequests.id),
           gt(githubPrs.updatedAt, pullRequests.sourceUpdatedAt)
         )
       )
@@ -69,11 +69,24 @@ export async function batchNormalizeUserPRs(
         .select()
         .from(githubPrCommits)
         .where(inArray(githubPrCommits.prId, prIds)),
-      db.select().from(githubReviews).where(inArray(githubReviews.prId, prIds)),
+      db
+        .select()
+        .from(githubReviews)
+        .where(
+          and(
+            inArray(githubReviews.prId, prIds),
+            not(eq(githubReviews.reviewerGithubLogin, username))
+          )
+        ),
       db
         .select()
         .from(githubReviewComments)
-        .where(inArray(githubReviewComments.prId, prIds)),
+        .where(
+          and(
+            inArray(githubReviews.prId, prIds),
+            not(eq(githubReviews.reviewerGithubLogin, username))
+          )
+        ),
       db
         .select()
         .from(githubTimelineEvents)

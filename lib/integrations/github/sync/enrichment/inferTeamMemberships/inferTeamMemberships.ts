@@ -7,17 +7,12 @@ import { upsertTeamMemberships } from './upsertTeamMemberships'
  */
 export async function inferTeamMemberships(opts: {
   tenantId: string
-  prIdsChanged: string[]
   since?: Date
   username: string
 }): Promise<{
   evidenceCount: number
 }> {
-  const { tenantId, prIdsChanged, since, username } = opts
-
-  if (!prIdsChanged?.length) {
-    return { evidenceCount: 0 }
-  }
+  const { tenantId, since, username } = opts
 
   const {
     rows: evidenceDeltas,

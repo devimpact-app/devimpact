@@ -45,7 +45,7 @@ export async function batchNormalizeUserReviews(
       reviews,
       and(
         eq(reviews.tenantId, githubReviews.tenantId),
-        eq(reviews.githubReviewId, githubReviews.reviewId)
+        eq(reviews.githubReviewId, githubReviews.id)
       )
     )
     .where(
