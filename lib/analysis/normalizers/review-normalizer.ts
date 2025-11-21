@@ -9,7 +9,10 @@ import {
   GithubReview,
   GithubReviewComment,
 } from '@/lib/db/schema/github-raw'
-import { reviews } from '@/lib/db/schema/github-normalized'
+import {
+  inferredTeamMemberships,
+  reviews,
+} from '@/lib/db/schema/github-normalized'
 import { eq, and, inArray, or, isNull, gt, not } from 'drizzle-orm'
 import {
   computeCycles,
@@ -21,11 +24,46 @@ import {
   sortAndBound,
 } from './helpers'
 
+async function getInferredTeams({
+  userId,
+  username,
+}: {
+  userId: string
+  username: string
+}): Promise<Set<string>> {
+  const memberships = await db
+    .select()
+    .from(inferredTeamMemberships)
+    .where(
+      and(
+        eq(inferredTeamMemberships.tenantId, userId),
+        eq(inferredTeamMemberships.githubLogin, username)
+      )
+    )
+
+  const activeTeamMemberships = memberships.filter((m) => {
+    if (m.confidence === 'high') return true
+    if (m.confidence === 'medium') {
+      const score = m.score ?? 0
+      const total = m.evidenceCounts?.totalReviewsAfterAnyTeamRequest ?? 0
+      return score >= 0.55 && total >= 3
+    }
+    return false
+  })
+
+  return new Set(activeTeamMemberships.map((m) => `${m.org}/${m.teamSlug}`))
+}
+
 export async function batchNormalizeUserReviews(
   userId: string,
   username: string,
   normalizedPrIds: string[]
 ): Promise<number> {
+  const inferredTeamsSet = await getInferredTeams({
+    userId,
+    username,
+  })
+
   const rawReviews = await db
     .select()
     .from(githubReviews)
@@ -106,8 +144,7 @@ export async function batchNormalizeUserReviews(
         allReviews: reviewsByPrId[review.prId] || [],
         reviewComments: commentsByReviewId[review.id] || [],
         userGithubLogin: username,
-        // TODO: add if we have it
-        inferredTeamSlug: null,
+        inferredTeams: inferredTeamsSet,
       })
 
       if (!existingNorm) {
@@ -133,7 +170,7 @@ interface CalculateMetricsInput {
   allReviews: GithubReview[]
   reviewComments: GithubReviewComment[]
   userGithubLogin: string
-  inferredTeamSlug: string | null
+  inferredTeams: Set<string> // "org/teamSlug"
 }
 
 function calculateMetrics(input: CalculateMetricsInput) {
@@ -204,7 +241,7 @@ export function computeReviewAnchorAt({
   pr,
   timeline,
   review,
-  inferredTeamSlug,
+  inferredTeams,
 }: CalculateMetricsInput): {
   anchorAt: Date
   anchorType: AnchorType
@@ -260,7 +297,8 @@ export function computeReviewAnchorAt({
       e.createdAt <= cycle.end &&
       e.eventType === 'review_requested' &&
       e.requestedTargetType === 'team' &&
-      (!inferredTeamSlug || e.requestedTeamSlug === inferredTeamSlug)
+      (inferredTeams.size === 0 ||
+        inferredTeams.has(`${e.requestedTeamOrg}/${e.requestedTeamSlug}`))
   )
   if (teamReq) {
     const laterRemoval = lastBefore(

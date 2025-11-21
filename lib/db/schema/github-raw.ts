@@ -123,7 +123,7 @@ export const githubPrFiles = pgTable(
     changes: integer('changes').notNull(),
 
     // Derived fields for analytics
-    fileExtension: text('file_extension'), // ".tsx"
+    fileExtension: text('file_extension').notNull(), // ".tsx"
     directory: text('directory'), // "src/components"
     isTestFile: boolean('is_test_file').default(false),
 

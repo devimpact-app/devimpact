@@ -1,6 +1,6 @@
-export type PRSummary = {
-  short_summary: string;
-  impact_area: string;
-  skills_involved: string[];
-  complexity_score: 1 | 2 | 3 | 4 | 5;
-};
+export interface PrSummaryResult {
+  shortSummary: string // 1–2 sentences, dashboard-friendly
+  longSummary: string // 3–6 sentences, more context
+  highlights: string[] // bullet points you can show in tooltips / weekly recap
+  tags: string[] // e.g. ["refactor", "infra", "onboarding", "performance"]
+}

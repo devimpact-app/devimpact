@@ -14,6 +14,39 @@ import {
 import { users } from './users'
 import { githubPrs, githubReviews } from './github-raw'
 
+export const prSummaries = pgTable(
+  'pr_summaries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    prId: uuid('pull_request_id')
+      .references(() => pullRequests.id, { onDelete: 'cascade' })
+      .notNull()
+      .unique(),
+    repoFullName: text('repo_full_name').notNull(), // "owner/repo"
+    prNumber: integer('pr_number').notNull(),
+    shortSummary: text('short_summary').notNull(),
+    longSummary: text('long_summary'),
+    highlights: jsonb('highlights').$type<string[]>().notNull().default([]),
+    tags: jsonb('tags').$type<string[]>().notNull().default([]),
+    inputHash: text('input_hash'),
+    model: text('model').notNull(), // e.g. "gpt-4.1-mini"
+    promptVersion: text('prompt_version').notNull(), // e.g. "v1"
+    prUpdatedAt: timestamp('pr_updated_at', { withTimezone: true }).notNull(),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .$onUpdateFn(() => new Date())
+      .defaultNow(),
+  },
+  (t) => ({
+    uniqPerTenantAndPr: unique().on(t.tenantId, t.prId),
+    idxTenant: index('pr_summaries_tenant_idx').on(t.tenantId),
+  })
+)
+
 export const pullRequests = pgTable(
   'pull_requests',
   {
@@ -120,6 +153,8 @@ export const pullRequests = pgTable(
     mergedAtIdx: index('pull_requests_merged_at_idx').on(table.mergedAt),
   })
 )
+
+export type PullRequest = typeof pullRequests.$inferSelect
 
 export const reviews = pgTable(
   'reviews',

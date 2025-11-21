@@ -1,4 +1,4 @@
-import { ActivityEvent, ActivityEventKind } from "@/types/api/timeline";
+import { ActivityEvent, ActivityEventKind } from '@/types/api/timeline';
 import {
   Clock,
   ExternalLink,
@@ -7,19 +7,19 @@ import {
   GitPullRequest,
   MessageSquare,
   X,
-} from "lucide-react";
-import { useEffect } from "react";
-import { kindLabel } from "./DotLogic";
-import { formatSeconds } from "@/lib/utils/date";
+} from 'lucide-react';
+import { kindLabel } from './DotLogic';
+import { formatSeconds } from '@/lib/utils/date';
+import { useEffect, useState } from 'react';
 
 function kindIcon(kind: ActivityEventKind) {
   switch (kind) {
-    case "pr_opened":
-    case "pr_merged":
+    case 'pr_opened':
+    case 'pr_merged':
       return <GitPullRequest className="h-3.5 w-3.5" />;
-    case "pr_commit":
+    case 'pr_commit':
       return <GitCommit className="h-3.5 w-3.5" />;
-    case "review_submitted":
+    case 'review_submitted':
       return <MessageSquare className="h-3.5 w-3.5" />;
     default:
       return <GitBranch className="h-3.5 w-3.5" />;
@@ -29,12 +29,22 @@ function kindIcon(kind: ActivityEventKind) {
 function formatTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
+
+function extractEntityId(event: ActivityEvent): string | null {
+  console.log('event', event);
+  if (!event.id) return null;
+  const parts = event.id.split(':');
+  if (parts.length < 2) return null;
+  return parts[parts.length - 1];
+}
+
+type SummaryState = 'idle' | 'loading' | 'ready' | 'error';
 
 export function EventInspectorPanel({
   event,
@@ -43,6 +53,48 @@ export function EventInspectorPanel({
   event: ActivityEvent;
   onClose: () => void;
 }) {
+  const [summary, setSummary] = useState<any | null>(null);
+  const [summaryState, setSummaryState] = useState<SummaryState>('idle');
+
+  useEffect(() => {
+    setSummary(null);
+    setSummaryState('idle');
+
+    if (!(event.kind === 'pr_opened' || event.kind === 'pr_merged')) {
+      return;
+    }
+
+    const prId = extractEntityId(event);
+    if (!prId) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setSummaryState('loading');
+        const res = await fetch(`/api/prs/${prId}/summaries`, {
+          method: 'POST',
+        });
+        if (!res.ok) throw new Error('Failed to load summary');
+        const { data } = await res.json();
+
+        if (cancelled) return;
+        setSummary(data);
+        setSummaryState('ready');
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to fetch PR summary', err);
+        setSummaryState('error');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [event.id]);
+
+  console.log('summary', summary);
+
   const latencyText = event.meta?.reviewLatencySeconds
     ? formatSeconds(event.meta?.reviewLatencySeconds)
     : null;
@@ -109,11 +161,11 @@ export function EventInspectorPanel({
           <div>
             <div className="text-text-primary text-xs">{event.actor.login}</div>
             <div className="text-[11px] text-text-tertiary">
-              {event.kind === "review_submitted"
-                ? "Submitted this review"
-                : event.kind === "pr_commit"
-                  ? "Pushed this change"
-                  : "Authored this activity"}
+              {event.kind === 'review_submitted'
+                ? 'Submitted this review'
+                : event.kind === 'pr_commit'
+                  ? 'Pushed this change'
+                  : 'Authored this activity'}
             </div>
           </div>
         </div>
@@ -131,19 +183,57 @@ export function EventInspectorPanel({
         ) : null}
 
         <section>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-1.5">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-1.5 flex items-center gap-1">
             Summary
+            {summaryState === 'loading' && (
+              <span className="text-[10px] text-text-tertiary">
+                · generating…
+              </span>
+            )}
           </h3>
-          <p className="text-xs leading-relaxed text-text-secondary">
-            {/* Placeholder for now */}
-            This is a recent{" "}
-            <span className="text-text-primary/80">
-              {kindLabel(event.kind).toLowerCase()}
-            </span>{" "}
-            in your timeline. In the future, DevImpact will show a brief
-            narrative here based on the PR changes, review content, and related
-            activity.
-          </p>
+
+          {summaryState === 'ready' && summary && (
+            <>
+              <p className="text-xs leading-relaxed text-text-secondary">
+                {summary.shortSummary}
+              </p>
+
+              {summary.highlights?.length > 0 && (
+                <ul className="mt-2 space-y-1 text-[11px] text-text-secondary">
+                  {summary.highlights.map((h) => (
+                    <li key={h} className="flex gap-1">
+                      <span className="mt-[3px] h-[3px] w-[3px] rounded-full bg-text-tertiary" />
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+
+          {summaryState === 'loading' && (
+            <p className="text-xs leading-relaxed text-text-secondary animate-pulse">
+              Pulling in a quick summary of this PR’s changes and review…
+            </p>
+          )}
+
+          {summaryState === 'error' && (
+            <p className="text-xs leading-relaxed text-text-secondary">
+              Couldn&apos;t load a summary right now. You can still open the PR
+              on GitHub for full details.
+            </p>
+          )}
+
+          {summaryState === 'idle' && !summary && (
+            <p className="text-xs leading-relaxed text-text-secondary">
+              This is a recent{' '}
+              <span className="text-text-primary/80">
+                {kindLabel(event.kind).toLowerCase()}
+              </span>{' '}
+              in your timeline. DevImpact will show a brief narrative here based
+              on the PR changes and review once summarization runs.
+            </p>
+          )}
         </section>
 
         {hasMeta && (
