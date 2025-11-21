@@ -1,43 +1,44 @@
-import { computeEvidenceCounts } from "./computeEvidenceCounts";
-import { upsertTeamMemberships } from "./upsertTeamMemberships";
+import { computeEvidenceCounts } from './computeEvidenceCounts'
+import { upsertTeamMemberships } from './upsertTeamMemberships'
 
 /**
  * Infer team memberships for users impacted by the given PRs.
  * Call this right after persist PR bundles
  */
 export async function inferTeamMemberships(opts: {
-  tenantId: string;
-  prIdsChanged: string[]; // PRs just persisted/updated
-  since?: Date; // e.g. new Date(Date.now() - 90*864e5)
-  username: string;
+  tenantId: string
+  since?: Date
+  username: string
 }): Promise<{
-  evidenceCount: number;
+  evidenceCount: number
 }> {
-  const { tenantId, prIdsChanged, since, username } = opts;
+  const { tenantId, since, username } = opts
 
-  if (!prIdsChanged?.length) {
-    return { evidenceCount: 0 };
-  }
-
-  const evidence = await computeEvidenceCounts({
+  const {
+    rows: evidenceDeltas,
+    totalReviewsAfterAnyTeamRequestDelta,
+    totalDirectRequestsAfterTeamRequestDelta,
+  } = await computeEvidenceCounts({
     tenantId,
     username,
     since,
-  });
+  })
 
-  if (!evidence.length) {
-    return { evidenceCount: 0 };
+  if (!evidenceDeltas.length) {
+    return { evidenceCount: 0 }
   }
 
-  // Upsert inferred memberships
   await upsertTeamMemberships({
     tenantId,
-    evidence,
-    source: "heuristic",
-    algoVersion: "v1",
-  });
+    evidenceDeltas,
+    totalReviewsAfterAnyTeamRequestDelta,
+    totalDirectRequestsAfterTeamRequestDelta,
+    source: 'heuristic',
+    algoVersion: 'v1',
+    username,
+  })
 
   return {
-    evidenceCount: evidence.length,
-  };
+    evidenceCount: evidenceDeltas.length,
+  }
 }

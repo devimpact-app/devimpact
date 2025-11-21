@@ -97,7 +97,6 @@ export function WorkRhythmCard({
         w-full
       "
     >
-      {/* Header */}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -131,7 +130,6 @@ export function WorkRhythmCard({
         </button>
       </header>
 
-      {/* Heatmap */}
       <div className="relative flex flex-col gap-2">
         <div
           className="
@@ -143,13 +141,11 @@ export function WorkRhythmCard({
           relative
         "
         >
-          {/* subtle guide lines */}
           <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
             <div className="absolute left-0 right-0 top-1/3 h-px bg-white/30" />
             <div className="absolute left-0 right-0 top-2/3 h-px bg-white/30" />
           </div>
 
-          {/* 4×7 grid of cells */}
           <div className="absolute inset-1 flex">
             <div className="flex flex-col justify-between mr-1">
               {["Early", "AM", "PM", "Eve"].map((t) => (
@@ -216,13 +212,11 @@ export function WorkRhythmCard({
       </div>
 
       <div className="mt-3 space-y-2">
-        {/* Explanatory line */}
         <p className="text-[11px] text-[#7C86A8] leading-normal">
           We aggregate your coding and review activity into a typical week so
           you can spot when your focus time naturally happens.
         </p>
 
-        {/* Narrative summary */}
         <p className="text-xs text-[#C7D2FF] leading-relaxed">
           You tend to do your heaviest coding early in the week, with most
           activity landing on
@@ -234,7 +228,6 @@ export function WorkRhythmCard({
           is a strong window to protect for focused work.
         </p>
 
-        {/* Optional suggestion pills */}
         <div className="flex flex-wrap gap-2 pt-1">
           <span className="rounded-full border border-[#3B4A78] px-2.5 py-1 text-[11px] text-[#C7D2FF]">
             Protect 9–11 AM on Tuesdays

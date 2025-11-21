@@ -5,35 +5,17 @@ import { storeReviews } from "../storage/store-reviews";
 import { storeReviewComments } from "../storage/store-review-comments";
 import { storeTimelineEvents } from "../storage/store-timeline-events";
 import { storeRawData } from "../storage/store-raw-data";
-import {
-  GitHubPRCommit,
-  GitHubPRFile,
-  GitHubReview,
-  GitHubReviewComment,
-  GitHubTimelineEvent,
-} from "../api/types";
-import { GitHubSearchPullRequest } from "../api/types/PullRequest";
-
-export type PRIngestBundle = {
-  repo: { fullName: string; owner: string; name: string };
-  pr: GitHubSearchPullRequest;
-  files?: Array<GitHubPRFile>;
-  commits?: Array<GitHubPRCommit>;
-  reviews?: Array<GitHubReview>;
-  reviewComments?: Array<GitHubReviewComment>;
-  timeline?: Array<GitHubTimelineEvent>;
-};
+import { RepoSyncPayload } from "@/types/api/sync";
 
 export async function persistBundles(
   userId: string,
-  bundles: PRIngestBundle[],
+  repo: { fullName: string; owner: string; name: string },
+  bundles: RepoSyncPayload["pulls"],
   opts?: {
-    saveRaw?: boolean; // default true
-    reviewerLoginFilter?: string | null; // when doing reviewed-only flows
+    saveRaw?: boolean;
   },
 ) {
   const saveRaw = opts?.saveRaw ?? true;
-  const filterReviewer = opts?.reviewerLoginFilter ?? null;
 
   const counts = {
     prs: 0,
@@ -50,18 +32,18 @@ export async function persistBundles(
     try {
       // Optional: raw snapshot for transparency/debugging
       if (saveRaw) {
-        await storeRawData(userId, b.repo.fullName, b.pr.number, {
+        await storeRawData(userId, repo.fullName, b.pr.number, {
           pr: b.pr,
           files: b.files ?? [],
           commits: b.commits ?? [],
           reviews: b.reviews ?? [],
           reviewComments: b.reviewComments ?? [],
-          timeline: b.timeline ?? [],
+          timeline: b.timelineEvents ?? [],
         });
       }
 
       // PR first → get internal prId
-      const prId = await storePR(userId, b.pr, b.repo.fullName);
+      const prId = await storePR(userId, b.pr, repo.fullName);
       prIds.push(prId);
 
       // Files
@@ -79,30 +61,24 @@ export async function persistBundles(
       }
 
       // Reviews (optionally filter to the reviewing user)
-      const reviews = filterReviewer
-        ? (b.reviews ?? []).filter((r) => r.user?.login === filterReviewer)
-        : (b.reviews ?? []);
+      const reviews = b.reviews ?? [];
       if (reviews.length) {
-        const reviewer = filterReviewer ?? b.pr.user?.login ?? "unknown";
+        const reviewer = b.pr.user?.login ?? "unknown";
         await storeReviews(prId, userId, reviews, reviewer);
         counts.reviews += reviews.length;
       }
 
       // Review comments (match optional filter)
-      const reviewComments = filterReviewer
-        ? (b.reviewComments ?? []).filter(
-            (c) => c.user?.login === filterReviewer,
-          )
-        : (b.reviewComments ?? []);
+      const reviewComments = b.reviewComments || [];
       if (reviewComments.length) {
         await storeReviewComments(prId, userId, reviewComments);
         counts.reviewComments += reviewComments.length;
       }
 
       // Timeline (immutable; your storeTimelineEvents already on-conflict-do-nothing)
-      if (b.timeline?.length) {
-        await storeTimelineEvents(prId, userId, b.timeline);
-        counts.events += b.timeline.length;
+      if (b.timelineEvents?.length) {
+        await storeTimelineEvents(prId, userId, b.timelineEvents);
+        counts.events += b.timelineEvents.length;
       }
 
       counts.prs += 1;

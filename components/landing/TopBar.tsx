@@ -1,7 +1,6 @@
 export default function TopBar() {
   return (
     <header className="w-full flex items-center justify-between px-6 py-4">
-      {/* Brand */}
       <a
         href="/"
         className="text-lg font-semibold text-text-primary tracking-tight"
@@ -9,11 +8,19 @@ export default function TopBar() {
         DevImpact
       </a>
 
-      {/* Right Side */}
       <nav className="flex items-center gap-4">
         <a
           href="/login"
-          className="rounded-xl bg-accent hover:bg-accent-hover text-white px-4 py-2 font-semibold transition-colors"
+          className="
+    rounded-xl 
+    border border-[#283047] 
+    bg-transparent 
+    px-4 py-2 
+    text-sm font-medium text-[#E2E6FF]
+    hover:bg-[#0E1220]
+    hover:border-[#3B4A78]
+    transition
+  "
         >
           Log in
         </a>

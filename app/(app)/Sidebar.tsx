@@ -85,7 +85,6 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
         <Orbit className="h-7 w-7 text-indigo-400" />
       </div>
 
-      {/* Links */}
       <div className="flex h-full flex-col gap-1">
         {NAV.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
@@ -177,7 +176,6 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
             )}
           </button>
 
-          {/* Menu */}
           {open && (
             <div
               ref={menuRef}

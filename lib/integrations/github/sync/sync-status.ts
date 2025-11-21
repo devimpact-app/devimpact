@@ -1,81 +1,92 @@
+// import { db } from "@/lib/db/client";
+// import { integrationTokens } from "@/lib/db/schema";
+// import { eq } from "drizzle-orm";
+// import { getActiveIntegrationToken } from "../client";
+
 import { db } from "@/lib/db/client";
-import { integrationTokens } from "@/lib/db/schema";
+import { users } from "@/lib/db/schema";
+import { CliStatus, OnboardingState } from "@/types/api/cli";
 import { eq } from "drizzle-orm";
-import { getActiveIntegrationToken } from "../client";
 
-export interface SyncStatus {
-  lastSyncedAt: Date | null;
-  coverageStartDate: Date | null;
-  lastSyncStatus?: "ok" | "partial" | "error" | null;
-}
+export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
+  const rows = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const user = rows[0] ?? null;
 
-/**
- * Get the current sync status for a user
- */
-export async function getSyncStatus(
-  userId: string,
-): Promise<SyncStatus | null> {
-  const token = await getActiveIntegrationToken(userId);
-  if (!token) return null;
+  const onboardingState: OnboardingState =
+    (user.onboardingState as OnboardingState) ?? "account_created";
+  const hasCliToken = !!user.cliTokenHash;
+  const cliLinkedAt = user.cliLinkedAt ? user.cliLinkedAt.toISOString() : null;
+  const lastSyncAt = user.cliLastSyncAt
+    ? user.cliLastSyncAt.toISOString()
+    : null;
+
+  let recommendedStartISO: string;
+
+  if (user.cliLastSyncAt) {
+    const last = new Date(user.cliLastSyncAt);
+    const bufferMs = 5 * 60 * 1000; // 5 minutes
+    const start = new Date(last.getTime() - bufferMs);
+    recommendedStartISO = start.toISOString();
+  } else {
+    // 90 day default
+    const lookbackDays = process.env.SYNC_LOOKBACK_DAYS
+      ? parseInt(process.env.SYNC_LOOKBACK_DAYS)
+      : 90;
+    const start = new Date();
+    start.setDate(start.getDate() - lookbackDays);
+    start.setHours(0, 0, 0, 0);
+    recommendedStartISO = start.toISOString();
+  }
 
   return {
-    lastSyncedAt: token.lastSyncedAt ?? null,
-    coverageStartDate: token.coverageStartDate ?? null,
-    lastSyncStatus: token.lastSyncStatus ?? null,
+    onboardingState,
+    hasCliToken,
+    cliLinkedAt,
+    lastSyncAt,
+    hasActivity: !!user.cliLastSyncAt,
+    recommendedStartISO,
   };
 }
 
-/**
- * Determine the date to sync from based on sync status
- */
-export function determineSyncDate(syncStatus: SyncStatus | null): Date {
-  if (syncStatus?.lastSyncedAt) {
-    // Incremental sync: 5-minute buffer to catch delayed updates
-    return new Date(syncStatus.lastSyncedAt.getTime() - 5 * 60 * 1000);
-  }
-  if (syncStatus?.coverageStartDate) {
-    return syncStatus.coverageStartDate;
-  }
-  // Initial sync: last 90 days
-  const d = new Date();
-  d.setDate(d.getDate() - 90);
-  return d;
-}
-
-/**
- * Update sync status after successful sync
- */
-export async function updateSyncStatus(
-  userId: string,
-  opts?: { status?: "ok" | "partial" | "error"; coverageStartDate?: Date },
-) {
-  const token = await getActiveIntegrationToken(userId);
-  if (!token) return; // no GitHub token to update
-
+export async function updateSyncStatus({
+  tenantId,
+  userLastSyncAt,
+  syncWindow,
+}: {
+  tenantId: string;
+  syncWindow: {
+    startISO: string;
+    endISO: string;
+  };
+  userLastSyncAt: string | null | undefined;
+}) {
+  const lastSyncAt = userLastSyncAt ? new Date(userLastSyncAt) : null;
+  const windowEnd = new Date(syncWindow.endISO);
   const now = new Date();
-  const status = opts?.status ?? "ok";
+  const candidateEnd = windowEnd > now ? now : windowEnd;
 
-  const coverage =
-    token.coverageStartDate ??
-    opts?.coverageStartDate ??
-    (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - 90);
-      return d;
-    })();
+  const nextLastSyncAt = lastSyncAt
+    ? new Date(Math.max(lastSyncAt.getTime(), candidateEnd.getTime()))
+    : candidateEnd;
 
   await db
-    .update(integrationTokens)
+    .update(users)
     .set({
-      lastSyncedAt: now,
-      lastSyncStatus: status,
-      coverageStartDate: coverage,
+      cliLastSyncAt: nextLastSyncAt,
+      // Add coverage start if no last sync
+      ...(!lastSyncAt
+        ? { coverageStartDate: new Date(syncWindow.startISO) }
+        : {}),
       updatedAt: now,
+      onboardingState: "synced",
     })
-    .where(eq(integrationTokens.id, token.id));
+    .where(eq(users.id, tenantId));
 }
 
-/** Initial if we have no token or no recorded last sync. */
-export function isInitialSync(syncStatus: SyncStatus | null): boolean {
-  return !syncStatus || !syncStatus.lastSyncedAt;
+export function isInitialSync(syncStatus: CliStatus | null): boolean {
+  return !syncStatus || !syncStatus.lastSyncAt;
 }

@@ -73,19 +73,16 @@ export function MetricStatCard({
         className={`${baseClasses} ${className ?? ""} animate-pulse`}
         aria-busy="true"
       >
-        {/* Title + period skeleton */}
         <div className="flex items-baseline justify-between gap-2">
           <div className="h-3 w-24 rounded-full bg-surface" />
           {periodLabel && <div className="h-2 w-14 rounded-full bg-surface" />}
         </div>
 
-        {/* Main value skeleton */}
         <div className="flex items-baseline gap-2 mt-1">
           <div className="h-6 w-16 rounded-md bg-surface" />
           {deltaText && <div className="h-4 w-10 rounded-full bg-surface" />}
         </div>
 
-        {/* Comparison row skeleton */}
         {showComparison && (
           <div className="mt-1 flex items-center gap-2">
             <div className="h-3 w-20 rounded-full bg-surface" />
@@ -93,7 +90,6 @@ export function MetricStatCard({
           </div>
         )}
 
-        {/* Description skeleton */}
         {description && (
           <div className="mt-1 space-y-1">
             <div className="h-2 w-32 rounded-full bg-surface" />
@@ -106,7 +102,6 @@ export function MetricStatCard({
 
   return (
     <section className={`${baseClasses} ${className ?? ""}`}>
-      {/* Title + period */}
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-xs font-medium uppercase tracking-wide text-text-secondary/80">
           {title}
@@ -118,7 +113,6 @@ export function MetricStatCard({
         )}
       </div>
 
-      {/* Main value */}
       <div className="flex items-baseline gap-2">
         <div className="text-2xl font-semibold tabular-nums">
           {loading ? "…" : (displayValue ?? "—")}
@@ -130,7 +124,6 @@ export function MetricStatCard({
         )}
       </div>
 
-      {/* Comparison row */}
       {showComparison && (
         <div className="text-xs text-text-secondary">
           <span className="font-medium">{comparisonLabel}:</span>{" "}
@@ -138,7 +131,6 @@ export function MetricStatCard({
         </div>
       )}
 
-      {/* Tiny caption */}
       {description && (
         <p className="mt-0.5 text-[11px] leading-snug text-text-secondary/80">
           {description}

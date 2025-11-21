@@ -1,5 +1,5 @@
-import { db } from "@/lib/db/client";
-import { repositories } from "@/lib/db/schema";
+import { db } from '@/lib/db/client'
+import { githubRepos } from '@/lib/db/schema'
 
 /**
  * Seed 3 basic repositories for a tenant (tenant=user for now).
@@ -7,77 +7,66 @@ import { repositories } from "@/lib/db/schema";
  */
 export async function seedRepositories(
   tenantId: string,
-  opts?: { provider?: "github" },
+  opts?: { provider?: 'github' }
 ) {
-  const provider = opts?.provider ?? "github";
+  const provider = opts?.provider ?? 'github'
 
   const sample = [
     {
-      externalId: "746391234", // GitHub repo numeric id as string
-      externalNodeId: "R_kgDOLabcde", // GitHub repo node_id
-      fullName: "acme/frontend",
-      owner: "acme",
-      name: "frontend",
+      externalId: '746391234', // GitHub repo numeric id as string
+      externalNodeId: 'R_kgDOLabcde', // GitHub repo node_id
+      fullName: 'acme/frontend',
+      owner: 'acme',
+      name: 'frontend',
       isPrivate: true,
     },
     {
-      externalId: "746391235",
-      externalNodeId: "R_kgDOLabcdn",
-      fullName: "acme/api",
-      owner: "acme",
-      name: "api",
+      externalId: '746391235',
+      externalNodeId: 'R_kgDOLabcdn',
+      fullName: 'acme/api',
+      owner: 'acme',
+      name: 'api',
       isPrivate: true,
     },
     {
-      externalId: "746391236",
-      externalNodeId: "R_kgDOLabcdo",
-      fullName: "acme/infra",
-      owner: "acme",
-      name: "infra",
+      externalId: '746391236',
+      externalNodeId: 'R_kgDOLabcdo',
+      fullName: 'acme/infra',
+      owner: 'acme',
+      name: 'infra',
       isPrivate: true,
     },
-  ];
+  ]
 
-  const results = [];
+  const results = []
   for (const r of sample) {
     const [row] = await db
-      .insert(repositories)
+      .insert(githubRepos)
       .values({
         tenantId,
-        provider,
-        externalId: r.externalId,
-        externalNodeId: r.externalNodeId,
+        githubRepoId: r.externalId,
         fullName: r.fullName,
         owner: r.owner,
         name: r.name,
         isPrivate: r.isPrivate,
-        selected: true,
-        // leave lastSyncedAt/syncCursor/syncError null for fresh seed
       })
       .onConflictDoUpdate({
-        target: [
-          repositories.tenantId,
-          repositories.provider,
-          repositories.fullName,
-        ],
+        target: [githubRepos.tenantId, githubRepos.fullName],
         set: {
-          // keep selection on, and refresh mutable fields (handles renames)
-          externalId: r.externalId, // if you later switch unique key to externalId, this helps migration
-          externalNodeId: r.externalNodeId,
+          githubRepoId: r.externalId,
           owner: r.owner,
           name: r.name,
           isPrivate: r.isPrivate,
-          selected: true,
         },
       })
       .returning({
-        id: repositories.id,
-        fullName: repositories.fullName,
-        externalId: repositories.externalId,
-      });
+        id: githubRepos.id,
+        fullName: githubRepos.fullName,
+        externalId: githubRepos.githubRepoId,
+      })
 
-    results.push(row);
+    results.push(row)
   }
 
-  return results;
+  return results
 }

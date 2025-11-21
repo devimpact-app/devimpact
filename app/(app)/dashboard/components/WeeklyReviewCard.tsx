@@ -54,7 +54,6 @@ export function RecentActivitySummaryCard({
 }: RecentActivitySummaryCardProps) {
   return (
     <section className="mt-8">
-      {/* Section header */}
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-text-primary">
           Recent Activity
@@ -62,14 +61,11 @@ export function RecentActivitySummaryCard({
         <span className="text-xs text-text-secondary">{periodLabel}</span>
       </div>
 
-      {/* Main card */}
       <article className="rounded-2xl border border-border bg-surface-alt px-5 py-4 shadow-sm flex flex-col gap-4">
-        {/* AI-style narrative summary */}
         <p className="text-sm leading-6 text-text-secondary max-w-3xl">
           {summary}
         </p>
 
-        {/* Thematic strips: PRs / Reviews / Projects */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {prSummary && (
             <div className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-3 flex flex-col gap-1.5">
@@ -132,7 +128,6 @@ export function RecentActivitySummaryCard({
           )}
         </div>
 
-        {/* Highlights + timeline link */}
         <div className="mt-1 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="md:max-w-xl">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-text-tertiary mb-1.5">

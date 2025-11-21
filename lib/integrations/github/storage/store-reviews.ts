@@ -1,15 +1,15 @@
-import { db } from "@/lib/db/client";
-import { githubReviews } from "@/lib/db/schema";
-import { GitHubReview } from "../api/types";
-import { sql } from "drizzle-orm";
+import { db } from '@/lib/db/client'
+import { githubReviews } from '@/lib/db/schema'
+import { sql } from 'drizzle-orm'
+import { SanitizedPRReview } from '../types'
 
 export async function storeReviews(
   prId: string,
   userId: string,
-  reviews: GitHubReview[],
-  username: string,
+  reviews: SanitizedPRReview[],
+  username: string
 ): Promise<void> {
-  if (reviews.length === 0) return;
+  if (reviews.length === 0) return
 
   await db
     .insert(githubReviews)
@@ -21,11 +21,9 @@ export async function storeReviews(
         state: r.state,
         body: r.body || null,
         reviewerGithubLogin: r.user?.login || username,
-        commitId: r.commit_id || null,
-        authorAssociation: r.author_association || null,
         submittedAt: r.submitted_at ? new Date(r.submitted_at) : null,
         htmlUrl: r.html_url,
-      })),
+      }))
     )
     .onConflictDoUpdate({
       target: [githubReviews.reviewId],
@@ -35,5 +33,5 @@ export async function storeReviews(
         submittedAt: sql`excluded.submitted_at`,
         fetchedAt: new Date(),
       },
-    });
+    })
 }

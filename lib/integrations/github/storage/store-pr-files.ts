@@ -1,29 +1,29 @@
-import { db } from "@/lib/db/client";
-import { githubPrFiles } from "@/lib/db/schema";
-import path from "path";
-import { GitHubPRFile } from "../api/types";
-import { sql } from "drizzle-orm";
+import { db } from '@/lib/db/client'
+import { githubPrFiles } from '@/lib/db/schema'
+import path from 'path'
+import { sql } from 'drizzle-orm'
+import { SanitizedPRFile } from '../types'
 
 export async function storePRFiles(
   prId: string,
   userId: string,
-  files: GitHubPRFile[],
-  username: string,
+  files: SanitizedPRFile[],
+  username: string
 ): Promise<void> {
-  if (files.length === 0) return;
+  if (files.length === 0) return
 
   const rows = files.map((f) => {
-    const ext = path.extname(f.filename);
-    const dir = path.dirname(f.filename);
+    const ext = path.extname(f.filename)
+    const dir = path.dirname(f.filename)
     const isTest =
-      f.filename.includes("test") ||
-      f.filename.includes("spec") ||
-      f.filename.includes("__tests__") ||
-      f.filename.includes(".test.") ||
-      f.filename.includes(".spec.") ||
-      dir.includes("test") ||
-      dir.includes("spec") ||
-      dir.includes("__tests__");
+      f.filename.includes('test') ||
+      f.filename.includes('spec') ||
+      f.filename.includes('__tests__') ||
+      f.filename.includes('.test.') ||
+      f.filename.includes('.spec.') ||
+      dir.includes('test') ||
+      dir.includes('spec') ||
+      dir.includes('__tests__')
 
     return {
       tenantId: userId,
@@ -37,11 +37,10 @@ export async function storePRFiles(
       fileExtension: ext || null,
       directory: dir,
       isTestFile: isTest,
-      blobUrl: f.blob_url ?? null,
       authorGithubLogin: username,
       fetchedAt: new Date(),
-    };
-  });
+    }
+  })
 
   await db
     .insert(githubPrFiles)
@@ -55,12 +54,11 @@ export async function storePRFiles(
         additions: sql`excluded.additions`,
         deletions: sql`excluded.deletions`,
         changes: sql`excluded.changes`,
-        blobUrl: sql`excluded.blob_url`,
         fileExtension: sql`excluded.file_extension`,
         directory: sql`excluded.directory`,
         isTestFile: sql`excluded.is_test_file`,
         previousFilename: sql`COALESCE(excluded.previous_filename, ${githubPrFiles.previousFilename})`,
         fetchedAt: new Date(),
       },
-    });
+    })
 }

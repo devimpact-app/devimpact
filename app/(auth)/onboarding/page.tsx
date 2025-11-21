@@ -3,15 +3,21 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import SyncingPage from "./components/SyncingLoader";
 import { unstable_noStore as noStore } from "next/cache";
 
 function assertNever(x: never): never {
   throw new Error(`Unhandled onboarding state: ${x}`);
 }
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ beta?: string }>;
+}) {
   noStore();
+
+  const params = await searchParams;
+  const betaCode = params.beta;
 
   const session = await auth();
   const userFromSession = session?.user;
@@ -20,29 +26,32 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
+  if (betaCode && betaCode === process.env.BETA_ACCESS_CODE) {
+    await db
+      .update(users)
+      .set({ betaAllowed: true })
+      .where(eq(users.id, userFromSession.id));
+  }
+
   const [user] = await db
-    .select({
-      id: users.id,
-      onboardingState: users.onboardingState,
-    })
+    .select()
     .from(users)
     .where(eq(users.id, userFromSession.id))
     .limit(1);
 
-  if (!user) {
+  if (!user || !user.betaAllowed) {
     redirect("/login");
   }
 
-  const state = user.onboardingState ?? "need_data_source";
+  const state = user.onboardingState ?? "account_created";
 
   switch (state) {
-    case "need_data_source":
-      redirect("/onboarding/setup");
-    case "token_provided":
-      redirect("/onboarding/repos");
+    case "account_created":
+    case "cli_pending":
+    case "cli_linked":
     case "syncing":
-      return <SyncingPage />;
-    case "complete":
+      redirect("/onboarding/cli");
+    case "synced":
       redirect("/dashboard");
     default:
       // Ensure we catch new states at build time

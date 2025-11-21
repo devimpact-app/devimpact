@@ -7,11 +7,10 @@ export default function Footer() {
             DevImpact
           </a>
           <p className="mt-1 text-sm text-text-secondary">
-            Your work. Your data. Your story.
+            Built for engineers. Controlled by you.
           </p>
         </div>
 
-        {/* Center — nav links */}
         <nav className="mt-6 flex justify-center gap-6 text-sm text-text-secondary md:mt-0">
           <a href="/privacy" className="hover:text-text-primary">
             Privacy
@@ -27,7 +26,6 @@ export default function Footer() {
           </a>
         </nav>
 
-        {/* Right side — copyright */}
         <div className="mt-6 text-center text-xs text-text-secondary md:mt-0 md:text-right">
           {new Date().getFullYear()} DevImpact.
         </div>

@@ -39,21 +39,18 @@ function DayColumn({
     <div key={label} className="flex flex-col items-center gap-1">
       <div className="h-[220px] w-full rounded-md border border-slate-700 bg-slate-900 relative">
         <div className="absolute inset-0 pointer-events-none">
-          {/* 25% */}
           <div className="absolute left-0 right-0 top-[25%] border-t border-border">
             <span className="absolute left-1 -translate-y-1/2 text-[10px] text-text-tertiary/50">
               6a
             </span>
           </div>
 
-          {/* 50% */}
           <div className="absolute left-0 right-0 top-1/2 border-t border-border">
             <span className="absolute left-1 -translate-y-1/2 text-[10px] text-text-tertiary/50">
               12p
             </span>
           </div>
 
-          {/* 75% */}
           <div className="absolute left-0 right-0 top-[75%] border-t border-border">
             <span className="absolute left-1 -translate-y-1/2 text-[10px] text-text-tertiary/50">
               6p

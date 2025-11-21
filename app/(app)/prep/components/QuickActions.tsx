@@ -129,7 +129,6 @@ export function PrepQuickActions({
         </h3>
       </header>
 
-      {/* accent divider */}
       <div className="relative my-3 h-px bg-gradient-to-r from-transparent via-[#2A3350] to-transparent" />
 
       <div className="relative grid gap-6 pt-2 md:grid-cols-2 xl:grid-cols-3">

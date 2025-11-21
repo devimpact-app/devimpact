@@ -133,7 +133,6 @@ export function StoryCardView({ story }: { story: StoryCard }) {
 
       {(hasSuggestions || hasEvidence) && (
         <div className="mt-auto pt-4 border-t border-text-secondary space-y-2">
-          {/* Suggestions */}
           {hasSuggestions && (
             <div>
               <button
@@ -157,7 +156,6 @@ export function StoryCardView({ story }: { story: StoryCard }) {
             </div>
           )}
 
-          {/* Evidence */}
           {hasEvidence && (
             <div>
               <button
