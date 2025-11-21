@@ -75,18 +75,18 @@ export async function batchNormalizeUserPRs(
         .where(
           and(
             inArray(githubReviews.prId, prIds),
-            not(eq(githubReviews.reviewerGithubLogin, username))
+            not(
+              eq(
+                githubReviews.reviewerGithubLogin,
+                githubReviews.prAuthorGithubLogin
+              )
+            )
           )
         ),
       db
         .select()
         .from(githubReviewComments)
-        .where(
-          and(
-            inArray(githubReviews.prId, prIds),
-            not(eq(githubReviews.reviewerGithubLogin, username))
-          )
-        ),
+        .where(inArray(githubReviewComments.prId, prIds)),
       db
         .select()
         .from(githubTimelineEvents)
@@ -312,7 +312,12 @@ function calculateMetrics(input: CalculateMetricsInput) {
 
     reviewsCount: reviews.length,
     uniqueReviewers,
-    reviewCommentsCount: reviewComments.length,
+    selfReviewCommentsCount: reviewComments.filter(
+      (rc) => rc.authorGithubLogin === pr.authorGithubLogin
+    ).length,
+    reviewCommentsCount: reviewComments.filter(
+      (rc) => rc.authorGithubLogin !== pr.authorGithubLogin
+    ).length,
     approvalsCount,
     changesRequestedCount,
     wasApprovedBeforeMerge,

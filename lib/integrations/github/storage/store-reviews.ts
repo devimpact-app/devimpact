@@ -7,7 +7,8 @@ export async function storeReviews(
   prId: string,
   userId: string,
   reviews: SanitizedPRReview[],
-  username: string
+  username: string,
+  prAuthorGithubLogin: string
 ): Promise<void> {
   if (reviews.length === 0) return
 
@@ -21,6 +22,7 @@ export async function storeReviews(
         state: r.state,
         body: r.body || null,
         reviewerGithubLogin: r.user?.login || username,
+        prAuthorGithubLogin,
         submittedAt: r.submitted_at ? new Date(r.submitted_at) : null,
         htmlUrl: r.html_url,
       }))

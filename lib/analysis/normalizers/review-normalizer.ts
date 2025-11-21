@@ -10,7 +10,7 @@ import {
   GithubReviewComment,
 } from '@/lib/db/schema/github-raw'
 import { reviews } from '@/lib/db/schema/github-normalized'
-import { eq, and, inArray, or, isNull, gt } from 'drizzle-orm'
+import { eq, and, inArray, or, isNull, gt, not } from 'drizzle-orm'
 import {
   computeCycles,
   diffSecondsRounded,
@@ -51,7 +51,13 @@ export async function batchNormalizeUserReviews(
     .where(
       and(
         eq(githubReviews.tenantId, userId),
-        inArray(githubReviews.prId, normalizedPrIds)
+        inArray(githubReviews.prId, normalizedPrIds),
+        not(
+          eq(
+            githubReviews.reviewerGithubLogin,
+            githubReviews.prAuthorGithubLogin
+          )
+        )
       )
     )
 

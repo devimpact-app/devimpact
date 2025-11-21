@@ -168,6 +168,7 @@ export const githubReviews = pgTable(
 
     // Reviewer info
     reviewerGithubLogin: text('reviewer_github_login').notNull(),
+    prAuthorGithubLogin: text('pr_author_github_login').notNull(),
 
     // Context
     commitId: text('commit_id'), // Which commit was reviewed
