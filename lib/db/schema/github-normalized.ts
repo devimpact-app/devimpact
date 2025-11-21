@@ -82,6 +82,7 @@ export const pullRequests = pgTable(
     commitsCount: integer('commits_count').default(0), // User's commits only
     reviewsCount: integer('reviews_count').default(0), // Total review submissions
     uniqueReviewers: integer('unique_reviewers').default(0),
+    selfReviewCommentsCount: integer('self_review_comments_count').default(0),
     reviewCommentsCount: integer('review_comments_count').default(0), // Code review comments
 
     approvalsCount: integer('approvals_count').default(0),

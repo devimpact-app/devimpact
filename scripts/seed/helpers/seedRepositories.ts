@@ -51,7 +51,7 @@ export async function seedRepositories(
         isPrivate: r.isPrivate,
       })
       .onConflictDoUpdate({
-        target: [githubRepos.tenantId, githubRepos.fullName],
+        target: [githubRepos.tenantId, githubRepos.githubRepoId],
         set: {
           githubRepoId: r.externalId,
           owner: r.owner,
