@@ -10,9 +10,9 @@ import {
   pgEnum,
   integer,
   boolean,
-} from 'drizzle-orm/pg-core'
-import { users } from './users'
-import { githubPrs, githubReviews } from './github-raw'
+} from 'drizzle-orm/pg-core';
+import { users } from './users';
+import { githubPrs, githubReviews } from './github-raw';
 
 export const prSummaries = pgTable(
   'pr_summaries',
@@ -45,7 +45,7 @@ export const prSummaries = pgTable(
     uniqPerTenantAndPr: unique().on(t.tenantId, t.prId),
     idxTenant: index('pr_summaries_tenant_idx').on(t.tenantId),
   })
-)
+);
 
 export const pullRequests = pgTable(
   'pull_requests',
@@ -152,9 +152,9 @@ export const pullRequests = pgTable(
     createdAtIdx: index('pull_requests_created_at_idx').on(table.createdAt),
     mergedAtIdx: index('pull_requests_merged_at_idx').on(table.mergedAt),
   })
-)
+);
 
-export type PullRequest = typeof pullRequests.$inferSelect
+export type PullRequest = typeof pullRequests.$inferSelect;
 
 export const reviews = pgTable(
   'reviews',
@@ -239,18 +239,20 @@ export const reviews = pgTable(
       t.submittedAt
     ),
   })
-)
+);
+
+export type Review = typeof reviews.$inferSelect;
 
 // Enums
 export const teamConfidenceEnum = pgEnum('team_confidence', [
   'low',
   'medium',
   'high',
-])
+]);
 export const membershipSourceEnum = pgEnum('membership_source', [
   'heuristic',
   'api',
-])
+]);
 
 export const inferredTeamMemberships = pgTable(
   'inferred_team_memberships',
@@ -277,10 +279,10 @@ export const inferredTeamMemberships = pgTable(
 
     // evidence snapshot (counts we used to compute score)
     evidenceCounts: jsonb('evidence_counts').notNull().$type<{
-      reqToReview: number // user reviewed when this team was requested
-      userDirectRequests: number // user was individually requested on those PRs
-      totalReviewsAfterAnyTeamRequest: number // denominator across all teams
-      totalDirectRequestsAfterTeamRequest: number
+      reqToReview: number; // user reviewed when this team was requested
+      userDirectRequests: number; // user was individually requested on those PRs
+      totalReviewsAfterAnyTeamRequest: number; // denominator across all teams
+      totalDirectRequestsAfterTeamRequest: number;
     }>(),
 
     // timestamps
@@ -307,9 +309,10 @@ export const inferredTeamMemberships = pgTable(
     ),
     byTenantScore: index('itm_tenant_score_idx').on(t.tenantId, t.score),
   })
-)
+);
 
 // Optional: Type helper
-export type InferredTeamMembership = typeof inferredTeamMemberships.$inferSelect
+export type InferredTeamMembership =
+  typeof inferredTeamMemberships.$inferSelect;
 export type NewInferredTeamMembership =
-  typeof inferredTeamMemberships.$inferInsert
+  typeof inferredTeamMemberships.$inferInsert;
