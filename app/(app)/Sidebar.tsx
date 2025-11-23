@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   LineChart,
@@ -19,9 +19,10 @@ import {
   CalendarClock,
   Icon,
   ClipboardList,
-} from "lucide-react";
-import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+} from 'lucide-react';
+import clsx from 'clsx';
+import { useEffect, useRef, useState } from 'react';
+import { signOutAction } from './dashboard/actions';
 
 type NavItem = {
   href: string;
@@ -30,11 +31,10 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Home", Icon: Home },
-  { href: "/timeline", label: "Timeline", Icon: CalendarClock },
-  { href: "/insights", label: "Insights", Icon: Lightbulb },
-  { href: "/prep", label: "Prep", Icon: ClipboardList },
-  { href: "/growth", label: "Growth", Icon: LineChart },
+  { href: '/dashboard', label: 'Home', Icon: Home },
+  { href: '/timeline', label: 'Timeline', Icon: CalendarClock },
+  { href: '/insights', label: 'Insights', Icon: Lightbulb },
+  { href: '/prep', label: 'Prep', Icon: ClipboardList },
 ];
 
 type SidebarProps = {
@@ -58,25 +58,25 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
       }
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === 'Escape') setOpen(false);
     }
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
     };
   }, [open]);
 
   const initials =
     userName
-      ?.split(" ")
+      ?.split(' ')
       .map((s) => s[0])
       .slice(0, 2)
-      .join("")
-      .toUpperCase() || "U";
+      .join('')
+      .toUpperCase() || 'U';
 
-  const settingsHref = "/settings";
+  const settingsHref = '/settings';
   const settingsActive = pathname === settingsHref;
 
   return (
@@ -87,26 +87,24 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
 
       <div className="flex h-full flex-col gap-1">
         {NAV.map(({ href, label, Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+          const active = pathname === href || pathname.startsWith(href + '/');
           return (
             <Link
               key={href}
               href={href}
               className={clsx(
-                "group relative grid place-items-center rounded-xl py-3 transition",
+                'group relative grid place-items-center rounded-xl py-3 transition',
                 active
-                  ? "bg-white/15 ring-1 ring-white/20 shadow"
-                  : "hover:bg-white/10",
+                  ? 'bg-white/15 ring-1 ring-white/20 shadow'
+                  : 'hover:bg-white/10'
               )}
               aria-label={label}
               title={label}
             >
               <Icon
                 className={clsx(
-                  "h-5 w-5 transition",
-                  active
-                    ? "text-white"
-                    : "text-blue-200 group-hover:text-white",
+                  'h-5 w-5 transition',
+                  active ? 'text-white' : 'text-blue-200 group-hover:text-white'
                 )}
               />
               <span className="pointer-events-none absolute left-[84px] z-10 hidden rounded-md bg-indigo-900 px-2 py-1 text-xs text-white shadow group-hover:block">
@@ -118,7 +116,7 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
       </div>
 
       <div className="mt-auto space-y-2 pt-4">
-        <Link
+        {/* <Link
           key={settingsHref}
           href={settingsHref}
           className={clsx(
@@ -141,7 +139,7 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
           <span className="pointer-events-none absolute left-[84px] z-10 hidden rounded-md bg-indigo-900 px-2 py-1 text-xs text-white shadow group-hover:block">
             Settings
           </span>
-        </Link>
+        </Link> */}
 
         <div className="relative flex  justify-center items-center">
           <button
@@ -151,22 +149,22 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setOpen((v) => !v);
               }
             }}
             className={clsx(
-              "group grid place-items-center rounded-xl p-2 transition ring-1 ring-white/0",
-              open ? "bg-white/15 ring-white/20" : "hover:bg-white/10",
+              'group grid place-items-center rounded-xl p-2 transition ring-1 ring-white/0',
+              open ? 'bg-white/15 ring-white/20' : 'hover:bg-white/10'
             )}
-            title={userName || "Account"}
+            title={userName || 'Account'}
           >
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={avatarUrl}
-                alt={userName || "User avatar"}
+                alt={userName || 'User avatar'}
                 className="h-8 w-8 rounded-full object-cover"
               />
             ) : (
@@ -185,20 +183,20 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
                  bg-[#0f1220]/95 backdrop-blur p-1 shadow-2xl"
             >
               <div className="px-3 py-2 text-xs text-white/60">
-                {userName || "Your account"}
+                {userName || 'Your account'}
               </div>
 
               <Link
-                href="/profile"
+                href="/settings"
                 role="menuitem"
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10"
                 onClick={() => setOpen(false)}
               >
-                <User className="h-4 w-4" />
-                Profile
+                <Settings className="h-4 w-4" />
+                Settings
               </Link>
 
-              <form method="post" action="/api/auth/signout">
+              <form action={signOutAction}>
                 <button
                   type="submit"
                   role="menuitem"
