@@ -10,7 +10,7 @@ export async function getActivityEventsForRange(
   const { start, end, limit = 200 } = params;
 
   const prRows = await getAuthoredPrs(params);
-  const reviewRows = await getAuthoredReviews(params);
+  const reviewRows = await getAuthoredReviews(params, { joinWithPrs: true });
   const commitRows = await getAuthoredCommits(params);
 
   const events: ActivityEvent[] = [];
@@ -30,6 +30,7 @@ export async function getActivityEventsForRange(
         title: `Opened “${pr.title}”`,
         subtitle: `${pr.repoFullName} • #${pr.prNumber}`,
         meta: {
+          prTitle: pr.title,
           prNumber: pr.prNumber,
           repoFullName: pr.repoFullName,
           linesChanged: pr.linesChanged ?? undefined,
@@ -55,6 +56,7 @@ export async function getActivityEventsForRange(
         title: `Merged “${pr.title}”`,
         subtitle: `${pr.repoFullName} • #${pr.prNumber}`,
         meta: {
+          prTitle: pr.title,
           prNumber: pr.prNumber,
           repoFullName: pr.repoFullName,
           linesChanged: pr.linesChanged ?? undefined,
@@ -83,9 +85,11 @@ export async function getActivityEventsForRange(
       title: `Reviewed PR #${r.prNumber}`,
       subtitle: `${r.repoFullName}`,
       meta: {
+        prTitle: row.pr?.title,
         prNumber: r.prNumber,
         repoFullName: r.repoFullName,
         reviewLatencySeconds: r.reviewLatencySeconds ?? undefined,
+        reviewState: r.state,
         isFirstResponder: r.wasFirstReview ?? undefined,
       },
       links: {
@@ -117,6 +121,7 @@ export async function getActivityEventsForRange(
       title: firstLine,
       subtitle,
       meta: {
+        prTitle: pr?.title,
         prNumber: pr?.prNumber ?? undefined,
         repoFullName: pr?.repoFullName ?? undefined,
       },

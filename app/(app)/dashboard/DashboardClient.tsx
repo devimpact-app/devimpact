@@ -15,6 +15,7 @@ import { DashboardHero } from './components/Hero';
 import { RecentActivitySummaryCard } from './components/WeeklyReviewCard';
 import WeeklySummaryCard from './WeeklySummary';
 import WorkRhythmCard from './WorkRythm';
+import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
 
 type Props = {
   user: {
@@ -104,44 +105,12 @@ export default function DashboardClient({ user }: Props) {
 
       <WorkRhythmCard />
 
-      <div>
-        <RecentActivitySummaryCard
-          periodLabel={periodLabel}
-          summary="Over the last two weeks, you merged 5 PRs and reviewed 11 others, with most work happening mid-week..."
-          prSummary={{
-            title: 'PRs you touched',
-            metricLabel: 'merged',
-            metricValue: '5',
-            description: 'Mostly dashboard layout refactors and search fixes.',
-          }}
-          reviewSummary={{
-            title: 'Reviews you gave',
-            metricLabel: 'reviews',
-            metricValue: '13',
-            description: 'Focused on API edge cases and test coverage.',
-          }}
-          projectSummary={{
-            title: 'Key projects',
-            metricLabel: 'threads',
-            metricValue: '3',
-            description: 'Dashboard V2, search caching, and auth hardening.',
-          }}
-          highlights={[
-            {
-              id: '1',
-              kind: 'pr_merged',
-              title: 'Merged “Improve dashboard layout”',
-              meta: '184 lines • 1 review round',
-            },
-            {
-              id: '2',
-              kind: 'review',
-              title: 'Reviewed “Search caching”',
-              meta: 'First responder • 42m latency',
-            },
-          ]}
-        />
-      </div>
+      <ActivityLogContainer
+        startISO={startISO}
+        endISO={endISO}
+        mode="preview"
+      />
+
       <section className="mt-6">
         <div
           className="

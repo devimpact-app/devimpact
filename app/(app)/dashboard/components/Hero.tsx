@@ -1,8 +1,8 @@
 'use client';
 
 import { TimelineRangeKey } from '@/lib/utils/date';
-import { Calendar, MoreHorizontal } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Calendar } from 'lucide-react';
+import { useMemo } from 'react';
 
 const TIMELINE_RANGE_OPTIONS: { key: TimelineRangeKey; label: string }[] = [
   { key: 'this_week', label: 'This week' },
