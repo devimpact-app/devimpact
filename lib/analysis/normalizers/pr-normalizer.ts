@@ -253,6 +253,17 @@ function calculateMetrics(input: CalculateMetricsInput) {
       ? (approvalsAfterLastReady[0].submittedAt ?? null)
       : null;
 
+  let reviewRounds = 0;
+  if (reviewsAfterLastReady.length > 0) {
+    reviewRounds = 1;
+
+    const changesRequestedAfterReady = reviewsAfterLastReady.filter(
+      (r) => normState(r.state) === 'changes_requested'
+    ).length;
+
+    reviewRounds += changesRequestedAfterReady;
+  }
+
   const authoringLeadSeconds = diffSecondsRounded(
     firstCommitAt,
     lastReadyForReviewAt
@@ -321,6 +332,7 @@ function calculateMetrics(input: CalculateMetricsInput) {
     approvalsCount,
     changesRequestedCount,
     wasApprovedBeforeMerge,
+    reviewRounds,
 
     hadForcePushes,
 

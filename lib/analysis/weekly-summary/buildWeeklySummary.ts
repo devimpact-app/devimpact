@@ -19,6 +19,8 @@ import {
   buildHighlightedReviewSummary,
   pickHighlightedReview,
 } from './highlightedReviews';
+import { deriveFrictionFollowups } from './frictionItems';
+import { buildWeeklyHeadline } from './headline';
 
 export type BuildWeeklySummaryArgs = {
   userId: string;
@@ -142,11 +144,19 @@ export async function buildWeeklySummary({
     };
   }
 
-  // -- Derive friction & follow-ups ------------------------------------------
-  // Should include themes like iteration, latency, high-friction reviews.
-  const frictionFollowups = {
-    items: [] as any[], // TODO
-  };
+  // friction & follow-ups
+  const frictionFollowups = deriveFrictionFollowups({
+    authoredPrs: authoredPrs,
+  });
+
+  // Headline
+  const headline = buildWeeklyHeadline({
+    softStats,
+    shipped,
+    whatYouWorkedOn,
+    reviewsCollab,
+    frictionFollowups,
+  });
 
   const summary: WeeklySummary = {
     version: 1,
@@ -155,9 +165,8 @@ export async function buildWeeklySummary({
     shipped,
     whatYouWorkedOn,
     reviewsCollab,
-    // TODO
-    headline: 'Wow test',
     frictionFollowups,
+    headline,
     meta: {
       generatedAt: new Date().toISOString(),
       rangeKey,

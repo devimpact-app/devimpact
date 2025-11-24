@@ -1,64 +1,82 @@
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions' // adjust import if you're using the new API
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'; // adjust import if you're using the new API
 
 export interface PRSummarizationInput {
   pr: {
-    repoFullName: string
-    prNumber: number
-    htmlUrl: string
-    state: string
-    createdAt: Date
-    updatedAt: Date | null
-    mergedAt: Date | null
-    closedAt: Date | null
-    authorLogin: string
-    title: string
-    body: string
-  }
+    repoFullName: string;
+    prNumber: number;
+    htmlUrl: string;
+    state: string;
+    createdAt: Date;
+    updatedAt: Date | null;
+    mergedAt: Date | null;
+    closedAt: Date | null;
+    authorLogin: string;
+    title: string;
+    body: string;
+  };
   metrics: {
-    linesChangedTotal: number
-    filesChanged: number
-    additions: number
-    deletions: number
-    reviewCount: number
-    approvalCount: number
-    commentCount: number
-    reviewRounds: number
-  }
+    linesChangedTotal: number;
+    filesChanged: number;
+    additions: number;
+    deletions: number;
+    reviewCount: number;
+    approvalCount: number;
+    commentCount: number;
+    reviewRounds: number;
+  };
   timeline: {
-    timeToFirstReviewSeconds: number | null
-    reviewToMergeSeconds: number | null
-    leadTimeSeconds: number | null
-    timeToFirstApprovalSeconds: number | null
-  }
+    timeToFirstReviewSeconds: number | null;
+    reviewToMergeSeconds: number | null;
+    leadTimeSeconds: number | null;
+    timeToFirstApprovalSeconds: number | null;
+  };
   topFiles: {
-    path: string
-    extension: string
-    additions: number
-    deletions: number
-  }[]
+    path: string;
+    extension: string;
+    additions: number;
+    deletions: number;
+  }[];
   fileSummary: {
-    totalFiles: number
+    totalFiles: number;
     byExtension: Array<{
-      extension: string
-      files: number
-      linesChanged: number
-    }>
-  }
+      extension: string;
+      files: number;
+      linesChanged: number;
+    }>;
+  };
   reviews: {
-    reviewerLogin: string
-    submittedAt: Date | null
-    state: string
-    body: string
-  }[]
+    reviewerLogin: string;
+    submittedAt: Date | null;
+    state: string;
+    body: string;
+  }[];
   reviewComments: {
-    reviewerLogin: string
-    createdAt: Date
-    body: string
-  }[]
+    reviewerLogin: string;
+    createdAt: Date;
+    body: string;
+  }[];
   context?: {
-    perspective: 'author' | 'reviewer'
-  }
+    perspective: 'author' | 'reviewer';
+  };
 }
+
+const TAG_VOCAB = [
+  'features',
+  'bugfixes',
+  'refactors',
+  'cleanups',
+  'performance',
+  'reliability',
+  'security',
+  'infra',
+  'devex',
+  'tests',
+  'docs',
+  'observability',
+  'config',
+  'build-release',
+  'experiment',
+];
 
 export function buildPrSummaryMessages(
   input: PRSummarizationInput
@@ -78,12 +96,12 @@ export function buildPrSummaryMessages(
       'Output strictly as a compact JSON object with keys: shortSummary, longSummary, highlights, tags.',
       'Do not include any extra commentary or markdown.',
     ].join('\n'),
-  }
+  };
 
   const user: ChatCompletionMessageParam = {
     role: 'user',
     content: [
-      'Here is structured metadata about a single pull request. ',
+      'Here is structured metadata about a single pull request.',
       'Use it to produce a concise but meaningful summary for the engineer who authored it.',
       '',
       'PR data (JSON):',
@@ -93,7 +111,15 @@ export function buildPrSummaryMessages(
       '- shortSummary: 1–2 sentences describing what this PR accomplished in plain, grounded language.',
       '- longSummary: 3–6 sentences giving a bit more context: what changed, why, and any notable review or iteration patterns.',
       '- highlights: 3–6 short, factual highlight lines (no bullet characters). Prioritize impact, scope, collaboration, or changes over time.',
-      "- tags: 3–6 short lowercase tags like 'infra', 'refactor', 'product', 'bugfix', 'performance', 'devex'.",
+      '- tags: 3–6 short lowercase tags describing the nature of the change. You MUST choose only from the allowed tag list below.',
+      '',
+      'Allowed tags (choose only from this list, do not invent new ones):',
+      TAG_VOCAB.join(', '),
+      '',
+      'Tag guidelines:',
+      '- Pick tags that best describe the type of work (e.g., feature vs bugfix vs refactor).',
+      '- It is OK to mix quality-focused tags (performance, reliability, security, devex) with structural ones (refactor, infra, tests).',
+      '- Do NOT create new tag words or synonyms. If none fit well, choose the closest reasonable tags from the list.',
       '',
       'Interpretation guidelines:',
       '- Metrics fields represent aggregate information about the PR, not code content.',
@@ -104,7 +130,7 @@ export function buildPrSummaryMessages(
       'If the PR is small, keep everything tight and avoid overstating impact.',
       "If timelines show multiple review rounds, it's fine to mention that neutrally.",
     ].join('\n'),
-  }
+  };
 
-  return [system, user]
+  return [system, user];
 }

@@ -81,6 +81,8 @@ export const FrictionItemSchema = z.discriminatedUnion('kind', [
   }),
 ]);
 
+export type FrictionItem = z.infer<typeof FrictionItemSchema>;
+
 export const FrictionFollowupsSchema = z
   .object({
     items: z.array(FrictionItemSchema).default([]),
