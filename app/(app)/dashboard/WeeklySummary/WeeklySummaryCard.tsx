@@ -73,14 +73,12 @@ export function WeeklySummaryCard({
   return (
     <section className="rounded-2xl border border-slate-800/80 bg-[#0B0F18] px-6 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.85)]">
       <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        {/* Left: title + headline + soft stats */}
         <div className="space-y-2">
           <div>
             <h2 className=" font-semibold text-slate-50">Weekly Summary</h2>
             <p className="text-xs text-slate-400">{range.label}</p>
           </div>
 
-          {/* headline */}
           <p className="max-w-xl text-sm text-slate-200/90">{headline}</p>
 
           <div className="mb-5 mt-2 flex flex-wrap items-start gap-x-3 gap-y-2">
@@ -125,9 +123,7 @@ export function WeeklySummaryCard({
         </div>
       </header>
 
-      {/* Body layout: stack on mobile, 2-col on desktop */}
       <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        {/* Left column: shipped + time + reviews */}
         <div className="space-y-4 text-sm text-slate-200">
           {(what?.textSummary ||
             shipped.length > 0 ||
@@ -135,14 +131,12 @@ export function WeeklySummaryCard({
             <section>
               <SectionLabel>What you worked on</SectionLabel>
 
-              {/* High-level text summary */}
               {what?.textSummary && (
                 <p className="mt-1.5 max-w-2xl text-sm text-slate-300">
                   {what.textSummary}
                 </p>
               )}
 
-              {/* Highlighted shipped PRs */}
               {shipped.length > 0 && (
                 <div
                   className={
@@ -197,7 +191,6 @@ export function WeeklySummaryCard({
                 </div>
               )}
 
-              {/* Focus areas */}
               {focusTags.length > 0 && (
                 <div className={shipped.length > 0 ? 'mt-3' : 'mt-2'}>
                   <SectionLabel>Focus Areas</SectionLabel>
@@ -216,13 +209,11 @@ export function WeeklySummaryCard({
             </section>
           )}
         </div>
-        {/* Right column: friction + CTA */}
         <div className="flex flex-col space-y-4">
           {reviewsCollab && (
             <section className="">
               <SectionLabel>Reviews & collaboration</SectionLabel>
 
-              {/* High-level summary */}
               <p className="mt-1 text-sm text-slate-300">
                 You reviewed {reviewsCollab.totalReviewed}{' '}
                 {reviewsCollab.totalReviewed === 1 ? 'PR' : 'PRs'} and were the

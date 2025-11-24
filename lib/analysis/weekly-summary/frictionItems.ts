@@ -1,7 +1,7 @@
 import { PullRequest } from '@/lib/db/schema';
 import { FrictionItem } from '@/types/api/weekly-summary';
 
-const SLOW_FIRST_REVIEW_THRESHOLD_HOURS = 2;
+const SLOW_FIRST_REVIEW_THRESHOLD_HOURS = 18;
 const HIGH_DISCUSSION_COMMENTS = 8;
 const HIGH_DISCUSSION_REVIEWS = 5;
 const LARGE_LINES_THRESHOLD = 800; // total lines changed

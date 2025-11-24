@@ -1,8 +1,6 @@
 'use client';
 
-import { MetricsAPI } from '@/lib/analysis/metrics/client';
 import { useEffect, useMemo, useState } from 'react';
-import { StatResult } from '@/lib/analysis/metrics/types/output';
 import {
   formatRange,
   getDefaultTimelineRange,
@@ -15,11 +13,8 @@ import {
 } from '@/components/stories/StoryCardView';
 import { DashboardHero } from './components/Hero';
 import { RecentActivitySummaryCard } from './components/WeeklyReviewCard';
-import { WorkRhythmCard } from './components/WorkRythmCard';
-import { ActivityEvent } from '@/types/api/timeline';
-import { WorkRhythmCardSkeleton } from './components/WorkRythmCardSkeleton';
-import { useRouter } from 'next/navigation';
 import WeeklySummaryCard from './WeeklySummary';
+import WorkRhythmCard from './WorkRythm';
 
 type Props = {
   user: {
@@ -31,24 +26,9 @@ type Props = {
 };
 
 export default function DashboardClient({ user }: Props) {
-  const router = useRouter();
-  const [catalog, setCatalog] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadingMetrics, setLoadingMetrics] = useState(false);
-  const [leadTimeStat, setLeadTimeStat] = useState<StatResult | null>(null);
-  const [reviewLatencyStat, setReviewLatencyStat] = useState<StatResult | null>(
-    null
-  );
-  const [linesChangedStat, setLinesChangedStat] = useState<StatResult | null>(
-    null
-  );
-  const [substantiveReviewStat, setSubstantiveReviewStat] =
-    useState<StatResult | null>(null);
 
   const [loadingStories, setLoadingStories] = useState(false);
-
-  const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [loadingActivity, setLoadingActivity] = useState(false);
 
   const [story1, setStory1] = useState<any | null>(null);
   const [story2, setStory2] = useState<any | null>(null);
@@ -67,95 +47,12 @@ export default function DashboardClient({ user }: Props) {
   }, [range]);
 
   useEffect(() => {
-    setLoadingActivity(true);
     setLoadingStories(true);
-    setLoadingMetrics(true);
-    async function loadCatalog() {
-      try {
-        const data = await MetricsAPI.getCatalog();
-        setCatalog(data.metrics);
-      } catch (err) {
-        setError('Failed to load metrics catalog');
-      }
-    }
-
-    loadCatalog();
   }, []);
 
   useEffect(() => {
-    if (!catalog) return;
     (async () => {
-      try {
-        setLoadingMetrics(true);
-        setLoadingStories(true);
-        setLoadingActivity(true);
-
-        const batch = await MetricsAPI.runBatch({
-          requests: [
-            {
-              metricId: 'pr.lead_time_seconds.v1',
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: 'stat',
-                comparison: { kind: 'previous_period' },
-              },
-            },
-            {
-              metricId: 'review.latency_seconds.avg.v1',
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: 'stat',
-                comparison: { kind: 'previous_period' },
-              },
-            },
-            {
-              metricId: 'pr.size_lines_changed_median.v1',
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: 'stat',
-                comparison: { kind: 'previous_period' },
-              },
-            },
-            {
-              metricId: 'review.substantive_rate.v1',
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: 'stat',
-                comparison: { kind: 'previous_period' },
-              },
-            },
-          ],
-        });
-
-        const lead = batch.results.find(
-          (r) => r.metricId === 'pr.lead_time_seconds.v1' && r.shape === 'stat'
-        ) as StatResult | undefined;
-        setLeadTimeStat(lead ?? null);
-        const latency = batch.results.find(
-          (r) =>
-            r.metricId === 'review.latency_seconds.avg.v1' && r.shape === 'stat'
-        ) as StatResult | undefined;
-        setReviewLatencyStat(latency ?? null);
-        const linesChanged = batch.results.find(
-          (r) =>
-            r.metricId === 'pr.size_lines_changed_median.v1' &&
-            r.shape === 'stat'
-        ) as StatResult | undefined;
-        setLinesChangedStat(linesChanged ?? null);
-        const substantiveReviewRate = batch.results.find(
-          (r) =>
-            r.metricId === 'review.substantive_rate.v1' && r.shape === 'stat'
-        ) as StatResult | undefined;
-        setSubstantiveReviewStat(substantiveReviewRate ?? null);
-      } catch {
-        setError('Failed to load metrics');
-      } finally {
-        setLoadingMetrics(false);
-      }
+      setLoadingStories(true);
       async function loadStory() {
         const res = await fetch(
           `/api/stories/query?start=${startISO}&end=${endISO}&id=invisible_load.v1&id=collaboration_patterns.v1`
@@ -166,42 +63,10 @@ export default function DashboardClient({ user }: Props) {
         setLoadingStories(false);
       }
       loadStory();
-
-      async function loadActivity() {
-        const res = await fetch(
-          `/api/activity?start=${startISO}&end=${endISO}`
-        );
-        const { data } = await res.json();
-        setActivity(data.events);
-        setLoadingActivity(false);
-      }
-      loadActivity();
     })();
-  }, [catalog, startISO, endISO]);
+  }, [startISO, endISO]);
 
   if (error) return <div className="text-red-500">{error}</div>;
-  if (!catalog) return <div>Loading metrics…</div>;
-
-  const leadValue =
-    leadTimeStat?.data?.find((d) => d.kind === 'current')?.value ?? null;
-  const comparisonValue =
-    leadTimeStat?.data?.find((d) => d.kind === 'comparison')?.value ?? null;
-  const latencyValue =
-    reviewLatencyStat?.data?.find((d) => d.kind === 'current')?.value ?? null;
-  const latencyComparisonValue =
-    reviewLatencyStat?.data?.find((d) => d.kind === 'comparison')?.value ??
-    null;
-
-  const linesValue =
-    linesChangedStat?.data?.find((d) => d.kind === 'current')?.value ?? null;
-  const linesComparisonValue =
-    linesChangedStat?.data?.find((d) => d.kind === 'comparison')?.value ?? null;
-  const subValue =
-    substantiveReviewStat?.data?.find((d) => d.kind === 'current')?.value ??
-    null;
-  const subComparisonValue =
-    substantiveReviewStat?.data?.find((d) => d.kind === 'comparison')?.value ??
-    null;
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -213,21 +78,6 @@ export default function DashboardClient({ user }: Props) {
       />
 
       {range && <WeeklySummaryCard rangeKey={range} />}
-
-      {loadingActivity ? (
-        <WorkRhythmCardSkeleton
-          rangeDays={range === '7d' ? 7 : range === '14d' ? 14 : 30}
-        />
-      ) : (
-        <WorkRhythmCard
-          loading={loadingActivity}
-          events={activity}
-          rangeDays={range === '7d' ? 7 : range === '14d' ? 14 : 30}
-          onViewTimelineClick={() => {
-            router.push('/timeline');
-          }}
-        />
-      )}
 
       <div>
         <h2 className="text-lg font-semibold mb-4">
@@ -251,6 +101,8 @@ export default function DashboardClient({ user }: Props) {
           )} */}
         </div>
       </div>
+
+      <WorkRhythmCard />
 
       <div>
         <RecentActivitySummaryCard

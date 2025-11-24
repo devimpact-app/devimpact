@@ -2,6 +2,26 @@ export function toDate(d: Date | string): Date {
   return d instanceof Date ? d : new Date(d);
 }
 
+export function toLocalDate(value: string | Date, timezone: string): Date {
+  const base = typeof value === 'string' ? new Date(value) : value;
+
+  // Safety: handle invalid dates defensively
+  if (!(base instanceof Date) || isNaN(base.getTime())) {
+    return base;
+  }
+
+  // Convert UTC → local timezone using locale string
+  return new Date(base.toLocaleString('en-US', { timeZone: timezone }));
+}
+
+export function getLocalWeekdayIndex(
+  value: string | Date,
+  timezone: string
+): number {
+  const local = toLocalDate(value, timezone);
+  return local.getDay();
+}
+
 /**
  * Shift a date by N years while trying to preserve month/day.
  * Handles leap days by clamping to the last day of Feb when needed.
