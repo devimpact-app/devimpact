@@ -10,17 +10,20 @@ import { getAuthoredCommits } from '../activity/getAuthoredCommits';
 import { computeActiveDaysAndMostActiveDay } from './activeDays';
 import { pickHighlightedAuthoredPrs } from './highlightedPrs';
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
-import { loadPrSummaryContext } from '@/lib/integrations/openai/services/loadContext';
 import {
   buildTagFrequencyMap,
   buildWhatYouWorkedOnSummary,
   pickTopFocusAreas,
 } from './focusAreas';
+import {
+  buildHighlightedReviewSummary,
+  pickHighlightedReview,
+} from './highlightedReviews';
 
 export type BuildWeeklySummaryArgs = {
   userId: string;
-  rangeStart: Date;
-  rangeEnd: Date;
+  rangeStart?: Date;
+  rangeEnd?: Date;
   rangeKey: TimelineRangeKey;
   timezone: string;
 };
@@ -31,11 +34,11 @@ export type BuildWeeklySummaryArgs = {
  */
 export async function buildWeeklySummary({
   userId,
+  rangeKey,
+  timezone,
   // TODO: support custom ranges
   rangeStart: _rangeStart,
   rangeEnd: _rangeEnd,
-  rangeKey,
-  timezone,
 }: BuildWeeklySummaryArgs): Promise<WeeklySummary> {
   // Date range
   const { start, end } = getTimelineRangeBounds(rangeKey);
@@ -52,16 +55,18 @@ export async function buildWeeklySummary({
     end,
   };
   const authoredPrs = await getAuthoredPrs(activityParams);
-  const authoredReviews = await getAuthoredReviews(activityParams);
+  const authoredReviews = await getAuthoredReviews(activityParams, {
+    joinWithPrs: true,
+  });
   const uniquePrsReviewed = Array.from(
-    new Set(authoredReviews.map((r) => r.githubPrId))
+    new Set(authoredReviews.map((r) => r.review.prId))
   );
   const authoredCommits = await getAuthoredCommits(activityParams);
 
   const allDates = [
     ...authoredPrs.map((pr) => pr.createdAt),
     ...authoredPrs.map((pr) => pr.mergedAt).filter(Boolean),
-    ...authoredReviews.map((r) => r.submittedAt).filter(Boolean),
+    ...authoredReviews.map((r) => r.review.submittedAt).filter(Boolean),
     ...authoredCommits.map((c) => c.commit.committedAt),
   ] as Date[];
 
@@ -112,17 +117,30 @@ export async function buildWeeklySummary({
   const freq = buildTagFrequencyMap(allFocusTags);
   const focusAreas = pickTopFocusAreas(freq);
   const textSummary = buildWhatYouWorkedOnSummary(focusAreas);
-  const whatYouWorkedOn = {
+  const whatYouWorkedOn: WeeklySummary['whatYouWorkedOn'] = {
     textSummary,
     focusAreas,
   };
 
-  // -- Derive reviews & collaboration section --------------------------------
-  const reviewsCollab = {
-    totalReviewed: 0, // TODO
-    firstResponderCount: 0, // TODO
-    highlightedReview: undefined, // TODO
+  // Reviews and collaboration
+  let reviewsCollab: WeeklySummary['reviewsCollab'] = {
+    totalReviewed: uniquePrsReviewed.length,
+    firstResponderCount: authoredReviews.filter((r) => r.review.wasFirstReview)
+      .length,
   };
+  const highlightedReviewed = pickHighlightedReview(authoredReviews);
+  if (highlightedReviewed) {
+    const pr = highlightedReviewed.pr!;
+    reviewsCollab.highlightedReview = {
+      prId: pr.id,
+      repo: pr.repoFullName,
+      number: pr.prNumber,
+      title: pr.title,
+      htmlUrl: pr.htmlUrl,
+      shortSummary: buildHighlightedReviewSummary(highlightedReviewed.review),
+      tags: [],
+    };
+  }
 
   // -- Derive friction & follow-ups ------------------------------------------
   // Should include themes like iteration, latency, high-friction reviews.
@@ -136,9 +154,9 @@ export async function buildWeeklySummary({
     softStats,
     shipped,
     whatYouWorkedOn,
-    // TODO
-    headline: '',
     reviewsCollab,
+    // TODO
+    headline: 'Wow test',
     frictionFollowups,
     meta: {
       generatedAt: new Date().toISOString(),

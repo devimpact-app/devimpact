@@ -31,7 +31,6 @@ export const ShippedItemSchema = PRReferenceSchema.extend({
 }).catchall(z.any());
 
 export const HighlightedReviewSchema = PRReferenceSchema.extend({
-  role: z.literal('reviewer'),
   shortSummary: z.string(), // from LLM
   tags: z.array(z.string()).default([]), // "architecture", "tests"
 }).catchall(z.any());

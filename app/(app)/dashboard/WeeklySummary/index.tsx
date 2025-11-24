@@ -3,9 +3,18 @@
 import useSWR from 'swr';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { WeeklySummary, WeeklySummarySchema } from '@/types/api/weekly-summary';
+import { TimelineRangeKey } from '@/types/api/http';
 
-async function fetchWeeklySummary(rangeKey: string): Promise<WeeklySummary> {
-  const res = await fetch(`/api/weekly-summary?range=${rangeKey}`, {
+async function fetchWeeklySummary(
+  rangeKey: string,
+  timezone: string
+): Promise<WeeklySummary> {
+  const params = new URLSearchParams({
+    rangeKey,
+    timezone,
+  });
+
+  const res = await fetch(`/api/weekly-summary?${params.toString()}`, {
     credentials: 'include',
   });
 
@@ -13,18 +22,23 @@ async function fetchWeeklySummary(rangeKey: string): Promise<WeeklySummary> {
     throw new Error('Failed to load weekly summary');
   }
 
-  const json = await res.json();
-  return WeeklySummarySchema.parse(json);
+  const { data } = await res.json();
+  return WeeklySummarySchema.parse(data);
 }
 
 export default function WeeklySummaryCardContainer({
-  rangeKey = 'last-week',
+  rangeKey,
 }: {
-  rangeKey?: 'this-week' | 'last-week' | 'custom';
+  rangeKey: TimelineRangeKey;
 }) {
+  const timezone =
+    typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'UTC';
+
   const { data, error, isLoading } = useSWR<WeeklySummary>(
-    ['/api/weekly-summary', rangeKey],
-    ([, rk]) => fetchWeeklySummary(rk as any)
+    ['/api/weekly-summary', rangeKey, timezone],
+    ([, rk, tz]) => fetchWeeklySummary(rk as string, tz as string)
   );
 
   return (
@@ -32,10 +46,7 @@ export default function WeeklySummaryCardContainer({
       summary={data}
       isLoading={isLoading}
       error={error?.message ?? null}
-      onOpenOneOnOne={() => {
-        // wire to your router / 1:1 prep page
-        // e.g. router.push("/one-on-ones?range=last-week")
-      }}
+      onOpenOneOnOne={() => {}}
     />
   );
 }

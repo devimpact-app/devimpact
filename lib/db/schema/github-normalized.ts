@@ -66,9 +66,9 @@ export const pullRequests = pgTable(
     title: text('title').notNull(),
     state: text('state').notNull(), // "open", "closed", "merged"
     prAuthorLogin: text('pr_author_login').notNull(),
-    htmlUrl: text('html_url'),
-    body: text('body'),
-    authorIsTenant: boolean('author_is_tenant'),
+    htmlUrl: text('html_url').notNull(),
+    body: text('body').default('').notNull(),
+    authorIsTenant: boolean('author_is_tenant').default(false).notNull(),
 
     // Key timestamps
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
@@ -94,37 +94,43 @@ export const pullRequests = pgTable(
     timeToFirstApprovalSeconds: integer('time_to_first_approval_seconds'),
 
     // User's authored changes only
-    linesAdded: integer('lines_added').default(0),
-    linesDeleted: integer('lines_deleted').default(0),
-    linesChanged: integer('lines_changed').default(0), // added + deleted
-    filesChanged: integer('files_changed').default(0),
+    linesAdded: integer('lines_added').default(0).notNull(),
+    linesDeleted: integer('lines_deleted').default(0).notNull(),
+    linesChanged: integer('lines_changed').default(0).notNull(), // added + deleted
+    filesChanged: integer('files_changed').default(0).notNull(),
 
     // File type breakdown
-    filesAdded: integer('files_added').default(0), // status = "added"
-    filesModified: integer('files_modified').default(0), // status = "modified"
-    filesDeleted: integer('files_deleted').default(0), // status = "deleted"
-    filesRenamed: integer('files_renamed').default(0), // status = "renamed"
+    filesAdded: integer('files_added').default(0).notNull(), // status = "added"
+    filesModified: integer('files_modified').default(0).notNull(), // status = "modified"
+    filesDeleted: integer('files_deleted').default(0).notNull(), // status = "deleted"
+    filesRenamed: integer('files_renamed').default(0).notNull(), // status = "renamed"
 
     // Test coverage indicator
-    touchedTests: boolean('touched_tests').default(false), // Any is_test_file = true
-    testFilesChanged: integer('test_files_changed').default(0),
+    touchedTests: boolean('touched_tests').default(false).notNull(),
+    testFilesChanged: integer('test_files_changed').default(0).notNull(),
 
     // Complexity indicators
-    largestFileChanged: integer('largest_file_changed').default(0), // Max changes in a single file
-    avgChangesPerFile: real('avg_changes_per_file'),
-    commitsCount: integer('commits_count').default(0), // User's commits only
-    reviewsCount: integer('reviews_count').default(0), // Total review submissions
-    uniqueReviewers: integer('unique_reviewers').default(0),
-    selfReviewCommentsCount: integer('self_review_comments_count').default(0),
-    reviewCommentsCount: integer('review_comments_count').default(0), // Code review comments
+    largestFileChanged: integer('largest_file_changed').default(0).notNull(), // Max changes in a single file
+    avgChangesPerFile: real('avg_changes_per_file').default(0).notNull(),
+    commitsCount: integer('commits_count').default(0).notNull(), // User's commits only
+    reviewsCount: integer('reviews_count').default(0).notNull(), // Total review submissions
+    uniqueReviewers: integer('unique_reviewers').default(0).notNull(),
+    selfReviewCommentsCount: integer('self_review_comments_count')
+      .default(0)
+      .notNull(),
+    reviewCommentsCount: integer('review_comments_count').default(0).notNull(), // Code review comments
 
-    approvalsCount: integer('approvals_count').default(0),
-    changesRequestedCount: integer('changes_requested_count').default(0),
-    reviewRounds: integer('review_rounds').default(0), // Feedback cycles
+    approvalsCount: integer('approvals_count').default(0).notNull(),
+    changesRequestedCount: integer('changes_requested_count')
+      .default(0)
+      .notNull(),
+    reviewRounds: integer('review_rounds').default(0).notNull(),
 
     // Status checks
-    wasApprovedBeforeMerge: boolean('was_approved_before_merge').default(false),
-    hadForcePushes: boolean('had_force_pushes').default(false),
+    wasApprovedBeforeMerge: boolean('was_approved_before_merge')
+      .default(false)
+      .notNull(),
+    hadForcePushes: boolean('had_force_pushes').default(false).notNull(),
 
     // TODO: Add later
     // - ciFailuresCount
@@ -139,11 +145,15 @@ export const pullRequests = pgTable(
 
     normalizedAt: timestamp('normalized_at', {
       withTimezone: true,
-    }).defaultNow(),
+    })
+      .defaultNow()
+      .notNull(),
     sourceUpdatedAt: timestamp('source_updated_at', {
       withTimezone: true,
-    }).defaultNow(),
-    normalizationVersion: integer('normalization_version').default(1),
+    })
+      .defaultNow()
+      .notNull(),
+    normalizationVersion: integer('normalization_version').default(1).notNull(),
   },
   (table) => ({
     tenantIdx: index('pull_requests_tenant_idx').on(table.tenantId),
@@ -170,9 +180,9 @@ export const reviews = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
 
     // PR linkage + small snapshot
-    githubPrId: uuid('github_pr_id')
+    prId: uuid('pr_id')
       .notNull()
-      .references(() => githubPrs.id, { onDelete: 'cascade' }),
+      .references(() => pullRequests.id, { onDelete: 'cascade' }),
     prNumber: integer('pr_number').notNull(),
     repoFullName: text('repo_full_name').notNull(), // "owner/repo"
     prAuthorLogin: text('pr_author_login').notNull(),
@@ -185,22 +195,24 @@ export const reviews = pgTable(
     state: text('state').notNull(), // "APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "DISMISSED" | "PENDING"
     submittedAt: timestamp('submitted_at', { withTimezone: true }),
     commitId: text('commit_id'),
-    htmlUrl: text('html_url'),
-    body: text('body'),
+    htmlUrl: text('html_url').notNull(),
+    body: text('body').default('').notNull(),
 
     // Minimal timing/quality metrics (keep simple for MVP)
     reviewLatencySeconds: real('review_latency'),
     reviewAnchorAt: timestamp('review_anchor_at', { withTimezone: true }), // Anchor - either a review request or PR open
-    reviewAnchorType: text('review_anchor_type'), // direct_request | team_request | draft_exit | first_request | pr_open
+    reviewAnchorType: text('review_anchor_type').notNull(), // direct_request | team_request | draft_exit | first_request | pr_open
     anchorTeamSlug: text('anchor_team_slug'), // What team anchored with, if using
 
     // Simple decision helpers
-    isApproval: boolean('is_approval').default(false),
-    isChangeRequest: boolean('is_change_request').default(false),
-    isCommentOnly: boolean('is_comment_only').default(false),
-    wasDirectlyRequested: boolean('was_directly_requested').default(false),
-    wasFirstReview: boolean('was_first_review').default(false),
-    reviewCommentsCount: integer('review_comments_count'), // number of code comments in this review
+    isApproval: boolean('is_approval').default(false).notNull(),
+    isChangeRequest: boolean('is_change_request').default(false).notNull(),
+    isCommentOnly: boolean('is_comment_only').default(false).notNull(),
+    wasDirectlyRequested: boolean('was_directly_requested')
+      .default(false)
+      .notNull(),
+    wasFirstReview: boolean('was_first_review').default(false).notNull(),
+    reviewCommentsCount: integer('review_comments_count').default(0).notNull(), // number of code comments in this review
 
     // TODO: add later
     // - suggestion count
@@ -211,11 +223,15 @@ export const reviews = pgTable(
     // Metadata
     normalizedAt: timestamp('normalized_at', {
       withTimezone: true,
-    }).defaultNow(),
+    })
+      .defaultNow()
+      .notNull(),
     sourceUpdatedAt: timestamp('source_updated_at', {
       withTimezone: true,
-    }).defaultNow(),
-    normalizationVersion: integer('normalization_version').default(1),
+    })
+      .defaultNow()
+      .notNull(),
+    normalizationVersion: integer('normalization_version').default(1).notNull(),
   },
   (t) => ({
     // Common query paths
@@ -232,7 +248,7 @@ export const reviews = pgTable(
       t.reviewAnchorType,
       t.submittedAt
     ),
-    prIdx: index('reviews_pr_idx').on(t.tenantId, t.githubPrId, t.submittedAt),
+    prIdx: index('reviews_pr_idx').on(t.tenantId, t.prId, t.submittedAt),
     stateIdx: index('reviews_state_idx').on(t.tenantId, t.state),
     submittedAtIdx: index('reviews_submitted_at_idx').on(
       t.tenantId,

@@ -20,8 +20,8 @@ export function shiftYear(d: Date, deltaYears: number): Date {
       d.getUTCHours(),
       d.getUTCMinutes(),
       d.getUTCSeconds(),
-      d.getUTCMilliseconds(),
-    ),
+      d.getUTCMilliseconds()
+    )
   );
 
   // If month overflowed (e.g., Feb 29 → Mar 1), clamp to last day of target month.
@@ -35,8 +35,8 @@ export function shiftYear(d: Date, deltaYears: number): Date {
         d.getUTCHours(),
         d.getUTCMinutes(),
         d.getUTCSeconds(),
-        d.getUTCMilliseconds(),
-      ),
+        d.getUTCMilliseconds()
+      )
     );
     return lastDay;
   }
@@ -44,7 +44,7 @@ export function shiftYear(d: Date, deltaYears: number): Date {
 }
 
 export function formatSeconds(s: number | null | undefined) {
-  if (s == null) return "—";
+  if (s == null) return '—';
   if (s < 60) return `${Math.round(s)}s`;
   const mins = Math.floor(s / 60);
   if (mins < 60) return `${mins}m`;
@@ -57,25 +57,29 @@ export function formatSeconds(s: number | null | undefined) {
 
 export function formatRange(start: Date, end: Date) {
   const fmt = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
+    month: 'short',
+    day: 'numeric',
   });
   const ySame = start.getFullYear() === end.getFullYear();
   const y = (d: Date) =>
-    new Intl.DateTimeFormat(undefined, { year: "numeric" }).format(d);
+    new Intl.DateTimeFormat(undefined, { year: 'numeric' }).format(d);
   return ySame
     ? `${fmt.format(start)}–${fmt.format(end)}, ${y(end)}`
     : `${fmt.format(start)} ${y(start)}–${fmt.format(end)} ${y(end)}`;
 }
 
-export type TimelineRangeKey =
-  | "this_week"
-  | "last_week"
-  | "2w"
-  | "4w"
-  | "7d"
-  | "14d"
-  | "30d";
+export const TIMELINE_RANGE_KEYS = [
+  'this_week',
+  'last_week',
+  'custom',
+  '2w',
+  '4w',
+  '7d',
+  '14d',
+  '30d',
+] as const;
+
+export type TimelineRangeKey = (typeof TIMELINE_RANGE_KEYS)[number];
 
 export function getDefaultTimelineRange(): TimelineRangeKey {
   const today = new Date();
@@ -83,11 +87,11 @@ export function getDefaultTimelineRange(): TimelineRangeKey {
 
   // If it's Thu or Fri, show "This week" by default.
   if (day === 4 || day === 5) {
-    return "this_week";
+    return 'this_week';
   }
 
   // Otherwise, default to "Last week"
-  return "last_week";
+  return 'last_week';
 }
 
 export function startOfWeek(date: Date): Date {
@@ -108,7 +112,7 @@ export function endOfWeek(date: Date): Date {
   return end;
 }
 
-export const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function getTimelineRangeBounds(range: TimelineRangeKey): {
   start: Date;
@@ -117,8 +121,8 @@ export function getTimelineRangeBounds(range: TimelineRangeKey): {
   const today = new Date();
   today.setHours(12, 0, 0, 0); // avoid DST weirdness a bit
 
-  if (range === "7d" || range === "14d" || range === "30d") {
-    const days = range === "7d" ? 7 : range === "14d" ? 14 : 30;
+  if (range === '7d' || range === '14d' || range === '30d') {
+    const days = range === '7d' ? 7 : range === '14d' ? 14 : 30;
     const end = new Date(today);
     end.setHours(23, 59, 59, 999);
     const start = new Date(end);
@@ -128,14 +132,14 @@ export function getTimelineRangeBounds(range: TimelineRangeKey): {
     return { start, end };
   }
 
-  if (range === "this_week") {
+  if (range === 'this_week') {
     const start = startOfWeek(today);
     const end = new Date(today); // "so far" this week
     end.setHours(23, 59, 59, 999);
     return { start, end };
   }
 
-  if (range === "last_week") {
+  if (range === 'last_week') {
     const thisWeekStart = startOfWeek(today);
     const lastWeekEnd = new Date(thisWeekStart);
     lastWeekEnd.setMilliseconds(-1); // one ms before this week
@@ -144,7 +148,7 @@ export function getTimelineRangeBounds(range: TimelineRangeKey): {
     return { start: lastWeekStart, end: lastWeekEnd };
   }
 
-  if (range === "2w") {
+  if (range === '2w') {
     // Start of *this* week (Monday)
     const thisWeekStart = startOfWeek(today);
 
@@ -174,8 +178,8 @@ export function getTimelineRangeBounds(range: TimelineRangeKey): {
 
 export function formatTimeIso(iso: string) {
   return new Date(iso).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 

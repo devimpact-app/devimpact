@@ -212,7 +212,7 @@ export default function DashboardClient({ user }: Props) {
         onRangeChange={setRange}
       />
 
-      <WeeklySummaryCard />
+      {range && <WeeklySummaryCard rangeKey={range} />}
 
       {loadingActivity ? (
         <WorkRhythmCardSkeleton

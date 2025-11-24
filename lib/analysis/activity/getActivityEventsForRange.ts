@@ -69,7 +69,8 @@ export async function getActivityEventsForRange(
   }
 
   // Map Reviews → ActivityEvents
-  for (const r of reviewRows) {
+  for (const row of reviewRows) {
+    const r = row.review;
     if (!r.submittedAt) continue;
     events.push({
       id: `review_submitted:${r.id}`,

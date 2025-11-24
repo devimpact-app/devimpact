@@ -1,62 +1,27 @@
-import { WeeklySummarySchema } from '@/types/api/weekly-summary';
-import { NextResponse } from 'next/server';
+import { buildWeeklySummary } from '@/lib/analysis/weekly-summary';
+import { jsonOK, jsonUnauthorized } from '../_lib/http';
+import { auth } from '@/lib/auth';
+import { NextRequest } from 'next/server';
+import { TimelineRangeKeySchema } from '@/types/api/http';
 
-export async function GET() {
-  const fakeSummary = WeeklySummarySchema.parse({
-    version: 1,
-    range: {
-      startISO: new Date('2025-10-14').toISOString(),
-      endISO: new Date('2025-10-18').toISOString(),
-      label: 'Last week · Oct 14–18',
-    },
-    headline: 'Steady shipping, heavier-than-usual review load.',
-    softStats: {
-      prsAuthored: 3,
-      prsReviewed: 7,
-      activeDays: 4,
-      mostActiveDay: 'Wed',
-    },
-    shipped: [
-      {
-        prId: '123',
-        title: 'Refactor auth middleware',
-        role: 'author',
-        shortSummary: 'Simplified auth flow and reduced duplication.',
-        tags: ['infra', 'auth'],
-        number: 158,
-        htmlUrl: 'https://google.com',
-      },
-    ],
-    reviewsCollab: {
-      totalReviewed: 7,
-      firstResponderCount: 3,
-      highlightedReview: {
-        prId: '456',
-        title: 'Add new billing endpoints',
-        role: 'reviewer',
-        shortSummary: 'Focused feedback on API consistency and error handling.',
-        tags: ['api', 'architecture'],
-        htmlUrl: 'https://google.com',
-      },
-    },
-    whatYouWorkedOn: {
-      textSummary: 'Most of your coding time was in infra and auth',
-      focusAreas: ['infra', 'auth'],
-    },
-    frictionFollowups: {
-      items: [
-        {
-          kind: 'theme',
-          text: 'Most iteration this week came from test coverage feedback.',
-          themeTags: ['tests'],
-        },
-      ],
-    },
-    meta: {
-      generatedAt: new Date().toISOString(),
-      rangeKey: 'last-week',
-    },
+export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) return jsonUnauthorized('Unauthorized');
+  const userId = session.user.id;
+
+  const { searchParams } = new URL(req.url);
+  const rawRangeKey = searchParams.get('rangeKey') ?? 'last_week';
+  const rangeKey = TimelineRangeKeySchema.parse(rawRangeKey);
+  // const startStr = searchParams.get('start');
+  // const endStr = searchParams.get('end');
+  const timezone = searchParams.get('timezone') ?? 'UTC';
+
+  const summary = await buildWeeklySummary({
+    userId,
+    rangeKey,
+    // rangeStart: startStr,
+    // rangeEnd: endStr,
+    timezone,
   });
-
-  return NextResponse.json(fakeSummary);
+  return jsonOK(summary);
 }
