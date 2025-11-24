@@ -7,10 +7,12 @@ import {
 } from '../prompts/prSummary';
 import { withRetry } from '../utils/retry';
 import { safeJson } from '../utils/json';
-import { prSummaries } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { prSummaries, pullRequests } from '@/lib/db/schema';
+import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { createHash } from 'crypto';
+import { loadPrSummaryContext } from './loadContext';
+import { buildPRSummarizationInput } from './buildPRSummarizationInput';
 
 function hashPrInput(input: PRSummarizationInput, model: string): string {
   const payload = {
@@ -23,31 +25,54 @@ function hashPrInput(input: PRSummarizationInput, model: string): string {
 export async function getOrGeneratePrSummary(opts: {
   tenantId: string;
   prId: string; // normalized pr row
-  input: PRSummarizationInput;
   force?: boolean; // if we want to always re-generate
 }) {
-  const { tenantId, prId, input, force } = opts;
-  const inputHash = hashPrInput(input, AiConfig.models.summarize);
+  const { tenantId, prId, force } = opts;
 
-  if (!force) {
-    const existing = await db
-      .select()
-      .from(prSummaries)
-      .where(eq(prSummaries.prId, prId))
-      .limit(1);
+  const results = await db
+    .select({
+      pr: pullRequests,
+      summary: prSummaries,
+    })
+    .from(pullRequests)
+    .leftJoin(
+      prSummaries,
+      and(
+        eq(prSummaries.tenantId, pullRequests.tenantId),
+        eq(prSummaries.prId, pullRequests.id)
+      )
+    )
+    .where(and(eq(pullRequests.id, prId), eq(pullRequests.tenantId, tenantId)))
+    .limit(1);
+  if (results.length === 0) throw new Error(`PR not found for id ${prId}`);
+  const prAndSummaryRow = results[0];
+  const summary = prAndSummaryRow.summary;
+  const needsNewSummary =
+    !summary ||
+    (prAndSummaryRow.pr.sourceUpdatedAt &&
+      summary.prUpdatedAt < prAndSummaryRow.pr.sourceUpdatedAt);
 
-    const row = existing[0];
-    if (row && row.inputHash === inputHash) {
-      return {
-        row,
-        source: 'cache' as const,
-      };
-    }
+  if (!force && !needsNewSummary) {
+    return {
+      row: summary,
+      source: 'cache' as const,
+    };
   }
+
+  const ctx = await loadPrSummaryContext({ tenantId, prId });
+  if (!ctx) throw new Error(`PR not found for id ${prId}`);
+
+  const input = buildPRSummarizationInput({
+    normPr: ctx.normPr,
+    files: ctx.files,
+    reviews: ctx.reviews,
+    reviewComments: ctx.reviewComments,
+  });
 
   const result = await summarizePullRequest(input);
 
   const prUpdatedAt = input.pr.updatedAt ?? new Date();
+  const inputHash = hashPrInput(input, AiConfig.models.summarize);
   const row = {
     tenantId,
     prId,

@@ -111,8 +111,6 @@ export function WeeklySummaryCard({
                 </p>
               )}
 
-              {/* Focus areas (domains / skills) – optional, inline under summary */}
-
               {shipped.length > 0 && (
                 <div className="mt-1">
                   <ul className="space-y-1.5">

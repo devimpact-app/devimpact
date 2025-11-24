@@ -26,7 +26,6 @@ export const PRReferenceSchema = z.object({
 });
 
 export const ShippedItemSchema = PRReferenceSchema.extend({
-  role: z.enum(['author', 'coauthor']).default('author'),
   shortSummary: z.string(), // from LLM
   tags: z.array(z.string()).default([]), // "feature-x", "infra", "tests"
 }).catchall(z.any());

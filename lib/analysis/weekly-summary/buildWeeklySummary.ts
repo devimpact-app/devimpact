@@ -8,6 +8,14 @@ import { getAuthoredPrs } from '../activity/getAuthoredPrs';
 import { getAuthoredReviews } from '../activity/getAuthoredReviews';
 import { getAuthoredCommits } from '../activity/getAuthoredCommits';
 import { computeActiveDaysAndMostActiveDay } from './activeDays';
+import { pickHighlightedAuthoredPrs } from './highlightedPrs';
+import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
+import { loadPrSummaryContext } from '@/lib/integrations/openai/services/loadContext';
+import {
+  buildTagFrequencyMap,
+  buildWhatYouWorkedOnSummary,
+  pickTopFocusAreas,
+} from './focusAreas';
 
 export type BuildWeeklySummaryArgs = {
   userId: string;
@@ -29,6 +37,7 @@ export async function buildWeeklySummary({
   rangeKey,
   timezone,
 }: BuildWeeklySummaryArgs): Promise<WeeklySummary> {
+  // Date range
   const { start, end } = getTimelineRangeBounds(rangeKey);
   const range: WeeklySummary['range'] = {
     startISO: start.toISOString(),
@@ -36,6 +45,7 @@ export async function buildWeeklySummary({
     label: formatRange(start, end),
   };
 
+  // Soft stats
   const activityParams = {
     tenantId: userId,
     start,
@@ -66,20 +76,46 @@ export async function buildWeeklySummary({
     mostActiveDay,
   };
 
-  // -- Derive focus areas / domains ------------------------------------------
-  // Collate PR tags, summary tags, file path categories.
-  // For now, empty.
+  // Highlighted shipped PRs
+  const mergedPrs = authoredPrs.filter((pr) => !!pr.mergedAt);
+  const summariesByPrId = new Map<string, any>();
+  for (const pr of mergedPrs) {
+    const { row } = await getOrGeneratePrSummary({
+      tenantId: userId,
+      prId: pr.id,
+    });
+    summariesByPrId.set(pr.id, row);
+  }
 
+  const highlightedAuthored = pickHighlightedAuthoredPrs(mergedPrs);
+  const shipped = await Promise.all(
+    highlightedAuthored.map(async (pr) => {
+      const summary = summariesByPrId.get(pr.id);
+
+      return {
+        prId: pr.id,
+        repo: pr.repoFullName,
+        number: pr.prNumber,
+        title: pr.title,
+        shortSummary: summary.shortSummary,
+        tags: summary.tags ?? [],
+        htmlUrl: pr.htmlUrl ?? undefined,
+      } as WeeklySummary['shipped'][0];
+    })
+  );
+
+  // What you worked on - focus
+  const allFocusTags = mergedPrs.flatMap((pr) => {
+    const s = summariesByPrId.get(pr.id);
+    return s?.tags ?? [];
+  });
+  const freq = buildTagFrequencyMap(allFocusTags);
+  const focusAreas = pickTopFocusAreas(freq);
+  const textSummary = buildWhatYouWorkedOnSummary(focusAreas);
   const whatYouWorkedOn = {
-    textSummary: '', // TODO: deterministic short narrative
-    focusAreas: [] as string[], // TODO
+    textSummary,
+    focusAreas,
   };
-
-  // -- Select highlighted PRs -------------------------------------------------
-  // Pick 1–3 PRs to represent the week. Use tags, iteration count, size, etc.
-  // For now: empty list.
-
-  const highlightedPRs: any[] = []; // TODO
 
   // -- Derive reviews & collaboration section --------------------------------
   const reviewsCollab = {
@@ -98,11 +134,11 @@ export async function buildWeeklySummary({
     version: 1,
     range,
     softStats,
+    shipped,
+    whatYouWorkedOn,
     // TODO
     headline: '',
-    shipped: highlightedPRs,
     reviewsCollab,
-    whatYouWorkedOn,
     frictionFollowups,
     meta: {
       generatedAt: new Date().toISOString(),
