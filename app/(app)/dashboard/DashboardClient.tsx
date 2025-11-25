@@ -1,15 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  StoryCardSkeleton,
-  StoryCardView,
-} from '@/components/stories/StoryCardView';
+import { useMemo } from 'react';
 import WeeklySummaryCard from './WeeklySummary';
 import WorkRhythmCard from './WorkRythm';
 import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
 import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
 import { WeekNavigator } from '@/components/dates/WeekPicker';
+import InsightsSectionContainer from '@/components/insights/InsightsSectionContainer';
 
 type Props = {
   user: {
@@ -21,46 +18,16 @@ type Props = {
 };
 
 export default function DashboardClient({ user }: Props) {
-  const [error, setError] = useState<string | null>(null);
-
-  const [loadingStories, setLoadingStories] = useState(false);
-
-  const [story1, setStory1] = useState<any | null>(null);
-  const [story2, setStory2] = useState<any | null>(null);
-  const [story3, setStory3] = useState<any | null>(null);
-
   const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
     useWeekNavigation();
 
   const startISO = start.toISOString();
   const endISO = end.toISOString();
 
-  useEffect(() => {
-    setLoadingStories(true);
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      setLoadingStories(true);
-      async function loadStory() {
-        const res = await fetch(
-          `/api/stories/query?start=${startISO}&end=${endISO}&id=invisible_load.v1&id=collaboration_patterns.v1`
-        );
-        const { data } = await res.json();
-        setStory1(data.stories[0]);
-        setStory2(data.stories[1]);
-        setLoadingStories(false);
-      }
-      loadStory();
-    })();
-  }, [startISO, endISO]);
-
   const firstName = useMemo(
     () => (user.name ? user.name.split(' ')[0] : 'there'),
     [user.name]
   );
-
-  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -88,28 +55,7 @@ export default function DashboardClient({ user }: Props) {
 
       <WeeklySummaryCard startISO={startISO} endISO={endISO} />
 
-      <div>
-        <h2 className="text-lg font-semibold mb-4">
-          Hightlights from {subLabel}
-        </h2>
-        <div className="grid grid-cols-3 gap-4">
-          {!loadingStories && story1 ? (
-            <StoryCardView story={story1} />
-          ) : (
-            <StoryCardSkeleton />
-          )}
-          {!loadingStories && story2 ? (
-            <StoryCardView story={story2} />
-          ) : (
-            <StoryCardSkeleton />
-          )}
-          {/* {!loadingStories && story3 ? (
-            <StoryCardView story={story3} />
-          ) : (
-            <StoryCardSkeleton />
-          )} */}
-        </div>
-      </div>
+      <InsightsSectionContainer />
 
       <WorkRhythmCard />
 
