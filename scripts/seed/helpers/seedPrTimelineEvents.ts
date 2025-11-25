@@ -1,13 +1,11 @@
-// scripts/seed/seedPrTimelineEvents.ts
 /* eslint-disable no-console */
-import { db as defaultDb } from "@/lib/db/client";
+import { db as defaultDb } from '@/lib/db/client';
 import {
   githubTimelineEvents,
   githubPrs,
   githubReviews,
-} from "@/lib/db/schema";
-import { InferSelectModel } from "drizzle-orm";
-import { TEAMMATES } from "./teammates";
+} from '@/lib/db/schema';
+import { InferSelectModel } from 'drizzle-orm';
 
 type DB = typeof defaultDb;
 type PRRow = InferSelectModel<typeof githubPrs>;
@@ -27,9 +25,9 @@ const shuffle = <T>(a: T[]) => {
 
 function fakeEventId(pr: PRRow, kind: string, suffix?: string) {
   const base = Buffer.from(`${pr.repoFullName}#${pr.prNumber}:${kind}`)
-    .toString("base64")
-    .replace(/=/g, "");
-  return `seed_evt_${base}${suffix ? `_${suffix}` : ""}`;
+    .toString('base64')
+    .replace(/=/g, '');
+  return `seed_evt_${base}${suffix ? `_${suffix}` : ''}`;
 }
 const prUrl = (pr: PRRow) =>
   `https://github.com/${pr.repoFullName}/pull/${pr.prNumber}`;
@@ -45,14 +43,14 @@ async function upsertEvent(
     eventData?: unknown | null;
 
     // normalized review-request fields
-    requestedTargetType?: "user" | "team" | null;
+    requestedTargetType?: 'user' | 'team' | null;
     requestedReviewerLogin?: string | null;
     requestedTeamSlug?: string | null;
     requestedTeamOrg?: string | null;
 
     createdAt: Date;
     url?: string | null;
-  },
+  }
 ) {
   if (values.eventId) {
     await db
@@ -134,20 +132,20 @@ export async function seedPrTimelineEvents(params: {
       // place the request before the review time (30–240 min)
       const submittedAt = r.submittedAt ?? pr.updatedAt ?? pr.createdAt;
       const requestAt = new Date(
-        submittedAt.getTime() - rand(30, 240) * 60 * 1000,
+        submittedAt.getTime() - rand(30, 240) * 60 * 1000
       );
 
       await upsertEvent(db, {
         prId: pr.id,
         tenantId,
-        eventId: fakeEventId(pr, "review_requested", reviewer),
-        eventType: "review_requested",
+        eventId: fakeEventId(pr, 'review_requested', reviewer),
+        eventType: 'review_requested',
         actorGithubLogin: authorGithubLogin,
-        requestedTargetType: "user",
+        requestedTargetType: 'user',
         requestedReviewerLogin: reviewer,
         requestedTeamSlug: null,
         requestedTeamOrg: null,
-        eventData: { type: "user", requested_reviewer: reviewer },
+        eventData: { type: 'user', requested_reviewer: reviewer },
         createdAt: requestAt,
         url: `${prUrl(pr)}/reviews`,
       });
@@ -155,18 +153,18 @@ export async function seedPrTimelineEvents(params: {
       // small chance you remove a request (e.g., reassigned)
       if (Math.random() < 0.15 && requestAt < submittedAt) {
         const removedAt = new Date(
-          requestAt.getTime() + rand(10, 90) * 60 * 1000,
+          requestAt.getTime() + rand(10, 90) * 60 * 1000
         );
         if (removedAt < submittedAt) {
           await upsertEvent(db, {
             prId: pr.id,
             tenantId,
-            eventId: fakeEventId(pr, "review_request_removed", reviewer),
-            eventType: "review_request_removed",
+            eventId: fakeEventId(pr, 'review_request_removed', reviewer),
+            eventType: 'review_request_removed',
             actorGithubLogin: authorGithubLogin,
-            requestedTargetType: "user",
+            requestedTargetType: 'user',
             requestedReviewerLogin: reviewer,
-            eventData: { type: "user", requested_reviewer: reviewer },
+            eventData: { type: 'user', requested_reviewer: reviewer },
             createdAt: removedAt,
             url: `${prUrl(pr)}/reviews`,
           });
@@ -178,8 +176,8 @@ export async function seedPrTimelineEvents(params: {
   // 1b) Optional: team review request (forced param OR small chance)
   if (requestedTeam || Math.random() < 0.2) {
     const team = requestedTeam ?? {
-      slug: pick(["frontend", "platform"]),
-      org: "acme",
+      slug: pick(['frontend', 'platform']),
+      org: 'acme',
     };
     // place after first request or a bit after PR open
     const baseTime =
@@ -187,21 +185,21 @@ export async function seedPrTimelineEvents(params: {
       new Date(pr.createdAt.getTime() + rand(1, 8) * 60 * 60 * 1000);
     const t = new Date(
       (baseTime instanceof Date ? baseTime : new Date(baseTime)).getTime() -
-        rand(60, 180) * 60 * 1000,
+        rand(60, 180) * 60 * 1000
     );
 
     await upsertEvent(db, {
       prId: pr.id,
       tenantId,
-      eventId: fakeEventId(pr, "review_requested", `team_${team.slug}`),
-      eventType: "review_requested",
+      eventId: fakeEventId(pr, 'review_requested', `team_${team.slug}`),
+      eventType: 'review_requested',
       actorGithubLogin: authorGithubLogin,
-      requestedTargetType: "team",
+      requestedTargetType: 'team',
       requestedReviewerLogin: null,
       requestedTeamSlug: team.slug,
       requestedTeamOrg: team.org,
       eventData: {
-        type: "team",
+        type: 'team',
         requested_team_slug: team.slug,
         org: team.org,
       },
@@ -214,15 +212,15 @@ export async function seedPrTimelineEvents(params: {
       await upsertEvent(db, {
         prId: pr.id,
         tenantId,
-        eventId: fakeEventId(pr, "review_request_removed", `team_${team.slug}`),
-        eventType: "review_request_removed",
+        eventId: fakeEventId(pr, 'review_request_removed', `team_${team.slug}`),
+        eventType: 'review_request_removed',
         actorGithubLogin: authorGithubLogin,
-        requestedTargetType: "team",
+        requestedTargetType: 'team',
         requestedReviewerLogin: null,
         requestedTeamSlug: team.slug,
         requestedTeamOrg: team.org,
         eventData: {
-          type: "team",
+          type: 'team',
           requested_team_slug: team.slug,
           org: team.org,
         },
@@ -234,15 +232,15 @@ export async function seedPrTimelineEvents(params: {
 
   // 2) MIRROR the actual reviews table → reviewed timeline events (no randomness)
   const ordered = [...reviews].sort(
-    (a, b) => (a.submittedAt?.getTime() ?? 0) - (b.submittedAt?.getTime() ?? 0),
+    (a, b) => (a.submittedAt?.getTime() ?? 0) - (b.submittedAt?.getTime() ?? 0)
   );
   for (const rev of ordered) {
     const t = rev.submittedAt ?? pr.updatedAt ?? pr.createdAt;
     await upsertEvent(db, {
       prId: pr.id,
       tenantId,
-      eventId: fakeEventId(pr, "reviewed", rev.reviewerGithubLogin),
-      eventType: "reviewed",
+      eventId: fakeEventId(pr, 'reviewed', rev.reviewerGithubLogin),
+      eventType: 'reviewed',
       actorGithubLogin: rev.reviewerGithubLogin,
       eventData: {
         state: rev.state, // APPROVED / COMMENTED / CHANGES_REQUESTED
@@ -260,10 +258,10 @@ export async function seedPrTimelineEvents(params: {
   await upsertEvent(db, {
     prId: pr.id,
     tenantId,
-    eventId: fakeEventId(pr, "merged"),
-    eventType: "merged",
+    eventId: fakeEventId(pr, 'merged'),
+    eventType: 'merged',
     actorGithubLogin: merger,
-    eventData: { merger, method: pick(["squash", "merge", "rebase"]) },
+    eventData: { merger, method: pick(['squash', 'merge', 'rebase']) },
     createdAt: mergedAt,
     url: `${prUrl(pr)}/merge`,
   });

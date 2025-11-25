@@ -33,6 +33,9 @@ export const InsightSchema = z.object({
   // Ranking
   score: z.number().min(0).max(100),
 
+  // For scoring
+  metrics: z.record(z.string(), z.any()).optional(),
+
   // Time window + debug metadata
   timeWindowLabel: z.string().optional(), // e.g. "Last 4 weeks"
   meta: z.record(z.string(), z.any()).optional(), // internal metrics for future use

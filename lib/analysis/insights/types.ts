@@ -5,12 +5,15 @@ import type {
   PrSummary,
 } from '@/lib/db/schema/github-normalized';
 
+export type InsightDraft = Omit<Insight, 'score'>;
+
 export type InsightContext = {
   userId: string;
+  timezone: string;
   windowStart: Date;
   windowEnd: Date;
 
-  prs: PullRequest[];
+  authoredPrs: PullRequest[];
   reviews: Review[];
   prSummariesByPrId: Map<string, PrSummary>;
 

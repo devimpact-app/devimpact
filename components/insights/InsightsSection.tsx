@@ -13,7 +13,7 @@ export function InsightsSection({
   onViewAll?: () => void;
 }) {
   return (
-    <section className="flex flex-col space-y-3 py-4">
+    <section className="flex flex-col space-y-3 py-2">
       <header className="flex flex-col gap-1">
         <h2 className="text-sm font-semibold text-slate-50">
           Insights (last 4 weeks)
