@@ -1,60 +1,62 @@
-'use client'
+'use client';
 
-import {
-  formatRange,
-  getDefaultTimelineRange,
-  getTimelineRangeBounds,
-  TimelineRangeKey,
-} from '@/lib/utils/date'
-import { useEffect, useMemo, useState } from 'react'
-import { TimelineHero } from './components/Hero'
-import {
-  TimelineHeatmap,
-  TimelineHeatmapLoadingSkeleton,
-} from './components/TimelineHeatmap'
-import { ActivityEvent } from '@/types/api/timeline'
-import { EventInspectorPanel } from './components/EventInspectorPanel'
-import { cn } from '@/lib/utils'
+import { useEffect, useMemo, useState } from 'react';
+import { TimelineHeatmap } from './components/TimelineHeatmap';
+import { ActivityEvent } from '@/types/api/timeline';
+import { EventInspectorPanel } from './components/EventInspectorPanel';
+import { cn } from '@/lib/utils';
+import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
+import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
+import { WeekNavigator } from '@/components/dates/WeekPicker';
+import { OneWeekSkeleton } from './components/OneWeekView';
 
 type Props = {
   user: {
-    id: string
-    name: string
-    image: string | null
-    githubUsername: string | null
-  }
-}
+    id: string;
+    name: string;
+    image: string | null;
+    githubUsername: string | null;
+  };
+};
 
 export default function TimelineClient({ user }: Props) {
-  const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(
+    null
+  );
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timeline, setTimeline] = useState<ActivityEvent[]>([]);
 
-  const [range, setRange] = useState<TimelineRangeKey>(() =>
-    getDefaultTimelineRange()
-  )
-  const [timelineLoading, setTimelineLoading] = useState(false)
-  const [timeline, setTimeline] = useState<ActivityEvent[]>([])
+  const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
+    useWeekNavigation();
 
-  const { startISO, endISO, periodLabel } = useMemo(() => {
-    const { start, end } = getTimelineRangeBounds(range)
+  const timezone =
+    typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'UTC';
+  const { startISO, endISO } = useMemo(() => {
     return {
       startISO: start.toISOString(),
       endISO: end.toISOString(),
-      periodLabel: formatRange(start, end),
-    }
-  }, [range])
+    };
+  }, [start, end]);
 
   useEffect(() => {
-    setTimelineLoading(true)
+    setTimelineLoading(true);
     async function loadStory() {
-      const res = await fetch(`/api/activity?start=${startISO}&end=${endISO}`)
-      const { data } = await res.json()
-      setTimeline(data.events)
-      setTimelineLoading(false)
+      const res = await fetch(`/api/activity?start=${startISO}&end=${endISO}`);
+      const { data } = await res.json();
+      setTimeline(data.events);
+      setTimelineLoading(false);
     }
-    loadStory()
-  }, [range])
+    loadStory();
+  }, [startISO, endISO]);
 
-  const panelOpen = !!selectedEvent
+  const panelOpen = !!selectedEvent;
+
+  const firstName = useMemo(
+    () => (user.name ? user.name.split(' ')[0] : undefined),
+    [user.name]
+  );
 
   return (
     <>
@@ -64,25 +66,47 @@ export default function TimelineClient({ user }: Props) {
           panelOpen && 'lg:pr-[280px]' // make room for the drawer on large screens
         )}
       >
-        <TimelineHero
-          userName={user.name}
-          range={range}
-          periodLabel={periodLabel}
-          onRangeChange={setRange}
-        />
+        <header className="mb-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
+                {firstName ? `${firstName}’s timeline` : 'Your work timeline'}
+              </h1>
+              <p className="mt-1 text-sm text-text-secondary">
+                Explore a chronological view of your recent work{' '}
+                <span className="text-text-primary/80">({subLabel})</span>.
+              </p>
+            </div>
+            <WeekNavigator
+              label={label}
+              subLabel={subLabel}
+              canGoForward={canGoForward}
+              onPrevWeek={goPrevWeek}
+              onNextWeek={goNextWeek}
+            />
+          </div>
+        </header>
         {timelineLoading ? (
-          <TimelineHeatmapLoadingSkeleton range={range} />
+          <OneWeekSkeleton />
         ) : (
           <TimelineHeatmap
-            range={range}
-            start={new Date(startISO)}
-            end={new Date(endISO)}
+            timezone={timezone}
             events={timeline}
             onEventClick={(event) => {
-              setSelectedEvent(event)
+              setSelectedEvent(event);
             }}
           />
         )}
+
+        <ActivityLogContainer
+          mode="full"
+          startISO={startISO}
+          endISO={endISO}
+          onViewAllClick={() => {}}
+          onEventClick={(event) => {
+            setSelectedEvent(event);
+          }}
+        />
       </main>
       {selectedEvent && (
         <EventInspectorPanel
@@ -92,5 +116,5 @@ export default function TimelineClient({ user }: Props) {
         />
       )}
     </>
-  )
+  );
 }

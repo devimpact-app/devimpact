@@ -1,16 +1,9 @@
-"use client";
+'use client';
 
-import { BarChart3, ChevronRight } from "lucide-react";
+import { BarChart3, ChevronRight } from 'lucide-react';
 
-type WorkRhythmCardSkeletonProps = {
-  rangeDays: 7 | 14 | 30;
-};
-
-export function WorkRhythmCardSkeleton({
-  rangeDays,
-}: WorkRhythmCardSkeletonProps) {
-  const windowLabel =
-    rangeDays === 7 ? "the last week" : `the last ${rangeDays} days`;
+export function WorkRhythmCardSkeleton() {
+  const windowLabel = 'the last 4 weeks';
 
   return (
     <section
@@ -58,7 +51,7 @@ export function WorkRhythmCardSkeleton({
         >
           <div className="absolute inset-1 flex">
             <div className="flex flex-col justify-between mr-1">
-              {["Early", "AM", "PM", "Eve"].map((t) => (
+              {['Early', 'AM', 'PM', 'Eve'].map((t) => (
                 <span key={t} className="h-2 w-6 rounded bg-[#151A28]" />
               ))}
             </div>

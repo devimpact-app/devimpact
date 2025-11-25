@@ -1,26 +1,24 @@
-'use client'
+'use client';
 
-import { CliStatus } from '@/types/api/cli'
+import { CliStatus } from '@/types/api/cli';
 import {
   Terminal,
   KeyRound,
-  ShieldCheck,
   CheckCircle2,
-  AlertCircle,
   Copy,
   RefreshCw,
   Loader2,
   Check,
-} from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
-import useSWR from 'swr'
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import useSWR from 'swr';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function CliSetupPageShell({ userName }: { userName?: string | null }) {
-  const router = useRouter()
-  const hasRedirectedRef = useRef(false)
+  const router = useRouter();
+  const hasRedirectedRef = useRef(false);
 
   const { data: res, isLoading } = useSWR<{ data: CliStatus }>(
     '/api/cli/status',
@@ -28,25 +26,28 @@ export function CliSetupPageShell({ userName }: { userName?: string | null }) {
     {
       // don't start polling until we have data
       refreshInterval(res) {
-        if (!res) return 0
-        return res.data.onboardingState === 'synced' ? 0 : 5_000
+        if (!res) return 0;
+        const stopPolling =
+          res.data.onboardingState === 'synced' && res.data.cliLinkedAt;
+        return stopPolling ? 0 : 5_000;
       },
     }
-  )
-  const status = res?.data
+  );
+  const status = res?.data;
 
   useEffect(() => {
-    if (!status) return
-    if (status.onboardingState !== 'synced') return
-    if (hasRedirectedRef.current) return
+    if (!status) return;
+    if (hasRedirectedRef.current) return;
 
-    hasRedirectedRef.current = true
-    const timeout = setTimeout(() => {
-      router.push('/dashboard')
-    }, 1500)
+    if (status.onboardingState === 'synced' && status.cliLinkedAt) {
+      hasRedirectedRef.current = true;
+      const timeout = setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
 
-    return () => clearTimeout(timeout)
-  }, [status?.onboardingState, router])
+      return () => clearTimeout(timeout);
+    }
+  }, [status?.onboardingState, router]);
 
   if (isLoading || !status) {
     return (
@@ -64,79 +65,79 @@ export function CliSetupPageShell({ userName }: { userName?: string | null }) {
           <div className="h-14 rounded-xl border border-white/10 bg-[#11151F] animate-pulse" />
         </div>
       </div>
-    )
+    );
   }
 
-  return <CliSetupPage status={status} userName={userName} />
+  return <CliSetupPage status={status} userName={userName} />;
 }
 
 type CliSetupPageProps = {
-  userName?: string | null
-  status: CliStatus
-}
+  userName?: string | null;
+  status: CliStatus;
+};
 
-const STORAGE_KEY = 'devimpact_cli_token'
+const STORAGE_KEY = 'devimpact_cli_token';
 
 export function CliSetupPage({ userName, status }: CliSetupPageProps) {
-  const [cliToken, setCliToken] = useState<string | null>(null)
-  const [generating, setGenerating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [cliToken, setCliToken] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const firstName = userName ? userName.split(' ')[0] : 'there'
+  const firstName = userName ? userName.split(' ')[0] : 'there';
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const stored = sessionStorage.getItem(STORAGE_KEY)
+    if (typeof window === 'undefined') return;
+    const stored = sessionStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setCliToken(stored)
+      setCliToken(stored);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (status?.onboardingState === 'synced' && typeof window !== 'undefined') {
-      sessionStorage.removeItem(STORAGE_KEY)
+      sessionStorage.removeItem(STORAGE_KEY);
     }
-  }, [status?.onboardingState])
+  }, [status?.onboardingState]);
 
   async function handleGenerate() {
-    setGenerating(true)
-    setError(null)
+    setGenerating(true);
+    setError(null);
     try {
-      const res = await fetch('/api/cli/token', { method: 'POST' })
-      if (!res.ok) throw new Error('Failed to generate CLI token')
-      const data = await res.json()
-      setCliToken(data.cliToken)
+      const res = await fetch('/api/cli/token', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to generate CLI token');
+      const data = await res.json();
+      setCliToken(data.cliToken);
       // Save in browser memory so lasts across refresh
-      sessionStorage.setItem(STORAGE_KEY, data.cliToken)
+      sessionStorage.setItem(STORAGE_KEY, data.cliToken);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong')
+      setError(err.message || 'Something went wrong');
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
   }
 
   async function handleCopy() {
-    if (!cliToken) return
+    if (!cliToken) return;
     try {
-      await navigator.clipboard.writeText(cliToken)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
+      await navigator.clipboard.writeText(cliToken);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     } catch {}
   }
 
-  const hasCliToken = !!cliToken || status.hasCliToken
-  const state = status.onboardingState
+  const hasCliToken = !!cliToken || status.hasCliToken;
+  const state = status.onboardingState;
 
-  const step1Expanded = state === 'account_created' || state === 'cli_pending'
-  const step1Completed = hasCliToken
+  const step1Expanded = state === 'account_created' || state === 'cli_pending';
+  const step1Completed = hasCliToken;
 
-  const step2Enabled = step1Completed
-  const step2Expanded = step2Enabled && state === 'cli_pending'
+  const step2Enabled = step1Completed;
+  const step2Expanded = step2Enabled && state === 'cli_pending';
 
-  const step3Enabled = state === 'cli_linked' || state === 'syncing'
-  const step3Expanded = state === 'cli_linked' || state === 'syncing'
-  const isSyncing = state === 'syncing'
+  const step3Enabled = state === 'cli_linked' || state === 'syncing';
+  const step3Expanded = state === 'cli_linked' || state === 'syncing';
+  const isSyncing = state === 'syncing';
 
   return (
     <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -458,5 +459,5 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
         </aside>
       </section>
     </main>
-  )
+  );
 }

@@ -1,7 +1,7 @@
-import { ActivityEvent, ActivityEventKind } from "@/types/api/timeline";
-import { dotColor, kindLabel, LegendDot, TimelineDot } from "./DotLogic";
-import { useState } from "react";
-import { formatTimeIso } from "@/lib/utils/date";
+import { ActivityEvent, ActivityEventKind } from '@/types/api/timeline';
+import { dotColor, kindLabel, LegendDot, TimelineDot } from './DotLogic';
+import { useState } from 'react';
+import { formatTimeIso } from '@/lib/utils/date';
 
 const LANE_COUNT = 3;
 
@@ -13,7 +13,7 @@ export function OneWeekSkeleton() {
       <div className="grid grid-cols-7 gap-1.5">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
-            <div className="h-[220px] w-full rounded-md bg-slate-800/40 border border-slate-700/50" />
+            <div className="h-[200px] w-full rounded-md bg-slate-800/40 border border-slate-700/50" />
             <div className="h-3 w-8 rounded bg-slate-700/30" />
           </div>
         ))}
@@ -37,7 +37,7 @@ function DayColumn({
 
   return (
     <div key={label} className="flex flex-col items-center gap-1">
-      <div className="h-[220px] w-full rounded-md border border-slate-700 bg-slate-900 relative">
+      <div className="h-[200px] w-full rounded-md border border-slate-700 bg-slate-900 relative">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute left-0 right-0 top-[25%] border-t border-border">
             <span className="absolute left-1 -translate-y-1/2 text-[10px] text-text-tertiary/50">
@@ -70,7 +70,7 @@ function DayColumn({
                 key={dot.id}
                 type="button"
                 className={`absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_6px_1px_rgba(255,255,255,0.08)] hover:scale-150 transition-transform ${dotColor(
-                  dot.event.kind,
+                  dot.event.kind
                 )}`}
                 style={{
                   top: `${dot.timeRatio * 100}%`,
@@ -95,12 +95,12 @@ function DayColumn({
               style={{
                 top: `${hoveredDot.timeRatio * 100}%`,
                 // slightly to the right of center so it doesn't cover the dot
-                left: "55%",
-                transform: "translateY(-50%)",
+                left: '55%',
+                transform: 'translateY(-50%)',
               }}
             >
               <div className="mb-1 text-[11px] text-white/60">
-                {kindLabel(hoveredDot.event.kind)} ·{" "}
+                {kindLabel(hoveredDot.event.kind)} ·{' '}
                 {formatTimeIso(hoveredDot.event.occurredAt)}
               </div>
               <div className="text-xs font-medium text-white/90 line-clamp-2">
@@ -151,7 +151,7 @@ export function OneWeekView({
     <section className="rounded-2xl border border-border bg-surface-alt px-4 py-3">
       <div className="mb-2 flex items-center justify-between gap-3">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
-          {label ? label : "Activity this week"}
+          {label ? label : 'Activity this week'}
         </h3>
         <div className="flex items-center gap-3 text-[11px] text-text-secondary">
           <span className="inline-flex items-center gap-1.5">

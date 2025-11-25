@@ -34,7 +34,7 @@ export async function storePRFiles(
       additions: f.additions,
       deletions: f.deletions,
       changes: f.changes,
-      fileExtension: ext || null,
+      fileExtension: ext,
       directory: dir,
       isTestFile: isTest,
       authorGithubLogin: username,

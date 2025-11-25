@@ -1,25 +1,15 @@
-"use client";
+'use client';
 
-import { MetricsAPI } from "@/lib/analysis/metrics/client";
-import { useEffect, useMemo, useState } from "react";
-import { StatResult } from "@/lib/analysis/metrics/types/output";
-import {
-  formatRange,
-  formatSeconds,
-  getTimelineRangeBounds,
-  TimelineRangeKey,
-} from "@/lib/utils/date";
+import { useEffect, useMemo, useState } from 'react';
 import {
   StoryCardSkeleton,
   StoryCardView,
-} from "@/components/stories/StoryCardView";
-import { DashboardHero, RANGE_OPTIONS } from "./components/Hero";
-import { MetricStatCard } from "./components/MetricStatCard";
-import { RecentActivitySummaryCard } from "./components/WeeklyReviewCard";
-import { WorkRhythmCard } from "./components/WorkRythmCard";
-import { ActivityEvent } from "@/types/api/timeline";
-import { WorkRhythmCardSkeleton } from "./components/WorkRythmCardSkeleton";
-import { useRouter } from "next/navigation";
+} from '@/components/stories/StoryCardView';
+import WeeklySummaryCard from './WeeklySummary';
+import WorkRhythmCard from './WorkRythm';
+import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
+import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
+import { WeekNavigator } from '@/components/dates/WeekPicker';
 
 type Props = {
   user: {
@@ -31,134 +21,30 @@ type Props = {
 };
 
 export default function DashboardClient({ user }: Props) {
-  const router = useRouter();
-  const [catalog, setCatalog] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadingMetrics, setLoadingMetrics] = useState(false);
-  const [leadTimeStat, setLeadTimeStat] = useState<StatResult | null>(null);
-  const [reviewLatencyStat, setReviewLatencyStat] = useState<StatResult | null>(
-    null,
-  );
-  const [linesChangedStat, setLinesChangedStat] = useState<StatResult | null>(
-    null,
-  );
-  const [substantiveReviewStat, setSubstantiveReviewStat] =
-    useState<StatResult | null>(null);
 
   const [loadingStories, setLoadingStories] = useState(false);
-
-  const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [loadingActivity, setLoadingActivity] = useState(false);
 
   const [story1, setStory1] = useState<any | null>(null);
   const [story2, setStory2] = useState<any | null>(null);
   const [story3, setStory3] = useState<any | null>(null);
 
-  const [range, setRange] = useState<TimelineRangeKey>("7d");
-  const { startISO, endISO, periodLabel, rangeLabel } = useMemo(() => {
-    const { start, end } = getTimelineRangeBounds(range);
-    return {
-      startISO: start.toISOString(),
-      endISO: end.toISOString(),
-      periodLabel: formatRange(start, end),
-      rangeLabel: RANGE_OPTIONS.find((r) => r.key === range)?.label || "",
-    };
-  }, [range]);
+  const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
+    useWeekNavigation();
+
+  const startISO = start.toISOString();
+  const endISO = end.toISOString();
 
   useEffect(() => {
-    setLoadingActivity(true);
     setLoadingStories(true);
-    setLoadingMetrics(true);
-    async function loadCatalog() {
-      try {
-        const data = await MetricsAPI.getCatalog();
-        setCatalog(data.metrics);
-      } catch (err) {
-        setError("Failed to load metrics catalog");
-      }
-    }
-
-    loadCatalog();
   }, []);
 
   useEffect(() => {
-    if (!catalog) return;
     (async () => {
-      try {
-        setLoadingMetrics(true);
-        setLoadingStories(true);
-        setLoadingActivity(true);
-
-        const batch = await MetricsAPI.runBatch({
-          requests: [
-            {
-              metricId: "pr.lead_time_seconds.v1",
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: "stat",
-                comparison: { kind: "previous_period" },
-              },
-            },
-            {
-              metricId: "review.latency_seconds.avg.v1",
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: "stat",
-                comparison: { kind: "previous_period" },
-              },
-            },
-            {
-              metricId: "pr.size_lines_changed_median.v1",
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: "stat",
-                comparison: { kind: "previous_period" },
-              },
-            },
-            {
-              metricId: "review.substantive_rate.v1",
-              input: {
-                start: startISO,
-                end: endISO,
-                shape: "stat",
-                comparison: { kind: "previous_period" },
-              },
-            },
-          ],
-        });
-
-        const lead = batch.results.find(
-          (r) => r.metricId === "pr.lead_time_seconds.v1" && r.shape === "stat",
-        ) as StatResult | undefined;
-        setLeadTimeStat(lead ?? null);
-        const latency = batch.results.find(
-          (r) =>
-            r.metricId === "review.latency_seconds.avg.v1" &&
-            r.shape === "stat",
-        ) as StatResult | undefined;
-        setReviewLatencyStat(latency ?? null);
-        const linesChanged = batch.results.find(
-          (r) =>
-            r.metricId === "pr.size_lines_changed_median.v1" &&
-            r.shape === "stat",
-        ) as StatResult | undefined;
-        setLinesChangedStat(linesChanged ?? null);
-        const substantiveReviewRate = batch.results.find(
-          (r) =>
-            r.metricId === "review.substantive_rate.v1" && r.shape === "stat",
-        ) as StatResult | undefined;
-        setSubstantiveReviewStat(substantiveReviewRate ?? null);
-      } catch {
-        setError("Failed to load metrics");
-      } finally {
-        setLoadingMetrics(false);
-      }
+      setLoadingStories(true);
       async function loadStory() {
         const res = await fetch(
-          `/api/stories/query?start=${startISO}&end=${endISO}&id=invisible_load.v1&id=collaboration_patterns.v1`,
+          `/api/stories/query?start=${startISO}&end=${endISO}&id=invisible_load.v1&id=collaboration_patterns.v1`
         );
         const { data } = await res.json();
         setStory1(data.stories[0]);
@@ -166,125 +52,45 @@ export default function DashboardClient({ user }: Props) {
         setLoadingStories(false);
       }
       loadStory();
-
-      async function loadActivity() {
-        const res = await fetch(
-          `/api/activity?start=${startISO}&end=${endISO}`,
-        );
-        const { data } = await res.json();
-        setActivity(data.events);
-        setLoadingActivity(false);
-      }
-      loadActivity();
     })();
-  }, [catalog, startISO, endISO]);
+  }, [startISO, endISO]);
+
+  const firstName = useMemo(
+    () => (user.name ? user.name.split(' ')[0] : 'there'),
+    [user.name]
+  );
 
   if (error) return <div className="text-red-500">{error}</div>;
-  if (!catalog) return <div>Loading metrics…</div>;
-
-  const leadValue =
-    leadTimeStat?.data?.find((d) => d.kind === "current")?.value ?? null;
-  const comparisonValue =
-    leadTimeStat?.data?.find((d) => d.kind === "comparison")?.value ?? null;
-  const latencyValue =
-    reviewLatencyStat?.data?.find((d) => d.kind === "current")?.value ?? null;
-  const latencyComparisonValue =
-    reviewLatencyStat?.data?.find((d) => d.kind === "comparison")?.value ??
-    null;
-
-  const linesValue =
-    linesChangedStat?.data?.find((d) => d.kind === "current")?.value ?? null;
-  const linesComparisonValue =
-    linesChangedStat?.data?.find((d) => d.kind === "comparison")?.value ?? null;
-  const subValue =
-    substantiveReviewStat?.data?.find((d) => d.kind === "current")?.value ??
-    null;
-  const subComparisonValue =
-    substantiveReviewStat?.data?.find((d) => d.kind === "comparison")?.value ??
-    null;
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <DashboardHero
-        userName={user.name}
-        range={range}
-        periodLabel={periodLabel}
-        onRangeChange={setRange}
-      />
+      <header className="mb-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
+              Welcome back, {firstName}!
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              Here&apos;s what&apos;s happening with your work{' '}
+              <span className="text-text-primary/80">({subLabel})</span>.
+            </p>
+          </div>
 
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Current Pulse</h2>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricStatCard
-            title="Your Review Latency"
-            periodLabel={rangeLabel}
-            value={loadingMetrics ? null : formatSeconds(latencyValue)}
-            comparisonLabel="Last period"
-            comparisonValue={
-              loadingMetrics ? null : formatSeconds(latencyComparisonValue)
-            }
-            loading={loadingMetrics}
-            // deltaText={deltaDisplay}
-            // deltaTone={deltaIsGood ? "better" : "worse"}
-            description="Average time to respond to others’ PRs"
-          />
-          <MetricStatCard
-            title="Your PR cycle time"
-            periodLabel={rangeLabel}
-            value={loadingMetrics ? null : formatSeconds(leadValue)}
-            comparisonLabel="Last period"
-            comparisonValue={
-              loadingMetrics ? null : formatSeconds(comparisonValue)
-            }
-            loading={loadingMetrics}
-            description="Average time from first commit → merge"
-          />
-          <MetricStatCard
-            title="Your typical PR Size"
-            periodLabel={rangeLabel}
-            value={
-              loadingMetrics ? null : `${Math.round(linesValue || 0)} lines`
-            }
-            comparisonLabel="Last period"
-            comparisonValue={
-              loadingMetrics
-                ? null
-                : `${Math.round(linesComparisonValue || 0)} lines`
-            }
-            loading={loadingMetrics}
-            description="Median lines changed per merged PR"
-          />
-          <MetricStatCard
-            title="Substantive Review ratio"
-            periodLabel={rangeLabel}
-            value={loadingMetrics ? null : subValue}
-            comparisonLabel="Last period"
-            comparisonValue={loadingMetrics ? null : subComparisonValue}
-            loading={loadingMetrics}
-            description="Ratio of your reviews where you left comments"
+          <WeekNavigator
+            label={label}
+            subLabel={subLabel}
+            canGoForward={canGoForward}
+            onPrevWeek={goPrevWeek}
+            onNextWeek={goNextWeek}
           />
         </div>
-      </div>
+      </header>
 
-      {loadingActivity ? (
-        <WorkRhythmCardSkeleton
-          rangeDays={range === "7d" ? 7 : range === "14d" ? 14 : 30}
-        />
-      ) : (
-        <WorkRhythmCard
-          loading={loadingActivity}
-          events={activity}
-          rangeDays={range === "7d" ? 7 : range === "14d" ? 14 : 30}
-          onViewTimelineClick={() => {
-            router.push("/timeline");
-          }}
-        />
-      )}
+      <WeeklySummaryCard startISO={startISO} endISO={endISO} />
 
       <div>
         <h2 className="text-lg font-semibold mb-4">
-          Hightlights from {rangeLabel}
+          Hightlights from {subLabel}
         </h2>
         <div className="grid grid-cols-3 gap-4">
           {!loadingStories && story1 ? (
@@ -305,44 +111,50 @@ export default function DashboardClient({ user }: Props) {
         </div>
       </div>
 
-      <div>
-        <RecentActivitySummaryCard
-          periodLabel={rangeLabel}
-          summary="Over the last two weeks, you merged 5 PRs and reviewed 11 others, with most work happening mid-week..."
-          prSummary={{
-            title: "PRs you touched",
-            metricLabel: "merged",
-            metricValue: "5",
-            description: "Mostly dashboard layout refactors and search fixes.",
-          }}
-          reviewSummary={{
-            title: "Reviews you gave",
-            metricLabel: "reviews",
-            metricValue: "13",
-            description: "Focused on API edge cases and test coverage.",
-          }}
-          projectSummary={{
-            title: "Key projects",
-            metricLabel: "threads",
-            metricValue: "3",
-            description: "Dashboard V2, search caching, and auth hardening.",
-          }}
-          highlights={[
-            {
-              id: "1",
-              kind: "pr_merged",
-              title: "Merged “Improve dashboard layout”",
-              meta: "184 lines • 1 review round",
-            },
-            {
-              id: "2",
-              kind: "review",
-              title: "Reviewed “Search caching”",
-              meta: "First responder • 42m latency",
-            },
-          ]}
-        />
-      </div>
+      <WorkRhythmCard />
+
+      <ActivityLogContainer
+        startISO={startISO}
+        endISO={endISO}
+        mode="preview"
+        onViewAllClick={() => {}}
+      />
+
+      <section className="mt-6">
+        <div
+          className="
+      rounded-2xl border border-[#252B3F] bg-[#090D16]
+      px-4 py-3 sm:px-5 sm:py-4
+      flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3
+    "
+        >
+          <div>
+            <h3 className="text-xs font-semibold text-[#E2E6FF] mb-1">
+              Turn this week into a clean 1:1
+            </h3>
+            <p className="text-[11px] text-[#9AA4C6] leading-snug max-w-md">
+              Pull in recent wins, questions, and blockers into a single view
+              you can share or use as your own notes before your next 1:1.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {}}
+            className="
+        inline-flex items-center gap-1.5
+        rounded-full bg-[#1D283A]
+        border border-[#3B4A78]
+        px-3.5 py-1.5
+        text-[11px] font-medium text-[#D5E0FF]
+        hover:bg-[#233047] hover:border-[#4C5FA0]
+        transition-colors
+      "
+          >
+            Prep for 1:1
+          </button>
+        </div>
+      </section>
     </main>
   );
 }

@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
-import { getActivityEventsForRange } from "@/lib/analysis/timeline/getActivityEventsForRange";
-import { auth } from "@/lib/auth"; // if using NextAuth
-import { jsonOK, jsonUnauthorized } from "../_lib/http";
+import { NextResponse } from 'next/server';
+import { getActivityEventsForRange } from '@/lib/analysis/activity/getActivityEventsForRange';
+import { auth } from '@/lib/auth'; // if using NextAuth
+import { jsonOK, jsonUnauthorized } from '../_lib/http';
 import {
   ActivityEvent,
   ActivityEventsResponseSchema,
-} from "@/types/api/timeline";
+} from '@/types/api/timeline';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -15,14 +15,14 @@ export async function GET(req: Request) {
     return jsonUnauthorized();
   }
 
-  const startParam = searchParams.get("start");
-  const endParam = searchParams.get("end");
-  const limitParam = searchParams.get("limit");
+  const startParam = searchParams.get('start');
+  const endParam = searchParams.get('end');
+  const limitParam = searchParams.get('limit');
 
   if (!startParam || !endParam) {
     return NextResponse.json(
-      { error: "Missing required query params: tenantId, start, end" },
-      { status: 400 },
+      { error: 'Missing required query params: tenantId, start, end' },
+      { status: 400 }
     );
   }
 
@@ -32,8 +32,8 @@ export async function GET(req: Request) {
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return NextResponse.json(
-      { error: "Invalid start or end date" },
-      { status: 400 },
+      { error: 'Invalid start or end date' },
+      { status: 400 }
     );
   }
 

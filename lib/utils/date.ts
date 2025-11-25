@@ -2,6 +2,27 @@ export function toDate(d: Date | string): Date {
   return d instanceof Date ? d : new Date(d);
 }
 
+export function toLocalDate(value: string | Date, timezone: string): Date {
+  const base = typeof value === 'string' ? new Date(value) : value;
+
+  // Safety: handle invalid dates defensively
+  if (!(base instanceof Date) || isNaN(base.getTime())) {
+    return base;
+  }
+
+  // Convert UTC → local timezone using locale string
+  return new Date(base.toLocaleString('en-US', { timeZone: timezone }));
+}
+
+export function getLocalWeekdayIndex(
+  value: string | Date,
+  timezone: string
+): number {
+  const local = toLocalDate(value, timezone);
+  const jsDay = local.getDay(); // 0–6
+  return (jsDay + 6) % 7;
+}
+
 /**
  * Shift a date by N years while trying to preserve month/day.
  * Handles leap days by clamping to the last day of Feb when needed.
@@ -20,8 +41,8 @@ export function shiftYear(d: Date, deltaYears: number): Date {
       d.getUTCHours(),
       d.getUTCMinutes(),
       d.getUTCSeconds(),
-      d.getUTCMilliseconds(),
-    ),
+      d.getUTCMilliseconds()
+    )
   );
 
   // If month overflowed (e.g., Feb 29 → Mar 1), clamp to last day of target month.
@@ -35,8 +56,8 @@ export function shiftYear(d: Date, deltaYears: number): Date {
         d.getUTCHours(),
         d.getUTCMinutes(),
         d.getUTCSeconds(),
-        d.getUTCMilliseconds(),
-      ),
+        d.getUTCMilliseconds()
+      )
     );
     return lastDay;
   }
@@ -44,7 +65,7 @@ export function shiftYear(d: Date, deltaYears: number): Date {
 }
 
 export function formatSeconds(s: number | null | undefined) {
-  if (s == null) return "—";
+  if (s == null) return '—';
   if (s < 60) return `${Math.round(s)}s`;
   const mins = Math.floor(s / 60);
   if (mins < 60) return `${mins}m`;
@@ -57,37 +78,28 @@ export function formatSeconds(s: number | null | undefined) {
 
 export function formatRange(start: Date, end: Date) {
   const fmt = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
+    month: 'short',
+    day: 'numeric',
   });
   const ySame = start.getFullYear() === end.getFullYear();
   const y = (d: Date) =>
-    new Intl.DateTimeFormat(undefined, { year: "numeric" }).format(d);
+    new Intl.DateTimeFormat(undefined, { year: 'numeric' }).format(d);
   return ySame
     ? `${fmt.format(start)}–${fmt.format(end)}, ${y(end)}`
     : `${fmt.format(start)} ${y(start)}–${fmt.format(end)} ${y(end)}`;
 }
 
-export type TimelineRangeKey =
-  | "this_week"
-  | "last_week"
-  | "2w"
-  | "4w"
-  | "7d"
-  | "14d"
-  | "30d";
-
-export function getDefaultTimelineRange(): TimelineRangeKey {
+export function getDefaultWeekOffset(): number {
   const today = new Date();
   const day = today.getDay(); // 0 = Sun, 1 = Mon, ... 4 = Thu, 5 = Fri
 
   // If it's Thu or Fri, show "This week" by default.
   if (day === 4 || day === 5) {
-    return "this_week";
+    return 0;
   }
 
   // Otherwise, default to "Last week"
-  return "last_week";
+  return -1;
 }
 
 export function startOfWeek(date: Date): Date {
@@ -108,74 +120,39 @@ export function endOfWeek(date: Date): Date {
   return end;
 }
 
-export const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export function getTimelineRangeBounds(range: TimelineRangeKey): {
-  start: Date;
-  end: Date;
-} {
-  const today = new Date();
-  today.setHours(12, 0, 0, 0); // avoid DST weirdness a bit
-
-  if (range === "7d" || range === "14d" || range === "30d") {
-    const days = range === "7d" ? 7 : range === "14d" ? 14 : 30;
-    const end = new Date(today);
-    end.setHours(23, 59, 59, 999);
-    const start = new Date(end);
-    start.setDate(end.getDate() - (days - 1));
-    start.setHours(0, 0, 0, 0);
-
-    return { start, end };
+export function getWeekBoundsFromOffset(
+  weekOffset: number,
+  windowWeeks: number = 1,
+  today: Date = new Date()
+): { start: Date; end: Date } {
+  if (windowWeeks < 1) {
+    throw new Error('windowWeeks must be >= 1');
   }
 
-  if (range === "this_week") {
-    const start = startOfWeek(today);
-    const end = new Date(today); // "so far" this week
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  }
-
-  if (range === "last_week") {
-    const thisWeekStart = startOfWeek(today);
-    const lastWeekEnd = new Date(thisWeekStart);
-    lastWeekEnd.setMilliseconds(-1); // one ms before this week
-    const lastWeekStart = startOfWeek(lastWeekEnd);
-    lastWeekEnd.setHours(23, 59, 59, 999);
-    return { start: lastWeekStart, end: lastWeekEnd };
-  }
-
-  if (range === "2w") {
-    // Start of *this* week (Monday)
-    const thisWeekStart = startOfWeek(today);
-
-    // Start of last week = thisWeekStart - 7 days
-    const lastWeekStart = new Date(thisWeekStart);
-    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
-
-    const start = lastWeekStart;
-    const end = endOfWeek(thisWeekStart); // Sunday of this week
-
-    return { start, end };
-  }
-
-  // "4w" (28 days trailing)
-  // Start of *this* week (Monday)
+  // Start of *this* week (e.g. Monday)
   const thisWeekStart = startOfWeek(today);
 
-  // Start of last week = thisWeekStart - 7 days
-  const fourWeeksStart = new Date(thisWeekStart);
-  fourWeeksStart.setDate(thisWeekStart.getDate() - 21);
+  // The week we want the range to END on
+  const endWeekStart = new Date(thisWeekStart);
+  endWeekStart.setDate(thisWeekStart.getDate() + weekOffset * 7);
 
-  const start = fourWeeksStart;
-  const end = endOfWeek(thisWeekStart); // Sunday of this week
+  // Oldest week included in the window
+  const oldestWeekOffset = weekOffset - (windowWeeks - 1);
+  const start = new Date(thisWeekStart);
+  start.setDate(thisWeekStart.getDate() + oldestWeekOffset * 7);
+
+  // End at the end of the end-week
+  const end = endOfWeek(endWeekStart);
 
   return { start, end };
 }
 
 export function formatTimeIso(iso: string) {
   return new Date(iso).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
