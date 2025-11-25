@@ -116,31 +116,6 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
       </div>
 
       <div className="mt-auto space-y-2 pt-4">
-        {/* <Link
-          key={settingsHref}
-          href={settingsHref}
-          className={clsx(
-            "group relative grid place-items-center rounded-xl py-3 transition",
-            settingsActive
-              ? "bg-white/15 ring-1 ring-white/20 shadow"
-              : "hover:bg-white/10",
-          )}
-          aria-label="Settings"
-          title="Settings"
-        >
-          <Settings
-            className={clsx(
-              "h-5 w-5 transition",
-              settingsActive
-                ? "text-white"
-                : "text-blue-200 group-hover:text-white",
-            )}
-          />
-          <span className="pointer-events-none absolute left-[84px] z-10 hidden rounded-md bg-indigo-900 px-2 py-1 text-xs text-white shadow group-hover:block">
-            Settings
-          </span>
-        </Link> */}
-
         <div className="relative flex  justify-center items-center">
           <button
             ref={btnRef}

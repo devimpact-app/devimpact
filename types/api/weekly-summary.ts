@@ -110,7 +110,6 @@ export const WeeklySummarySchema = z
     meta: z
       .object({
         generatedAt: z.string().datetime(),
-        rangeKey: z.string(),
       })
       .optional(),
   })

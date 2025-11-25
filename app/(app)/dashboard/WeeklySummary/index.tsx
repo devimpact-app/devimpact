@@ -6,11 +6,13 @@ import { WeeklySummary, WeeklySummarySchema } from '@/types/api/weekly-summary';
 import { TimelineRangeKey } from '@/types/api/http';
 
 async function fetchWeeklySummary(
-  rangeKey: string,
+  start: string,
+  end: string,
   timezone: string
 ): Promise<WeeklySummary> {
   const params = new URLSearchParams({
-    rangeKey,
+    start,
+    end,
     timezone,
   });
 
@@ -27,9 +29,11 @@ async function fetchWeeklySummary(
 }
 
 export default function WeeklySummaryCardContainer({
-  rangeKey,
+  startISO,
+  endISO,
 }: {
-  rangeKey: TimelineRangeKey;
+  startISO: string;
+  endISO: string;
 }) {
   const timezone =
     typeof Intl !== 'undefined'
@@ -37,8 +41,9 @@ export default function WeeklySummaryCardContainer({
       : 'UTC';
 
   const { data, error, isLoading } = useSWR<WeeklySummary>(
-    ['/api/weekly-summary', rangeKey, timezone],
-    ([, rk, tz]) => fetchWeeklySummary(rk as string, tz as string)
+    ['/api/weekly-summary', startISO, endISO, timezone],
+    ([, start, end, tz]) =>
+      fetchWeeklySummary(start as string, end as string, tz as string)
   );
 
   return (

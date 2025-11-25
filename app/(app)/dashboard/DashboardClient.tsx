@@ -2,20 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  formatRange,
-  getDefaultTimelineRange,
-  getTimelineRangeBounds,
-  TimelineRangeKey,
-} from '@/lib/utils/date';
-import {
   StoryCardSkeleton,
   StoryCardView,
 } from '@/components/stories/StoryCardView';
-import { DashboardHero } from './components/Hero';
-import { RecentActivitySummaryCard } from './components/WeeklyReviewCard';
 import WeeklySummaryCard from './WeeklySummary';
 import WorkRhythmCard from './WorkRythm';
 import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
+import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
+import { WeekNavigator } from '@/components/dates/WeekPicker';
 
 type Props = {
   user: {
@@ -35,17 +29,11 @@ export default function DashboardClient({ user }: Props) {
   const [story2, setStory2] = useState<any | null>(null);
   const [story3, setStory3] = useState<any | null>(null);
 
-  const [range, setRange] = useState<TimelineRangeKey>(() =>
-    getDefaultTimelineRange()
-  );
-  const { startISO, endISO, periodLabel } = useMemo(() => {
-    const { start, end } = getTimelineRangeBounds(range);
-    return {
-      startISO: start.toISOString(),
-      endISO: end.toISOString(),
-      periodLabel: formatRange(start, end),
-    };
-  }, [range]);
+  const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
+    useWeekNavigation();
+
+  const startISO = start.toISOString();
+  const endISO = end.toISOString();
 
   useEffect(() => {
     setLoadingStories(true);
@@ -67,22 +55,42 @@ export default function DashboardClient({ user }: Props) {
     })();
   }, [startISO, endISO]);
 
+  const firstName = useMemo(
+    () => (user.name ? user.name.split(' ')[0] : 'there'),
+    [user.name]
+  );
+
   if (error) return <div className="text-red-500">{error}</div>;
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <DashboardHero
-        userName={user.name}
-        range={range}
-        periodLabel={periodLabel}
-        onRangeChange={setRange}
-      />
+      <header className="mb-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
+              Welcome back, {firstName}!
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              Here&apos;s what&apos;s happening with your work{' '}
+              <span className="text-text-primary/80">({subLabel})</span>.
+            </p>
+          </div>
 
-      {range && <WeeklySummaryCard rangeKey={range} />}
+          <WeekNavigator
+            label={label}
+            subLabel={subLabel}
+            canGoForward={canGoForward}
+            onPrevWeek={goPrevWeek}
+            onNextWeek={goNextWeek}
+          />
+        </div>
+      </header>
+
+      <WeeklySummaryCard startISO={startISO} endISO={endISO} />
 
       <div>
         <h2 className="text-lg font-semibold mb-4">
-          Hightlights from {periodLabel}
+          Hightlights from {subLabel}
         </h2>
         <div className="grid grid-cols-3 gap-4">
           {!loadingStories && story1 ? (
@@ -109,6 +117,7 @@ export default function DashboardClient({ user }: Props) {
         startISO={startISO}
         endISO={endISO}
         mode="preview"
+        onViewAllClick={() => {}}
       />
 
       <section className="mt-6">

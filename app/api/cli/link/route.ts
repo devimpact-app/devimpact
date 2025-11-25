@@ -1,9 +1,9 @@
-import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
-import { jsonBadRequest, jsonUnauthorized } from "../../_lib/http";
-import { hashCliToken } from "@/lib/utils/crypto";
+import { db } from '@/lib/db/client';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { NextRequest, NextResponse } from 'next/server';
+import { jsonBadRequest, jsonUnauthorized } from '../../_lib/http';
+import { hashCliToken } from '@/lib/utils/crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const githubLogin = body.githubLogin as string | undefined;
 
     if (!cliToken || !githubLogin) {
-      return jsonBadRequest("Missing cliToken or githubLogin");
+      return jsonBadRequest('Missing cliToken or githubLogin');
     }
 
     const user = await db.query.users.findFirst({
@@ -22,25 +22,31 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return jsonUnauthorized(
-        "No DevImpact account found for this GitHub user. " +
-          "Sign into the DevImpact app with GitHub first, then re-run `devimpact init`.",
+        'No DevImpact account found for this GitHub user. ' +
+          'Sign into the DevImpact app with GitHub first, then re-run `devimpact init`.'
       );
     }
 
     if (!user.cliTokenHash) {
-      return jsonUnauthorized("No CLI token was generated for this user");
+      return jsonUnauthorized('No CLI token was generated for this user');
     }
 
     const incomingHash = hashCliToken(cliToken);
     if (user.cliTokenHash !== incomingHash) {
-      return jsonUnauthorized("Invalid or expired cli token");
+      return jsonUnauthorized('Invalid or expired cli token');
     }
 
+    const newOnboardingState =
+      user.onboardingState === 'cli_pending'
+        ? {
+            onboardingState: 'cli_linked',
+          }
+        : {};
     await db
       .update(users)
       .set({
         cliLinkedAt: new Date(),
-        onboardingState: "cli_linked",
+        ...newOnboardingState,
       })
       .where(eq(users.id, user.id));
 
@@ -49,10 +55,10 @@ export async function POST(req: NextRequest) {
       tenantId: user.id,
     });
   } catch (err) {
-    console.error("[CLI LINK] error:", err);
+    console.error('[CLI LINK] error:', err);
     return NextResponse.json(
-      { ok: false, message: "Internal server error" },
-      { status: 500 },
+      { ok: false, message: 'Internal server error' },
+      { status: 500 }
     );
   }
 }

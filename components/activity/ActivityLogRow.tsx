@@ -13,6 +13,7 @@ export type ActivityLogMode = 'preview' | 'full';
 type ActivityLogRowProps = {
   event: ActivityEvent;
   mode?: ActivityLogMode;
+  onEventClick?: (event: ActivityEvent) => void;
 };
 
 type Presentation = {
@@ -167,6 +168,7 @@ function getPresentation(event: ActivityEvent): Presentation {
 export function ActivityLogRow({
   event,
   mode = 'preview',
+  onEventClick,
 }: ActivityLogRowProps) {
   const compact = mode === 'preview';
   const { icon, iconBgClass, iconColorClass, title, subtitle, href } =
@@ -213,6 +215,18 @@ export function ActivityLogRow({
       </div>
     </div>
   );
+
+  if (onEventClick) {
+    return (
+      <button
+        type="button"
+        onClick={() => onEventClick(event)}
+        className="block w-full rounded-md px-1 text-left hover:bg-slate-900/40 focus:outline-none focus:ring-1 focus:ring-slate-600/80"
+      >
+        {content}
+      </button>
+    );
+  }
 
   if (href) {
     return (

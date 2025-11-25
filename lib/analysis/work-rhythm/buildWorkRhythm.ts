@@ -3,7 +3,7 @@ import {
   WorkRhythmBucket,
   WorkRhythmSchema,
 } from '@/types/api/work-rhythm';
-import { formatRange, getTimelineRangeBounds } from '@/lib/utils/date';
+import { formatRange, getWeekBoundsFromOffset } from '@/lib/utils/date';
 import { getActivityEventsForRange } from '../activity/getActivityEventsForRange';
 import { bucketEventsByDayAndBand } from './bucket';
 import {
@@ -45,7 +45,7 @@ export async function buildWorkRhythm({
   userId,
   timezone,
 }: BuildWorkRhythmArgs): Promise<WorkRhythm> {
-  const { start, end } = getTimelineRangeBounds('4w');
+  const { start, end } = getWeekBoundsFromOffset(0, 4);
   const range: WorkRhythm['range'] = {
     startISO: start.toISOString(),
     endISO: end.toISOString(),

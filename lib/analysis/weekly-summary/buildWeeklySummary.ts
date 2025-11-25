@@ -1,8 +1,4 @@
-import {
-  formatRange,
-  getTimelineRangeBounds,
-  TimelineRangeKey,
-} from '@/lib/utils/date';
+import { formatRange } from '@/lib/utils/date';
 import { WeeklySummary, WeeklySummarySchema } from '@/types/api/weekly-summary';
 import { getAuthoredPrs } from '../activity/getAuthoredPrs';
 import { getAuthoredReviews } from '../activity/getAuthoredReviews';
@@ -24,9 +20,8 @@ import { buildWeeklyHeadline } from './headline';
 
 export type BuildWeeklySummaryArgs = {
   userId: string;
-  rangeStart?: Date;
-  rangeEnd?: Date;
-  rangeKey: TimelineRangeKey;
+  rangeStart: Date;
+  rangeEnd: Date;
   timezone: string;
 };
 
@@ -36,20 +31,10 @@ export type BuildWeeklySummaryArgs = {
  */
 export async function buildWeeklySummary({
   userId,
-  rangeKey,
+  rangeStart: start,
+  rangeEnd: end,
   timezone,
-  // TODO: support custom ranges
-  rangeStart: _rangeStart,
-  rangeEnd: _rangeEnd,
 }: BuildWeeklySummaryArgs): Promise<WeeklySummary> {
-  // Date range
-  const { start, end } = getTimelineRangeBounds(rangeKey);
-  const range: WeeklySummary['range'] = {
-    startISO: start.toISOString(),
-    endISO: end.toISOString(),
-    label: formatRange(start, end),
-  };
-
   // Soft stats
   const activityParams = {
     tenantId: userId,
@@ -65,26 +50,28 @@ export async function buildWeeklySummary({
   );
   const authoredCommits = await getAuthoredCommits(activityParams);
 
-  const allDates = [
-    ...authoredPrs.map((pr) => pr.createdAt),
-    ...authoredPrs.map((pr) => pr.mergedAt).filter(Boolean),
-    ...authoredReviews.map((r) => r.review.submittedAt).filter(Boolean),
-    ...authoredCommits.map((c) => c.commit.committedAt),
-  ] as Date[];
+  const allDates = (
+    [
+      ...authoredPrs.map((pr) => pr.createdAt),
+      ...authoredPrs.map((pr) => pr.mergedAt).filter(Boolean),
+      ...authoredReviews.map((r) => r.review.submittedAt).filter(Boolean),
+      ...authoredCommits.map((c) => c.commit.committedAt),
+    ] as Date[]
+  ).filter((d) => d >= start && d <= end);
 
   const { activeDays, mostActiveDay } = computeActiveDaysAndMostActiveDay(
     allDates,
     timezone
   );
+  const mergedPrs = authoredPrs.filter((pr) => !!pr.mergedAt);
   const softStats: WeeklySummary['softStats'] = {
-    prsAuthored: authoredPrs.length,
+    prsAuthored: mergedPrs.length,
     prsReviewed: uniquePrsReviewed.length,
     activeDays,
     mostActiveDay,
   };
 
   // Highlighted shipped PRs
-  const mergedPrs = authoredPrs.filter((pr) => !!pr.mergedAt);
   const summariesByPrId = new Map<string, any>();
   for (const pr of mergedPrs) {
     const { row } = await getOrGeneratePrSummary({
@@ -160,7 +147,11 @@ export async function buildWeeklySummary({
 
   const summary: WeeklySummary = {
     version: 1,
-    range,
+    range: {
+      startISO: start.toISOString(),
+      endISO: end.toISOString(),
+      label: formatRange(start, end),
+    },
     softStats,
     shipped,
     whatYouWorkedOn,
@@ -169,7 +160,6 @@ export async function buildWeeklySummary({
     headline,
     meta: {
       generatedAt: new Date().toISOString(),
-      rangeKey,
     },
   };
 

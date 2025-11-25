@@ -1,8 +1,7 @@
 import { buildWeeklySummary } from '@/lib/analysis/weekly-summary';
-import { jsonOK, jsonUnauthorized } from '../_lib/http';
+import { jsonBadRequest, jsonOK, jsonUnauthorized } from '../_lib/http';
 import { auth } from '@/lib/auth';
 import { NextRequest } from 'next/server';
-import { TimelineRangeKeySchema } from '@/types/api/http';
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -10,17 +9,19 @@ export async function GET(req: NextRequest) {
   const userId = session.user.id;
 
   const { searchParams } = new URL(req.url);
-  const rawRangeKey = searchParams.get('rangeKey') ?? 'last_week';
-  const rangeKey = TimelineRangeKeySchema.parse(rawRangeKey);
-  // const startStr = searchParams.get('start');
-  // const endStr = searchParams.get('end');
+  const startISO = searchParams.get('start');
+  const endISO = searchParams.get('end');
   const timezone = searchParams.get('timezone') ?? 'UTC';
+  const start = startISO ? new Date(startISO) : null;
+  const end = endISO ? new Date(endISO) : null;
+  if (!start || !end) {
+    return jsonBadRequest('Start and end not valid ISO strings');
+  }
 
   const summary = await buildWeeklySummary({
     userId,
-    rangeKey,
-    // rangeStart: startStr,
-    // rangeEnd: endStr,
+    rangeStart: start,
+    rangeEnd: end,
     timezone,
   });
   return jsonOK(summary);

@@ -1,5 +1,9 @@
-import { truncateToDay } from "@/lib/utils/date";
-import { ActivityEvent, ActivityEventKind } from "@/types/api/timeline";
+import {
+  getLocalWeekdayIndex,
+  toLocalDate,
+  truncateToDay,
+} from '@/lib/utils/date';
+import { ActivityEvent, ActivityEventKind } from '@/types/api/timeline';
 
 type Lane = 0 | 1 | 2;
 const LANE_COUNT = 3;
@@ -16,16 +20,16 @@ export type TimelineDot = {
 
 export function dotColor(kind: ActivityEventKind): string {
   switch (kind) {
-    case "pr_commit":
-      return "bg-red-400 border-red-300";
-    case "pr_opened":
-    case "pr_merged":
-      return "bg-emerald-400 border-emerald-300";
-    case "review_submitted":
-      return "bg-sky-400 border-sky-300";
+    case 'pr_commit':
+      return 'bg-red-400 border-red-300';
+    case 'pr_opened':
+    case 'pr_merged':
+      return 'bg-emerald-400 border-emerald-300';
+    case 'review_submitted':
+      return 'bg-sky-400 border-sky-300';
     default:
       // Future: meetings / other signals
-      return "bg-slate-400 border-slate-300";
+      return 'bg-slate-400 border-slate-300';
   }
 }
 
@@ -37,14 +41,14 @@ export function LegendDot({ className }: { className: string }) {
 
 export function kindLabel(kind: ActivityEventKind): string {
   switch (kind) {
-    case "pr_commit":
-      return "Commit";
-    case "pr_opened":
-      return "PR opened";
-    case "pr_merged":
-      return "PR merged";
-    case "review_submitted":
-      return "Review submitted";
+    case 'pr_commit':
+      return 'Commit';
+    case 'pr_opened':
+      return 'PR opened';
+    case 'pr_merged':
+      return 'PR merged';
+    case 'review_submitted':
+      return 'Review submitted';
     default:
       return kind;
   }
@@ -52,7 +56,7 @@ export function kindLabel(kind: ActivityEventKind): string {
 
 export function toDotsForWeek(
   events: ActivityEvent[],
-  weekStart: Date, // Monday (local)
+  timezone: string
 ): TimelineDot[] {
   const dots: TimelineDot[] = [];
 
@@ -67,24 +71,26 @@ export function toDotsForWeek(
     6: [],
   };
 
+  console.log(events.map((ev) => ev.occurredAt));
   for (const ev of events) {
-    const d = new Date(ev.occurredAt);
+    const raw = new Date(ev.occurredAt);
+    console.log('raw', raw);
+    if (Number.isNaN(raw.getTime())) continue;
 
-    const dayDiff = Math.floor(
-      (truncateToDay(d).getTime() - truncateToDay(weekStart).getTime()) /
-        (1000 * 60 * 60 * 24),
-    );
+    // 0–6 (Mon–Sun) using your helper
+    const dayIndex = getLocalWeekdayIndex(raw, timezone);
+    console.log('day', dayIndex);
+    if (dayIndex < 0 || dayIndex > 6) continue; // defensive, should never happen
 
-    if (dayDiff < 0 || dayDiff > 6) continue; // outside this week
+    const local = toLocalDate(raw, timezone);
+    const hours = local.getHours() + local.getMinutes() / 60;
+    const timeRatio = hours / 24; // 0–1 over local day
 
-    const hours = d.getHours() + d.getMinutes() / 60;
-    const timeRatio = hours / 24; // 0–1
-
-    const dayDots = dotsByDay[dayDiff] ?? [];
+    const dayDots = dotsByDay[dayIndex] ?? [];
 
     // Find other dots in this day that are roughly at the same vertical band
     const nearbyDots = dayDots.filter(
-      (dot) => Math.abs(dot.timeRatio - timeRatio) < COLLISION_THRESHOLD,
+      (dot) => Math.abs(dot.timeRatio - timeRatio) < COLLISION_THRESHOLD
     );
 
     // Use nearby count to stagger lanes 0,1,2
@@ -92,14 +98,14 @@ export function toDotsForWeek(
 
     const dot: TimelineDot = {
       id: ev.id,
-      dayIndex: dayDiff,
+      dayIndex,
       laneIndex,
       timeRatio,
       event: ev,
     };
 
     dayDots.push(dot);
-    dotsByDay[dayDiff] = dayDots;
+    dotsByDay[dayIndex] = dayDots;
     dots.push(dot);
   }
 

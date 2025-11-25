@@ -1,6 +1,6 @@
 import { db } from '@/lib/db/client';
 import { PullRequest, pullRequests } from '@/lib/db/schema';
-import { and, between, eq, or } from 'drizzle-orm';
+import { and, between, eq, isNull, or } from 'drizzle-orm';
 import { ActivityQueryParams } from './types';
 
 export async function getAuthoredPrs(
@@ -15,7 +15,10 @@ export async function getAuthoredPrs(
         eq(pullRequests.tenantId, tenantId),
         eq(pullRequests.authorIsTenant, true),
         or(
-          between(pullRequests.createdAt, start, end),
+          and(
+            isNull(pullRequests.mergedAt),
+            between(pullRequests.createdAt, start, end)
+          ),
           between(pullRequests.mergedAt, start, end)
         )
       )
