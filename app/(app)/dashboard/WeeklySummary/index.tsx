@@ -3,7 +3,6 @@
 import useSWR from 'swr';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { WeeklySummary, WeeklySummarySchema } from '@/types/api/weekly-summary';
-import { TimelineRangeKey } from '@/types/api/http';
 
 async function fetchWeeklySummary(
   start: string,

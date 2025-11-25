@@ -47,6 +47,8 @@ export const prSummaries = pgTable(
   })
 );
 
+export type PrSummary = typeof prSummaries.$inferSelect;
+
 export const pullRequests = pgTable(
   'pull_requests',
   {

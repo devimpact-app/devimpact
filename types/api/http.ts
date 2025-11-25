@@ -1,8 +1,4 @@
-import { TIMELINE_RANGE_KEYS } from '@/lib/utils/date';
 import z from 'zod';
-
-export const TimelineRangeKeySchema = z.enum(TIMELINE_RANGE_KEYS);
-export type TimelineRangeKey = z.infer<typeof TimelineRangeKeySchema>;
 
 export const ApiSuccess = <T extends z.ZodTypeAny>(schema: T) =>
   z.object({ ok: z.literal(true), data: schema });
