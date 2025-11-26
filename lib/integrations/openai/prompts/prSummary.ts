@@ -92,7 +92,7 @@ const PR_DOMAIN_VOCAB = [
   'shared_lib_or_core',
 ];
 
-const REVIEW_TAG_VOCAB = [
+export const REVIEW_TAG_VOCAB = [
   'readability_or_clarity',
   'architecture_or_design',
   'logic_or_correctness',

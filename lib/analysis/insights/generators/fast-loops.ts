@@ -1,4 +1,4 @@
-import { InsightContext, InsightDraft } from '../types';
+import { InsightContext } from '../types';
 import { PullRequest } from '@/lib/db/schema';
 import { diffSecondsRounded } from '../../normalizers/helpers';
 import { computeMedianClamped } from '@/lib/utils/math';
@@ -15,6 +15,8 @@ import {
   SizeBucket,
   TimeOfDayBucket,
 } from './shared';
+import { Insight } from '@/types/api/insights';
+import { scoreInsightBase } from '../scoring';
 
 type FastLoopCandidate = PullRequest & {
   cycleTimeHours: number;
@@ -97,9 +99,7 @@ function formatFastLoopsBody(params: {
   return `${firstSentence}${secondSentence}${thirdSentence}`;
 }
 
-export function generateFastLoopsInsight(
-  ctx: InsightContext
-): InsightDraft | null {
+export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
   const { authoredPrs, timezone } = ctx;
 
   // 1) Build candidates with cycle times + basic features
@@ -233,7 +233,40 @@ export function generateFastLoopsInsight(
     baselineMedianHours > 0 ? baselineMedianHours / fastMedianHours : 1;
   const improvementDisplay = `${improvementRatio.toFixed(1)}×`;
 
-  const insight: InsightDraft = {
+  // Very simple scoring heuristic for V0
+  const fastShare = fast.length / candidates.length;
+  const absDelta = baselineMedianHours - fastMedianHours;
+
+  // map improvementRatio → 0–5
+  let signalStrength = 2;
+  if (improvementRatio >= 1.8 && absDelta >= 8) signalStrength = 5;
+  else if (improvementRatio >= 1.5 && absDelta >= 4) signalStrength = 4;
+  else if (improvementRatio >= 1.2 && absDelta >= 2) signalStrength = 3;
+
+  // recurrence from fastShare
+  let recurrence = 2;
+  if (fastShare >= 0.4) recurrence = 5;
+  else if (fastShare >= 0.25) recurrence = 4;
+  else if (fastShare >= 0.15) recurrence = 3;
+
+  // impact mostly tied to saved hours
+  let impact = 2;
+  if (absDelta >= 12) impact = 5;
+  else if (absDelta >= 6) impact = 4;
+  else if (absDelta >= 3) impact = 3;
+
+  const novelty = 3; // baseline for now
+  const personalization = 4; // this is fully about your own patterns
+
+  const score = scoreInsightBase({
+    signalStrength,
+    recurrence,
+    impact,
+    novelty,
+    personalization,
+  });
+
+  const insight: Insight = {
     id: 'fast-loops:baseline',
     kind: 'fast_loops',
     severity: 'positive',
@@ -268,6 +301,7 @@ export function generateFastLoopsInsight(
       topDay: topDay?.key ?? null,
       topCleanPassShare: topCleanPass ? topCleanPass.count / totalFast : null,
     },
+    score,
   };
 
   return insight;

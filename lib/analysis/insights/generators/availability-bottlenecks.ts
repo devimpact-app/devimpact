@@ -1,5 +1,5 @@
 import { computeMedianClamped } from '@/lib/utils/math';
-import { InsightContext, InsightDraft } from '../types';
+import { InsightContext } from '../types';
 import {
   formatTimeOfDayLabel,
   formatWeekdayLabel,
@@ -8,10 +8,12 @@ import {
   TimeOfDayBucket,
 } from './shared';
 import { getLocalWeekdayIndex, toLocalDate } from '@/lib/utils/date';
+import { Insight } from '@/types/api/insights';
+import { scoreInsightBase } from '../scoring';
 
 export function generateAvailabilityDeadzoneInsight(
   ctx: InsightContext
-): InsightDraft | null {
+): Insight | null {
   const { authoredPrs, reviewsOnAuthoredPrs, timezone } = ctx;
   if (!authoredPrs || !reviewsOnAuthoredPrs) return null;
 
@@ -136,6 +138,48 @@ export function generateAvailabilityDeadzoneInsight(
   const slowdownPct = Math.round((worst.slowdownRatio - 1) * 100);
   const timeframe = 'last 4 weeks';
 
+  // Simple scoring heuristic for v0 ---
+  const shareOfSamples = worst.count / samples.length;
+  const slowdownRatio = worst.slowdownRatio;
+  const absoluteDiff = worst.absoluteDiff;
+
+  // signalStrength: how bad this dead zone is (ratio + absolute diff)
+  let signalStrength = 2;
+  if (slowdownRatio >= 2 && absoluteDiff >= 8) {
+    signalStrength = 5;
+  } else if (slowdownRatio >= 1.7 && absoluteDiff >= 4) {
+    signalStrength = 4;
+  } else if (slowdownRatio >= 1.4 && absoluteDiff >= 2) {
+    signalStrength = 3;
+  }
+
+  // recurrence: how often you hit this window for first reviews
+  let recurrence = 2;
+  if (worst.count >= 10 && shareOfSamples >= 0.3) {
+    recurrence = 5;
+  } else if (worst.count >= 6 && shareOfSamples >= 0.2) {
+    recurrence = 4;
+  } else if (worst.count >= 3 && shareOfSamples >= 0.15) {
+    recurrence = 3;
+  }
+
+  // impact: extra hours of waiting
+  let impact = 2;
+  if (absoluteDiff >= 8) impact = 5;
+  else if (absoluteDiff >= 4) impact = 4;
+  else if (absoluteDiff >= 2) impact = 3;
+
+  const novelty = 3; // “this specific time window is bad”
+  const personalization = 4; // based on *your* actual review timing
+
+  const score = scoreInsightBase({
+    signalStrength,
+    recurrence,
+    impact,
+    novelty,
+    personalization,
+  });
+
   const title = `You hit a review dead zone on ${dayLabel.toLowerCase()} ${timeLabel}`;
   const emphasis = `${bucketMedianLabel} median first review vs ${baselineLabel} overall`;
 
@@ -145,7 +189,7 @@ export function generateAvailabilityDeadzoneInsight(
     `When it’s possible, avoid opening or marking PRs ready for review during that window, or set expectations with reviewers that anything opened then may not be seen until the next day.`,
   ].join(' ');
 
-  const insight: InsightDraft = {
+  const insight: Insight = {
     id: `review-bottlenecks:availability:${worst.bucketKey}`,
     kind: 'bottlenecks',
     severity: 'warning',
@@ -180,6 +224,7 @@ export function generateAvailabilityDeadzoneInsight(
       categories: ['reviews', 'bottlenecks', 'availability'],
       simulated: false,
     },
+    score,
   };
 
   return insight;

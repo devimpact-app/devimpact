@@ -7,6 +7,8 @@ import {
   MAX_HOURS_CUTOFF,
   SizeBucket,
 } from './shared';
+import { Insight } from '@/types/api/insights';
+import { scoreInsightBase } from '../scoring';
 
 type ContentBottleneckCandidate = {
   prId: string;
@@ -70,7 +72,7 @@ function pickTopTagForSlowBucket(
 
 export function generateContentBottlenecksInsight(
   ctx: InsightContext
-): InsightDraft | null {
+): Insight | null {
   const { authoredPrs, prSummariesByPrId } = ctx;
 
   // 1) Build candidates with cycle time + scope + tags
@@ -194,6 +196,50 @@ export function generateContentBottlenecksInsight(
 
   const topTag = pickTopTagForSlowBucket(slowInBestBucket);
 
+  // Simple scoring heuristic for v0 ---
+  const absoluteDiffHours = best.slowMedianHours - baselineMedianHours;
+  const slowShare = best.slowShare;
+
+  // How “strong” is the content bottleneck signal?
+  let signalStrength = 2;
+  if (slowdownPct >= 80 || absoluteDiffHours >= 12) {
+    signalStrength = 5;
+  } else if (slowdownPct >= 50 || absoluteDiffHours >= 8) {
+    signalStrength = 4;
+  } else if (slowdownPct >= 30 || absoluteDiffHours >= 4) {
+    signalStrength = 3;
+  }
+
+  // How often does this bucket show up among your slow PRs?
+  let recurrence = 2;
+  if (slowShare >= 0.5 && best.slowCount >= 6) {
+    recurrence = 5;
+  } else if (slowShare >= 0.35 && best.slowCount >= 4) {
+    recurrence = 4;
+  } else if (slowShare >= 0.25 && best.slowCount >= 3) {
+    recurrence = 3;
+  }
+
+  // Impact: extra hours of waiting due to this bucket
+  let impact = 2;
+  if (absoluteDiffHours >= 12) impact = 5;
+  else if (absoluteDiffHours >= 8) impact = 4;
+  else if (absoluteDiffHours >= 4) impact = 3;
+
+  // Novelty: content/size pattern is a pretty distinct lens
+  const novelty = topTag ? 4 : 3;
+
+  // Personalization: based entirely on your own PR mix & tags
+  const personalization = 4;
+
+  const score = scoreInsightBase({
+    signalStrength,
+    recurrence,
+    impact,
+    novelty,
+    personalization,
+  });
+
   const title = `${sizeLabel} are where your PRs tend to stall`;
   const emphasis = `${slowdownPct}% slower than your typical PR`;
   const timeWindowLabel = 'Last 4 weeks';
@@ -224,7 +270,7 @@ export function generateContentBottlenecksInsight(
 
   const body = `${firstSentence} ${secondSentence}${thirdSentence}`;
 
-  const insight: InsightDraft = {
+  const insight: Insight = {
     id: `content-bottlenecks:${best.bucket}`,
     kind: 'bottlenecks',
     severity: 'warning',
@@ -269,6 +315,7 @@ export function generateContentBottlenecksInsight(
       overallShare: best.overallShare,
       topTag,
     },
+    score,
   };
 
   return insight;

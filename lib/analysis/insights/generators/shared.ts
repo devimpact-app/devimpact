@@ -1,3 +1,5 @@
+import { REVIEW_TAG_VOCAB } from '@/lib/integrations/openai/prompts/prSummary';
+
 export const MAX_HOURS_CUTOFF = 24 * 14; // clamp at 14 days
 
 export type TimeOfDayBucket =
@@ -94,3 +96,29 @@ export function formatSizeLabel(bucket: SizeBucket): string {
       return 'larger PRs';
   }
 }
+
+export type ReviewTag = (typeof REVIEW_TAG_VOCAB)[number];
+
+export const REVIEW_TAG_LABELS: Record<ReviewTag, string> = {
+  readability_or_clarity: 'readability & clarity',
+  architecture_or_design: 'architecture & design',
+  logic_or_correctness: 'logic & correctness',
+  testing_requirements: 'tests & coverage',
+  oversized_or_scope: 'scope & size',
+  style_nits: 'style & polish',
+};
+
+export const REVIEW_TAG_DESCRIPTION: Record<ReviewTag, string> = {
+  readability_or_clarity:
+    'Comments tend to focus on making code and naming easier to follow.',
+  architecture_or_design:
+    'Reviewers are often asking for structural or design changes rather than small tweaks.',
+  logic_or_correctness:
+    'Feedback is frequently about edge cases, correctness, or behavior mismatches.',
+  testing_requirements:
+    'Reviewers are asking for more or better tests before they’re comfortable approving.',
+  oversized_or_scope:
+    'PRs are being flagged as too large or trying to tackle too many concerns at once.',
+  style_nits:
+    'Most of the friction is around stylistic preferences and small consistency fixes.',
+};

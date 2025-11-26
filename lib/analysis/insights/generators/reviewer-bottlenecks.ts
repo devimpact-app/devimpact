@@ -1,10 +1,12 @@
 import { InsightContext, InsightDraft } from '../types';
 import { computeMedianClamped } from '@/lib/utils/math';
 import { MAX_HOURS_CUTOFF } from './shared';
+import { Insight } from '@/types/api/insights';
+import { scoreInsightBase } from '../scoring';
 
 export function generateReviewerBottleneckInsight(
   ctx: InsightContext
-): InsightDraft | null {
+): Insight | null {
   const { authoredPrs, reviewsOnAuthoredPrs } = ctx;
 
   // Need some minimum data to say anything non-silly
@@ -125,7 +127,40 @@ export function generateReviewerBottleneckInsight(
     `This concentration makes your review loop vulnerable to their availability — consider spreading first-review load to a couple of other teammates or explicitly coordinating review expectations with them.`,
   ].join(' ');
 
-  const insight: InsightDraft = {
+  // Simple scoring v0
+  const latencyDelta = best.medianLatencyHours - baselineMedianHours; // hours slower than baseline
+  const firstShare = best.firstShare;
+
+  // signalStrength: how slow & concentrated this bottleneck is
+  let signalStrength = 2;
+  if (latencyDelta >= 8 && firstShare >= 0.35) signalStrength = 5;
+  else if (latencyDelta >= 4 && firstShare >= 0.3) signalStrength = 4;
+  else if (latencyDelta >= 2 && firstShare >= 0.25) signalStrength = 3;
+
+  // recurrence: how often this shows up (share + absolute count)
+  let recurrence = 2;
+  if (best.firstReviewCount >= 10 && firstShare >= 0.35) recurrence = 5;
+  else if (best.firstReviewCount >= 6 && firstShare >= 0.3) recurrence = 4;
+  else if (best.firstReviewCount >= 4 && firstShare >= 0.25) recurrence = 3;
+
+  // impact: how much time is being lost
+  let impact = 2;
+  if (latencyDelta >= 12) impact = 5;
+  else if (latencyDelta >= 6) impact = 4;
+  else if (latencyDelta >= 3) impact = 3;
+
+  const novelty = 3; // baseline for now
+  const personalization = 4; // “this person is a bottleneck for you”
+
+  const score = scoreInsightBase({
+    signalStrength,
+    recurrence,
+    impact,
+    novelty,
+    personalization,
+  });
+
+  const insight: Insight = {
     id: `review-bottlenecks:reviewer:${reviewerLabel}`,
     kind: 'bottlenecks',
     severity: 'warning',
@@ -162,6 +197,7 @@ export function generateReviewerBottleneckInsight(
       categories: ['reviews', 'bottlenecks'],
       simulated: false,
     },
+    score,
   };
 
   return insight;
