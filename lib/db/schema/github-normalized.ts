@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
 import { githubPrs, githubReviews } from './github-raw';
+import { sql } from 'drizzle-orm';
 
 export const prSummaries = pgTable(
   'pr_summaries',
@@ -30,7 +31,18 @@ export const prSummaries = pgTable(
     shortSummary: text('short_summary').notNull(),
     longSummary: text('long_summary'),
     highlights: jsonb('highlights').$type<string[]>().notNull().default([]),
-    tags: jsonb('tags').$type<string[]>().notNull().default([]),
+    typeTags: jsonb('type_tags')
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    domainTags: jsonb('domain_tags')
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    reviewFrictionTags: jsonb('review_friction_tags')
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     inputHash: text('input_hash'),
     model: text('model').notNull(), // e.g. "gpt-4.1-mini"
     promptVersion: text('prompt_version').notNull(), // e.g. "v1"
@@ -126,6 +138,10 @@ export const pullRequests = pgTable(
     changesRequestedCount: integer('changes_requested_count')
       .default(0)
       .notNull(),
+    blockingReviewCount: integer('blocking_review_count').default(0).notNull(),
+    nonBlockingReviewCount: integer('non_blocking_review_count')
+      .default(0)
+      .notNull(),
     reviewRounds: integer('review_rounds').default(0).notNull(),
 
     // Status checks
@@ -214,6 +230,10 @@ export const reviews = pgTable(
       .default(false)
       .notNull(),
     wasFirstReview: boolean('was_first_review').default(false).notNull(),
+    isBlockingReview: boolean('is_blocking_review').default(false).notNull(),
+    isNonBlockingReview: boolean('is_non_blocking_review')
+      .default(false)
+      .notNull(),
     reviewCommentsCount: integer('review_comments_count').default(0).notNull(), // number of code comments in this review
 
     // TODO: add later

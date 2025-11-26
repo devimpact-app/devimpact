@@ -53,7 +53,7 @@ export default function DashboardClient({ user }: Props) {
         </div>
       </header>
 
-      <WeeklySummaryCard startISO={startISO} endISO={endISO} />
+      {/* <WeeklySummaryCard startISO={startISO} endISO={endISO} /> */}
 
       <InsightsSectionContainer />
 

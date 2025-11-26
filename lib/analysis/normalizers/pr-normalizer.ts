@@ -253,15 +253,41 @@ function calculateMetrics(input: CalculateMetricsInput) {
       ? (approvalsAfterLastReady[0].submittedAt ?? null)
       : null;
 
+  const firstApprovalIndex = reviewsAfterLastReady.findIndex(
+    (r) => normState(r.state) === 'approved'
+  );
+
+  const blockingReviewsAfterReady = reviewsAfterLastReady.filter((r, idx) => {
+    const state = normState(r.state);
+    if (state === 'changes_requested') return true;
+
+    // COMMENTED before the first approval = effectively blocking
+    if (
+      state === 'commented' &&
+      (firstApprovalIndex === -1 || idx < firstApprovalIndex)
+    ) {
+      return true;
+    }
+
+    return false;
+  });
+
+  const nonBlockingReviewsAfterReady = reviewsAfterLastReady.filter(
+    (r) => !blockingReviewsAfterReady.includes(r)
+  );
+
+  const blockingReviewCount = blockingReviewsAfterReady.length;
+  const nonBlockingReviewCount = nonBlockingReviewsAfterReady.length;
+
   let reviewRounds = 0;
   if (reviewsAfterLastReady.length > 0) {
+    // First review round
     reviewRounds = 1;
 
-    const changesRequestedAfterReady = reviewsAfterLastReady.filter(
-      (r) => normState(r.state) === 'changes_requested'
-    ).length;
-
-    reviewRounds += changesRequestedAfterReady;
+    // Additional “rounds” are extra blocking reviews after that
+    // (CHANGES_REQUESTED or COMMENTED-before-approval)
+    const extraBlocking = Math.max(0, blockingReviewCount - 1);
+    reviewRounds += extraBlocking;
   }
 
   const authoringLeadSeconds = diffSecondsRounded(
@@ -331,6 +357,8 @@ function calculateMetrics(input: CalculateMetricsInput) {
     ).length,
     approvalsCount,
     changesRequestedCount,
+    blockingReviewCount,
+    nonBlockingReviewCount,
     wasApprovedBeforeMerge,
     reviewRounds,
 

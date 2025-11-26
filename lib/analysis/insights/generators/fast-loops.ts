@@ -3,166 +3,96 @@ import { PullRequest } from '@/lib/db/schema';
 import { diffSecondsRounded } from '../../normalizers/helpers';
 import { computeMedianClamped } from '@/lib/utils/math';
 import { getLocalWeekdayIndex, toLocalDate } from '@/lib/utils/date';
+import {
+  DayBucket,
+  formatDayBucketLabel,
+  formatSizeLabel,
+  formatTimeOfDayLabel,
+  getDayBucket,
+  getSizeBucket,
+  getTimeOfDayBucket,
+  MAX_HOURS_CUTOFF,
+  SizeBucket,
+  TimeOfDayBucket,
+} from './shared';
 
-export type TimeOfDayBucket =
-  | 'early_morning'
-  | 'morning'
-  | 'afternoon'
-  | 'evening';
-
-export type DayBucket =
-  | 'early_week' // Mon–Tue
-  | 'mid_week' // Wed–Thu
-  | 'late_week' // Fri
-  | 'weekend'; // Sat–Sun
-
-export type SizeBucket = 'tiny' | 'small' | 'medium' | 'large';
-
-export type FastLoopCandidate = PullRequest & {
+type FastLoopCandidate = PullRequest & {
   cycleTimeHours: number;
-
-  /** Derived size classification based on lines/files changed */
   sizeBucket: SizeBucket;
-
-  /** Local time-of-day when it became ready for review */
   timeOfDay: TimeOfDayBucket;
-
-  /** Local day-of-week bucket */
   dayBucket: DayBucket;
-
-  /** True if no changes were requested on this PR */
   cleanPass: boolean;
-
-  /** True if there was heavy review discussion */
-  highDiscussion: boolean;
 };
 
-export type FastLoopSegment = {
-  /** Stable machine ID for this segment definition */
-  id: string;
-
-  /** Human-friendly label, e.g. "small morning PRs" */
-  label: string;
-
-  /** Hint to help build narrative text */
-  descriptionHint: string;
-
-  /** How many PRs fit this segment */
-  sampleSize: number;
-
-  /** Median cycle time *within* this segment (in hours) */
-  fastMedianHours: number;
-
-  /** Median cycle time across *all* PRs in the window (in hours) */
-  baselineMedianHours: number;
-
-  /* e.g. baseline=20h, segment=10h → 2.0x faster */
-  improvementRatio: number;
-  meta?: Record<string, unknown>;
+type BucketCount<T extends string> = {
+  key: T;
+  count: number;
 };
 
-type SegmentDef = {
-  id: string;
-  label: string; // human name: "small morning PRs"
-  descriptionHint: string; // used in body copy
-  matches: (c: FastLoopCandidate) => boolean;
-};
-
-const segmentsToEvaluate: SegmentDef[] = [
-  {
-    id: 'small-morning',
-    label: 'small morning PRs',
-    descriptionHint:
-      'PRs that became ready for review in the morning and stayed relatively small in scope.',
-    matches: (c) =>
-      (c.sizeBucket === 'tiny' || c.sizeBucket === 'small') &&
-      c.timeOfDay === 'morning',
-  },
-  {
-    id: 'small-early-week',
-    label: 'small early-week PRs',
-    descriptionHint: 'Small PRs you get ready early in the week (Mon–Tue).',
-    matches: (c) =>
-      (c.sizeBucket === 'tiny' || c.sizeBucket === 'small') &&
-      c.dayBucket === 'early_week',
-  },
-  {
-    id: 'clean-pass',
-    label: 'clean-pass PRs',
-    descriptionHint: 'PRs that were approved without changes requested.',
-    matches: (c) => c.cleanPass === true,
-  },
-  {
-    id: 'small-low-discussion',
-    label: 'small PRs with light discussion',
-    descriptionHint:
-      'Compact PRs that didn’t require heavy back-and-forth in review.',
-    matches: (c) =>
-      (c.sizeBucket === 'tiny' || c.sizeBucket === 'small') &&
-      !c.highDiscussion,
-  },
-];
-
-function getTimeOfDayBucket(hour: number): TimeOfDayBucket {
-  if (hour < 8) return 'early_morning';
-  if (hour < 12) return 'morning';
-  if (hour < 17) return 'afternoon';
-  return 'evening';
+function bucketCounts<T extends string>(
+  items: FastLoopCandidate[],
+  picker: (c: FastLoopCandidate) => T
+): BucketCount<T>[] {
+  const m = new Map<T, number>();
+  for (const c of items) {
+    const key = picker(c);
+    m.set(key, (m.get(key) ?? 0) + 1);
+  }
+  return Array.from(m.entries()).map(([key, count]) => ({ key, count }));
 }
 
-function getDayBucket(localWeekdayIndex: number): DayBucket {
-  if (localWeekdayIndex <= 1) return 'early_week'; // Mon–Tue
-  if (localWeekdayIndex <= 3) return 'mid_week'; // Wed–Thu
-  if (localWeekdayIndex === 4) return 'late_week'; // Fri
-  return 'weekend'; // Sat–Sun
-}
-
-function getSizeBucket(
-  linesChanged: number | null | undefined,
-  filesChanged: number | null | undefined
-): SizeBucket {
-  const lines = linesChanged ?? 0;
-  const files = filesChanged ?? 0;
-
-  if (lines <= 50 && files <= 2) return 'tiny';
-  if (lines <= 250 && files <= 6) return 'small';
-  if (lines <= 800 && files <= 15) return 'medium';
-  return 'large';
+function pickDominantBucket<T extends string>(
+  counts: BucketCount<T>[],
+  total: number,
+  minShare = 0.5,
+  minCount = 3
+): BucketCount<T> | null {
+  if (!counts.length || total === 0) return null;
+  const sorted = [...counts].sort((a, b) => b.count - a.count);
+  const top = sorted[0];
+  const share = top.count / total;
+  if (top.count < minCount) return null;
+  if (share < minShare) return null;
+  return top;
 }
 
 function formatFastLoopsBody(params: {
-  segmentLabel: string;
-  descriptionHint: string;
+  patternDescription: string; // e.g. "small PRs you send for review in the morning"
   baselineMedianHours: number;
-  segmentMedianHours: number;
-  pctImprovement: number; // 0–1
-  sampleSize: number;
-  timeframeLabel: string; // e.g. 'last 4 weeks'
+  fastMedianHours: number;
+  fastCount: number;
+  totalCount: number;
+  timeframeLabel: string;
 }): string {
   const {
-    segmentLabel,
-    descriptionHint,
+    patternDescription,
     baselineMedianHours,
-    segmentMedianHours,
-    pctImprovement,
-    sampleSize,
+    fastMedianHours,
+    fastCount,
+    totalCount,
     timeframeLabel,
   } = params;
 
   const baselineStr = baselineMedianHours.toFixed(1);
-  const segmentStr = segmentMedianHours.toFixed(1);
-  const pct = Math.round(pctImprovement * 100);
+  const fastStr = fastMedianHours.toFixed(1);
+  const improvementPct =
+    baselineMedianHours > 0
+      ? Math.round(
+          ((baselineMedianHours - fastMedianHours) / baselineMedianHours) * 100
+        )
+      : 0;
 
-  const firstSentence = `Over the ${timeframeLabel}, your ${segmentLabel} merged about ${pct}% faster than your typical PR (${segmentStr}h vs ${baselineStr}h).`;
+  const firstSentence = `Over the ${timeframeLabel}, your ${patternDescription} merged about ${improvementPct}% faster than your typical PR (${fastStr}h vs ${baselineStr}h median).`;
 
   let secondSentence = '';
-  if (sampleSize >= 10) {
-    secondSentence = ` This pattern showed up consistently (${sampleSize} PRs), not just as a one-off.`;
-  } else if (sampleSize >= 5) {
-    secondSentence = ` This is based on ${sampleSize} PRs, so it’s a real pattern but still worth watching over time.`;
+  if (fastCount >= 10) {
+    secondSentence = ` This pattern shows up often (${fastCount} of ${totalCount} merged PRs), so it’s worth deliberately leaning into.`;
+  } else if (fastCount >= 5) {
+    secondSentence = ` It’s based on ${fastCount} PRs so far — a real signal, but still forming.`;
   }
 
-  const thirdSentence = descriptionHint ? ` ${descriptionHint}` : '';
+  const thirdSentence =
+    ' Try scheduling more of this kind of work into those windows when you can.';
 
   return `${firstSentence}${secondSentence}${thirdSentence}`;
 }
@@ -172,22 +102,19 @@ export function generateFastLoopsInsight(
 ): InsightDraft | null {
   const { authoredPrs, timezone } = ctx;
 
+  // 1) Build candidates with cycle times + basic features
   const candidates: FastLoopCandidate[] = authoredPrs
     .filter((pr) => pr.lastReadyForReviewAt && pr.mergedAt)
     .map((pr) => {
-      console.log('lastReadyForReviewAt', pr.lastReadyForReviewAt);
-      console.log('mergedAt', pr.mergedAt);
       const cycleTimeSeconds = diffSecondsRounded(
         pr.lastReadyForReviewAt,
         pr.mergedAt
       );
-      console.log('cycleTimeSeconds', cycleTimeSeconds);
       const safeSeconds =
         typeof cycleTimeSeconds === 'number' && cycleTimeSeconds > 0
           ? cycleTimeSeconds
           : 0;
       const cycleTimeHours = safeSeconds / 3600;
-      console.log('cycleTimeHours', cycleTimeHours);
 
       const readyLocal = toLocalDate(pr.lastReadyForReviewAt!, timezone);
       const hour = readyLocal.getHours();
@@ -195,11 +122,12 @@ export function generateFastLoopsInsight(
         pr.lastReadyForReviewAt!,
         timezone
       );
+
       const sizeBucket = getSizeBucket(pr.linesChanged, pr.filesChanged);
       const timeOfDay = getTimeOfDayBucket(hour);
       const dayBucket = getDayBucket(weekdayIdx);
-      const cleanPass = (pr.changesRequestedCount ?? 0) === 0;
-      const highDiscussion = (pr.reviewCommentsCount ?? 0) >= 10; // tweak threshold later
+      const cleanPass = (pr.blockingReviewCount ?? 0) === 0;
+
       return {
         ...pr,
         cycleTimeHours,
@@ -207,125 +135,138 @@ export function generateFastLoopsInsight(
         timeOfDay,
         dayBucket,
         cleanPass,
-        highDiscussion,
       };
-    });
+    })
+    .filter((c) => c.cycleTimeHours > 0 && c.cycleTimeHours < MAX_HOURS_CUTOFF);
 
-  console.log('candidates', candidates.length);
+  if (candidates.length < 5) return null;
 
-  // If there isn't enough data, don't surface an insight at all.
-  if (candidates.length < 5) {
-    return null;
-  }
-
-  // Get baseline so we can see deviations from normal cycle
+  // 2) Baseline median cycle time
   const baselineMedianHours = computeMedianClamped(
     candidates.map((c) => c.cycleTimeHours),
-    { min: 0, max: 24 * 14 } // 14 days in hours
+    { min: 0, max: MAX_HOURS_CUTOFF }
+  );
+  if (baselineMedianHours <= 0) return null;
+
+  // 3) Define “fast” as <= 85% of median, but at least 2h faster
+  const maxFastHours = Math.max(2, baselineMedianHours * 0.85);
+  const fast = candidates.filter((c) => c.cycleTimeHours <= maxFastHours);
+
+  if (fast.length < 4) return null;
+
+  const fastMedianHours = computeMedianClamped(
+    fast.map((c) => c.cycleTimeHours),
+    { min: 0, max: MAX_HOURS_CUTOFF }
+  );
+  if (fastMedianHours <= 0) return null;
+
+  // 4) Look for a dominant pattern inside fast PRs
+  const totalFast = fast.length;
+
+  const timeOfDayBuckets = bucketCounts(fast, (c) => c.timeOfDay);
+  const sizeBuckets = bucketCounts(fast, (c) => c.sizeBucket);
+  const dayBuckets = bucketCounts(fast, (c) => c.dayBucket);
+  const cleanPassBuckets = bucketCounts(fast, (c) =>
+    c.cleanPass ? 'clean' : 'non_clean'
   );
 
-  console.log('baselineMedianHours', baselineMedianHours);
+  const topTimeOfDay = pickDominantBucket(timeOfDayBuckets, totalFast, 0.45, 3);
+  const topSize = pickDominantBucket(sizeBuckets, totalFast, 0.45, 3);
+  const topDay = pickDominantBucket(dayBuckets, totalFast, 0.45, 3);
+  const topCleanPass = pickDominantBucket(cleanPassBuckets, totalFast, 0.55, 4);
 
-  // If baseline is already extremely fast (e.g. < 2h), skip for now
-  if (baselineMedianHours < 2) return null;
+  // 5) Choose the most narratively useful pattern
+  type PatternKind = 'size+time' | 'time' | 'day' | 'clean';
+  let patternKind: PatternKind | null = null;
 
-  // Go through segments, see if pass threshold
-  const viableSegments: FastLoopSegment[] = [];
-  for (const segmentDef of segmentsToEvaluate) {
-    const inSegment = candidates.filter(segmentDef.matches);
-    if (inSegment.length < 5) continue; // min sample size
-
-    console.log('inSegment', inSegment.length, segmentDef.id);
-    const fastMedianHours = computeMedianClamped(
-      inSegment.map((c) => c.cycleTimeHours),
-      { min: 0, max: 24 * 14 }
-    );
-    console.log('fastMedianHours', fastMedianHours);
-
-    if (fastMedianHours <= 0) continue;
-
-    const improvementRatio =
-      baselineMedianHours > 0 ? baselineMedianHours / fastMedianHours : 1;
-
-    // require at least ~30–40% faster and maybe >= 2h absolute difference
-    const absoluteDiff = baselineMedianHours - fastMedianHours;
-    const passesThresholds = improvementRatio >= 1.3 && absoluteDiff >= 2;
-
-    if (!passesThresholds) continue;
-
-    viableSegments.push({
-      id: segmentDef.id,
-      label: segmentDef.label,
-      descriptionHint: segmentDef.descriptionHint,
-      sampleSize: inSegment.length,
-      fastMedianHours,
-      baselineMedianHours,
-      improvementRatio,
-    });
+  if (topSize && topTimeOfDay) {
+    patternKind = 'size+time';
+  } else if (topTimeOfDay) {
+    patternKind = 'time';
+  } else if (topDay) {
+    patternKind = 'day';
+  } else if (topCleanPass) {
+    patternKind = 'clean';
   }
 
-  if (viableSegments.length === 0) {
+  if (!patternKind) return null;
+
+  let title: string;
+  let emphasis: string;
+  let patternDescription: string;
+
+  if (patternKind === 'size+time' && topSize && topTimeOfDay) {
+    const sizeLabel = formatSizeLabel(topSize.key);
+    const timeLabel = formatTimeOfDayLabel(topTimeOfDay.key);
+    patternDescription = `${sizeLabel} you send for review in the ${timeLabel}`;
+    emphasis = `${sizeLabel} in the ${timeLabel} move fastest`;
+    title = `Your ${sizeLabel} in the ${timeLabel} merge much faster`;
+  } else if (patternKind === 'time' && topTimeOfDay) {
+    const timeLabel = formatTimeOfDayLabel(topTimeOfDay.key);
+    patternDescription = `PRs you send for review in the ${timeLabel}`;
+    emphasis = `${timeLabel} are your fastest review window`;
+    title = `PRs sent for review in the ${timeLabel} merge faster`;
+  } else if (patternKind === 'day' && topDay) {
+    const dayLabel = formatDayBucketLabel(topDay.key);
+    patternDescription = `PRs you send for review on ${dayLabel}`;
+    emphasis = `${dayLabel} are your strongest merge window`;
+    title = `PRs reviewed on ${dayLabel} tend to merge faster`;
+  } else if (patternKind === 'clean' && topCleanPass) {
+    patternDescription = 'PRs that are approved on the first review';
+    emphasis = 'first-pass approvals correlate with fast merges';
+    title = 'Clean-pass PRs are your fastest loops';
+  } else {
     return null;
   }
 
-  viableSegments.sort((a, b) => {
-    // higher improvement first, then larger sample
-    if (b.improvementRatio !== a.improvementRatio) {
-      return b.improvementRatio - a.improvementRatio;
-    }
-    return b.sampleSize - a.sampleSize;
-  });
-  const best = viableSegments[0];
-  const improvementDisplay = best.improvementRatio.toFixed(1); // e.g. "2.3×"
-  const fastMedianLabel = `${best.fastMedianHours.toFixed(1)}h`;
-  const baselineLabel = `${best.baselineMedianHours.toFixed(1)}h`;
-
-  const pctImprovement =
-    baselineMedianHours > 0
-      ? (baselineMedianHours - best.fastMedianHours) / baselineMedianHours
-      : 0;
-
+  // 6) Build body text
   const body = formatFastLoopsBody({
-    segmentLabel: best.label,
-    descriptionHint: best.descriptionHint,
+    patternDescription,
     baselineMedianHours,
-    segmentMedianHours: best.fastMedianHours,
-    pctImprovement,
-    sampleSize: best.sampleSize,
+    fastMedianHours,
+    fastCount: fast.length,
+    totalCount: candidates.length,
     timeframeLabel: 'last 4 weeks',
   });
 
+  const improvementRatio =
+    baselineMedianHours > 0 ? baselineMedianHours / fastMedianHours : 1;
+  const improvementDisplay = `${improvementRatio.toFixed(1)}×`;
+
   const insight: InsightDraft = {
-    id: `fast-loops:${best.id}`,
+    id: 'fast-loops:baseline',
     kind: 'fast_loops',
     severity: 'positive',
-    title: `Your ${best.label} merged ${improvementDisplay}× faster`,
-    emphasis: `${improvementDisplay}x faster turnaround`,
+    title,
+    emphasis,
     body,
     timeWindowLabel: 'Last 4 weeks',
     stats: [
       {
-        label: 'PRs in this pattern',
-        value: String(best.sampleSize),
+        label: 'Fast-loop PRs',
+        value: String(fast.length),
       },
       {
-        label: 'Pattern median',
-        value: fastMedianLabel,
+        label: 'Fast-loop median',
+        value: `${fastMedianHours.toFixed(1)}h`,
       },
       {
         label: 'Overall median',
-        value: baselineLabel,
+        value: `${baselineMedianHours.toFixed(1)}h`,
       },
     ],
     metrics: {
       baselineMedianHours,
-      fastMedianHours: best.fastMedianHours,
-      sampleSize: best.sampleSize,
+      fastMedianHours,
+      sampleSize: fast.length,
       totalPrCount: candidates.length,
     },
     meta: {
-      simulated: false,
-      topThemes: ['fast-loops', 'reviews', 'patterns'],
+      patternKind,
+      topTimeOfDay: topTimeOfDay?.key ?? null,
+      topSize: topSize?.key ?? null,
+      topDay: topDay?.key ?? null,
+      topCleanPassShare: topCleanPass ? topCleanPass.count / totalFast : null,
     },
   };
 

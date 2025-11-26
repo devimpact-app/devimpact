@@ -109,6 +109,31 @@ export async function seedPrTimelineEvents(params: {
 
   // Controls
   generateRequestsFromReviews?: boolean; // if true, add user review_requested for each reviewer in `reviews`
+
+  /**
+   * Optional controls so archetypes can shape the timeline.
+   * All fields are optional; if omitted we fall back to current behavior.
+   */
+  timelineConfig?: {
+    /**
+     * If provided, this is the timestamp used for the "merged" event.
+     * Useful if your archetype already computed mergedAt from cycleTime.
+     */
+    mergedAt?: Date | null;
+
+    /**
+     * When generating review_requested from reviews, how long *before*
+     * the submittedAt we place the request.
+     * Defaults to [30, 240] minutes if omitted.
+     */
+    userRequestLeadMinutesRange?: [number, number];
+
+    /**
+     * Probability of adding a team review request if `requestedTeam` is not explicitly passed.
+     * Defaults to 0.2 (20%) when omitted.
+     */
+    teamRequestProbability?: number;
+  };
 }) {
   const db = params.db ?? defaultDb;
   const {
@@ -118,21 +143,31 @@ export async function seedPrTimelineEvents(params: {
     reviews,
     requestedTeam,
     generateRequestsFromReviews = true,
+    timelineConfig,
   } = params;
 
-  // Ensure mergedAt exists (you said all PRs are merged)
-  const mergedAt =
-    pr.closedAt ??
-    new Date((pr.updatedAt ?? pr.createdAt).getTime() + rand(1, 5) * 864e5);
+  // ---- 0) Resolve config with defaults ----
+  const userRequestLeadMinutesRange: [number, number] =
+    timelineConfig?.userRequestLeadMinutesRange ?? [30, 240];
+
+  const teamRequestProbability =
+    typeof timelineConfig?.teamRequestProbability === 'number'
+      ? timelineConfig.teamRequestProbability
+      : 0.2;
 
   // 1) Optional: review_requested generated from actual reviewers (keeps timeline coherent)
   if (generateRequestsFromReviews && reviews.length) {
     for (const r of reviews) {
       const reviewer = r.reviewerGithubLogin;
-      // place the request before the review time (30–240 min)
+
       const submittedAt = r.submittedAt ?? pr.updatedAt ?? pr.createdAt;
+
+      // place the request before the review time using configurable window
+      const [minLead, maxLead] = userRequestLeadMinutesRange;
+      const leadMinutes = rand(minLead, maxLead);
+
       const requestAt = new Date(
-        submittedAt.getTime() - rand(30, 240) * 60 * 1000
+        submittedAt.getTime() - leadMinutes * 60 * 1000 + rand(-120, 120)
       );
 
       await upsertEvent(db, {
@@ -173,16 +208,18 @@ export async function seedPrTimelineEvents(params: {
     }
   }
 
-  // 1b) Optional: team review request (forced param OR small chance)
-  if (requestedTeam || Math.random() < 0.2) {
+  // 1b) Optional: team review request (forced param OR probability)
+  if (requestedTeam || Math.random() < teamRequestProbability) {
     const team = requestedTeam ?? {
       slug: pick(['frontend', 'platform']),
       org: 'acme',
     };
+
     // place after first request or a bit after PR open
     const baseTime =
       reviews[0]?.submittedAt ??
       new Date(pr.createdAt.getTime() + rand(1, 8) * 60 * 60 * 1000);
+
     const t = new Date(
       (baseTime instanceof Date ? baseTime : new Date(baseTime)).getTime() -
         rand(60, 180) * 60 * 1000
@@ -251,20 +288,23 @@ export async function seedPrTimelineEvents(params: {
     });
   }
 
-  // 3) PR merged (always)
-  const merger = ordered.length
-    ? pick(ordered).reviewerGithubLogin
-    : authorGithubLogin;
-  await upsertEvent(db, {
-    prId: pr.id,
-    tenantId,
-    eventId: fakeEventId(pr, 'merged'),
-    eventType: 'merged',
-    actorGithubLogin: merger,
-    eventData: { merger, method: pick(['squash', 'merge', 'rebase']) },
-    createdAt: mergedAt,
-    url: `${prUrl(pr)}/merge`,
-  });
+  // 3) PR merged (always) — now using the configured mergedAt when provided
+  if (timelineConfig?.mergedAt) {
+    const merger = ordered.length
+      ? pick(ordered).reviewerGithubLogin
+      : authorGithubLogin;
+
+    await upsertEvent(db, {
+      prId: pr.id,
+      tenantId,
+      eventId: fakeEventId(pr, 'merged'),
+      eventType: 'merged',
+      actorGithubLogin: merger,
+      eventData: { merger, method: pick(['squash', 'merge', 'rebase']) },
+      createdAt: timelineConfig.mergedAt,
+      url: `${prUrl(pr)}/merge`,
+    });
+  }
 
   return { ok: true };
 }

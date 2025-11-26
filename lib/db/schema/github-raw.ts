@@ -1,4 +1,4 @@
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -9,8 +9,8 @@ import {
   unique,
   index,
   boolean,
-} from 'drizzle-orm/pg-core'
-import { users } from './users'
+} from 'drizzle-orm/pg-core';
+import { users } from './users';
 
 export const githubPrs = pgTable(
   'github_prs',
@@ -56,9 +56,10 @@ export const githubPrs = pgTable(
     repoIdx: index('github_prs_repo_idx').on(table.repoFullName),
     createdAtIdx: index('github_prs_created_at_idx').on(table.createdAt),
   })
-)
+);
 
-export type GithubPR = typeof githubPrs.$inferSelect
+export type GithubPR = typeof githubPrs.$inferSelect;
+export type NewGithubPR = typeof githubPrs.$inferInsert;
 
 export const githubPrCommits = pgTable(
   'github_pr_commits',
@@ -95,9 +96,9 @@ export const githubPrCommits = pgTable(
     byTenant: index('github_pr_commits_tenant_idx').on(table.tenantId),
     prIdIdx: index('github_pr_commits_pr_id_idx').on(table.prId),
   })
-)
+);
 
-export type GithubPRCommit = typeof githubPrCommits.$inferSelect
+export type GithubPRCommit = typeof githubPrCommits.$inferSelect;
 
 export const githubPrFiles = pgTable(
   'github_pr_files',
@@ -143,9 +144,9 @@ export const githubPrFiles = pgTable(
     testFileIdx: index('github_pr_files_test_file_idx').on(table.isTestFile),
     uniquePrFile: unique().on(table.prId, table.filename),
   })
-)
+);
 
-export type GithubPRFile = typeof githubPrFiles.$inferSelect
+export type GithubPRFile = typeof githubPrFiles.$inferSelect;
 
 export const githubReviews = pgTable(
   'github_reviews',
@@ -193,9 +194,9 @@ export const githubReviews = pgTable(
       table.reviewerGithubLogin
     ),
   })
-)
+);
 
-export type GithubReview = typeof githubReviews.$inferSelect
+export type GithubReview = typeof githubReviews.$inferSelect;
 
 export const githubReviewComments = pgTable(
   'github_review_comments',
@@ -259,9 +260,9 @@ export const githubReviewComments = pgTable(
       table.authorGithubLogin
     ),
   })
-)
+);
 
-export type GithubReviewComment = typeof githubReviewComments.$inferSelect
+export type GithubReviewComment = typeof githubReviewComments.$inferSelect;
 
 export const githubTimelineEvents = pgTable(
   'github_timeline_events',
@@ -331,9 +332,9 @@ export const githubTimelineEvents = pgTable(
       table.actorGithubLogin
     ),
   })
-)
+);
 
-export type GithubTimelineEvent = typeof githubTimelineEvents.$inferSelect
+export type GithubTimelineEvent = typeof githubTimelineEvents.$inferSelect;
 
 export const githubRepos = pgTable(
   'github_repos',
@@ -365,9 +366,9 @@ export const githubRepos = pgTable(
     uniqPerTenant: unique().on(t.tenantId, t.githubRepoId),
     idxTenant: index('repos_tenant_idx').on(t.tenantId),
   })
-)
+);
 
-export type RepositoryCreateInput = InferInsertModel<typeof githubRepos>
+export type RepositoryCreateInput = InferInsertModel<typeof githubRepos>;
 
 // Raw responses
 export const githubRawData = pgTable(
@@ -392,4 +393,4 @@ export const githubRawData = pgTable(
       table.externalId
     ),
   })
-)
+);

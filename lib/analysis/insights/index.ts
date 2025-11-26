@@ -4,13 +4,17 @@ import type { BuildInsightContextArgs } from './context';
 
 import { generateFastLoopsInsight } from './generators/fast-loops';
 import { generateFrictionThemesInsight } from './generators/friction-themes';
-import { generateBottlenecksInsight } from './generators/bottlenecks';
+import { generateReviewerBottleneckInsight } from './generators/reviewer-bottlenecks';
 import { attachScore, pickTopInsights } from './scoring/helpers';
+import { generateAvailabilityDeadzoneInsight } from './generators/availability-bottlenecks';
+import { generateContentBottlenecksInsight } from './generators/content-bottlenecks';
 
 const GENERATORS = [
   generateFastLoopsInsight,
-  generateFrictionThemesInsight,
-  generateBottlenecksInsight,
+  // generateFrictionThemesInsight,
+  generateReviewerBottleneckInsight,
+  generateAvailabilityDeadzoneInsight,
+  generateContentBottlenecksInsight,
 ];
 
 export async function buildInsights(args: BuildInsightContextArgs): Promise<{

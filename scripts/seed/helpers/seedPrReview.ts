@@ -1,36 +1,36 @@
 /* eslint-disable no-console */
-import { db as defaultDb } from '@/lib/db/client'
-import { githubReviews, githubPrs } from '@/lib/db/schema'
-import { InferSelectModel } from 'drizzle-orm'
-import { randomTeammates } from './teammates'
-import { seedPrReviewComments } from './seedPrReviewComments'
+import { db as defaultDb } from '@/lib/db/client';
+import { githubReviews, githubPrs } from '@/lib/db/schema';
+import { InferSelectModel } from 'drizzle-orm';
+import { randomTeammates } from './teammates';
+import { seedPrReviewComments } from './seedPrReviewComments';
 
-type DB = typeof defaultDb
-type PRRow = InferSelectModel<typeof githubPrs>
+type DB = typeof defaultDb;
+type PRRow = InferSelectModel<typeof githubPrs>;
 
 const rand = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1)) + min
+  Math.floor(Math.random() * (max - min + 1)) + min;
 
-const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)]
+const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
 function makeSha() {
-  const hex = '0123456789abcdef'
-  let s = ''
-  for (let i = 0; i < 40; i++) s += hex[rand(0, 15)]
-  return s
+  const hex = '0123456789abcdef';
+  let s = '';
+  for (let i = 0; i < 40; i++) s += hex[rand(0, 15)];
+  return s;
 }
 
 function reviewState() {
   // Mostly APPROVED, some COMMENTED, occasional CHANGES_REQUESTED
-  const r = Math.random()
-  if (r < 0.7) return 'APPROVED'
-  if (r < 0.92) return 'COMMENTED'
-  return 'CHANGES_REQUESTED'
+  const r = Math.random();
+  if (r < 0.7) return 'APPROVED';
+  if (r < 0.92) return 'COMMENTED';
+  return 'CHANGES_REQUESTED';
 }
 
 function authorAssociation() {
   // Reasonable variety
-  return pick(['MEMBER', 'CONTRIBUTOR', 'COLLABORATOR'])
+  return pick(['MEMBER', 'CONTRIBUTOR', 'COLLABORATOR']);
 }
 
 function reviewBody(state: string, repo: string) {
@@ -50,35 +50,36 @@ function reviewBody(state: string, repo: string) {
       'Needs tests for edge cases before merge.',
       'Let’s split this into smaller PRs.',
     ],
-  }
-  const arr = notes[state] ?? ['Looks good.']
-  return `${pick(arr)} (${repo})`
+  };
+  const arr = notes[state] ?? ['Looks good.'];
+  return `${pick(arr)} (${repo})`;
 }
 
 function fakeReviewId(repoFullName: string, prNumber: number) {
   // Stable-ish, unique text id for seeds (schema wants text)
   const base = Buffer.from(`${repoFullName}#${prNumber}`)
     .toString('base64')
-    .replace(/=/g, '')
+    .replace(/=/g, '');
   // Add short random to avoid collisions across re-runs
-  return `seed_review_${base}_${rand(10000, 99999)}`
+  return `seed_review_${base}_${rand(10000, 99999)}`;
 }
 
 /**
  * Seed a single review for a PR. Upserts on unique(review_id).
  */
 export async function seedPrReview(params: {
-  db?: DB // pass tx if inside a transaction
-  pr: PRRow // PR row you just inserted/upserted
-  tenantId: string
-  reviewerGithubLogin?: string // who reviewed (e.g. "irichard620")
-  prAuthorGithubLogin: string
-  prNumber: number // used to build urls and reviewId
-  repoFullName: string // "<owner>/<repo>"
-  submittedAt: Date // when the review happened
-  preferredState?: 'APPROVED' | 'COMMENTED' | 'CHANGES_REQUESTED' // optional override
+  db?: DB;
+  pr: PRRow;
+  tenantId: string;
+  reviewerGithubLogin?: string;
+  prAuthorGithubLogin: string;
+  prNumber: number;
+  repoFullName: string;
+  submittedAt: Date;
+  preferredState?: 'APPROVED' | 'COMMENTED' | 'CHANGES_REQUESTED';
+  inlineCommentProbabilityOverride?: number;
 }) {
-  const db = params.db ?? defaultDb
+  const db = params.db ?? defaultDb;
   const {
     pr,
     tenantId,
@@ -88,16 +89,19 @@ export async function seedPrReview(params: {
     repoFullName,
     submittedAt,
     preferredState,
-  } = params
+    inlineCommentProbabilityOverride,
+  } = params;
 
-  const state = preferredState ?? reviewState()
-  const reviewId = fakeReviewId(repoFullName, prNumber) // unique text id
-  const commitId = Math.random() < 0.7 ? makeSha() : null // sometimes linked
-  const assoc = authorAssociation()
-  const body = Math.random() < 0.8 ? reviewBody(state, repoFullName) : null
-  const htmlUrl = `https://github.com/${repoFullName}/pull/${prNumber}#pullrequestreview-${reviewId.slice(-6)}`
+  const state = preferredState ?? reviewState();
+  const reviewId = fakeReviewId(repoFullName, prNumber); // unique text id
+  const commitId = Math.random() < 0.7 ? makeSha() : null; // sometimes linked
+  const assoc = authorAssociation();
+  const body = Math.random() < 0.8 ? reviewBody(state, repoFullName) : null;
+  const htmlUrl = `https://github.com/${repoFullName}/pull/${prNumber}#pullrequestreview-${reviewId.slice(
+    -6
+  )}`;
 
-  const reviewer = reviewerGithubLogin ?? randomTeammates(1)[0]
+  const reviewer = reviewerGithubLogin ?? randomTeammates(1)[0];
   const [row] = await db
     .insert(githubReviews)
     .values({
@@ -126,10 +130,15 @@ export async function seedPrReview(params: {
         htmlUrl,
       },
     })
-    .returning()
+    .returning();
 
-  // ~70% chance to add inline comments; tweak as you like
-  if (Math.random() < 0.7) {
+  // Decide probability for inline comments
+  const inlineCommentProbability =
+    typeof inlineCommentProbabilityOverride === 'number'
+      ? inlineCommentProbabilityOverride
+      : 0.7; // default behavior
+
+  if (Math.random() < inlineCommentProbability) {
     await seedPrReviewComments({
       db,
       pr,
@@ -138,8 +147,9 @@ export async function seedPrReview(params: {
       reviewGitId: row.reviewId,
       reviewerGithubLogin: reviewer,
       createdAt: submittedAt,
-    })
+      // later we can also pass an "intensity" hint here
+    });
   }
 
-  return row
+  return row;
 }

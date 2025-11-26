@@ -2,13 +2,13 @@ import { db } from '@/lib/db/client';
 import {
   pullRequests, // normalized PRs
   githubPrFiles, // files
-  githubReviews,
   githubReviewComments,
   githubPrs,
   GithubPRFile,
-  GithubReview,
   GithubReviewComment,
   PullRequest,
+  reviews,
+  Review,
 } from '@/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
 
@@ -36,7 +36,7 @@ export async function loadPrSummaryContext(opts: {
 
   if (!pr) return null;
 
-  const [files, reviews, reviewComments] = await Promise.all([
+  const [files, normReviews, reviewComments] = await Promise.all([
     db
       .select()
       .from(githubPrFiles)
@@ -45,10 +45,8 @@ export async function loadPrSummaryContext(opts: {
       ),
     db
       .select()
-      .from(githubReviews)
-      .where(
-        and(eq(githubReviews.tenantId, tenantId), eq(githubReviews.prId, pr.id))
-      ),
+      .from(reviews)
+      .where(and(eq(reviews.tenantId, tenantId), eq(reviews.prId, normPr.id))),
     db
       .select()
       .from(githubReviewComments)
@@ -63,7 +61,7 @@ export async function loadPrSummaryContext(opts: {
   return {
     normPr: normPr as PullRequest,
     files: files as GithubPRFile[],
-    reviews: reviews as GithubReview[],
+    reviews: normReviews as Review[],
     reviewComments: reviewComments as GithubReviewComment[],
   };
 }

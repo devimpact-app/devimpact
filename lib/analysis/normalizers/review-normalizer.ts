@@ -198,8 +198,30 @@ function calculateMetrics(input: CalculateMetricsInput) {
     )
     .sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime());
 
-  const first = nonAuthorReviews[0];
-  const wasFirstReview = !!first && first.id === review.id;
+  const firstNonAuthorReview = nonAuthorReviews[0];
+  const wasFirstReview =
+    !!firstNonAuthorReview && firstNonAuthorReview.id === review.id;
+
+  const firstApprovalIndex = nonAuthorReviews.findIndex(
+    (r) => normState(r.state) === 'approved'
+  );
+
+  const stateNorm = normState(review.state);
+
+  let isBlockingReview = false;
+  if (stateNorm === 'changes_requested') {
+    isBlockingReview = true;
+  } else if (stateNorm === 'commented') {
+    // If there's no approval yet, OR this review comes before the first approval
+    if (
+      firstApprovalIndex === -1 ||
+      nonAuthorReviews.findIndex((r) => r.id === review.id) < firstApprovalIndex
+    ) {
+      isBlockingReview = true;
+    }
+  }
+
+  const isNonBlockingReview = !isBlockingReview;
 
   return {
     githubReviewId: review.id,
@@ -213,7 +235,7 @@ function calculateMetrics(input: CalculateMetricsInput) {
     reviewerLogin: review.reviewerGithubLogin,
     reviewerIsTenant: review.reviewerGithubLogin === userGithubLogin,
 
-    state: normState(review.state),
+    state: stateNorm,
     submittedAt: review.submittedAt,
     commitId: review.commitId,
     htmlUrl: review.htmlUrl || '',
@@ -224,9 +246,11 @@ function calculateMetrics(input: CalculateMetricsInput) {
     reviewAnchorType: anchorType,
     anchorTeamSlug: anchorTeamSlug,
 
-    isApproval: normState(review.state) === 'approved',
-    isChangeRequest: normState(review.state) === 'changes_requested',
-    isCommentOnly: normState(review.state) === 'commented',
+    isApproval: stateNorm === 'approved',
+    isChangeRequest: stateNorm === 'changes_requested',
+    isCommentOnly: stateNorm === 'commented',
+    isBlockingReview,
+    isNonBlockingReview,
     reviewCommentsCount: reviewComments.length,
 
     wasDirectlyRequested: anchorType === 'direct_request',

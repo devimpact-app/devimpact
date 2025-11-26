@@ -14,7 +14,7 @@ export type InsightContext = {
   windowEnd: Date;
 
   authoredPrs: PullRequest[];
-  reviews: Review[];
+  reviewsOnAuthoredPrs: Review[];
   prSummariesByPrId: Map<string, PrSummary>;
 
   // room for precomputed aggregates later (latency histograms, etc.)
