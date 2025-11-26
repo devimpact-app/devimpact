@@ -3,8 +3,9 @@ import { auth } from '@/lib/auth';
 import { jsonOK, jsonUnauthorized } from '../_lib/http';
 import { buildInsights } from '@/lib/analysis/insights';
 import { InsightsResponseSchema } from '@/types/api/insights';
+import { withSentryUser } from '@/lib/withSentryUser';
 
-export async function GET(req: NextRequest) {
+export const GET = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
   if (!session?.user?.id) return jsonUnauthorized('Unauthorized');
 
@@ -27,4 +28,4 @@ export async function GET(req: NextRequest) {
   });
 
   return jsonOK(payload);
-}
+});

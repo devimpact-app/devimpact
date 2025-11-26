@@ -2,8 +2,9 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { jsonOK, jsonUnauthorized } from '../_lib/http';
 import { buildWorkRhythm } from '@/lib/analysis/work-rhythm/buildWorkRhythm';
+import { withSentryUser } from '@/lib/withSentryUser';
 
-export async function GET(req: NextRequest) {
+export const GET = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
   if (!session?.user?.id) {
     return jsonUnauthorized('Unauthorized');

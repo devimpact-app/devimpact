@@ -2,8 +2,9 @@ import { buildWeeklySummary } from '@/lib/analysis/weekly-summary';
 import { jsonBadRequest, jsonOK, jsonUnauthorized } from '../_lib/http';
 import { auth } from '@/lib/auth';
 import { NextRequest } from 'next/server';
+import { withSentryUser } from '@/lib/withSentryUser';
 
-export async function GET(req: NextRequest) {
+export const GET = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
   if (!session?.user?.id) return jsonUnauthorized('Unauthorized');
   const userId = session.user.id;
@@ -25,4 +26,4 @@ export async function GET(req: NextRequest) {
     timezone,
   });
   return jsonOK(summary);
-}
+});

@@ -1,13 +1,14 @@
-import { ReactNode } from "react";
-import { auth } from "@/lib/auth"; // your NextAuth server helper
-import { redirect } from "next/navigation";
-import { Sidebar } from "./Sidebar";
+import { ReactNode } from 'react';
+import { auth } from '@/lib/auth'; // your NextAuth server helper
+import { redirect } from 'next/navigation';
+import { Sidebar } from './Sidebar';
+import { SentryUserBridge } from '@/components/SentryUserBridge';
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await auth();
 
   // Gate: must be logged in
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect('/login');
   const sessionUser = session.user;
 
   // Gate: must have completed onboarding
@@ -16,15 +17,22 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // if (state !== "complete") redirect("/onboarding");
 
   return (
-    <div className="h-screen w-screen flex bg-background text-text-primary overflow-x-hidden">
-      <Sidebar userName={sessionUser.name} avatarUrl={sessionUser.image} />
-      <div className="flex flex-col flex-1">
-        <main className="flex-1 overflow-y-auto no-scrollbar">
-          <div className="min-h-screen bg-background text-text-primary">
-            {children}
-          </div>
-        </main>
+    <SentryUserBridge
+      user={{
+        id: session.user.id,
+        email: session.user.email ?? undefined,
+      }}
+    >
+      <div className="h-screen w-screen flex bg-background text-text-primary overflow-x-hidden">
+        <Sidebar userName={sessionUser.name} avatarUrl={sessionUser.image} />
+        <div className="flex flex-col flex-1">
+          <main className="flex-1 overflow-y-auto no-scrollbar">
+            <div className="min-h-screen bg-background text-text-primary">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SentryUserBridge>
   );
 }
