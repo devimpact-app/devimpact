@@ -23,4 +23,4 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   });
 
   return jsonOK(rhythm);
-}
+});

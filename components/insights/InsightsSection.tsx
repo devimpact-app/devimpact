@@ -6,22 +6,27 @@ export function InsightsSection({
   isLoading,
   error,
   onViewAll,
+  title,
+  subtitle,
 }: {
   insights: Insight[] | undefined;
   isLoading: boolean;
   error: string | null;
   onViewAll?: () => void;
+  title?: string;
+  subtitle?: string;
 }) {
   return (
     <section className="flex flex-col space-y-3 py-2">
       <header className="flex flex-col gap-1">
         <h2 className="text-sm font-semibold text-slate-50">
-          Insights (last 4 weeks)
+          {title ?? 'Insights (last 4 weeks)'}
         </h2>
 
         <div className="flex items-baseline">
           <p className="text-[11px] mr-6 text-slate-500">
-            Observations, opportunities and friction in how you work.
+            {subtitle ??
+              'Observations, opportunities and friction in how you work.'}
           </p>
 
           {onViewAll && (

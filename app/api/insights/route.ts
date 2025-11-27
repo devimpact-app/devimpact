@@ -13,9 +13,23 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
   const timezone = searchParams.get('timezone') ?? 'UTC';
 
+  const limitParam = searchParams.get('limit');
+  const limit = limitParam ? Number(limitParam) : undefined;
+  const safeLimit =
+    typeof limit === 'number' && !isNaN(limit) && limit > 0 ? limit : undefined;
+
+  const windowWeeksParam = searchParams.get('windowWeeks');
+  const windowWeeks = windowWeeksParam ? Number(windowWeeksParam) : undefined;
+  const safeWindowWeeks =
+    typeof windowWeeks === 'number' && !isNaN(windowWeeks) && windowWeeks > 0
+      ? windowWeeks
+      : undefined;
+
   const { insights, windowStart, windowEnd } = await buildInsights({
     userId,
     timezone,
+    limit: safeLimit,
+    windowWeeks: safeWindowWeeks,
   });
 
   const payload = InsightsResponseSchema.parse({

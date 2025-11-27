@@ -44,6 +44,7 @@ export function useRange() {
     setRange,
     start,
     end,
+    numWeeks: weeksForRange(range),
     label,
     subLabel,
   };

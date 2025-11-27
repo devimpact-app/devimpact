@@ -33,7 +33,7 @@ export async function buildInsights(args: BuildInsightContextArgs): Promise<{
     }
   }
 
-  const top = pickTopInsights(candidates, 3, 0); // limit=3 for dashboard
+  const top = pickTopInsights(candidates, args.limit ?? 3, 0); // default=3 for dashboard
 
   return {
     insights: top,

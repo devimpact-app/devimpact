@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { Insight } from '@/types/api/insights';
+import clsx from 'clsx';
+import { useState } from 'react';
 
 const severityStyles = {
   info: {
@@ -30,6 +32,36 @@ const severityLabel: Record<Insight['severity'], string> = {
   warning: 'Friction',
   critical: 'Blocker',
 };
+
+function InsightBody({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const shouldClamp = text.length > 220; // simple heuristic — adjust as needed
+  const displayText = text;
+
+  return (
+    <div className="mt-2 mb-4 text-[13px] text-slate-400 leading-relaxed">
+      <p
+        className={clsx(
+          'transition-all',
+          shouldClamp && !expanded && 'line-clamp-3'
+        )}
+      >
+        {displayText}
+      </p>
+
+      {shouldClamp && (
+        <button
+          type="button"
+          onClick={() => setExpanded((x) => !x)}
+          className="mt-1 text-sky-400 hover:text-sky-300 text-[12px] font-medium"
+        >
+          {expanded ? 'Show less' : 'See more'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function InsightCard({ insight }: { insight: Insight }) {
   const styles = severityStyles[insight.severity];
@@ -67,11 +99,7 @@ export function InsightCard({ insight }: { insight: Insight }) {
         </p>
       )}
 
-      {insight.body && (
-        <p className="mt-2 mb-4 text-[13px] text-slate-400 leading-relaxed">
-          {insight.body}
-        </p>
-      )}
+      {insight.body && <InsightBody text={insight.body} />}
 
       {insight.stats && insight.stats.length > 0 && (
         <div className="mt-auto pt-2.5 border-white/5 border-t">

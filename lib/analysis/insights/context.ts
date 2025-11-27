@@ -9,13 +9,18 @@ import { and, eq, inArray } from 'drizzle-orm';
 export type BuildInsightContextArgs = {
   userId: string;
   timezone: string;
+  limit?: number;
+  windowWeeks?: number;
 };
 
 export async function buildInsightContext(
   args: BuildInsightContextArgs
 ): Promise<InsightContext> {
-  const { userId, timezone } = args;
-  const { start: windowStart, end: windowEnd } = getWeekBoundsFromOffset(0, 4);
+  const { userId, timezone, windowWeeks } = args;
+  const { start: windowStart, end: windowEnd } = getWeekBoundsFromOffset(
+    0,
+    windowWeeks ?? 4
+  );
 
   const authoredPrs = await getAuthoredPrs({
     start: windowStart,
