@@ -72,20 +72,20 @@ async function seedGithubActivity(
     lookbackDays: 90,
   });
 
-  // console.log('Seeding reviewed PRs');
-  // const prs2 = await seedReviewedPRs({
-  //   tenantId,
-  //   reviewerGithubLogin: githubUsername,
-  //   repos: repoInputs,
-  //   lookbackDays: 90,
-  // });
+  console.log('Seeding reviewed PRs');
+  const prs2 = await seedReviewedPRs({
+    tenantId,
+    reviewerGithubLogin: githubUsername,
+    repos: repoInputs,
+    lookbackDays: 90,
+  });
 
-  // console.log('Inferring team memberships');
-  // await inferTeamMemberships({
-  //   tenantId,
-  //   since: new Date(Date.now() - 90 * 864e5),
-  //   username: githubUsername,
-  // });
+  console.log('Inferring team memberships');
+  await inferTeamMemberships({
+    tenantId,
+    since: new Date(Date.now() - 90 * 864e5),
+    username: githubUsername,
+  });
 
   console.log('Normalizing PRs and reviews');
   const prIds = await batchNormalizeUserPRs(tenantId, githubUsername);

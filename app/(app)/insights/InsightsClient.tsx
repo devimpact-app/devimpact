@@ -4,6 +4,7 @@ import { RangePicker } from '@/components/dates/RangePicker';
 import { useRange } from '@/components/dates/useRangeNavigation';
 import { InsightsSection } from '@/components/insights/InsightsSection';
 import { useInsights } from '@/components/insights/useInsights';
+import { KeyMetricsPanel } from './KeyMetricsView';
 
 type Props = {
   user: {
@@ -15,7 +16,7 @@ type Props = {
 };
 
 export default function InsightsClient({ user }: Props) {
-  const { range, setRange, label, subLabel, numWeeks } = useRange();
+  const { range, setRange, label, subLabel, numWeeks, start, end } = useRange();
 
   const { insights, error, isLoading } = useInsights({
     limit: 50,
@@ -71,13 +72,12 @@ export default function InsightsClient({ user }: Props) {
 
         {/* Right column: sticky trends summary (desktop only for now) */}
         <aside className="hidden lg:block lg:sticky lg:top-20">
-          Hi
-          {/* <KeyTrendsSummary
-            label={label}
-            subLabel={subLabel}
-            isLoading={isLoading}
-            insights={insights}
-          /> */}
+          <KeyMetricsPanel
+            range={{
+              start,
+              end,
+            }}
+          />
         </aside>
       </section>
     </main>

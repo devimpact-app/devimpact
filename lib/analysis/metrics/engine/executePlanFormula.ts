@@ -1,15 +1,41 @@
-import { and, between, eq, gt, gte, inArray, lt, lte, sql } from "drizzle-orm";
-import type { MetricDefinition } from "../types/definition";
-import { MetricInput } from "../types/input";
-import { DB } from "@/lib/db/client";
-import { pullRequests, reviews } from "@/lib/db/schema";
-import { TMetricResult } from "@/types/api/metrics";
+import { and, between, eq, gt, gte, inArray, lt, lte, sql } from 'drizzle-orm';
+import type { MetricDefinition } from '../types/definition';
+import { MetricInput } from '../types/input';
+import { DB } from '@/lib/db/client';
+import { pullRequests, reviews } from '@/lib/db/schema';
+import { TMetricResult } from '@/types/api/metrics';
 
 export const TABLES = {
   pullRequests,
   reviews,
 };
 export type TableId = keyof typeof TABLES;
+
+function getWeeklyBuckets(
+  start: Date,
+  end: Date
+): Array<{ start: Date; end: Date }> {
+  // normalize to avoid mutating original
+  let cursor = new Date(start);
+  cursor.setHours(0, 0, 0, 0);
+
+  const buckets: { start: Date; end: Date }[] = [];
+
+  while (cursor < end) {
+    const bucketStart = new Date(cursor);
+    const bucketEnd = new Date(bucketStart);
+    bucketEnd.setDate(bucketEnd.getDate() + 7);
+
+    buckets.push({
+      start: bucketStart,
+      end: bucketEnd > end ? end : bucketEnd,
+    });
+
+    cursor = bucketEnd;
+  }
+
+  return buckets;
+}
 
 function resolveTable(tableId: TableId) {
   const table = TABLES[tableId];
@@ -25,9 +51,9 @@ function andAll(...clauses: any[]) {
 function buildWhereClauses(
   table: any,
   where: NonNullable<
-    Extract<MetricDefinition["formula"], { kind: "plan" }>["where"]
+    Extract<MetricDefinition['formula'], { kind: 'plan' }>['where']
   >,
-  input: MetricInput,
+  input: MetricInput
 ) {
   const clauses: any[] = [];
 
@@ -36,42 +62,42 @@ function buildWhereClauses(
     if (!colRef) throw new Error(`Unknown column '${w.col}'`);
 
     switch (w.op) {
-      case "eq":
+      case 'eq':
         clauses.push(eq(colRef, w.val));
         break;
-      case "neq":
+      case 'neq':
         clauses.push(sql`${colRef} != ${w.val}`);
         break;
-      case "gt":
+      case 'gt':
         clauses.push(gt(colRef, w.val));
         break;
-      case "gte":
+      case 'gte':
         clauses.push(gte(colRef, w.val));
         break;
-      case "lt":
+      case 'lt':
         clauses.push(lt(colRef, w.val));
         break;
-      case "lte":
+      case 'lte':
         clauses.push(lte(colRef, w.val));
         break;
-      case "between": {
+      case 'between': {
         const start =
-          w.start ?? (w.startRef === "start" ? new Date(input.start) : w.start);
-        const end = w.end ?? (w.endRef === "end" ? new Date(input.end) : w.end);
+          w.start ?? (w.startRef === 'start' ? new Date(input.start) : w.start);
+        const end = w.end ?? (w.endRef === 'end' ? new Date(input.end) : w.end);
         if (start == null || end == null)
-          throw new Error("between requires start/end");
+          throw new Error('between requires start/end');
         clauses.push(between(colRef, start, end));
         break;
       }
-      case "in": {
+      case 'in': {
         const vals = w.vals ?? [];
         clauses.push(inArray(colRef, vals));
         break;
       }
-      case "is_null":
+      case 'is_null':
         clauses.push(sql`${colRef} IS NULL`);
         break;
-      case "is_not_null":
+      case 'is_not_null':
         clauses.push(sql`${colRef} IS NOT NULL`);
         break;
       default:
@@ -82,15 +108,14 @@ function buildWhereClauses(
   return clauses.length ? and(...clauses) : undefined;
 }
 
-export async function executePlanFormula(
+async function runPlanOnce(
   def: MetricDefinition,
   input: MetricInput,
-  ctx: { db: DB },
-): Promise<TMetricResult> {
-  if (input.shape !== "stat" || def.formula.kind !== "plan") {
+  ctx: { db: DB }
+): Promise<number | null> {
+  if (def.formula.kind !== 'plan') {
     throw new Error("Plan executor currently supports only 'stat' shape");
   }
-
   const plan = def.formula;
   const table = resolveTable(plan.source as TableId);
 
@@ -99,23 +124,34 @@ export async function executePlanFormula(
     : undefined;
 
   const tenantWhere =
-    "tenantId" in table
+    'tenantId' in table
       ? eq((table as any).tenantId, input.tenantId)
       : undefined;
 
-  const where = andAll(tenantWhere, userWhere);
+  let where = andAll(tenantWhere, userWhere);
 
   let selectExpr: any;
-  if (plan.operation === "count") {
+  if (plan.operation === 'count') {
     selectExpr = { value: sql<number>`count(*)::int` };
-  } else if (plan.operation === "avg") {
+  } else if (plan.operation === 'avg') {
     if (!plan.column) throw new Error("avg requires 'column'");
     const col = table[plan.column as keyof typeof table];
     selectExpr = { value: sql<number>`avg(${col})::float` };
-  } else if (plan.operation === "sum") {
+  } else if (plan.operation === 'sum') {
     if (!plan.column) throw new Error("sum requires 'column'");
     const col = table[plan.column as keyof typeof table];
     selectExpr = { value: sql<number>`sum(${col})::float` };
+  } else if (plan.operation === 'median') {
+    if (!plan.column) throw new Error("median requires 'column'");
+    const col = table[plan.column as keyof typeof table];
+    const nonNullWhere = sql`${col} IS NOT NULL`;
+    where = andAll(tenantWhere, userWhere, nonNullWhere);
+    selectExpr = {
+      value: sql<number>`
+        percentile_cont(0.5) 
+        WITHIN GROUP (ORDER BY ${col})::float
+      `,
+    };
   } else {
     throw new Error(`Unsupported operation: ${plan.operation}`);
   }
@@ -125,19 +161,88 @@ export async function executePlanFormula(
     .from(table)
     .where(where as any);
   const debug = query.toSQL();
-  console.log("SQL:", debug.sql);
+  console.log('SQL:', debug.sql);
+
   const rows = await query;
   const value = rows[0]?.value ?? null;
+  return value === null ? null : Number(value);
+}
 
-  return {
-    metricId: def.id,
-    shape: "stat",
-    title: def.display?.label ?? def.name,
-    unit: def.unit,
-    window: {
-      start: input.start.toISOString(),
-      end: input.end.toISOString(),
-    },
-    data: [{ kind: "current", value: value === null ? null : Number(value) }],
-  };
+export async function executePlanFormula(
+  def: MetricDefinition,
+  input: MetricInput,
+  ctx: { db: DB }
+): Promise<TMetricResult> {
+  if (def.formula.kind !== 'plan') {
+    throw new Error("Plan executor currently supports only 'stat' shape");
+  }
+
+  if (input.shape === 'stat') {
+    const value = await runPlanOnce(def, input, ctx);
+
+    return {
+      metricId: def.id,
+      shape: 'stat',
+      title: def.display?.label ?? def.name,
+      unit: def.unit,
+      window: {
+        start: input.start.toISOString(),
+        end: input.end.toISOString(),
+      },
+      data: [
+        {
+          kind: 'current',
+          value,
+        },
+      ],
+    };
+  }
+
+  if (input.shape === 'timeseries') {
+    const buckets = getWeeklyBuckets(input.start, input.end);
+
+    const points = await Promise.all(
+      buckets.map(async (bucket) => {
+        const bucketInput: MetricInput = {
+          ...input,
+          start: bucket.start,
+          end: bucket.end,
+          // still shape: 'timeseries' here, but runPlanOnce only uses start/end
+        };
+
+        const value = await runPlanOnce(def, bucketInput, ctx);
+
+        return {
+          bucketStart: bucket.start.toISOString(),
+          bucketEnd: bucket.end.toISOString(),
+          bucketMidpoint: new Date(
+            (bucket.start.getTime() + bucket.end.getTime()) / 2
+          ).toISOString(),
+          value,
+        };
+      })
+    );
+
+    return {
+      metricId: def.id,
+      shape: 'timeseries',
+      title: def.display?.label ?? def.name,
+      unit: def.unit,
+      window: {
+        start: input.start.toISOString(),
+        end: input.end.toISOString(),
+      },
+      bucket: 'week',
+      series: [
+        {
+          label: 'Test',
+          points,
+        },
+      ],
+    } as TMetricResult;
+  }
+
+  throw new Error(
+    `Unsupported metric shape '${(input as any).shape}' for plan executor`
+  );
 }

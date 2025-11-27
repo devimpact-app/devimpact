@@ -2,14 +2,8 @@ import {
   TMetricResult,
   TStatResult,
   TTimeseriesResult,
-} from "@/types/api/metrics";
-import {
-  MetricResult,
-  StatResult,
-  TimeseriesResult,
-  Series,
-  StatDataset,
-} from "../types/output";
+} from '@/types/api/metrics';
+import { Series, StatDataset } from '../types/output';
 
 type MergeOptions = {
   // When true, for timeseries we align on timestamps and drop points
@@ -20,7 +14,7 @@ type MergeOptions = {
 export function mergePrimaryAndComparison(
   primary: TMetricResult,
   comparison?: TMetricResult | null,
-  opts: MergeOptions = {},
+  opts: MergeOptions = {}
 ): TMetricResult {
   if (!comparison) return primary;
 
@@ -33,7 +27,7 @@ export function mergePrimaryAndComparison(
     return primary;
   }
 
-  if (primary.shape === "stat") {
+  if (primary.shape === 'stat') {
     return mergeStat(primary as TStatResult, comparison as TStatResult);
   }
 
@@ -41,7 +35,7 @@ export function mergePrimaryAndComparison(
   return mergeTimeseries(
     primary as TTimeseriesResult,
     comparison as TTimeseriesResult,
-    opts,
+    opts
   );
 }
 
@@ -58,8 +52,8 @@ function mergeStat(primary: TStatResult, comparison: TStatResult): TStatResult {
       : null;
 
   const data: StatDataset[] = [
-    { kind: "current", value: cur.value, deltaAbs, deltaPct },
-    { kind: "comparison", value: cmp.value },
+    { kind: 'current', value: cur.value, deltaAbs, deltaPct },
+    { kind: 'comparison', value: cmp.value },
   ];
 
   return {
@@ -71,7 +65,7 @@ function mergeStat(primary: TStatResult, comparison: TStatResult): TStatResult {
 
 function valueOf(s: TStatResult): { value: number | null } {
   // Expect one dataset in simple runners; otherwise pick the first "current"
-  const current = s.data.find((d) => d.kind === "current") ??
+  const current = s.data.find((d) => d.kind === 'current') ??
     s.data[0] ?? { value: null };
   return { value: current.value ?? null };
 }
@@ -79,23 +73,23 @@ function valueOf(s: TStatResult): { value: number | null } {
 function mergeTimeseries(
   primary: TTimeseriesResult,
   comparison: TTimeseriesResult,
-  opts: MergeOptions,
+  opts: MergeOptions
 ): TTimeseriesResult {
   // Default: return two labeled series, untouched
   if (!opts.alignTimeseries) {
     return {
       ...primary,
       series: [
-        labelSeries(primary.series, "Current"),
-        labelSeries(comparison.series, "Comparison"),
+        labelSeries(primary.series, 'Current'),
+        labelSeries(comparison.series, 'Comparison'),
       ].flat(),
     };
   }
 
   // Alignment path: build point maps for each label and intersect timestamps
   const aligned: Series[] = [];
-  const primLabeled = labelSeries(primary.series, "Current");
-  const compLabeled = labelSeries(comparison.series, "Comparison");
+  const primLabeled = labelSeries(primary.series, 'Current');
+  const compLabeled = labelSeries(comparison.series, 'Comparison');
 
   // We’ll align per-series label index, assuming both sets have same number of series
   const maxSeries = Math.max(primLabeled.length, compLabeled.length);
@@ -137,14 +131,14 @@ function labelSeries(series: Series[], suffix: string): Series[] {
   return series.map((s) => ({
     label: s.label?.includes(suffix)
       ? s.label
-      : `${s.label || ""}`.trim() || suffix,
+      : `${s.label || ''}`.trim() || suffix,
     points: s.points,
   }));
 }
 
 function intersectTimestamps(
   a: Map<string, number | null>,
-  b: Map<string, number | null>,
+  b: Map<string, number | null>
 ): string[] {
   const out: string[] = [];
   for (const t of a.keys()) if (b.has(t)) out.push(t);
