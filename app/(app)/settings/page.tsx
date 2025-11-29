@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Calendar, Github, LogOut, TerminalSquare, Trash2 } from 'lucide-react';
+import { signOutAction } from '../dashboard/actions';
 
 async function postJson(url: string, body?: unknown) {
   const res = await fetch(url, {
@@ -60,15 +61,6 @@ export default function SettingsPage() {
     } finally {
       setDeleteLoading(false);
     }
-  }
-
-  function handleLogout() {
-    setError(null);
-    setSuccess(null);
-    setLogoutLoading(true);
-    // If you're using NextAuth, this is usually the sign-out route.
-    // Adjust this path if your app uses something different.
-    window.location.href = '/api/auth/signout';
   }
 
   return (
@@ -210,7 +202,7 @@ export default function SettingsPage() {
             </div>
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={signOutAction}
               disabled={logoutLoading}
               className="rounded-full border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >

@@ -11,17 +11,14 @@ import { getLocalWeekdayIndex, toLocalDate } from '@/lib/utils/date';
 import { Insight } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 
+// Thresholds
+// export const
+
 export function generateAvailabilityDeadzoneInsight(
   ctx: InsightContext
 ): Insight | null {
-  const { authoredPrs, reviewsOnAuthoredPrs, timezone } = ctx;
-  if (!authoredPrs || !reviewsOnAuthoredPrs) return null;
-
-  // Map PRs by id so we can find ready-at timestamps
-  const prsById = new Map<string, (typeof authoredPrs)[number]>();
-  for (const pr of authoredPrs) {
-    prsById.set(pr.id, pr);
-  }
+  const { authoredPrs, timezone } = ctx;
+  if (!authoredPrs) return null;
 
   type Sample = {
     bucketKey: string; // `${weekday}:${timeBucket}`
@@ -32,13 +29,11 @@ export function generateAvailabilityDeadzoneInsight(
 
   const samples: Sample[] = [];
 
-  for (const r of reviewsOnAuthoredPrs) {
-    if (!r.wasFirstReview) continue;
+  for (const pr of authoredPrs) {
+    if (!pr || !pr.timeToFirstReviewSeconds || !pr.lastReadyForReviewAt)
+      continue;
 
-    const pr = prsById.get(r.prId);
-    if (!pr || !pr.lastReadyForReviewAt) continue;
-
-    const seconds = r.reviewLatencySeconds ?? 0;
+    const seconds = pr.timeToFirstReviewSeconds ?? 0;
     if (seconds <= 0) continue;
 
     const hours = seconds / 3600;
@@ -201,25 +196,29 @@ export function generateAvailabilityDeadzoneInsight(
       {
         label: 'Median in that window',
         value: bucketMedianLabel,
+        importance: 'primary',
       },
       {
         label: 'Overall median',
         value: baselineLabel,
+        importance: 'primary',
       },
       {
         label: 'First reviews in that window',
         value: String(worst.count),
+        importance: 'primary',
+      },
+      {
+        label: 'Slowdown percent',
+        value: `${slowdownPct}%`,
+        importance: 'secondary',
       },
     ],
-    metrics: {
-      baselineMedianHours,
-      deadzoneMedianHours: worst.medianLatencyHours,
-      slowdownRatio: worst.slowdownRatio,
-      bucketSampleSize: worst.count,
-      totalSamples: samples.length,
-      weekdayIndex: worst.weekdayIndex,
-      timeBucket: worst.timeBucket,
-    },
+    // metrics: {
+    //   totalSamples: samples.length,
+    //   weekdayIndex: worst.weekdayIndex,
+    //   timeBucket: worst.timeBucket,
+    // },
     meta: {
       categories: ['reviews', 'bottlenecks', 'availability'],
       simulated: false,

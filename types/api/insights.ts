@@ -1,5 +1,46 @@
 import { z } from 'zod';
 
+export const InsightTransparencySchema = z.object({
+  summary: z.string(),
+  bullets: z.array(z.string()).optional(),
+  thresholds: z
+    .array(
+      z.object({
+        key: z.string(), // e.g. "improvementRatio"
+        label: z.string(), // "Improvement ratio"
+        actual: z.number(), // e.g. 2.1
+        condition: z.string(), // ">= 1.3 & ≥ 2h difference"
+      })
+    )
+    .optional(),
+});
+
+// Stat chips - primary go in card, all others go in right detail view only
+export const InsightStatSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  tooltip: z.string().optional(),
+  importance: z.enum(['primary', 'secondary']).optional().default('primary'),
+});
+
+export type InsightStat = z.infer<typeof InsightStatSchema>;
+
+export const InsightRelatedItemSchema = z.object({
+  id: z.string(),
+  entityType: z.enum(['pull_request', 'review']),
+  title: z.string(),
+  htmlUrl: z.string().optional(),
+  subtitle: z.string().optional(),
+  /**
+   * Insight-specific chips for this item
+   * e.g. "Cycle time 18.2h", "Theme: architecture", "Delay: +6.1h"
+   */
+  stats: z.array(InsightStatSchema).default([]),
+  meta: z.record(z.string(), z.any()).optional(),
+});
+
+export type InsightRelatedItem = z.infer<typeof InsightRelatedItemSchema>;
+
 export const InsightKindSchema = z.enum([
   'fast_loops',
   'friction_themes',
@@ -8,15 +49,6 @@ export const InsightKindSchema = z.enum([
 ]);
 
 export type InsightKind = z.infer<typeof InsightKindSchema>;
-
-// Stat chips under story
-export const InsightStatSchema = z.object({
-  label: z.string(),
-  value: z.string(),
-  tooltip: z.string().optional(),
-});
-
-export type InsightStat = z.infer<typeof InsightStatSchema>;
 
 export const InsightSchema = z.object({
   id: z.string(), // e.g. "fast_loops:2024-11-25"
@@ -33,12 +65,12 @@ export const InsightSchema = z.object({
   // Ranking
   score: z.number().min(0).max(100),
 
-  // For scoring
-  metrics: z.record(z.string(), z.any()).optional(),
-
   // Time window + debug metadata
   timeWindowLabel: z.string().optional(), // e.g. "Last 4 weeks"
   meta: z.record(z.string(), z.any()).optional(), // internal metrics for future use
+
+  relatedItems: z.array(InsightRelatedItemSchema).optional(),
+  transparency: InsightTransparencySchema.optional(),
 });
 
 export type Insight = z.infer<typeof InsightSchema>;

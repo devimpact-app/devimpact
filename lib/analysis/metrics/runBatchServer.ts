@@ -211,7 +211,6 @@ export async function runBatchServer(
       if (numRes.shape === 'timeseries' && denRes.shape === 'timeseries') {
         const numSeries = numRes.series?.[0];
         const denSeries = denRes.series?.[0];
-        console.log('in series logic');
 
         if (!numSeries || !denSeries) {
           console.warn(

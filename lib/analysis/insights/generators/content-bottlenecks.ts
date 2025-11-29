@@ -90,7 +90,6 @@ export function generateContentBottlenecksInsight(
       const linesChanged = pr.linesChanged ?? 0;
       const filesChanged = pr.filesChanged ?? 0;
       const sizeBucket = getSizeBucket(linesChanged, filesChanged);
-      console.log('pr', linesChanged, filesChanged, sizeBucket);
 
       const summary = prSummariesByPrId.get(pr.id);
       const tags = (summary?.typeTags as string[] | undefined) ?? [];
@@ -125,11 +124,9 @@ export function generateContentBottlenecksInsight(
     baselineMedianHours * 1.5,
     baselineMedianHours + 4
   );
-  console.log('content baselineMedianHours', baselineMedianHours);
-  console.log('content slowThreshold', slowThreshold);
+
   const slow = candidates.filter((c) => c.cycleTimeHours >= slowThreshold);
 
-  console.log('content slow', slow.length);
   if (slow.length < 3) {
     return null;
   }
@@ -160,8 +157,6 @@ export function generateContentBottlenecksInsight(
       slowShare: slowInBucket.length / slowCount,
     };
   });
-
-  console.log('stats', stats);
 
   const viable = stats
     .filter((s) => s.slowCount >= 3 && s.totalCount >= 3)
@@ -282,32 +277,36 @@ export function generateContentBottlenecksInsight(
       {
         label: 'Slow PRs in this bucket',
         value: String(best.slowCount),
+        importance: 'primary',
       },
       {
         label: 'Bucket median cycle',
         value: `${best.slowMedianHours.toFixed(1)}h`,
+        importance: 'primary',
       },
       {
         label: 'Overall median cycle',
         value: `${baselineMedianHours.toFixed(1)}h`,
+        importance: 'primary',
       },
       ...(topTag
         ? [
             {
               label: 'Most common tag in slow PRs',
               value: `${topTag.tag} (${Math.round(topTag.share * 100)}%)`,
+              importance: 'primary' as any,
             },
           ]
         : []),
     ],
-    metrics: {
-      baselineMedianHours,
-      slowMedianHours: best.slowMedianHours,
-      slowCount: best.slowCount,
-      totalPrCount: allCount,
-      bucket: best.bucket,
-      topTag: topTag?.tag ?? null,
-    } as any,
+    // metrics: {
+    //   baselineMedianHours,
+    //   slowMedianHours: best.slowMedianHours,
+    //   slowCount: best.slowCount,
+    //   totalPrCount: allCount,
+    //   bucket: best.bucket,
+    //   topTag: topTag?.tag ?? null,
+    // } as any,
     meta: {
       bucket: best.bucket,
       slowdownPct,

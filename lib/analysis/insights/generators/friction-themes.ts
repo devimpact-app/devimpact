@@ -16,9 +16,21 @@ type TagStats = {
   label: string;
   count: number;
   share: number;
-  medianDelayHours: number | null;
-  delayDeltaHours: number | null;
+  medianApprovalHours: number | null;
+  approvalDeltaHours: number | null;
 };
+
+type FrictionItem = {
+  pr: PullRequest;
+  frictionTags: string[];
+  approvalTime: number | null;
+};
+
+// Thresholds
+const THRESHOLD_MINIMUM_BLOCKED_PRS = 3;
+const THRESHOLD_MIN_SHARE_WITH_TAG = 0.25; // at least 25% of blocked PRs have that tag
+const THRESHOLD_MIN_COUNT_WITH_TAG = 3;
+const THRESHOLD_HAS_DELAY_SIGNAL = 1; // 1 hour approval difference
 
 export function generateFrictionThemesInsight(
   ctx: InsightContext
@@ -27,8 +39,24 @@ export function generateFrictionThemesInsight(
 
   if (!authoredPrs || authoredPrs.length === 0) return null;
 
-  // 1) Collect PRs that actually experienced blocking friction
-  const frictionItems = authoredPrs
+  // Baseline time to approval from all PRs
+  const baselineApprovalTimes = authoredPrs
+    .map((pr) =>
+      pr.timeToFirstApprovalSeconds
+        ? pr.timeToFirstApprovalSeconds / 3600
+        : null
+    )
+    .filter((s) => !!s && s > 0) as number[];
+
+  const baselineApprovalHours =
+    baselineApprovalTimes.length > 0
+      ? computeMedianClamped(baselineApprovalTimes, {
+          min: 0,
+          max: MAX_HOURS_CUTOFF,
+        })
+      : null;
+
+  const frictionItems: FrictionItem[] = authoredPrs
     .map((pr: PullRequest) => {
       const summary = prSummariesByPrId?.get(pr.id);
       const frictionTags: string[] = summary?.reviewFrictionTags ?? [];
@@ -39,19 +67,6 @@ export function generateFrictionThemesInsight(
       if (!frictionTags || frictionTags.length === 0) return null;
       if (changesRequestedEquivalent <= 0) return null;
 
-      // Use time-to-first-approval (or fallback) as our "delay" measure
-      const timeToFirstApprovalSeconds = pr.timeToFirstApprovalSeconds ?? null;
-      const timeToFirstReviewSeconds = pr.timeToFirstReviewSeconds ?? null;
-
-      const delaySeconds =
-        typeof timeToFirstApprovalSeconds === 'number' &&
-        timeToFirstApprovalSeconds > 0
-          ? timeToFirstApprovalSeconds
-          : typeof timeToFirstReviewSeconds === 'number' &&
-              timeToFirstReviewSeconds > 0
-            ? timeToFirstReviewSeconds
-            : null;
-
       return {
         pr,
         frictionTags: Array.from(
@@ -61,47 +76,37 @@ export function generateFrictionThemesInsight(
             )
           )
         ),
-        delayHours: delaySeconds ? delaySeconds / 3600 : null,
+        approvalTime: pr.timeToFirstApprovalSeconds
+          ? pr.timeToFirstApprovalSeconds / 3600
+          : null,
       };
     })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+    .filter(Boolean) as FrictionItem[];
 
-  if (frictionItems.length < 3) {
-    // Not enough data to say anything meaningful
+  if (frictionItems.length < THRESHOLD_MINIMUM_BLOCKED_PRS) {
     return null;
   }
 
   const totalFrictionPrs = frictionItems.length;
 
-  // 2) Compute baseline delay for blocked PRs (where we have delay)
-  const baselineDelays = frictionItems
-    .map((f) => f.delayHours)
-    .filter((hrs) => !!hrs && hrs > 0) as number[];
-
-  const baselineMedianHours =
-    baselineDelays.length > 0
-      ? computeMedianClamped(baselineDelays, { min: 0, max: MAX_HOURS_CUTOFF })
-      : null;
-
   const tagStats: TagStats[] = [];
   for (const tag of REVIEW_TAG_VOCAB) {
     const withTag = frictionItems.filter((f) => f.frictionTags.includes(tag));
-
     if (withTag.length === 0) continue;
 
-    const delaysWithTag = withTag
-      .map((f) => f.delayHours)
+    const approvalTimesWithTag = withTag
+      .map((f) => f.approvalTime)
       .filter((hrs) => !!hrs && hrs > 0) as number[];
 
-    let medianDelayHours: number | null = null;
-    let delayDeltaHours: number | null = null;
+    let medianApprovalHours: number | null = null;
+    let approvalDeltaHours: number | null = null;
 
-    if (baselineMedianHours !== null && delaysWithTag.length >= 2) {
-      medianDelayHours = computeMedianClamped(delaysWithTag, {
+    if (baselineApprovalHours !== null && approvalTimesWithTag.length >= 2) {
+      medianApprovalHours = computeMedianClamped(approvalTimesWithTag, {
         min: 0,
         max: MAX_HOURS_CUTOFF,
       });
-      delayDeltaHours = medianDelayHours - baselineMedianHours;
+      approvalDeltaHours = medianApprovalHours - baselineApprovalHours;
     }
 
     const count = withTag.length;
@@ -112,43 +117,46 @@ export function generateFrictionThemesInsight(
       label: REVIEW_TAG_LABELS[tag],
       count,
       share,
-      medianDelayHours,
-      delayDeltaHours,
+      medianApprovalHours,
+      approvalDeltaHours,
     });
   }
 
   if (tagStats.length === 0) return null;
 
-  const MIN_SHARE = 0.25; // at least 25% of blocked PRs
-  const MIN_COUNT = 3;
-
   const viable = tagStats.filter(
-    (t) => t.count >= MIN_COUNT && t.share >= MIN_SHARE
+    (t) =>
+      t.count >= THRESHOLD_MIN_COUNT_WITH_TAG &&
+      t.share >= THRESHOLD_MIN_SHARE_WITH_TAG
   );
   if (viable.length === 0) return null;
 
   viable.sort((a, b) => {
     if (b.share !== a.share) return b.share - a.share;
-    const aDelta = a.delayDeltaHours ?? 0;
-    const bDelta = b.delayDeltaHours ?? 0;
+    const aDelta = a.approvalDeltaHours ?? 0;
+    const bDelta = b.approvalDeltaHours ?? 0;
     return bDelta - aDelta;
   });
 
   const top = viable[0];
 
   const baselineLabel =
-    baselineMedianHours !== null ? `${baselineMedianHours.toFixed(1)}h` : '—';
+    baselineApprovalHours !== null
+      ? `${baselineApprovalHours.toFixed(1)}h`
+      : '—';
 
   const hasDelaySignal =
-    baselineMedianHours !== null &&
-    top.medianDelayHours !== null &&
-    (top.delayDeltaHours ?? 0) > 1;
+    baselineApprovalHours !== null &&
+    top.medianApprovalHours !== null &&
+    (top.approvalDeltaHours ?? 0) > THRESHOLD_HAS_DELAY_SIGNAL;
 
   const medianWithTagLabel =
-    top.medianDelayHours !== null ? `${top.medianDelayHours.toFixed(1)}h` : '—';
+    top.medianApprovalHours !== null
+      ? `${top.medianApprovalHours.toFixed(1)}h`
+      : '—';
 
   const pct = Math.round(top.share * 100);
-  const latencyDelta = top.delayDeltaHours ?? 0;
+  const latencyDelta = top.approvalDeltaHours ?? 0;
 
   // Simple scoring heuristic for v0 ---
   let signalStrength = 2;
@@ -193,11 +201,11 @@ export function generateFrictionThemesInsight(
   let emphasis: string;
   let body: string;
 
-  if (hasDelaySignal && baselineMedianHours !== null && top.medianDelayHours) {
+  if (hasDelaySignal && top.medianApprovalHours) {
     title = `${top.label} is your biggest source of review friction`;
     emphasis = `${pct}% of blocked PRs hit ${top.label}`;
 
-    const delta = top.delayDeltaHours!;
+    const delta = top.approvalDeltaHours!;
     const deltaLabel = delta.toFixed(1);
 
     body =
@@ -221,17 +229,20 @@ export function generateFrictionThemesInsight(
     {
       label: 'Blocked PRs',
       value: String(totalFrictionPrs),
+      importance: 'primary',
     },
     {
       label: 'PRs with this theme',
       value: `${top.count} (${pct}%)`,
+      importance: 'primary',
     },
   ];
 
-  if (hasDelaySignal && top.delayDeltaHours !== null) {
+  if (hasDelaySignal && top.approvalDeltaHours !== null) {
     stats.push({
       label: 'Extra time to approval',
-      value: `+${top.delayDeltaHours.toFixed(1)}h`,
+      value: `+${top.approvalDeltaHours.toFixed(1)}h`,
+      importance: 'primary',
     });
   }
 
@@ -244,15 +255,6 @@ export function generateFrictionThemesInsight(
     body,
     timeWindowLabel: 'Last 4 weeks',
     stats,
-    metrics: {
-      totalFrictionPrs,
-      topTag: top.tag,
-      topTagCount: top.count,
-      topTagShare: top.share,
-      baselineMedianHours,
-      tagMedianDelayHours: top.medianDelayHours,
-      tagDelayDeltaHours: top.delayDeltaHours,
-    },
     meta: {
       topTagLabel: top.label,
       hasDelaySignal,

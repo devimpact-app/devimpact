@@ -1,5 +1,6 @@
 import type { Insight } from '@/types/api/insights';
 import { InsightCard } from './InsightCard';
+import { InsightLibraryCard } from './InsightsLibraryCard';
 
 export function InsightsSection({
   insights,
@@ -8,6 +9,8 @@ export function InsightsSection({
   onViewAll,
   title,
   subtitle,
+  isHighlight = true,
+  onInsightClick,
 }: {
   insights: Insight[] | undefined;
   isLoading: boolean;
@@ -15,6 +18,8 @@ export function InsightsSection({
   onViewAll?: () => void;
   title?: string;
   subtitle?: string;
+  isHighlight?: boolean;
+  onInsightClick?: (insight: Insight) => void;
 }) {
   return (
     <section className="flex flex-col space-y-3 py-2">
@@ -51,9 +56,25 @@ export function InsightsSection({
 
       {!isLoading && !error && insights && insights.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {insights.map((insight) => (
-            <InsightCard key={insight.id} insight={insight} />
-          ))}
+          {insights.map((insight) => {
+            if (isHighlight) {
+              return (
+                <InsightCard
+                  key={insight.id}
+                  insight={insight}
+                  onClick={() => onInsightClick?.(insight)}
+                />
+              );
+            } else {
+              return (
+                <InsightLibraryCard
+                  key={insight.id}
+                  insight={insight}
+                  onSelect={() => onInsightClick?.(insight)}
+                />
+              );
+            }
+          })}
         </div>
       )}
 

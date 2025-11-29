@@ -3,7 +3,7 @@ import type { Insight } from '@/types/api/insights';
 import clsx from 'clsx';
 import { useState } from 'react';
 
-const severityStyles = {
+export const severityStyles = {
   info: {
     dot: 'bg-slate-400/80',
     border: 'border-white/10',
@@ -26,7 +26,7 @@ const severityStyles = {
   },
 } as const;
 
-const severityLabel: Record<Insight['severity'], string> = {
+export const severityLabel: Record<Insight['severity'], string> = {
   info: 'Observation',
   positive: 'Opportunity',
   warning: 'Friction',
@@ -63,7 +63,13 @@ function InsightBody({ text }: { text: string }) {
   );
 }
 
-export function InsightCard({ insight }: { insight: Insight }) {
+export function InsightCard({
+  insight,
+  onClick,
+}: {
+  insight: Insight;
+  onClick: () => void;
+}) {
   const styles = severityStyles[insight.severity];
 
   return (
@@ -74,6 +80,7 @@ export function InsightCard({ insight }: { insight: Insight }) {
         'transition-all duration-150',
         'hover:border-white/20 hover:bg-[#131824] hover:-translate-y-[1px] cursor-pointer'
       )}
+      onClick={onClick}
     >
       <header className="flex flex-col gap-2">
         <div className="flex items-center gap-1.5">

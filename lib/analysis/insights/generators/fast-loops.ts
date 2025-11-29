@@ -102,7 +102,6 @@ function formatFastLoopsBody(params: {
 export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
   const { authoredPrs, timezone } = ctx;
 
-  // 1) Build candidates with cycle times + basic features
   const candidates: FastLoopCandidate[] = authoredPrs
     .filter((pr) => pr.lastReadyForReviewAt && pr.mergedAt)
     .map((pr) => {
@@ -278,22 +277,25 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
       {
         label: 'Fast-loop PRs',
         value: String(fast.length),
+        importance: 'primary',
       },
       {
         label: 'Fast-loop median',
         value: `${fastMedianHours.toFixed(1)}h`,
+        importance: 'primary',
       },
       {
         label: 'Overall median',
         value: `${baselineMedianHours.toFixed(1)}h`,
+        importance: 'primary',
       },
     ],
-    metrics: {
-      baselineMedianHours,
-      fastMedianHours,
-      sampleSize: fast.length,
-      totalPrCount: candidates.length,
-    },
+    // metrics: {
+    //   baselineMedianHours,
+    //   fastMedianHours,
+    //   sampleSize: fast.length,
+    //   totalPrCount: candidates.length,
+    // },
     meta: {
       patternKind,
       topTimeOfDay: topTimeOfDay?.key ?? null,

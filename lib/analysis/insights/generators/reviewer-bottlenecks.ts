@@ -4,14 +4,34 @@ import { MAX_HOURS_CUTOFF } from './shared';
 import { Insight } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 
+type ReviewerStats = {
+  reviewer: string;
+  medianLatencyHours: number;
+  firstReviewCount: number;
+  totalReviewCount: number;
+  firstShare: number; // fraction of first reviews that this person owns
+  bottleneckScore: number;
+};
+
+// Thresholds
+const THRESHOLD_MIN_AUTHORED_PRS = 5;
+const THRESHOLD_MIN_REVIEWS = 5;
+const THRESHOLD_MIN_FIRST_REVIEWS_FOR_REVIEWER = 3;
+const THRESHOLD_MIN_SHARE_OF_FIRST_REVIEWS = 0.5;
+
 export function generateReviewerBottleneckInsight(
   ctx: InsightContext
 ): Insight | null {
   const { authoredPrs, reviewsOnAuthoredPrs } = ctx;
 
   // Need some minimum data to say anything non-silly
-  if (!authoredPrs || authoredPrs.length < 5) return null;
-  if (!reviewsOnAuthoredPrs || reviewsOnAuthoredPrs.length < 5) return null;
+  if (!authoredPrs || authoredPrs.length < THRESHOLD_MIN_AUTHORED_PRS)
+    return null;
+  if (
+    !reviewsOnAuthoredPrs ||
+    reviewsOnAuthoredPrs.length < THRESHOLD_MIN_REVIEWS
+  )
+    return null;
 
   // 1) Prepare latency data in hours
   const allLatenciesHours: number[] = [];
@@ -43,11 +63,7 @@ export function generateReviewerBottleneckInsight(
     }
   }
 
-  if (allLatenciesHours.length < 5 || firstReviewLatenciesHours.length < 3) {
-    return null;
-  }
-
-  const baselineMedianHours = computeMedianClamped(allLatenciesHours, {
+  const baselineMedianHours = computeMedianClamped(firstReviewLatenciesHours, {
     min: 0,
     max: MAX_HOURS_CUTOFF,
   });
@@ -55,23 +71,13 @@ export function generateReviewerBottleneckInsight(
   const totalFirstReviews = firstReviewLatenciesHours.length;
   if (totalFirstReviews === 0) return null;
 
-  type ReviewerStats = {
-    reviewer: string;
-    medianLatencyHours: number;
-    firstReviewCount: number;
-    totalReviewCount: number;
-    firstShare: number; // fraction of first reviews that this person owns
-    bottleneckScore: number;
-  };
-
   const candidates: ReviewerStats[] = [];
-
   for (const [reviewer, firstLatencies] of firstReviewByReviewer.entries()) {
     const firstCount = firstLatencies.length;
     const totalCount = allReviewsByReviewer.get(reviewer)?.length ?? firstCount;
 
     // Require a bit of data per reviewer
-    if (firstCount < 3) continue;
+    if (firstCount < THRESHOLD_MIN_FIRST_REVIEWS_FOR_REVIEWER) continue;
 
     const medianLatencyHours = computeMedianClamped(firstLatencies, {
       min: 0,
@@ -83,7 +89,8 @@ export function generateReviewerBottleneckInsight(
     // Heuristic thresholds for “bottleneck”:
     // - at least ~30–40% of your first reviews
     // - noticeably slower than baseline
-    const isHeavilyReliedOn = firstShare >= 0.2;
+    const isHeavilyReliedOn =
+      firstShare >= THRESHOLD_MIN_SHARE_OF_FIRST_REVIEWS;
     const isNoticeablySlow =
       medianLatencyHours >= baselineMedianHours * 1.25 &&
       medianLatencyHours - baselineMedianHours >= 0.5; // at least 2h slower
@@ -173,25 +180,28 @@ export function generateReviewerBottleneckInsight(
       {
         label: 'Share of first reviews',
         value: `${pctFirst}%`,
+        importance: 'primary',
       },
       {
         label: 'Median response (them)',
         value: reviewerMedianLabel,
+        importance: 'primary',
       },
       {
         label: 'Median response (overall)',
         value: baselineLabel,
+        importance: 'primary',
       },
     ],
 
-    metrics: {
-      reviewer: reviewerLabel,
-      medianLatencyHours: best.medianLatencyHours,
-      baselineMedianHours,
-      firstReviewCount: best.firstReviewCount,
-      totalReviewCount: best.totalReviewCount,
-      totalFirstReviews,
-    },
+    // metrics: {
+    //   reviewer: reviewerLabel,
+    //   medianLatencyHours: best.medianLatencyHours,
+    //   baselineMedianHours,
+    //   firstReviewCount: best.firstReviewCount,
+    //   totalReviewCount: best.totalReviewCount,
+    //   totalFirstReviews,
+    // },
 
     meta: {
       categories: ['reviews', 'bottlenecks'],
