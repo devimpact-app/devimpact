@@ -1,6 +1,6 @@
-// components/metrics/MetricTimeseriesChart.tsx
 'use client';
 
+import { TMetricResult, TTimeseriesResult } from '@/types/api/metrics';
 import {
   LineChart,
   Line,
@@ -10,13 +10,12 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
-
-type Point = { x: Date; value: number };
+import { toChartPoints } from './utils';
+import { InfoTooltip } from '@/components/InfoTooltip';
+import { ChartTooltip } from '@/components/ChartTooltip';
 
 type MetricTimeseriesChartProps = {
-  title: string;
-  unit?: string | null;
-  points: Point[];
+  result: TTimeseriesResult;
 };
 
 function formatDateTick(ts: number) {
@@ -24,14 +23,27 @@ function formatDateTick(ts: number) {
   return `${d.getMonth() + 1}/${d.getDate()}`; // e.g. 1/23
 }
 
-export function MetricTimeseriesChart({
-  title,
-  unit,
-  points,
-}: MetricTimeseriesChartProps) {
+function formatMetricValue(
+  valueFormat: TMetricResult['valueFormat'],
+  rawValue: number | null
+): string {
+  if (rawValue == null) return '—';
+
+  const vf = valueFormat;
+  const scale = vf?.scale ?? 1;
+  const decimals = vf?.decimals ?? 0;
+  const unitSuffix = vf?.unitSuffix ?? '';
+
+  const scaled = rawValue * scale;
+  const formatted = scaled.toFixed(decimals);
+
+  return unitSuffix ? `${formatted} ${unitSuffix}` : formatted;
+}
+
+export function MetricTimeseriesChart({ result }: MetricTimeseriesChartProps) {
+  const points = toChartPoints(result);
   if (!points.length) return null;
 
-  console.log('points', points);
   const data = points.map((p) => ({
     ts: p.x.getTime(),
     value: p.value,
@@ -40,13 +52,24 @@ export function MetricTimeseriesChart({
   const dataMin = data[0]?.ts;
   const dataMax = data[data.length - 1]?.ts;
 
+  let description = '';
+  if (result.description) {
+    description = result.description;
+    if (result.unit) {
+      description = `${result.description} in ${result.unit}`;
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-      <div className="mb-2 flex items-baseline justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-xs font-semibold text-slate-100">{title}</h3>
-          {unit && <p className="text-[10px] text-slate-400">{unit}</p>}
+          <h3 className="text-xs font-semibold text-slate-100">
+            {result.title}
+            {result.aggregation ? ` (${result.aggregation.op})` : ''}
+          </h3>
         </div>
+        {result.description && <InfoTooltip description={description} />}
       </div>
 
       <div className="h-40 w-full">
@@ -71,11 +94,19 @@ export function MetricTimeseriesChart({
               tick={{ fontSize: 10, fill: '#94a3b8' }}
               axisLine={{ stroke: '#1e293b' }}
               tickLine={false}
-              width={40}
+              width={50}
+              tickFormatter={(val: number) =>
+                val ? formatMetricValue(result.valueFormat, val) : ''
+              }
             />
             <Tooltip
-              labelFormatter={(ts) => new Date(ts).toLocaleDateString()}
-              formatter={(val: any) => [unit ? `${val} ${unit}` : val, title]}
+              content={
+                <ChartTooltip
+                  formatValue={(val: any) =>
+                    formatMetricValue(result.valueFormat, val)
+                  }
+                />
+              }
             />
             <Line
               type="monotone"

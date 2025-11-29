@@ -7,15 +7,15 @@ export const REVIEWS_GIVEN_COUNT_V1: MetricDefinition = {
     'Count of code reviews submitted by the tenant within the selected window.',
   entity: 'review',
   unit: 'count',
-  source: {
-    table: 'reviews',
-    columns: ['tenantId', 'reviewerIsTenant', 'submittedAt', 'state'],
-  },
   display: {
-    kind: 'stat',
     label: 'Reviews given',
     description: 'Reviews you submitted in this period',
-    decimals: 0,
+    valueFormat: {
+      scale: 1,
+      unitSuffix: 'reviews',
+      decimals: 0,
+      kind: 'count',
+    },
   },
   cacheTtlSeconds: 300,
   formula: {
@@ -37,22 +37,17 @@ export const REVIEW_LATENCY_SECONDS_AVG_V1: MetricDefinition = {
   description:
     'Average time from the relevant request/anchor to the reviewer’s submission, for reviews made by the tenant within the window.',
   entity: 'review',
-  unit: 'seconds',
-  source: {
-    table: 'reviews',
-    columns: [
-      'tenantId',
-      'reviewerIsTenant',
-      'submittedAt',
-      'reviewLatencySeconds',
-    ],
-  },
+  unit: 'hours',
   display: {
-    kind: 'stat',
-    label: 'Avg review latency',
-    description: 'Anchor → review submission',
-    decimals: 0,
-    unitSuffix: 's',
+    label: 'Your review response time',
+    description:
+      'How long it takes you to respond when someone else requests your review',
+    valueFormat: {
+      scale: 1 / 3600,
+      unitSuffix: 'h',
+      decimals: 1,
+      kind: 'duration',
+    },
   },
   cacheTtlSeconds: 300,
   formula: {
@@ -75,15 +70,15 @@ export const REVIEW_FIRST_RESPONDER_COUNT_V1: MetricDefinition = {
     'Number of reviews by the tenant that were the first review on a PR (within the window).',
   entity: 'review',
   unit: 'count',
-  source: {
-    table: 'reviews',
-    columns: ['tenantId', 'reviewerIsTenant', 'submittedAt', 'wasFirstReview'],
-  },
   display: {
-    kind: 'stat',
     label: 'First responder',
     description: 'You were the first to review',
-    decimals: 0,
+    valueFormat: {
+      scale: 1,
+      unitSuffix: 'reviews',
+      decimals: 0,
+      kind: 'count',
+    },
   },
   cacheTtlSeconds: 300,
   formula: {
@@ -106,20 +101,15 @@ export const REVIEW_SUBSTANTIVE_COUNT_V1: MetricDefinition = {
     'Number of reviews you submitted in this period that included at least one code comment.',
   entity: 'review',
   unit: 'count',
-  source: {
-    table: 'reviews',
-    columns: [
-      'tenantId',
-      'reviewerIsTenant',
-      'submittedAt',
-      'reviewCommentsCount',
-    ],
-  },
   display: {
-    kind: 'stat',
     label: 'Substantive reviews',
     description: 'Reviews with code comments',
-    decimals: 0,
+    valueFormat: {
+      scale: 1,
+      unitSuffix: 'reviews',
+      decimals: 0,
+      kind: 'count',
+    },
   },
   cacheTtlSeconds: 300,
   formula: {
@@ -144,16 +134,15 @@ export const REVIEW_SUBSTANTIVE_RATE_V1: MetricDefinition = {
     'Percentage of your reviews that included code comments during the selected window.',
   entity: 'review',
   unit: 'percent',
-  source: {
-    table: 'reviews',
-    columns: [],
-  },
   display: {
-    kind: 'stat',
     label: 'Substantive reviews',
     description: 'Share of your reviews that had code comments',
-    decimals: 0,
-    unitSuffix: '%',
+    valueFormat: {
+      scale: 1,
+      unitSuffix: '%',
+      decimals: 1,
+      kind: 'ratio',
+    },
   },
   cacheTtlSeconds: 300,
   formula: {

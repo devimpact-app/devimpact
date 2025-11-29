@@ -23,11 +23,11 @@ export default function InsightsClient({ user }: Props) {
     windowWeeks: numWeeks,
   });
 
-  const highlightedInsights = insights.slice(0, 3);
-  const libraryInsights = insights.slice(3);
+  const highlightedInsights = insights.slice(0, 2);
+  const libraryInsights = insights.slice(2);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 space-y-8">
       <header className="mb-8">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -50,9 +50,8 @@ export default function InsightsClient({ user }: Props) {
         </div>
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
-        {/* Left column: highlighted + library */}
-        <div className="space-y-8">
+      <section className="grid lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)] gap-6 h-[calc(100vh-132px)]">
+        <div className="overflow-y-auto no-scrollbar pr-2 space-y-8">
           <InsightsSection
             insights={highlightedInsights}
             isLoading={isLoading}
@@ -65,13 +64,12 @@ export default function InsightsClient({ user }: Props) {
             insights={libraryInsights}
             isLoading={isLoading}
             error={error}
-            title="All insights this period"
-            subtitle="Every story we surfaced in this window"
+            title="Other insights this period"
+            subtitle="Other stories we surfaced in this window"
           />
         </div>
 
-        {/* Right column: sticky trends summary (desktop only for now) */}
-        <aside className="hidden lg:block lg:sticky lg:top-20">
+        <aside className="hidden no-scrollbar lg:block overflow-y-auto pl-2">
           <KeyMetricsPanel
             range={{
               start,

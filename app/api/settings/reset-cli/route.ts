@@ -3,8 +3,9 @@ import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema/users';
 import { eq } from 'drizzle-orm';
 import { jsonOK, jsonUnauthorized } from '../../_lib/http';
+import { withSentryUser } from '@/lib/withSentryUser';
 
-export async function POST() {
+export const POST = withSentryUser(async () => {
   const session = await auth();
   if (!session?.user?.id) {
     return jsonUnauthorized('Unauthorized');
@@ -21,4 +22,4 @@ export async function POST() {
     .where(eq(users.id, userId));
 
   return jsonOK({ ok: true });
-}
+});

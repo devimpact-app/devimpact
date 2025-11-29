@@ -47,7 +47,11 @@ function useKeyMetrics(range: DateRange): KeyMetricsState {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const metricIds = ['review.latency_seconds.avg.v1'];
+        const metricIds = [
+          'pr.time_to_first_review.v1',
+          'review.latency_seconds.avg.v1',
+          'pr.blocked_rate.v1',
+        ];
         if (metricIds.length === 0) {
           if (!cancelled) {
             setState({
@@ -143,39 +147,35 @@ export function KeyMetricsPanel({ range }: KeyMetricsPanelProps) {
                     <>
                       <MetricTimeseriesChart
                         key={result.metricId}
-                        title={result.title ?? ''}
-                        unit={result.unit}
-                        points={toChartPoints(result)}
+                        result={result}
                       />
                     </>
                   )}
-                  <div
-                    key={result.metricId}
-                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2.5"
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-medium text-slate-200">
-                        {result.title ?? result.metricId}
-                      </span>
-                      {result.unit && (
-                        <span className="text-[10px] text-slate-500">
-                          {result.unit}
+                  {!isTimeseries && (
+                    <div
+                      key={result.metricId}
+                      className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2.5"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-medium text-slate-200">
+                          {result.title ?? result.metricId}
                         </span>
-                      )}
-                    </div>
+                        {result.unit && (
+                          <span className="text-[10px] text-slate-500">
+                            {result.unit}
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="text-right">
-                      {!isTimeseries && (
-                        <span className="text-sm font-semibold text-slate-50">
-                          {result.data?.[0]?.value ?? '—'}
-                        </span>
-                      )}
-
-                      {isTimeseries && (
-                        <MetricSparkline points={toChartPoints(result)} />
-                      )}
+                      <div className="text-right">
+                        {!isTimeseries && (
+                          <span className="text-sm font-semibold text-slate-50">
+                            {result.data?.[0]?.value ?? '—'}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}

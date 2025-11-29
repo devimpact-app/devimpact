@@ -62,7 +62,7 @@ export type MetricFormula =
   | SqlFormula;
 
 export type MetricUnit =
-  | 'seconds'
+  | 'hours'
   | 'count'
   | 'ratio'
   | 'percent'
@@ -79,15 +79,21 @@ export type MetricDisplayKind =
   | 'gauge'; // target vs actual
 
 export type MetricDisplay = {
-  kind: MetricDisplayKind;
-  // Human-facing labels/hints
   label?: string; // overrides descriptor.title in UI, if desired
   description?: string; // short tooltip/help
-  decimals?: number; // suggested decimal places
-  unitSuffix?: string; // e.g., "s", "ms", "%"
-  // For charts
-  yAxisLabel?: string;
-  xAxisLabel?: string;
+  valueFormat?: {
+    // multiply the raw number by this before display (e.g. seconds → hours)
+    scale?: number; // e.g. 1 / 3600
+
+    // what to append after the formatted number, e.g. "h", "s", "%"
+    unitSuffix?: string; // e.g. "h"
+
+    // how many decimals to show after scaling
+    decimals?: number; // e.g. 1
+
+    // optional: hint for FE if you ever want different styling rules
+    kind?: 'duration' | 'ratio' | 'count';
+  };
 };
 
 export interface MetricDefinition {
@@ -96,10 +102,6 @@ export interface MetricDefinition {
   description: string;
   entity: MetricEntity;
   unit: MetricUnit;
-  source: {
-    table: 'pullRequests' | 'reviews';
-    columns: string[];
-  };
   display: MetricDisplay;
   cacheTtlSeconds?: number;
   formula: MetricFormula;

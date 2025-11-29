@@ -4,8 +4,9 @@ import { eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { jsonBadRequest, jsonUnauthorized } from '../../_lib/http';
 import { hashCliToken } from '@/lib/utils/crypto';
+import { withSentryUser } from '@/lib/withSentryUser';
 
-export async function POST(req: NextRequest) {
+export const POST = withSentryUser(async (req: NextRequest) => {
   try {
     const body = await req.json();
 
@@ -61,4 +62,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

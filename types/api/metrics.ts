@@ -83,13 +83,25 @@ export const CatalogResponse = z.object({
 });
 
 /* ------- results ------- */
+const ValueFormat = z.object({
+  scale: z.number().optional(),
+  decimals: z.number().optional(),
+  unitSuffix: z.string().optional(),
+  kind: z.enum(['duration', 'ratio', 'count']).optional(),
+});
+const Aggregation = z.object({
+  op: z.enum(['count', 'avg', 'sum', 'median']),
+});
 const BaseResult = z.object({
   metricId: MetricId,
   title: z.string().optional(),
+  description: z.string().optional(),
   unit: z.string().optional(),
   meta: z.record(z.string(), z.any()).optional(),
   window: z.object({ start: z.string(), end: z.string() }),
   error: z.object({ code: z.string(), message: z.string() }).optional(),
+  valueFormat: ValueFormat.optional(),
+  aggregation: Aggregation.optional(),
 });
 const StatDataset = z.object({
   kind: z.enum(['current', 'comparison']),

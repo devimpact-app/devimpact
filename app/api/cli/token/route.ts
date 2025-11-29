@@ -4,8 +4,9 @@ import { eq } from 'drizzle-orm';
 import { generateCliToken, hashCliToken } from '@/lib/utils/crypto';
 import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
+import { withSentryUser } from '@/lib/withSentryUser';
 
-export async function POST(req: NextRequest) {
+export const POST = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
@@ -26,4 +27,4 @@ export async function POST(req: NextRequest) {
     .where(eq(users.id, session.user.id));
 
   return NextResponse.json({ cliToken: plainToken });
-}
+});

@@ -227,6 +227,7 @@ export async function executePlanFormula(
       metricId: def.id,
       shape: 'timeseries',
       title: def.display?.label ?? def.name,
+      description: def.display?.description ?? def.description,
       unit: def.unit,
       window: {
         start: input.start.toISOString(),
