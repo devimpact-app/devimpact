@@ -10,22 +10,37 @@ import {
 import { getLocalWeekdayIndex, toLocalDate } from '@/lib/utils/date';
 import { Insight } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
+import { PullRequest } from '@/lib/db/schema';
 
 // Thresholds
-// export const
+const THRESHOLD_MIN_AUTHORED_PRS = 8;
+const THRESHOLD_MIN_TIME_OF_WEEK_BUCKET = 3;
+const THRESHOLD_MIN_SLOWER_PERCENTAGE = 40;
+const THRESHOLD_MIN_SLOWER_HOURS = 3;
+
+type BucketStats = {
+  bucketKey: string;
+  weekdayIndex: number;
+  timeBucket: TimeOfDayBucket;
+  count: number;
+  medianLatencyHours: number;
+  slowdownRatio: number;
+  absoluteDiff: number;
+};
+
+type Sample = {
+  pr: PullRequest;
+  bucketKey: string; // `${weekday}:${timeBucket}`
+  weekdayIndex: number; // 0–6 local
+  timeBucket: TimeOfDayBucket;
+  latencyHours: number;
+};
 
 export function generateAvailabilityDeadzoneInsight(
   ctx: InsightContext
 ): Insight | null {
   const { authoredPrs, timezone } = ctx;
   if (!authoredPrs) return null;
-
-  type Sample = {
-    bucketKey: string; // `${weekday}:${timeBucket}`
-    weekdayIndex: number; // 0–6 local
-    timeBucket: TimeOfDayBucket;
-    latencyHours: number;
-  };
 
   const samples: Sample[] = [];
 
@@ -45,6 +60,7 @@ export function generateAvailabilityDeadzoneInsight(
     const bucketKey = `${weekdayIdx}:${timeBucket}`;
 
     samples.push({
+      pr,
       bucketKey,
       weekdayIndex: weekdayIdx,
       timeBucket,
@@ -52,7 +68,7 @@ export function generateAvailabilityDeadzoneInsight(
     });
   }
 
-  if (samples.length < 8) {
+  if (samples.length < THRESHOLD_MIN_AUTHORED_PRS) {
     // not enough signal to do time-of-week analysis
     return null;
   }
@@ -63,17 +79,6 @@ export function generateAvailabilityDeadzoneInsight(
   );
   if (baselineMedianHours <= 0) return null;
 
-  // Aggregate per bucket
-  type BucketStats = {
-    bucketKey: string;
-    weekdayIndex: number;
-    timeBucket: TimeOfDayBucket;
-    count: number;
-    medianLatencyHours: number;
-    slowdownRatio: number;
-    absoluteDiff: number;
-  };
-
   const latenciesByBucket = new Map<string, Sample[]>();
   for (const s of samples) {
     const arr = latenciesByBucket.get(s.bucketKey) ?? [];
@@ -82,9 +87,8 @@ export function generateAvailabilityDeadzoneInsight(
   }
 
   const bucketStats: BucketStats[] = [];
-
   for (const [key, bucketSamples] of latenciesByBucket.entries()) {
-    if (bucketSamples.length < 3) continue; // min sample per bucket
+    if (bucketSamples.length < THRESHOLD_MIN_TIME_OF_WEEK_BUCKET) continue; // min sample per bucket
 
     const medianLatencyHours = computeMedianClamped(
       bucketSamples.map((s) => s.latencyHours),
@@ -96,10 +100,10 @@ export function generateAvailabilityDeadzoneInsight(
       baselineMedianHours > 0 ? medianLatencyHours / baselineMedianHours : 1;
     const absoluteDiff = medianLatencyHours - baselineMedianHours;
 
-    // Heuristic: "dead zone" if >= 1.5x slower and at least 3h worse
-    const isDeadZone = slowdownRatio >= 1.4 && absoluteDiff >= 0.5;
+    const isDeadZone =
+      slowdownRatio >= 1 + THRESHOLD_MIN_SLOWER_PERCENTAGE / 100 &&
+      absoluteDiff >= THRESHOLD_MIN_SLOWER_HOURS;
     if (!isDeadZone) continue;
-
     const sample = bucketSamples[0];
     bucketStats.push({
       bucketKey: key,
@@ -184,6 +188,57 @@ export function generateAvailabilityDeadzoneInsight(
     `When it’s possible, avoid opening or marking PRs ready for review during that window, or set expectations with reviewers that anything opened then may not be seen until the next day.`,
   ].join(' ');
 
+  const worstBucketSamples = (latenciesByBucket.get(worst.bucketKey) ?? [])
+    .slice()
+    .sort((a, b) => b.latencyHours - a.latencyHours)
+    .slice(0, 8); // cap for v0
+
+  const relatedItems: Insight['relatedItems'] = worstBucketSamples.map((s) => {
+    const pr = s.pr;
+    const readyLocal = pr.lastReadyForReviewAt
+      ? toLocalDate(pr.lastReadyForReviewAt, timezone)
+      : null;
+    const readyDateLabel = readyLocal
+      ? readyLocal.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        })
+      : null;
+    const timeBucketLabel = formatTimeOfDayLabel(s.timeBucket);
+    return {
+      id: pr.id,
+      entityType: 'pull_request',
+      title: pr.title || `PR #${pr.prNumber ?? ''}`,
+      htmlUrl: pr.htmlUrl ?? undefined,
+      subtitle:
+        pr.repoFullName && pr.prNumber
+          ? `${pr.repoFullName} · #${pr.prNumber}`
+          : (pr.repoFullName ?? undefined),
+      stats: [
+        {
+          label: 'Time to first review',
+          value: `${s.latencyHours.toFixed(1)}h`,
+          importance: 'primary',
+        },
+        ...(readyDateLabel
+          ? [
+              {
+                label: 'Ready at',
+                value: `${readyDateLabel} (${timeBucketLabel})`,
+                importance: 'secondary',
+              } as const,
+            ]
+          : []),
+      ],
+      meta: {
+        latencyHours: s.latencyHours,
+        weekdayIndex: s.weekdayIndex,
+        timeBucket: s.timeBucket,
+        bucketKey: s.bucketKey,
+      },
+    };
+  });
+
   const insight: Insight = {
     id: `review-bottlenecks:availability:${worst.bucketKey}`,
     kind: 'bottlenecks',
@@ -215,6 +270,35 @@ export function generateAvailabilityDeadzoneInsight(
       },
     ],
     score,
+    relatedItems,
+    transparency: {
+      summary: `This window was flagged because PRs sent for review then had significantly slower first-review times than your baseline.`,
+      bullets: [
+        `We compared the median first-review time across all your PRs to the median in each time-of-week bucket.`,
+        `A bucket is considered a "dead zone" when it is both slower by ≥${THRESHOLD_MIN_SLOWER_PERCENTAGE}% and at least +${THRESHOLD_MIN_SLOWER_HOURS}h slower in absolute terms.`,
+        `We also require ≥${THRESHOLD_MIN_TIME_OF_WEEK_BUCKET} PRs in that window to avoid noise.`,
+      ],
+      thresholds: [
+        {
+          key: 'slowdownRatio',
+          label: 'Slowdown ratio',
+          actual: worst.slowdownRatio,
+          condition: `>= 1 + ${THRESHOLD_MIN_SLOWER_PERCENTAGE / 100}`,
+        },
+        {
+          key: 'absoluteDiff',
+          label: 'Extra hours waited',
+          actual: worst.absoluteDiff,
+          condition: `>= ${THRESHOLD_MIN_SLOWER_HOURS}h`,
+        },
+        {
+          key: 'sampleCount',
+          label: 'PRs in this window',
+          actual: worst.count,
+          condition: `>= ${THRESHOLD_MIN_TIME_OF_WEEK_BUCKET}`,
+        },
+      ],
+    },
   };
 
   return insight;
