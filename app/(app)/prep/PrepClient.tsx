@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
-import { PrepHero } from "./components/Hero";
-import { PrepQuickActions } from "./components/QuickActions";
+import { useRouter } from 'next/navigation';
+import { PrepHero } from './components/Hero';
+import { PrepQuickActions } from './components/QuickActions';
 
 type Props = {
   user: {
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export default function PrepClient({ user }: Props) {
+  const router = useRouter();
   // Hero at top
   // Then in-profess stuff below that (Ex: mid year review (draft))
   // Then recent highlights and evidence at bottom
@@ -21,7 +23,7 @@ export default function PrepClient({ user }: Props) {
       <PrepHero userName={user.name} />
       <PrepQuickActions
         onPerformanceReviewClick={() => {}}
-        onOneOnOnePrepClick={() => {}}
+        onOneOnOnePrepClick={() => router.push('prep/one-on-one')}
       />
     </main>
   );

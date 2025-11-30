@@ -23,6 +23,12 @@ export function getLocalWeekdayIndex(
   return (jsDay + 6) % 7;
 }
 
+export function weeksAgo(start: Date, weeks: number): Date {
+  const d = new Date(start);
+  d.setDate(d.getDate() - weeks * 7);
+  return d;
+}
+
 /**
  * Shift a date by N years while trying to preserve month/day.
  * Handles leap days by clamping to the last day of Feb when needed.

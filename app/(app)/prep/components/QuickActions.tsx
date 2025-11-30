@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 import {
   ClipboardList,
   MessageSquare,
@@ -9,7 +9,7 @@ import {
   Sparkles,
   Hourglass,
   ChevronRight,
-} from "lucide-react";
+} from 'lucide-react';
 
 type QuickActionsProps = {
   onPerformanceReviewClick?: () => void;
@@ -20,11 +20,11 @@ type QuickActionsProps = {
 };
 
 type ActionKey =
-  | "performance_review"
-  | "one_on_one"
-  | "promotion"
-  | "job_search"
-  | "custom_packet";
+  | 'performance_review'
+  | 'one_on_one'
+  | 'promotion'
+  | 'job_search'
+  | 'custom_packet';
 
 type ActionConfig = {
   key: ActionKey;
@@ -32,55 +32,46 @@ type ActionConfig = {
   description: string;
   icon: ReactNode;
   // whether this is fully implemented or not
-  status: "ready" | "coming_soon";
+  status: 'ready' | 'coming_soon';
   primaryCtaLabel: string;
 };
 
 const ACTIONS: ActionConfig[] = [
   {
-    key: "performance_review",
-    label: "Performance review packet",
+    key: 'one_on_one',
+    label: 'Prep for your next 1:1',
     description:
-      "Summarize your recent work, impact, and feedback into a clean packet you can share.",
-    icon: <ClipboardList className="h-5 w-5" />,
-    status: "ready",
-    primaryCtaLabel: "Start review packet",
-  },
-  {
-    key: "one_on_one",
-    label: "Prep for your next 1:1",
-    description:
-      "Auto-collect recent wins, questions, and blockers to bring into your next 1:1.",
+      'Auto-collect recent wins, questions, and blockers to bring into your next 1:1.',
     icon: <MessageSquare className="h-5 w-5" />,
-    status: "ready",
-    primaryCtaLabel: "Open 1:1 prep",
+    status: 'ready',
+    primaryCtaLabel: 'Open 1:1 prep',
   },
   {
-    key: "promotion",
-    label: "Promotion readiness",
+    key: 'performance_review',
+    label: 'Performance review packet',
     description:
-      "Map your recent work to expectations for the next level and spot evidence gaps.",
+      'Summarize your recent work, impact, and feedback into a clean packet you can share.',
+    icon: <ClipboardList className="h-5 w-5" />,
+    status: 'coming_soon',
+    primaryCtaLabel: 'Start review packet (soon)',
+  },
+  {
+    key: 'promotion',
+    label: 'Promotion readiness',
+    description:
+      'Map your recent work to expectations for the next level and spot evidence gaps.',
     icon: <ArrowUpCircle className="h-5 w-5" />,
-    status: "coming_soon",
-    primaryCtaLabel: "View readiness (soon)",
+    status: 'coming_soon',
+    primaryCtaLabel: 'View readiness (soon)',
   },
   {
-    key: "job_search",
-    label: "Job search packet",
+    key: 'job_search',
+    label: 'Job search packet',
     description:
-      "Turn your real work into interview-ready stories, highlights, and impact summaries.",
+      'Turn your real work into interview-ready stories, highlights, and impact summaries.',
     icon: <Briefcase className="h-5 w-5" />,
-    status: "coming_soon",
-    primaryCtaLabel: "Build packet (soon)",
-  },
-  {
-    key: "custom_packet",
-    label: "Custom packet template",
-    description:
-      "Create your own template for any recurring conversation: team updates, skip-levels, and more.",
-    icon: <Sparkles className="h-5 w-5" />,
-    status: "coming_soon",
-    primaryCtaLabel: "Create template (soon)",
+    status: 'coming_soon',
+    primaryCtaLabel: 'Build packet (soon)',
   },
 ];
 
@@ -91,23 +82,23 @@ export function PrepQuickActions({
   onJobSearchPrepClick,
   onCustomPacketClick,
 }: QuickActionsProps) {
-  const handleClick = (key: ActionKey, status: ActionConfig["status"]) => {
-    if (status === "coming_soon") return; // no-op for now
+  const handleClick = (key: ActionKey, status: ActionConfig['status']) => {
+    if (status === 'coming_soon') return; // no-op for now
 
     switch (key) {
-      case "performance_review":
+      case 'performance_review':
         onPerformanceReviewClick?.();
         break;
-      case "one_on_one":
+      case 'one_on_one':
         onOneOnOnePrepClick?.();
         break;
-      case "promotion":
+      case 'promotion':
         onPromotionPrepClick?.();
         break;
-      case "job_search":
+      case 'job_search':
         onJobSearchPrepClick?.();
         break;
-      case "custom_packet":
+      case 'custom_packet':
         onCustomPacketClick?.();
         break;
     }
@@ -133,7 +124,7 @@ export function PrepQuickActions({
 
       <div className="relative grid gap-6 pt-2 md:grid-cols-2 xl:grid-cols-3">
         {ACTIONS.map((action) => {
-          const isDisabled = action.status === "coming_soon";
+          const isDisabled = action.status === 'coming_soon';
 
           return (
             <button
@@ -150,8 +141,8 @@ export function PrepQuickActions({
                 hover:shadow-[0_0_18px_rgba(18,34,64,0.8)]
                 ${
                   isDisabled
-                    ? "cursor-not-allowed opacity-65 hover:border-[#272E3F] hover:shadow-none"
-                    : ""
+                    ? 'cursor-not-allowed opacity-65 hover:border-[#272E3F] hover:shadow-none'
+                    : ''
                 }
               `}
             >
@@ -173,7 +164,7 @@ export function PrepQuickActions({
                   </span>
                 </div>
 
-                {action.status === "coming_soon" && (
+                {action.status === 'coming_soon' && (
                   <span
                     className="
                       flex items-center gap-1 rounded-full 
@@ -197,8 +188,8 @@ export function PrepQuickActions({
                   border px-2.5 py-1.5 text-[11px] font-medium
                   ${
                     isDisabled
-                      ? "border-[#30384A] bg-[#151925] text-[#737A94]"
-                      : "border-[#3C3E66] bg-[#1A2142] text-[#7C8BFF] group-hover:bg-[#2A2C4F]"
+                      ? 'border-[#30384A] bg-[#151925] text-[#737A94]'
+                      : 'border-[#3C3E66] bg-[#1A2142] text-[#7C8BFF] group-hover:bg-[#2A2C4F]'
                   }
                 `}
               >
