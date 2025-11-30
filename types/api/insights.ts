@@ -20,7 +20,7 @@ export const InsightStatSchema = z.object({
   label: z.string(),
   value: z.string(),
   tooltip: z.string().optional(),
-  importance: z.enum(['primary', 'secondary']).optional().default('primary'),
+  importance: z.enum(['primary', 'secondary']).default('primary').optional(),
 });
 
 export type InsightStat = z.infer<typeof InsightStatSchema>;

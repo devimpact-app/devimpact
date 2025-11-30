@@ -299,21 +299,6 @@ export function generateContentBottlenecksInsight(
           ]
         : []),
     ],
-    // metrics: {
-    //   baselineMedianHours,
-    //   slowMedianHours: best.slowMedianHours,
-    //   slowCount: best.slowCount,
-    //   totalPrCount: allCount,
-    //   bucket: best.bucket,
-    //   topTag: topTag?.tag ?? null,
-    // } as any,
-    meta: {
-      bucket: best.bucket,
-      slowdownPct,
-      slowShare: best.slowShare,
-      overallShare: best.overallShare,
-      topTag,
-    },
     score,
   };
 

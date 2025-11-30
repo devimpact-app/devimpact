@@ -8,7 +8,7 @@ import {
 } from './shared';
 import { PullRequest } from '@/lib/db/schema';
 import { computeMedianClamped } from '@/lib/utils/math';
-import { Insight } from '@/types/api/insights';
+import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 
 type TagStats = {
@@ -246,6 +246,47 @@ export function generateFrictionThemesInsight(
     });
   }
 
+  const relatedItems: InsightRelatedItem[] = frictionItems
+    .slice()
+    .filter((f) => f.frictionTags.includes(top.tag))
+    .sort((a, b) => {
+      const aTime = a.approvalTime ?? 0;
+      const bTime = b.approvalTime ?? 0;
+      return bTime - aTime;
+    })
+    .slice(0, 10)
+    .map((f) => {
+      const approvalHours = f.approvalTime ?? null;
+      const pr = f.pr;
+      return {
+        entityType: 'pull_request' as const,
+        id: pr.id,
+        title: pr.title || `PR #${pr.prNumber}`,
+        stats: [
+          approvalHours !== null
+            ? {
+                label: 'Time to first approval',
+                value: `${approvalHours.toFixed(1)}h`,
+              }
+            : {
+                label: 'Time to first approval',
+                value: 'n/a',
+              },
+          {
+            label: 'Review rounds',
+            value: (pr.reviewRounds ?? 1).toString(),
+          },
+        ],
+        meta: {
+          prNumber: pr.prNumber,
+          repoFullName: pr.repoFullName,
+          htmlUrl: pr.htmlUrl,
+          approvalHours,
+          frictionTags: f.frictionTags,
+        },
+      };
+    });
+
   const insight: Insight = {
     id: `friction-themes:${top.tag}`,
     kind: 'friction_themes',
@@ -255,11 +296,61 @@ export function generateFrictionThemesInsight(
     body,
     timeWindowLabel: 'Last 4 weeks',
     stats,
-    meta: {
-      topTagLabel: top.label,
-      hasDelaySignal,
-    },
     score,
+    relatedItems,
+    transparency: {
+      summary: hasDelaySignal
+        ? `"${top.label}" shows up frequently on blocked PRs and is measurably slower to get approved than your typical blocked PR.`
+        : `"${top.label}" shows up frequently on blocked PRs in this window, so it’s a meaningful pattern even if the delay is close to baseline.`,
+      bullets: [
+        `Blocked PRs in this window: ${totalFrictionPrs}`,
+        `This theme appears on ${pct}% of blocked PRs (${top.count} of ${totalFrictionPrs}).`,
+        baselineApprovalHours !== null
+          ? `Baseline time to first approval on your merged PRs: ${baselineApprovalHours.toFixed(
+              1
+            )}h.`
+          : `Baseline time to first approval on your merged PRs was not available.`,
+        top.medianApprovalHours !== null
+          ? `When this theme appears, median time to first approval is ${top.medianApprovalHours.toFixed(
+              1
+            )}h (${latencyDelta >= 0 ? '+' : ''}${latencyDelta.toFixed(
+              1
+            )}h vs baseline for blocked PRs).`
+          : `We didn't have enough timing data to compare approval speed for this theme.`,
+      ],
+      thresholds: [
+        {
+          key: 'minBlockedPrs',
+          label: 'Minimum blocked PRs to consider a theme',
+          actual: totalFrictionPrs,
+          condition: `>= ${THRESHOLD_MINIMUM_BLOCKED_PRS}`,
+        },
+        {
+          key: 'minShareWithTag',
+          label: 'Share of blocked PRs with this theme',
+          actual: top.share, // 0–1
+          condition: `>= ${THRESHOLD_MIN_SHARE_WITH_TAG} (~${Math.round(
+            THRESHOLD_MIN_SHARE_WITH_TAG * 100
+          )}%)`,
+        },
+        {
+          key: 'minCountWithTag',
+          label: 'Number of blocked PRs with this theme',
+          actual: top.count,
+          condition: `>= ${THRESHOLD_MIN_COUNT_WITH_TAG}`,
+        },
+        ...(hasDelaySignal && top.approvalDeltaHours !== null
+          ? [
+              {
+                key: 'minDelaySignalHours',
+                label: 'Extra time to approval when this theme appears (hours)',
+                actual: top.approvalDeltaHours,
+                condition: `>= ${THRESHOLD_HAS_DELAY_SIGNAL}h`,
+              },
+            ]
+          : []),
+      ],
+    },
   };
 
   return insight;

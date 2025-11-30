@@ -214,15 +214,6 @@ export function generateAvailabilityDeadzoneInsight(
         importance: 'secondary',
       },
     ],
-    // metrics: {
-    //   totalSamples: samples.length,
-    //   weekdayIndex: worst.weekdayIndex,
-    //   timeBucket: worst.timeBucket,
-    // },
-    meta: {
-      categories: ['reviews', 'bottlenecks', 'availability'],
-      simulated: false,
-    },
     score,
   };
 

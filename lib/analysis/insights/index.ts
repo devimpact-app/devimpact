@@ -6,7 +6,7 @@ import { generateFastLoopsInsight } from './generators/fast-loops';
 import { generateFrictionThemesInsight } from './generators/friction-themes';
 import { generateReviewerBottleneckInsight } from './generators/reviewer-bottlenecks';
 import { generateAvailabilityDeadzoneInsight } from './generators/availability-bottlenecks';
-import { generateContentBottlenecksInsight } from './generators/content-bottlenecks';
+// import { generateContentBottlenecksInsight } from './generators/content-bottlenecks';
 import { pickTopInsights } from './scoring';
 
 const GENERATORS = [
@@ -14,7 +14,7 @@ const GENERATORS = [
   generateFrictionThemesInsight,
   generateReviewerBottleneckInsight,
   generateAvailabilityDeadzoneInsight,
-  generateContentBottlenecksInsight,
+  // generateContentBottlenecksInsight,
 ];
 
 export async function buildInsights(args: BuildInsightContextArgs): Promise<{

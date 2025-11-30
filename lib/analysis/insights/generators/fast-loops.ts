@@ -15,15 +15,21 @@ import {
   SizeBucket,
   TimeOfDayBucket,
 } from './shared';
-import { Insight } from '@/types/api/insights';
+import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
+
+const THRESHOLD_MIN_AUTHORED_PRS = 5;
+const THRESOLD_MAX_MEDIAN_RATIO = 0.85;
+const THRESHOLD_MIN_FAST_PRS = 4;
+const THRESOLD_MIN_SHARE_FOR_SIZE_OR_TIME = 0.45;
+const THRESHOLD_MIN_COUNT_FOR_SIZE_OR_TIME = 3;
+const THRESHOLD_MIN_SIZE_ENRICHMENT = 0.15;
 
 type FastLoopCandidate = PullRequest & {
   cycleTimeHours: number;
   sizeBucket: SizeBucket;
   timeOfDay: TimeOfDayBucket;
   dayBucket: DayBucket;
-  cleanPass: boolean;
 };
 
 type BucketCount<T extends string> = {
@@ -43,19 +49,61 @@ function bucketCounts<T extends string>(
   return Array.from(m.entries()).map(([key, count]) => ({ key, count }));
 }
 
-function pickDominantBucket<T extends string>(
-  counts: BucketCount<T>[],
-  total: number,
-  minShare = 0.5,
-  minCount = 3
-): BucketCount<T> | null {
-  if (!counts.length || total === 0) return null;
-  const sorted = [...counts].sort((a, b) => b.count - a.count);
-  const top = sorted[0];
-  const share = top.count / total;
-  if (top.count < minCount) return null;
-  if (share < minShare) return null;
-  return top;
+type EnrichedBucket<T extends string> = BucketCount<T> & {
+  fastShare: number;
+  overallShare: number;
+  enrichment: number;
+};
+
+function pickEnrichedDominantBucket<T extends string>(params: {
+  all: FastLoopCandidate[];
+  fast: FastLoopCandidate[];
+  pickKey: (c: FastLoopCandidate) => T;
+  minFastCount: number;
+  minFastShare: number;
+  minEnrichment: number;
+}): EnrichedBucket<T> | null {
+  const { all, fast, pickKey, minFastCount, minFastShare, minEnrichment } =
+    params;
+
+  if (!fast.length || !all.length) return null;
+
+  const allBuckets = bucketCounts(all, pickKey);
+  const fastBuckets = bucketCounts(fast, pickKey);
+
+  const overallShare = new Map<T, number>();
+  for (const b of allBuckets) {
+    overallShare.set(b.key, b.count / all.length);
+  }
+
+  const enriched: EnrichedBucket<T>[] = [];
+
+  for (const fb of fastBuckets) {
+    const fastShare = fb.count / fast.length;
+    const baseShare = overallShare.get(fb.key) ?? 0;
+    const enrichment = fastShare - baseShare;
+
+    if (fb.count < minFastCount) continue;
+    if (fastShare < minFastShare) continue;
+    if (enrichment < minEnrichment) continue;
+
+    enriched.push({
+      ...fb,
+      fastShare,
+      overallShare: baseShare,
+      enrichment,
+    });
+  }
+
+  if (!enriched.length) return null;
+
+  // Pick the most enriched bucket; break ties by fast count
+  enriched.sort((a, b) => {
+    if (b.enrichment !== a.enrichment) return b.enrichment - a.enrichment;
+    return b.count - a.count;
+  });
+
+  return enriched[0];
 }
 
 function formatFastLoopsBody(params: {
@@ -125,7 +173,6 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
       const sizeBucket = getSizeBucket(pr.linesChanged, pr.filesChanged);
       const timeOfDay = getTimeOfDayBucket(hour);
       const dayBucket = getDayBucket(weekdayIdx);
-      const cleanPass = (pr.blockingReviewCount ?? 0) === 0;
 
       return {
         ...pr,
@@ -133,12 +180,11 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
         sizeBucket,
         timeOfDay,
         dayBucket,
-        cleanPass,
       };
     })
     .filter((c) => c.cycleTimeHours > 0 && c.cycleTimeHours < MAX_HOURS_CUTOFF);
 
-  if (candidates.length < 5) return null;
+  if (candidates.length < THRESHOLD_MIN_AUTHORED_PRS) return null;
 
   // 2) Baseline median cycle time
   const baselineMedianHours = computeMedianClamped(
@@ -147,35 +193,50 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
   );
   if (baselineMedianHours <= 0) return null;
 
-  // 3) Define “fast” as <= 85% of median, but at least 2h faster
-  const maxFastHours = Math.max(2, baselineMedianHours * 0.85);
+  const maxFastHours = Math.max(
+    2,
+    baselineMedianHours * THRESOLD_MAX_MEDIAN_RATIO
+  );
   const fast = candidates.filter((c) => c.cycleTimeHours <= maxFastHours);
 
-  if (fast.length < 4) return null;
-
+  const totalFast = fast.length;
+  if (totalFast < THRESHOLD_MIN_FAST_PRS) return null;
   const fastMedianHours = computeMedianClamped(
     fast.map((c) => c.cycleTimeHours),
     { min: 0, max: MAX_HOURS_CUTOFF }
   );
   if (fastMedianHours <= 0) return null;
 
-  // 4) Look for a dominant pattern inside fast PRs
-  const totalFast = fast.length;
+  const topSize = pickEnrichedDominantBucket<SizeBucket>({
+    all: candidates,
+    fast,
+    pickKey: (c) => c.sizeBucket,
+    minFastCount: THRESHOLD_MIN_COUNT_FOR_SIZE_OR_TIME,
+    minFastShare: THRESOLD_MIN_SHARE_FOR_SIZE_OR_TIME,
+    minEnrichment: THRESHOLD_MIN_SIZE_ENRICHMENT,
+  });
 
-  const timeOfDayBuckets = bucketCounts(fast, (c) => c.timeOfDay);
-  const sizeBuckets = bucketCounts(fast, (c) => c.sizeBucket);
-  const dayBuckets = bucketCounts(fast, (c) => c.dayBucket);
-  const cleanPassBuckets = bucketCounts(fast, (c) =>
-    c.cleanPass ? 'clean' : 'non_clean'
-  );
+  // Enriched time-of-day bucket (morning/afternoon/evening/late-night)
+  const topTimeOfDay = pickEnrichedDominantBucket<TimeOfDayBucket>({
+    all: candidates,
+    fast,
+    pickKey: (c) => c.timeOfDay,
+    minFastCount: THRESHOLD_MIN_COUNT_FOR_SIZE_OR_TIME,
+    minFastShare: THRESOLD_MIN_SHARE_FOR_SIZE_OR_TIME,
+    minEnrichment: THRESHOLD_MIN_SIZE_ENRICHMENT,
+  });
 
-  const topTimeOfDay = pickDominantBucket(timeOfDayBuckets, totalFast, 0.45, 3);
-  const topSize = pickDominantBucket(sizeBuckets, totalFast, 0.45, 3);
-  const topDay = pickDominantBucket(dayBuckets, totalFast, 0.45, 3);
-  const topCleanPass = pickDominantBucket(cleanPassBuckets, totalFast, 0.55, 4);
+  // Enriched day-of-week bucket (early-week / mid-week / late-week etc.)
+  const topDay = pickEnrichedDominantBucket<DayBucket>({
+    all: candidates,
+    fast,
+    pickKey: (c) => c.dayBucket,
+    minFastCount: THRESHOLD_MIN_COUNT_FOR_SIZE_OR_TIME,
+    minFastShare: THRESOLD_MIN_SHARE_FOR_SIZE_OR_TIME,
+    minEnrichment: THRESHOLD_MIN_SIZE_ENRICHMENT,
+  });
 
-  // 5) Choose the most narratively useful pattern
-  type PatternKind = 'size+time' | 'time' | 'day' | 'clean';
+  type PatternKind = 'size+time' | 'time' | 'day';
   let patternKind: PatternKind | null = null;
 
   if (topSize && topTimeOfDay) {
@@ -184,8 +245,6 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
     patternKind = 'time';
   } else if (topDay) {
     patternKind = 'day';
-  } else if (topCleanPass) {
-    patternKind = 'clean';
   }
 
   if (!patternKind) return null;
@@ -210,10 +269,6 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
     patternDescription = `PRs you send for review on ${dayLabel}`;
     emphasis = `${dayLabel} are your strongest merge window`;
     title = `PRs reviewed on ${dayLabel} tend to merge faster`;
-  } else if (patternKind === 'clean' && topCleanPass) {
-    patternDescription = 'PRs that are approved on the first review';
-    emphasis = 'first-pass approvals correlate with fast merges';
-    title = 'Clean-pass PRs are your fastest loops';
   } else {
     return null;
   }
@@ -265,6 +320,36 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
     personalization,
   });
 
+  const relatedItems: InsightRelatedItem[] = fast
+    .slice()
+    .sort((a, b) => a.cycleTimeHours - b.cycleTimeHours)
+    .slice(0, 8)
+    .map((pr) => ({
+      entityType: 'pull_request' as const,
+      id: pr.id,
+      title: `#${pr.prNumber} · ${pr.title}`,
+      htmlUrl: pr.htmlUrl ?? undefined,
+      stats: [
+        {
+          label: 'Cycle time',
+          value: `${pr.cycleTimeHours.toFixed(1)}h`,
+        },
+        ...(typeof pr.linesChanged === 'number'
+          ? [
+              {
+                label: 'Lines changed',
+                value: String(pr.linesChanged),
+              },
+            ]
+          : []),
+      ],
+      meta: {
+        sizeBucket: pr.sizeBucket,
+        timeOfDay: pr.timeOfDay,
+        dayBucket: pr.dayBucket,
+      },
+    }));
+
   const insight: Insight = {
     id: 'fast-loops:baseline',
     kind: 'fast_loops',
@@ -290,20 +375,52 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
         importance: 'primary',
       },
     ],
-    // metrics: {
-    //   baselineMedianHours,
-    //   fastMedianHours,
-    //   sampleSize: fast.length,
-    //   totalPrCount: candidates.length,
-    // },
-    meta: {
-      patternKind,
-      topTimeOfDay: topTimeOfDay?.key ?? null,
-      topSize: topSize?.key ?? null,
-      topDay: topDay?.key ?? null,
-      topCleanPassShare: topCleanPass ? topCleanPass.count / totalFast : null,
-    },
     score,
+    relatedItems,
+    transparency: {
+      summary:
+        'We highlighted this because this pattern of PRs consistently merges faster than your typical PRs in this period.',
+      bullets: [
+        `Looked at ${candidates.length} merged PRs with a ready-for-review and merge time in the last 4 weeks.`,
+        `Computed a baseline median cycle time of ${baselineMedianHours.toFixed(
+          1
+        )}h from ready-for-review to merge.`,
+        `Marked PRs as "fast-loop" when their cycle time was ≤ ${Math.round(
+          THRESOLD_MAX_MEDIAN_RATIO * 100
+        )}% of that baseline and at least 2 hours faster.`,
+        `Required at least ${THRESHOLD_MIN_FAST_PRS} fast-loop PRs and a dominant ${
+          patternKind === 'day'
+            ? 'day-of-week'
+            : patternKind === 'time'
+              ? 'time-of-day'
+              : 'size + time-of-day'
+        } bucket covering at least ${Math.round(
+          THRESOLD_MIN_SHARE_FOR_SIZE_OR_TIME * 100
+        )}% of fast-loop PRs (with ≥ ${
+          THRESHOLD_MIN_COUNT_FOR_SIZE_OR_TIME
+        } examples).`,
+      ],
+      thresholds: [
+        {
+          key: 'improvementRatio',
+          label: 'Fast-loop vs baseline cycle time',
+          actual: Number(improvementRatio.toFixed(2)),
+          condition: '≥ 1.2× faster than baseline',
+        },
+        {
+          key: 'fastShare',
+          label: 'Fast-loop share of merged PRs',
+          actual: Number(fastShare.toFixed(2)),
+          condition: '≥ 0.15 (15%) of merged PRs in this window',
+        },
+        {
+          key: 'sampleSize',
+          label: 'Fast-loop sample size',
+          actual: fast.length,
+          condition: `≥ ${THRESHOLD_MIN_FAST_PRS} PRs`,
+        },
+      ],
+    },
   };
 
   return insight;

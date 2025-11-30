@@ -1,7 +1,7 @@
 import { InsightContext, InsightDraft } from '../types';
 import { computeMedianClamped } from '@/lib/utils/math';
 import { MAX_HOURS_CUTOFF } from './shared';
-import { Insight } from '@/types/api/insights';
+import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 
 type ReviewerStats = {
@@ -18,6 +18,8 @@ const THRESHOLD_MIN_AUTHORED_PRS = 5;
 const THRESHOLD_MIN_REVIEWS = 5;
 const THRESHOLD_MIN_FIRST_REVIEWS_FOR_REVIEWER = 3;
 const THRESHOLD_MIN_SHARE_OF_FIRST_REVIEWS = 0.5;
+const THRESHOLD_MIN_SLOWER_PERCENTAGE = 20;
+const THRESHOLD_MIN_SLOWER_HOURS = 2;
 
 export function generateReviewerBottleneckInsight(
   ctx: InsightContext
@@ -87,13 +89,14 @@ export function generateReviewerBottleneckInsight(
     const firstShare = firstCount / totalFirstReviews;
 
     // Heuristic thresholds for “bottleneck”:
-    // - at least ~30–40% of your first reviews
+    // - a significant chunk of your first reviews
     // - noticeably slower than baseline
     const isHeavilyReliedOn =
       firstShare >= THRESHOLD_MIN_SHARE_OF_FIRST_REVIEWS;
     const isNoticeablySlow =
-      medianLatencyHours >= baselineMedianHours * 1.25 &&
-      medianLatencyHours - baselineMedianHours >= 0.5; // at least 2h slower
+      medianLatencyHours >=
+        baselineMedianHours * (1 + THRESHOLD_MIN_SLOWER_PERCENTAGE / 100) &&
+      medianLatencyHours - baselineMedianHours >= THRESHOLD_MIN_SLOWER_HOURS;
 
     if (!isHeavilyReliedOn || !isNoticeablySlow) continue;
 
@@ -167,6 +170,31 @@ export function generateReviewerBottleneckInsight(
     personalization,
   });
 
+  const relatedItems: InsightRelatedItem[] = reviewsOnAuthoredPrs
+    .slice()
+    .filter((r) => r.wasFirstReview && r.reviewerLogin === reviewerLabel)
+    .map((r) => {
+      const hours = (r.reviewLatencySeconds ?? 0) / 3600;
+      return {
+        entityType: 'review',
+        id: r.id,
+        title: r.state,
+        subtitle: `Review on PR ${r.prId}`,
+        htmlUrl: r.htmlUrl,
+        stats: [
+          { label: 'Latency', value: `${hours.toFixed(1)}h` },
+          { label: 'First review?', value: 'Yes' },
+        ],
+        meta: {
+          prId: r.prId,
+          latencyHours: hours,
+          submittedAt: r.submittedAt,
+        },
+      } as InsightRelatedItem;
+    })
+    .sort((a, b) => b.meta?.latencyHours - a.meta?.latencyHours)
+    .slice(0, 10);
+
   const insight: Insight = {
     id: `review-bottlenecks:reviewer:${reviewerLabel}`,
     kind: 'bottlenecks',
@@ -175,7 +203,6 @@ export function generateReviewerBottleneckInsight(
     emphasis,
     body,
     timeWindowLabel: 'Last 4 weeks',
-
     stats: [
       {
         label: 'Share of first reviews',
@@ -193,21 +220,49 @@ export function generateReviewerBottleneckInsight(
         importance: 'primary',
       },
     ],
-
-    // metrics: {
-    //   reviewer: reviewerLabel,
-    //   medianLatencyHours: best.medianLatencyHours,
-    //   baselineMedianHours,
-    //   firstReviewCount: best.firstReviewCount,
-    //   totalReviewCount: best.totalReviewCount,
-    //   totalFirstReviews,
-    // },
-
-    meta: {
-      categories: ['reviews', 'bottlenecks'],
-      simulated: false,
-    },
     score,
+    transparency: {
+      summary:
+        'Shown because one reviewer is handling a large share of your first reviews and is noticeably slower than your overall baseline.',
+      bullets: [
+        `This reviewer handled ${pctFirst}% of your first reviews in this window (threshold: at least ${Math.round(
+          THRESHOLD_MIN_SHARE_OF_FIRST_REVIEWS * 100
+        )}%).`,
+        `Their median response time is ${best.medianLatencyHours.toFixed(
+          1
+        )}h vs ${baselineMedianHours.toFixed(1)}h across all reviewers.`,
+        `We only surface this when they are both heavily relied on and at least ${THRESHOLD_MIN_SLOWER_PERCENTAGE}% and ${THRESHOLD_MIN_SLOWER_HOURS}h slower than your typical first review.`,
+      ],
+      thresholds: [
+        {
+          key: 'minAuthoredPrs',
+          label: 'Minimum authored PRs',
+          actual: authoredPrs.length,
+          condition: `>= ${THRESHOLD_MIN_AUTHORED_PRS}`,
+        },
+        {
+          key: 'minFirstReviewsForReviewer',
+          label: 'Min first reviews per reviewer',
+          actual: best.firstReviewCount,
+          condition: `>= ${THRESHOLD_MIN_FIRST_REVIEWS_FOR_REVIEWER}`,
+        },
+        {
+          key: 'shareOfFirstReviews',
+          label: 'Share of your first reviews',
+          actual: best.firstShare,
+          condition: `>= ${THRESHOLD_MIN_SHARE_OF_FIRST_REVIEWS} (~${Math.round(
+            THRESHOLD_MIN_SHARE_OF_FIRST_REVIEWS * 100
+          )}%)`,
+        },
+        {
+          key: 'latencyDeltaHours',
+          label: 'Extra hours vs baseline',
+          actual: latencyDelta,
+          condition: `>= ${THRESHOLD_MIN_SLOWER_HOURS}h and >= ${THRESHOLD_MIN_SLOWER_PERCENTAGE}% slower`,
+        },
+      ],
+    },
+    relatedItems,
   };
 
   return insight;
