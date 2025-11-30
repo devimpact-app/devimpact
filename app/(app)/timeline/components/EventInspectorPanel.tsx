@@ -37,7 +37,6 @@ function formatTime(iso: string) {
 }
 
 function extractEntityId(event: ActivityEvent): string | null {
-  console.log('event', event);
   if (!event.id) return null;
   const parts = event.id.split(':');
   if (parts.length < 2) return null;
@@ -92,8 +91,6 @@ export function EventInspectorPanel({
       cancelled = true;
     };
   }, [event.id]);
-
-  console.log('summary', summary);
 
   const latencyText = event.meta?.reviewLatencySeconds
     ? formatSeconds(event.meta?.reviewLatencySeconds)

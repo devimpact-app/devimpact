@@ -1,56 +1,57 @@
-import { MetricInput } from "./input";
-import { MetricResult } from "./output";
+import { MetricInput } from './input';
+import { MetricResult } from './output';
 
 export type MetricEntity =
-  | "pr" // authored PRs (your normalized `pull_requests`)
-  | "review" // normalized `reviews`
-  | "repo"
-  | "tenant";
+  | 'pr' // authored PRs (your normalized `pull_requests`)
+  | 'review' // normalized `reviews`
+  | 'repo'
+  | 'tenant';
 
 export type WhereOp =
   | {
       col: string;
-      op: "eq" | "neq" | "gt" | "gte" | "lt" | "lte";
+      op: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
       valRef?: string;
       val?: any;
     }
   | {
       col: string;
-      op: "between";
+      op: 'between';
       startRef?: string;
       endRef?: string;
       start?: any;
       end?: any;
     }
-  | { col: string; op: "in"; valsRef?: string; vals?: any[] }
-  | { col: string; op: "is_null" | "is_not_null" };
+  | { col: string; op: 'in'; valsRef?: string; vals?: any[] }
+  | { col: string; op: 'is_null' | 'is_not_null' };
 
 export type PlanFormula = {
-  kind: "plan";
-  source: "pullRequests" | "reviews"; // extend as needed
-  operation: "avg" | "sum" | "count";
+  kind: 'plan';
+  source: 'pullRequests' | 'reviews'; // extend as needed
+  operation: 'avg' | 'sum' | 'count' | 'median';
   column?: string;
+  timeColumn: string;
   where?: WhereOp[];
   groupBy?: string[]; // future use
 };
 
 type DerivedFormula = {
-  kind: "derived";
+  kind: 'derived';
   dependsOn: string[]; // metricIds
-  compute: "ratio"; // you can expand later
+  compute: 'ratio'; // you can expand later
   numerator: string; // metricId
   denominator: string; // metricId
 };
 
 /** Programmatic formula */
 export type FunctionFormula = {
-  kind: "function";
+  kind: 'function';
   compute: (input: MetricInput) => Promise<MetricResult>;
 };
 
 /** Raw SQL formula (parameterized) */
 export type SqlFormula = {
-  kind: "sql";
+  kind: 'sql';
   text: (input: MetricInput) => { sql: string; params: any[] };
 };
 
@@ -61,32 +62,38 @@ export type MetricFormula =
   | SqlFormula;
 
 export type MetricUnit =
-  | "seconds"
-  | "count"
-  | "ratio"
-  | "percent"
-  | "files"
-  | "lines";
+  | 'hours'
+  | 'count'
+  | 'ratio'
+  | 'percent'
+  | 'files'
+  | 'lines';
 
 export type MetricDisplayKind =
-  | "stat" // big number / KPI
-  | "timeseries" // line/area
-  | "histogram" // distribution
-  | "bar" // categorical bars
-  | "table" // rows
-  | "spark" // small sparkline in a stat card
-  | "gauge"; // target vs actual
+  | 'stat' // big number / KPI
+  | 'timeseries' // line/area
+  | 'histogram' // distribution
+  | 'bar' // categorical bars
+  | 'table' // rows
+  | 'spark' // small sparkline in a stat card
+  | 'gauge'; // target vs actual
 
 export type MetricDisplay = {
-  kind: MetricDisplayKind;
-  // Human-facing labels/hints
   label?: string; // overrides descriptor.title in UI, if desired
   description?: string; // short tooltip/help
-  decimals?: number; // suggested decimal places
-  unitSuffix?: string; // e.g., "s", "ms", "%"
-  // For charts
-  yAxisLabel?: string;
-  xAxisLabel?: string;
+  valueFormat?: {
+    // multiply the raw number by this before display (e.g. seconds → hours)
+    scale?: number; // e.g. 1 / 3600
+
+    // what to append after the formatted number, e.g. "h", "s", "%"
+    unitSuffix?: string; // e.g. "h"
+
+    // how many decimals to show after scaling
+    decimals?: number; // e.g. 1
+
+    // optional: hint for FE if you ever want different styling rules
+    kind?: 'duration' | 'ratio' | 'count';
+  };
 };
 
 export interface MetricDefinition {
@@ -95,10 +102,6 @@ export interface MetricDefinition {
   description: string;
   entity: MetricEntity;
   unit: MetricUnit;
-  source: {
-    table: "pullRequests" | "reviews";
-    columns: string[];
-  };
   display: MetricDisplay;
   cacheTtlSeconds?: number;
   formula: MetricFormula;

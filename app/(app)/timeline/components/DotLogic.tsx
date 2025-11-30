@@ -71,15 +71,12 @@ export function toDotsForWeek(
     6: [],
   };
 
-  console.log(events.map((ev) => ev.occurredAt));
   for (const ev of events) {
     const raw = new Date(ev.occurredAt);
-    console.log('raw', raw);
     if (Number.isNaN(raw.getTime())) continue;
 
     // 0–6 (Mon–Sun) using your helper
     const dayIndex = getLocalWeekdayIndex(raw, timezone);
-    console.log('day', dayIndex);
     if (dayIndex < 0 || dayIndex > 6) continue; // defensive, should never happen
 
     const local = toLocalDate(raw, timezone);

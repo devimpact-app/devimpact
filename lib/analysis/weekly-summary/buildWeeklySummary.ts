@@ -92,7 +92,7 @@ export async function buildWeeklySummary({
         number: pr.prNumber,
         title: pr.title,
         shortSummary: summary.shortSummary,
-        tags: summary.tags ?? [],
+        tags: summary.typeTags ?? [],
         htmlUrl: pr.htmlUrl ?? undefined,
       } as WeeklySummary['shipped'][0];
     })
@@ -101,7 +101,7 @@ export async function buildWeeklySummary({
   // What you worked on - focus
   const allFocusTags = mergedPrs.flatMap((pr) => {
     const s = summariesByPrId.get(pr.id);
-    return s?.tags ?? [];
+    return s?.typeTags ?? [];
   });
   const freq = buildTagFrequencyMap(allFocusTags);
   const focusAreas = pickTopFocusAreas(freq);

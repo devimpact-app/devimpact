@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getActivityEventsForRange } from '@/lib/analysis/activity/getActivityEventsForRange';
 import { auth } from '@/lib/auth'; // if using NextAuth
 import { jsonOK, jsonUnauthorized } from '../_lib/http';
@@ -6,8 +6,9 @@ import {
   ActivityEvent,
   ActivityEventsResponseSchema,
 } from '@/types/api/timeline';
+import { withSentryUser } from '@/lib/withSentryUser';
 
-export async function GET(req: Request) {
+export const GET = withSentryUser(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
 
   const session = await auth();
@@ -49,4 +50,4 @@ export async function GET(req: Request) {
   });
 
   return jsonOK({ events: parsed.events });
-}
+});
