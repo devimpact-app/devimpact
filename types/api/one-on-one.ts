@@ -7,6 +7,7 @@ export const OneOnOneMetricSnapshotSchema = z.object({
   unit: z.string().optional(),
   windowStart: z.string(),
   windowEnd: z.string(),
+  windowKind: z.enum(['short', 'medium', 'long']),
   value: z.number().nullable(),
   formattedValue: z.string().optional(),
 });
@@ -59,6 +60,7 @@ export const OneOnOnePrepSchema = z.object({
   meetingAt: z.string().nullable(),
   shortWindowStart: z.string(),
   shortWindowEnd: z.string(),
+  shortWindowWeeks: z.number().int().optional(),
   mediumWindowStart: z.string(),
   mediumWindowEnd: z.string(),
 
@@ -80,13 +82,22 @@ export type OneOnOnePrep = z.infer<typeof OneOnOnePrepSchema>;
 
 export const CreateOneOnOneInput = z.object({
   meetingAt: z.string().optional(),
+  shortWindowStart: z.string().optional(),
   counterpartLabel: z.string().optional(),
   counterpartType: CounterpartTypeEnum.optional(),
   title: z.string().optional(),
   timezone: z.string(),
 
   // For the short window
-  windowWeeks: z.union([z.literal(1), z.literal(2), z.literal(4)]).default(2),
+  windowWeeks: z
+    .union([
+      z.literal(1),
+      z.literal(2),
+      z.literal(4),
+      z.literal(8),
+      z.literal(12),
+    ])
+    .optional(),
 });
 export type TCreateOneOnOneInput = z.infer<typeof CreateOneOnOneInput>;
 

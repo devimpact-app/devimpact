@@ -56,7 +56,7 @@ export const POST = withSentryUser(
     }
 
     const prepPayload = await generateOneOnOnePrep({
-      windowWeeks: inferWindowWeeks(row.shortWindowStart, row.shortWindowEnd),
+      windowWeeks: row.shortWindowWeeks as any,
       title: row.title ?? undefined,
       timezone,
       db,
@@ -70,6 +70,7 @@ export const POST = withSentryUser(
       .update(oneOnOneSessions)
       .set({
         ...prepPayload,
+        meetingAt: row.meetingAt,
         payload: prepPayload.payload,
         updatedAt: new Date(),
         status: 'ready',

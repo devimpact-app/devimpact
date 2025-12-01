@@ -3,10 +3,11 @@ import { NewOneOnOneSession } from '@/lib/db/schema/prep';
 import { weeksAgo } from '@/lib/utils/date';
 import { Insight } from '@/types/api/insights';
 import {
-  OneOnOneMetricSnapshot,
   OneOnOneTalkingPoint,
   TCreateOneOnOneInput,
 } from '@/types/api/one-on-one';
+
+const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
 type GenerateOneOnOnePrepParams = TCreateOneOnOneInput & {
   tenantId: string;
@@ -102,8 +103,10 @@ export async function generateOneOnOnePrep(
   const {
     tenantId,
     timezone,
+    title,
     meetingAt: rawMeetingAt,
-    windowWeeks = 2,
+    windowWeeks,
+    shortWindowStart,
     counterpartLabel,
     counterpartType,
     db,
@@ -111,11 +114,22 @@ export async function generateOneOnOnePrep(
 
   const meetingAt = rawMeetingAt ? new Date(rawMeetingAt) : new Date();
 
-  const shortEnd = meetingAt;
-  const shortStart = weeksAgo(meetingAt, windowWeeks);
+  let shortStart = null;
+  let shortEnd = meetingAt;
+  if (shortWindowStart) {
+    shortStart = new Date(shortWindowStart);
+  } else {
+    shortStart = weeksAgo(shortEnd, windowWeeks ?? 2);
+  }
 
+  const shortDurationMs = shortEnd.getTime() - shortStart.getTime();
+  const shortWindowWeeks = Math.max(
+    1,
+    Math.round(shortDurationMs / MS_PER_WEEK)
+  );
+  const mediumWindowWeeks = Math.max(4, shortWindowWeeks);
   const mediumEnd = meetingAt;
-  const mediumStart = weeksAgo(meetingAt, 4);
+  const mediumStart = weeksAgo(mediumEnd, mediumWindowWeeks);
 
   // 2) Fetch insights + metrics in parallel
   const [shortInsights, mediumInsights, metricsByWindow] = await Promise.all([
@@ -181,16 +195,17 @@ export async function generateOneOnOnePrep(
     month: 'short',
     day: 'numeric',
   });
-  const title = `1:1 prep – ${formatter.format(meetingAt)}`;
+  const finalTitle = title ?? `1:1 prep – ${formatter.format(meetingAt)}`;
 
   const prep: NewOneOnOneSession = {
     tenantId,
     meetingAt,
     shortWindowStart: shortStart,
     shortWindowEnd: shortEnd,
+    shortWindowWeeks: windowWeeks,
     mediumWindowStart: mediumStart,
     mediumWindowEnd: mediumEnd,
-    title,
+    title: finalTitle,
     payload: {
       // summary: `1:1 prep for ${rowP} covering ${mediumStart}–${mediumEnd}. Focus on delivery, code health, and current blockers.`,
       summary: '',
@@ -274,6 +289,7 @@ export async function generateOneOnOnePrep(
           unit: 'PRs',
           windowStart: mediumStart.toISOString(),
           windowEnd: mediumEnd.toISOString(),
+          windowKind: 'medium',
           value: 24,
           formattedValue: '24 PRs merged',
         },

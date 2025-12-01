@@ -38,7 +38,7 @@ export function ChartTooltip({
     "
     >
       <div className="text-[10px] text-slate-400 mb-1">
-        {new Date(label as number).toLocaleDateString()}
+        Week of {new Date(label as number).toLocaleDateString()}
       </div>
 
       <div className="text-xs text-slate-300">

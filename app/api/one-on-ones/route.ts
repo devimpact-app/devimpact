@@ -27,6 +27,7 @@ export const POST = withSentryUser(async (req: NextRequest) => {
 
   const parsed = CreateOneOnOneInput.safeParse(rawBody);
   if (!parsed.success) {
+    console.log(parsed.error);
     const firstIssue = parsed.error.issues[0];
     return jsonBadRequest(firstIssue?.message ?? 'Invalid request body');
   }

@@ -7,6 +7,7 @@ import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer
 import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
 import { WeekNavigator } from '@/components/dates/WeekPicker';
 import InsightsSectionContainer from '@/components/insights/InsightsSectionContainer';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   user: {
@@ -18,6 +19,8 @@ type Props = {
 };
 
 export default function DashboardClient({ user }: Props) {
+  const router = useRouter();
+
   const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
     useWeekNavigation();
 
@@ -28,6 +31,21 @@ export default function DashboardClient({ user }: Props) {
     () => (user.name ? user.name.split(' ')[0] : 'there'),
     [user.name]
   );
+
+  function handleOneOnOne() {
+    const weekStart = startISO;
+    const params = new URLSearchParams();
+
+    params.set('shortWindowStart', weekStart);
+
+    const weekLabel = new Date(weekStart).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    });
+    params.set('title', `1:1 – Week of ${weekLabel}`);
+
+    router.push(`/prep/one-on-one?${params.toString()}`);
+  }
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -53,7 +71,11 @@ export default function DashboardClient({ user }: Props) {
         </div>
       </header>
 
-      <WeeklySummaryCard startISO={startISO} endISO={endISO} />
+      <WeeklySummaryCard
+        startISO={startISO}
+        endISO={endISO}
+        handleOneOnOne={handleOneOnOne}
+      />
 
       <InsightsSectionContainer />
 
@@ -86,7 +108,7 @@ export default function DashboardClient({ user }: Props) {
 
           <button
             type="button"
-            onClick={() => {}}
+            onClick={handleOneOnOne}
             className="
         inline-flex items-center gap-1.5
         rounded-full bg-[#1D283A]

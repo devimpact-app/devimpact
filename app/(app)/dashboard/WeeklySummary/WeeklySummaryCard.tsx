@@ -5,7 +5,7 @@ type WeeklySummaryCardProps = {
   summary?: WeeklySummary;
   isLoading?: boolean;
   error?: string | null;
-  onOpenOneOnOne?: () => void;
+  handleOneOnOne: () => void;
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,7 @@ export function WeeklySummaryCard({
   summary,
   isLoading,
   error,
-  onOpenOneOnOne,
+  handleOneOnOne,
 }: WeeklySummaryCardProps) {
   if (isLoading) {
     return (
@@ -101,7 +101,7 @@ export function WeeklySummaryCard({
         <div className="mt-3 flex flex-col items-start sm:items-end gap-1">
           <button
             type="button"
-            onClick={onOpenOneOnOne}
+            onClick={handleOneOnOne}
             className="
                 rounded-full 
                 px-3 py-1.5

@@ -7,6 +7,7 @@ import {
   pgEnum,
   unique,
   index,
+  integer,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
 import {
@@ -60,6 +61,7 @@ export const oneOnOneSessions = pgTable(
       .default('manager'),
 
     // Time windows used to generate the prep
+    shortWindowWeeks: integer('short_window_weeks').notNull().default(2),
     shortWindowStart: timestamp('short_window_start', {
       withTimezone: true,
     }).notNull(),

@@ -14,7 +14,7 @@ import { StatDataset, StatResult } from './types/output';
 type MetricInputForBatch = TMetricsBatchInput['requests'][0];
 
 function makeInputKey(input: MetricInputForBatch): string {
-  return [input.metricId, input.input.start, input.input.windowWeeks].join('|');
+  return [input.metricId, input.input.start].join('|');
 }
 
 function expandInputsWithDependencies(
@@ -299,10 +299,6 @@ export async function runBatchServer(
         metricId: r.metricId,
         input: {
           ...r.window,
-          windowWeeks: inferWindowWeeks(
-            new Date(r.window.start),
-            new Date(r.window.end)
-          ),
         } as unknown as TMetricInput,
       });
       console.log('key', key);

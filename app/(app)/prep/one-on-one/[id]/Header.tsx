@@ -14,8 +14,7 @@ function prettyCounterpartType(counterpartType: string) {
 }
 
 const statusStyles: Record<string, string> = {
-  draft: 'border-indigo-500/70 bg-indigo-600/20 text-indigo-100',
-  ready: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  ready: 'border-indigo-500/70 bg-indigo-600/20 text-indigo-100',
   archived: 'bg-slate-100 text-slate-700 border-slate-200',
   error: 'bg-rose-100 text-rose-800 border-rose-200',
 };

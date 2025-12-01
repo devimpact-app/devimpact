@@ -11,6 +11,7 @@ export function formatOneOnOneResponse(row: OneOnOneSession) {
     meetingAt: rowProps.meetingAt.toISOString(),
     shortWindowStart: rowProps.shortWindowStart.toISOString(),
     shortWindowEnd: rowProps.shortWindowEnd.toISOString(),
+    shortWindowWeeks: rowProps.shortWindowWeeks ?? undefined,
     mediumWindowStart: rowProps.mediumWindowStart.toISOString(),
     mediumWindowEnd: rowProps.mediumWindowEnd.toISOString(),
 
@@ -24,6 +25,7 @@ export function formatOneOnOneResponse(row: OneOnOneSession) {
   const parsed = OneOnOneResponse.safeParse({ prep });
 
   if (!parsed.success) {
+    console.log(parsed.error);
     throw new Error('Failed to format one-on-one response');
   }
 
