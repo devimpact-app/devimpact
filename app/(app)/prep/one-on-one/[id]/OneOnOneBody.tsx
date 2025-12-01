@@ -21,9 +21,11 @@ const SECTION_ORDER: { kind: TOneOnOneSectionKind; label: string }[] = [
 export function OneOnOneBody({
   prep,
   onClickInsight,
+  onClickMetric,
 }: {
   prep: OneOnOnePrep;
   onClickInsight: (insight: Insight) => void;
+  onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
 }) {
   const { talkingPoints, usedInsights, usedMetrics } = prep;
 
@@ -51,6 +53,7 @@ export function OneOnOneBody({
           usedInsights={usedInsights}
           usedMetrics={usedMetrics}
           onClickInsight={onClickInsight}
+          onClickMetric={onClickMetric}
         />
       ))}
       {emptySections.map((section) => (
@@ -76,6 +79,7 @@ type SectionProps = {
   usedInsights: Insight[];
   usedMetrics: OneOnOneMetricSnapshot[];
   onClickInsight: (insight: Insight) => void;
+  onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
 };
 
 function OneOnOneSection({
@@ -84,6 +88,7 @@ function OneOnOneSection({
   usedInsights,
   usedMetrics,
   onClickInsight,
+  onClickMetric,
 }: SectionProps) {
   return (
     <div className="pl-3 border-l border-indigo-400/60 space-y-4">
@@ -100,6 +105,7 @@ function OneOnOneSection({
             usedMetrics={usedMetrics}
             isFirst={idx === 0}
             onClickInsight={onClickInsight}
+            onClickMetric={onClickMetric}
           />
         ))}
       </ul>
@@ -113,6 +119,7 @@ type TalkingPointProps = {
   usedMetrics: OneOnOneMetricSnapshot[];
   isFirst: boolean;
   onClickInsight: (insight: Insight) => void;
+  onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
 };
 
 function TalkingPointRow({
@@ -120,6 +127,7 @@ function TalkingPointRow({
   usedInsights,
   usedMetrics,
   onClickInsight,
+  onClickMetric,
 }: TalkingPointProps) {
   const relatedInsights = usedInsights.filter((ins) =>
     tp.relatedInsightIds.includes(ins.id)
@@ -146,7 +154,11 @@ function TalkingPointRow({
       {(relatedInsights.length > 0 || relatedMetrics.length > 0) && (
         <div className="mt-1.5 ml-2 flex flex-wrap gap-1.5">
           {relatedMetrics.map((metric) => (
-            <MetricPill key={metric.id} metric={metric} />
+            <MetricPill
+              key={metric.id}
+              metric={metric}
+              onClick={onClickMetric}
+            />
           ))}
           {relatedInsights.map((insight) => (
             <InsightPill
@@ -161,7 +173,13 @@ function TalkingPointRow({
   );
 }
 
-function MetricPill({ metric }: { metric: OneOnOneMetricSnapshot }) {
+function MetricPill({
+  metric,
+  onClick,
+}: {
+  metric: OneOnOneMetricSnapshot;
+  onClick: (metric: OneOnOneMetricSnapshot) => void;
+}) {
   const label = metric.label;
   const value =
     metric.formattedValue ??
@@ -172,7 +190,7 @@ function MetricPill({ metric }: { metric: OneOnOneMetricSnapshot }) {
   return (
     <button
       type="button"
-      onClick={() => {}}
+      onClick={() => onClick(metric)}
       className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-surface-lower px-2 py-1 text-[10px] text-text-secondary hover:bg-white/5 hover:text-text-primary transition"
     >
       <BarChart3 className="h-3 w-3" />

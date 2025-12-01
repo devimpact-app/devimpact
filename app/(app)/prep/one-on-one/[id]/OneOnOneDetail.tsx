@@ -1,12 +1,13 @@
 'use client';
 
-import { OneOnOnePrep } from '@/types/api/one-on-one';
+import { OneOnOneMetricSnapshot, OneOnOnePrep } from '@/types/api/one-on-one';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { OneOnOneHeader } from './Header';
 import { OneOnOneBody } from './OneOnOneBody';
 import { Insight } from '@/types/api/insights';
-import { InsightPanel } from '@/app/(app)/insights/InsightPanel';
+import { InsightPanel } from '@/components/insights/InsightPanel';
+import { MetricPanel } from '@/components/metrics/MetricPanel';
 
 type Status = 'loading' | 'ready' | 'error' | 'not_found';
 
@@ -79,6 +80,8 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
   const [status, setStatus] = useState<Status>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
+  const [selectedMetric, setSelectedMetric] =
+    useState<OneOnOneMetricSnapshot | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -225,6 +228,9 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
             onClickInsight={(insight) => {
               setSelectedInsight(insight);
             }}
+            onClickMetric={(metric) => {
+              setSelectedMetric(metric);
+            }}
           />
         </div>
       </main>
@@ -233,6 +239,13 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
           key={selectedInsight.id}
           insight={selectedInsight}
           onClose={() => setSelectedInsight(null)}
+        />
+      )}
+      {selectedMetric && (
+        <MetricPanel
+          key={selectedMetric.id}
+          metric={selectedMetric}
+          onClose={() => setSelectedMetric(null)}
         />
       )}
     </>

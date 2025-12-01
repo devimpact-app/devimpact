@@ -7,7 +7,7 @@ import { useInsights } from '@/components/insights/useInsights';
 import { KeyMetricsPanel } from './KeyMetricsView';
 import { useState } from 'react';
 import { Insight } from '@/types/api/insights';
-import { InsightPanel } from './InsightPanel';
+import { InsightPanel } from '../../../components/insights/InsightPanel';
 
 type Props = {
   user: {
@@ -81,12 +81,7 @@ export default function InsightsClient({ user }: Props) {
           </div>
 
           <aside className="hidden no-scrollbar lg:block overflow-y-auto pl-2">
-            <KeyMetricsPanel
-              range={{
-                start,
-                end,
-              }}
-            />
+            <KeyMetricsPanel start={start} windowWeeks={numWeeks} />
           </aside>
         </section>
       </main>

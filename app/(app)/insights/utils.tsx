@@ -2,12 +2,12 @@ import type { TTimeseriesResult } from '@/types/api/metrics';
 
 export function toChartPoints(result: TTimeseriesResult) {
   const series = result.series[0];
+  const now = new Date();
   return series.points
-    .filter((d) => d.value != null)
     .map((d) => ({
-      // using midpoint as x
-      x: new Date(d.bucketMidpoint),
-      value: d.value as number,
+      x: new Date(d.bucketStart),
+      value: d.value ?? (0 as number),
+      isDotted: new Date(d.bucketEnd) > now,
     }))
     .sort((a, b) => a.x.getTime() - b.x.getTime());
 }

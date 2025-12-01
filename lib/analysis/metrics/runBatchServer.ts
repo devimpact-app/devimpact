@@ -8,20 +8,13 @@ import {
 import { runMetric } from './engine/runMetric';
 import { db } from '@/lib/db/client';
 import { METRIC_CATALOG_MAP } from './catalog';
-import { toDate } from '@/lib/utils/date';
+import { computeWindowEnd, inferWindowWeeks, toDate } from '@/lib/utils/date';
 import { StatDataset, StatResult } from './types/output';
 
 type MetricInputForBatch = TMetricsBatchInput['requests'][0];
 
 function makeInputKey(input: MetricInputForBatch): string {
-  return [input.metricId, input.input.start, input.input.end].join('|');
-}
-
-function sameContext(a: TMetricInput, b: TMetricInput): boolean {
-  return (
-    makeInputKey({ input: a, metricId: '' }) ===
-    makeInputKey({ input: b, metricId: '' })
-  );
+  return [input.metricId, input.input.start, input.input.windowWeeks].join('|');
 }
 
 function expandInputsWithDependencies(
@@ -59,6 +52,7 @@ export async function runBatchServer(
   const inputs = expandInputsWithDependencies(input.requests);
   const requestedKeys = new Set(input.requests.map(makeInputKey));
 
+  console.log('requestedKeys', requestedKeys);
   const planInputs: MetricInputForBatch[] = [];
   const derivedInputs: MetricInputForBatch[] = [];
 
@@ -82,8 +76,7 @@ export async function runBatchServer(
   for (const r of planInputs) {
     const def = METRIC_CATALOG_MAP[r.metricId];
     const start = toDate(r.input.start);
-    const end = toDate(r.input.end);
-    if (!start || !end || start > end) {
+    if (!start) {
       // Push invalid date error if bad range
       planResults.push({
         metricId: r.metricId,
@@ -104,7 +97,8 @@ export async function runBatchServer(
         ...r.input,
         tenantId,
         start,
-        end,
+        end: computeWindowEnd(start, r.input.windowWeeks),
+        windowWeeks: r.input.windowWeeks,
         comparison:
           r.input.comparison?.kind === 'custom'
             ? {
@@ -196,10 +190,7 @@ export async function runBatchServer(
           title: def.display?.label ?? def.name,
           description: def.display?.description ?? def.description,
           data: datasets,
-          window: {
-            start: input.input.start,
-            end: input.input.end,
-          },
+          window: numRes.window,
           valueFormat: def.display.valueFormat ?? undefined,
         };
 
@@ -227,6 +218,7 @@ export async function runBatchServer(
             bucketEnd: string;
             bucketMidpoint: string;
             value: number | null;
+            status: 'partial' | 'complete';
           }
         >();
         for (const p of denSeries.points) {
@@ -248,6 +240,7 @@ export async function runBatchServer(
             bucketEnd: p.bucketEnd,
             bucketMidpoint: p.bucketMidpoint,
             value: v,
+            status: p.status,
           };
         });
 
@@ -257,10 +250,7 @@ export async function runBatchServer(
           title: def.display?.label ?? def.name,
           description: def.display?.description ?? def.description,
           unit: def.unit,
-          window: {
-            start: input.input.start,
-            end: input.input.end,
-          },
+          window: numRes.window,
           series: [
             {
               label: def.display?.label ?? def.name,
@@ -285,10 +275,7 @@ export async function runBatchServer(
         shape: input.input.shape, // whatever was requested
         title: def.display?.label ?? def.name,
         unit: def.unit,
-        window: {
-          start: input.input.start,
-          end: input.input.end,
-        },
+        window: numRes.window,
         ...(input.input.shape === 'stat'
           ? { data: [{ kind: 'current', value: null }] }
           : { series: [] }),
@@ -312,8 +299,13 @@ export async function runBatchServer(
         metricId: r.metricId,
         input: {
           ...r.window,
-        } as TMetricInput,
+          windowWeeks: inferWindowWeeks(
+            new Date(r.window.start),
+            new Date(r.window.end)
+          ),
+        } as unknown as TMetricInput,
       });
+      console.log('key', key);
       return requestedKeys.has(key);
     }),
   };

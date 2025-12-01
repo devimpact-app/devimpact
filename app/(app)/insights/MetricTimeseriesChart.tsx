@@ -44,13 +44,16 @@ export function MetricTimeseriesChart({ result }: MetricTimeseriesChartProps) {
   const points = toChartPoints(result);
   if (!points.length) return null;
 
-  const data = points.map((p) => ({
+  const base = points.map((p) => ({
     ts: p.x.getTime(),
     value: p.value,
+    isDotted: p.isDotted,
   }));
 
-  const dataMin = data[0]?.ts;
-  const dataMax = data[data.length - 1]?.ts;
+  const dataMin = base[0]?.ts;
+  const dataMax = base[base.length - 1]?.ts;
+
+  const firstDottedIdx = base.findIndex((d) => d.isDotted);
 
   let description = '';
   if (result.description) {
@@ -59,6 +62,19 @@ export function MetricTimeseriesChart({ result }: MetricTimeseriesChartProps) {
       description = `${result.description} in ${result.unit}`;
     }
   }
+
+  const data = base.map((d, idx) => {
+    const isPartialSegment =
+      firstDottedIdx !== -1 &&
+      (idx === firstDottedIdx || idx === firstDottedIdx - 1);
+
+    return {
+      ts: d.ts,
+      isDotted: d.isDotted,
+      solidValue: d.isDotted ? null : d.value,
+      dottedValue: isPartialSegment ? d.value : null,
+    };
+  });
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
@@ -110,9 +126,18 @@ export function MetricTimeseriesChart({ result }: MetricTimeseriesChartProps) {
             />
             <Line
               type="monotone"
-              dataKey="value"
+              dataKey="solidValue"
               dot={false}
               strokeWidth={1.6}
+              activeDot={{ r: 3 }}
+            />
+
+            <Line
+              type="monotone"
+              dataKey="dottedValue"
+              dot={false}
+              strokeWidth={1.6}
+              strokeDasharray="4 4"
               activeDot={{ r: 3 }}
             />
           </LineChart>

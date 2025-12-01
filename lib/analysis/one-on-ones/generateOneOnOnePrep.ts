@@ -202,7 +202,7 @@ export async function generateOneOnOnePrep(
           body: 'Closed out the lingering auth cleanup PR (#4821) that had been stalled for two weeks. Reduced ~600 lines of dead code.',
           order: 1,
           relatedInsightIds: ['shipping_momentum:last_4_weeks'],
-          relatedMetricIds: ['prs_merged:last_4_weeks'],
+          relatedMetricIds: ['pr.authored_merged_count.v1'],
         },
         {
           id: 'tp-2',
@@ -211,7 +211,7 @@ export async function generateOneOnOnePrep(
           body: 'Delivered the initial settings panel. Minimal scope but unblocked design and helped backend validate API shape.',
           order: 2,
           relatedInsightIds: [],
-          relatedMetricIds: ['prs_merged:last_4_weeks'],
+          relatedMetricIds: ['pr.authored_merged_count.v1'],
         },
         {
           id: 'tp-3',
@@ -220,7 +220,7 @@ export async function generateOneOnOnePrep(
           body: 'The two PRs for notifications batching sat 4–5 days waiting for review, causing some context switching.',
           order: 3,
           relatedInsightIds: ['shipping_momentum:last_4_weeks'],
-          relatedMetricIds: ['prs_merged:last_4_weeks'],
+          relatedMetricIds: ['pr.authored_merged_count.v1'],
         },
         {
           id: 'tp-4',
@@ -269,7 +269,7 @@ export async function generateOneOnOnePrep(
 
       usedMetrics: [
         {
-          id: 'prs_merged:last_4_weeks',
+          id: 'pr.authored_merged_count.v1',
           label: 'PRs merged',
           unit: 'PRs',
           windowStart: mediumStart.toISOString(),

@@ -11,26 +11,27 @@ export const TABLES = {
 };
 export type TableId = keyof typeof TABLES;
 
-function getWeeklyBuckets(
-  start: Date,
-  end: Date
-): Array<{ start: Date; end: Date }> {
-  // normalize to avoid mutating original
+function getWeeklyBuckets(start: Date, windowWeeks: number) {
+  const now = new Date();
+  const maxEnd = new Date(start);
+  maxEnd.setDate(maxEnd.getDate() + windowWeeks * 7);
+
+  const buckets: { start: Date; end: Date; status: 'partial' | 'complete' }[] =
+    [];
+
   let cursor = new Date(start);
-  cursor.setHours(0, 0, 0, 0);
-
-  const buckets: { start: Date; end: Date }[] = [];
-
-  while (cursor < end) {
+  while (cursor < maxEnd) {
     const bucketStart = new Date(cursor);
     const bucketEnd = new Date(bucketStart);
     bucketEnd.setDate(bucketEnd.getDate() + 7);
 
+    const isPartial = bucketEnd > now;
+
     buckets.push({
       start: bucketStart,
-      end: bucketEnd > end ? end : bucketEnd,
+      end: bucketEnd,
+      status: isPartial ? 'partial' : 'complete',
     });
-
     cursor = bucketEnd;
   }
 
@@ -199,7 +200,7 @@ export async function executePlanFormula(
   }
 
   if (input.shape === 'timeseries') {
-    const buckets = getWeeklyBuckets(input.start, input.end);
+    const buckets = getWeeklyBuckets(input.start, input.windowWeeks);
 
     const points = await Promise.all(
       buckets.map(async (bucket) => {
@@ -219,6 +220,7 @@ export async function executePlanFormula(
             (bucket.start.getTime() + bucket.end.getTime()) / 2
           ).toISOString(),
           value,
+          status: bucket.status,
         };
       })
     );

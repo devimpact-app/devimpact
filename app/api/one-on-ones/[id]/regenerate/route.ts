@@ -13,31 +13,7 @@ import {
 } from '../../../_lib/http';
 import { generateOneOnOnePrep } from '@/lib/analysis/one-on-ones/generateOneOnOnePrep';
 import { formatOneOnOneResponse } from '@/lib/analysis/one-on-ones/formatResponse';
-
-export function inferWindowWeeks(shortStart: Date, shortEnd: Date): 1 | 2 | 4 {
-  const ms = shortEnd.getTime() - shortStart.getTime();
-  const days = Math.round(ms / (1000 * 60 * 60 * 24));
-
-  const options = [
-    { days: 7, weeks: 1 as const },
-    { days: 14, weeks: 2 as const },
-    { days: 28, weeks: 4 as const },
-  ];
-
-  // find the closest option
-  let best = options[0];
-  let smallestDiff = Math.abs(days - best.days);
-
-  for (const opt of options.slice(1)) {
-    const diff = Math.abs(days - opt.days);
-    if (diff < smallestDiff) {
-      best = opt;
-      smallestDiff = diff;
-    }
-  }
-
-  return best.weeks;
-}
+import { inferWindowWeeks } from '@/lib/utils/date';
 
 export const POST = withSentryUser(
   async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
@@ -88,11 +64,13 @@ export const POST = withSentryUser(
       counterpartType: row.counterpartType,
       tenantId: userId,
     });
+    console.log('prepPayload', prepPayload.payload);
 
     const [updated] = await db
       .update(oneOnOneSessions)
       .set({
         ...prepPayload,
+        payload: prepPayload.payload,
         updatedAt: new Date(),
         status: 'ready',
       })

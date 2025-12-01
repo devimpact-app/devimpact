@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { OneOnOnePrep } from '@/types/api/one-on-one';
-import { formatDateTime, formatRange } from '@/lib/utils/date';
+import { formatDateTime } from '@/lib/utils/date';
 import { useRouter } from 'next/navigation';
 import { Download, RefreshCw, Trash2 } from 'lucide-react';
 

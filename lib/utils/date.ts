@@ -181,3 +181,40 @@ export function truncateToDay(d: Date) {
   nd.setHours(0, 0, 0, 0);
   return nd;
 }
+
+export function inferWindowWeeks(
+  shortStart: Date,
+  shortEnd: Date
+): 1 | 2 | 4 | 8 | 12 {
+  const ms = shortEnd.getTime() - shortStart.getTime();
+  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+
+  const options = [
+    { days: 7, weeks: 1 as const },
+    { days: 14, weeks: 2 as const },
+    { days: 28, weeks: 4 as const },
+    { days: 56, weeks: 8 as const },
+    { days: 84, weeks: 12 as const },
+  ];
+
+  // find the closest option
+  let best = options[0];
+  let smallestDiff = Math.abs(days - best.days);
+
+  for (const opt of options.slice(1)) {
+    const diff = Math.abs(days - opt.days);
+    if (diff < smallestDiff) {
+      best = opt;
+      smallestDiff = diff;
+    }
+  }
+
+  return best.weeks;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function computeWindowEnd(start: Date, windowWeeks: number): Date {
+  const duration = windowWeeks * 7 * DAY_MS;
+  return new Date(start.getTime() + duration);
+}

@@ -1,21 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { z } from 'zod';
+import { useEffect, useState } from 'react';
 import type { TMetricsBatchResult } from '@/types/api/metrics';
 import { TMetricsBatchInput } from '@/types/api/metrics';
 import { MetricsAPI } from '@/lib/analysis/metrics/client';
-import { MetricSparkline } from './MetricSparkline';
-import { toChartPoints } from './utils';
 import { MetricTimeseriesChart } from './MetricTimeseriesChart';
 
-type DateRange = {
-  start: Date;
-  end: Date;
-};
-
 type KeyMetricsPanelProps = {
-  range: DateRange;
+  start: Date;
+  windowWeeks: number;
 };
 
 type KeyMetricsState = {
@@ -24,7 +17,10 @@ type KeyMetricsState = {
   error: string | null;
 };
 
-function useKeyMetrics(range: DateRange): KeyMetricsState {
+function useKeyMetrics({
+  start,
+  windowWeeks,
+}: KeyMetricsPanelProps): KeyMetricsState {
   const [state, setState] = useState<KeyMetricsState>({
     data: null,
     isLoading: true,
@@ -32,13 +28,7 @@ function useKeyMetrics(range: DateRange): KeyMetricsState {
   });
 
   // Keep a stable ISO window for the API
-  const windowIso = useMemo(
-    () => ({
-      start: range.start.toISOString(),
-      end: range.end.toISOString(),
-    }),
-    [range.start, range.end]
-  );
+  const startIso = start?.toISOString();
 
   useEffect(() => {
     let cancelled = false;
@@ -70,8 +60,8 @@ function useKeyMetrics(range: DateRange): KeyMetricsState {
             metricId: id,
             input: {
               shape: 'timeseries',
-              start: windowIso.start,
-              end: windowIso.end,
+              start: startIso,
+              windowWeeks,
             },
           })),
         };
@@ -101,13 +91,16 @@ function useKeyMetrics(range: DateRange): KeyMetricsState {
     return () => {
       cancelled = true;
     };
-  }, [windowIso.start, windowIso.end]);
+  }, [startIso, windowWeeks]);
 
   return state;
 }
 
-export function KeyMetricsPanel({ range }: KeyMetricsPanelProps) {
-  const { data, isLoading, error } = useKeyMetrics(range);
+export function KeyMetricsPanel({ start, windowWeeks }: KeyMetricsPanelProps) {
+  const { data, isLoading, error } = useKeyMetrics({
+    start,
+    windowWeeks,
+  });
 
   return (
     <aside className="lg:sticky lg:top-24">
