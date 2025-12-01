@@ -14,9 +14,9 @@ export function toLocalDate(value: string | Date, timezone: string): Date {
   return new Date(base.toLocaleString('en-US', { timeZone: timezone }));
 }
 
-export function formatDateTime(iso: string | null) {
+export function formatDateTime(iso: string | Date | null) {
   if (!iso) return null;
-  const d = new Date(iso);
+  const d = typeof iso === 'string' ? new Date(iso) : iso;
   if (Number.isNaN(d.getTime())) return null;
 
   return new Intl.DateTimeFormat(undefined, {

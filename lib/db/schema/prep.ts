@@ -16,8 +16,7 @@ import {
 import { Insight } from '@/types/api/insights';
 
 export const oneOnOneStatusEnum = pgEnum('one_on_one_status', [
-  'draft',
-  'final',
+  'ready',
   'archived',
 ]);
 
@@ -74,7 +73,7 @@ export const oneOnOneSessions = pgTable(
       withTimezone: true,
     }).notNull(),
 
-    status: oneOnOneStatusEnum('status').notNull().default('draft'),
+    status: oneOnOneStatusEnum('status').notNull().default('ready'),
     title: text('title'),
     payload: jsonb('payload').$type<OneOnOnePayload>().notNull(),
   },

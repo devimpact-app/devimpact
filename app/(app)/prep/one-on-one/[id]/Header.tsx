@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { OneOnOnePrep } from '@/types/api/one-on-one';
 import { formatDateTime, formatRange } from '@/lib/utils/date';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, Trash2 } from 'lucide-react';
 
 function prettyCounterpartType(counterpartType: string) {
   return counterpartType
@@ -20,19 +20,19 @@ const statusStyles: Record<string, string> = {
   error: 'bg-rose-100 text-rose-800 border-rose-200',
 };
 
-export function OneOnOneHeader({ prep }: { prep: OneOnOnePrep }) {
+export function OneOnOneHeader({
+  prep,
+  onDeleteClick,
+  onRegenerateClick,
+}: {
+  prep: OneOnOnePrep;
+  onDeleteClick: (id: string) => void;
+  onRegenerateClick: (id: string) => void;
+}) {
   const router = useRouter();
   const meetingLabel = useMemo(
     () => formatDateTime(prep.meetingAt),
     [prep.meetingAt]
-  );
-  const mediumRangeLabel = useMemo(
-    () =>
-      formatRange(
-        new Date(prep.shortWindowStart),
-        new Date(prep.shortWindowEnd)
-      ),
-    [prep.shortWindowStart, prep.shortWindowEnd]
   );
 
   const title =
@@ -76,22 +76,13 @@ export function OneOnOneHeader({ prep }: { prep: OneOnOnePrep }) {
             <span className="w-1 h-1 rounded-full bg-border-muted" />
             <span>{counterpartDisplay}</span>
           </div>
-
-          {/* <div className="flex flex-wrap items-center gap-3 text-xs text-text-tertiary">
-            {mediumRangeLabel && <span>Focus window: {mediumRangeLabel}</span>}
-
-            <div className="flex-grow" />
-            <span>
-              Last Updated {new Date(prep.updatedAt).toLocaleDateString()}
-            </span>
-          </div> */}
         </div>
 
         <div className="flex items-end gap-3">
           <div className="relative group">
             <button
               type="button"
-              onClick={() => {}}
+              onClick={() => onRegenerateClick(prep.id)}
               className="flex items-center justify-center h-9 w-9 rounded-full border border-white/15
                  bg-surface-lower text-text-secondary hover:text-text-primary transition"
             >
@@ -111,13 +102,13 @@ export function OneOnOneHeader({ prep }: { prep: OneOnOnePrep }) {
           <div className="relative group">
             <button
               type="button"
-              onClick={() => {}}
-              disabled={prep.status === 'final'}
+              onClick={() => onDeleteClick(prep.id)}
+              disabled={prep.status === 'archived'}
               className="flex items-center justify-center h-9 w-9 rounded-full
-                 bg-emerald-400/20 text-emerald-300 hover:bg-emerald-400/30 transition
+                 bg-red-400/20 text-red-300 hover:bg-red-400/30 transition
                  disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <CheckCircle2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             </button>
 
             <div
@@ -126,11 +117,11 @@ export function OneOnOneHeader({ prep }: { prep: OneOnOnePrep }) {
                  whitespace-nowrap rounded-md px-2 py-1 text-xs text-text-primary
                  shadow-lg"
             >
-              {prep.status === 'final' ? 'Ready' : 'Mark ready'}
+              {prep.status === 'ready' ? 'Delete' : 'Archived'}
             </div>
           </div>
 
-          <div className="relative group">
+          {/* <div className="relative group">
             <button
               type="button"
               onClick={() => {}}
@@ -148,7 +139,7 @@ export function OneOnOneHeader({ prep }: { prep: OneOnOnePrep }) {
             >
               Export
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </header>

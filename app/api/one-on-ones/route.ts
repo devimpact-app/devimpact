@@ -4,8 +4,13 @@ import { withSentryUser } from '@/lib/withSentryUser';
 import { db } from '@/lib/db/client';
 import { oneOnOneSessions } from '@/lib/db/schema';
 import { generateOneOnOnePrep } from '@/lib/analysis/one-on-ones/generateOneOnOnePrep';
-import { CreateOneOnOneInput, OneOnOneResponse } from '@/types/api/one-on-one';
+import {
+  CreateOneOnOneInput,
+  OneOnOneListResponse,
+} from '@/types/api/one-on-one';
 import { jsonBadRequest, jsonOK, jsonUnauthorized } from '../_lib/http';
+import { and, desc, eq, lt } from 'drizzle-orm';
+import { formatOneOnOneResponse } from '@/lib/analysis/one-on-ones/formatResponse';
 
 export const POST = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
@@ -59,28 +64,70 @@ export const POST = withSentryUser(async (req: NextRequest) => {
     })
     .returning();
 
-  const { payload, ...rowProps } = row;
+  return jsonOK(formatOneOnOneResponse(row));
+});
 
-  const parsedResponse = OneOnOneResponse.safeParse({
-    prep: {
-      ...rowProps,
-      createdAt: rowProps.createdAt.toISOString(),
-      updatedAt: rowProps.updatedAt.toISOString(),
-      meetingAt: rowProps.meetingAt.toISOString(),
-      shortWindowStart: rowProps.shortWindowStart.toISOString(),
-      shortWindowEnd: rowProps.shortWindowEnd.toISOString(),
-      mediumWindowStart: rowProps.mediumWindowStart.toISOString(),
-      mediumWindowEnd: rowProps.mediumWindowEnd.toISOString(),
-      talkingPoints: payload.talkingPoints,
-      usedInsights: payload.usedInsights,
-      usedMetrics: payload.usedMetrics,
-      counterpartLabel: rowProps.counterpartLabel ?? undefined,
-    },
-  });
+export const GET = withSentryUser(async (req: NextRequest) => {
+  const session = await auth();
+  if (!session?.user?.id) return jsonUnauthorized('Unauthorized');
 
-  if (!parsedResponse.success) {
-    return jsonBadRequest('Failed to parse one-on-one response');
+  const userId = session.user.id;
+  const url = new URL(req.url);
+  const searchParams = url.searchParams;
+
+  const limitParam = searchParams.get('limit');
+  const cursor = searchParams.get('cursor');
+
+  const limitRaw = limitParam ? Number(limitParam) : 20;
+  const limit = Number.isFinite(limitRaw)
+    ? Math.min(Math.max(limitRaw, 1), 50)
+    : 20;
+
+  let where = eq(oneOnOneSessions.tenantId, userId);
+
+  if (cursor) {
+    const cursorDate = new Date(cursor);
+    if (Number.isNaN(cursorDate.getTime())) {
+      return jsonBadRequest('Invalid cursor');
+    }
+    where = and(where, lt(oneOnOneSessions.createdAt, cursorDate)) as any;
   }
 
-  return jsonOK(parsedResponse.data);
+  const rows = await db
+    .select()
+    .from(oneOnOneSessions)
+    .where(and(where, eq(oneOnOneSessions.status, 'ready')))
+    .orderBy(desc(oneOnOneSessions.createdAt))
+    .limit(limit + 1);
+
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+
+  const items = pageRows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    meetingAt: row.meetingAt ? row.meetingAt.toISOString() : null,
+    createdAt: row.createdAt.toISOString(),
+    shortWindowStart: row.shortWindowStart.toISOString(),
+    shortWindowEnd: row.shortWindowEnd.toISOString(),
+    mediumWindowStart: row.mediumWindowStart.toISOString(),
+    mediumWindowEnd: row.mediumWindowEnd.toISOString(),
+    status: row.status,
+  }));
+
+  const nextCursor =
+    hasMore && pageRows[pageRows.length - 1]
+      ? pageRows[pageRows.length - 1].createdAt.toISOString()
+      : null;
+
+  const parsed = OneOnOneListResponse.safeParse({
+    items,
+    nextCursor,
+  });
+
+  if (!parsed.success) {
+    return jsonBadRequest('Failed to parse one-on-one list response');
+  }
+
+  return jsonOK(parsed.data);
 });

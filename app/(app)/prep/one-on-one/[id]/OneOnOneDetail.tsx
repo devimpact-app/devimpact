@@ -1,7 +1,6 @@
 'use client';
 
 import { OneOnOnePrep } from '@/types/api/one-on-one';
-import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { OneOnOneHeader } from './Header';
@@ -9,54 +8,221 @@ import { OneOnOneBody } from './OneOnOneBody';
 import { Insight } from '@/types/api/insights';
 import { InsightPanel } from '@/app/(app)/insights/InsightPanel';
 
+type Status = 'loading' | 'ready' | 'error' | 'not_found';
+
+const HeaderSkeleton = () => (
+  <div className="sticky top-0 z-20 bg-background pt-5 pb-3 border-b border-white/10">
+    <div className="flex items-start justify-between gap-4 animate-pulse">
+      <div className="space-y-2">
+        <div className="h-3 w-24 rounded-full bg-slate-800/80" />
+        <div className="h-6 w-64 rounded bg-slate-800" />
+        <div className="h-3 w-80 max-w-[60vw] rounded bg-slate-900" />
+      </div>
+      <div className="h-8 w-28 rounded-full bg-slate-800/80" />
+    </div>
+  </div>
+);
+
+const BodySkeleton = () => (
+  <div className="pb-8 pt-10 space-y-4 animate-pulse">
+    <div className="grid gap-4 md:grid-cols-2">
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4 space-y-3"
+        >
+          <div className="h-3 w-20 rounded-full bg-slate-800/80" />
+          <div className="h-4 w-3/4 rounded bg-slate-800" />
+          <div className="space-y-2 pt-2">
+            <div className="h-3 w-full rounded bg-slate-900" />
+            <div className="h-3 w-5/6 rounded bg-slate-900" />
+            <div className="h-3 w-2/3 rounded bg-slate-900" />
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4 space-y-3">
+      <div className="h-3 w-24 rounded-full bg-slate-800/80" />
+      <div className="h-3 w-2/3 rounded bg-slate-900" />
+      <div className="h-3 w-1/2 rounded bg-slate-900" />
+    </div>
+  </div>
+);
+
+const ProblemState = ({ title, body }: { title: string; body: string }) => {
+  const router = useRouter();
+  return (
+    <main className="mx-auto flex max-w-7xl flex-col px-4 sm:px-6 lg:px-8 pt-8">
+      <button
+        type="button"
+        onClick={() => router.push('/prep')}
+        className="mb-4 inline-flex items-center gap-1.5 self-start rounded-full border border-slate-700/80 bg-slate-950/60 px-3 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50 transition-colors"
+      >
+        {/* simple chevron using &larr; to avoid extra import */}
+        <span className="text-xs">&larr;</span>
+        <span>Back to prep</span>
+      </button>
+
+      <div className="rounded-2xl border border-slate-800/80 bg-slate-950/80 px-6 py-6 shadow-sm shadow-black/40 max-w-xl">
+        <h1 className="text-sm font-semibold text-slate-50">{title}</h1>
+        <p className="mt-2 text-xs text-slate-400">{body}</p>
+      </div>
+    </main>
+  );
+};
+
 export default function OneOnOneDetailClient({ id }: { id: string }) {
   const router = useRouter();
 
   const [prep, setPrep] = useState<OneOnOnePrep | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>('loading');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        if (!id) return;
-        const res = await fetch(`/api/one-on-ones/${id}`);
+        if (!id) {
+          setStatus('not_found');
+          return;
+        }
+
+        const res = await fetch(`/api/one-on-ones/${id}`, {
+          credentials: 'include',
+        });
 
         if (!res.ok) {
-          setError('Failed to load');
-          setLoading(false);
+          if (res.status === 404) {
+            setStatus('not_found');
+          } else {
+            setStatus('error');
+            const text = await res.text().catch(() => '');
+            setErrorMessage(text || 'Failed to load this 1:1 prep.');
+          }
           return;
         }
 
         const { data } = await res.json();
         setPrep(data.prep);
+        setStatus('ready');
       } catch (err) {
-        setError('Network error');
-      } finally {
-        setLoading(false);
+        setStatus('error');
+        setErrorMessage('Network error while loading this 1:1 prep.');
       }
     }
 
     load();
   }, [id]);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-  if (!prep) return <div>Not found</div>;
+  async function handleDeleteClick(oneOnOneId: string) {
+    try {
+      const confirmed = window.confirm(
+        'Delete this 1:1 prep? This cannot be undone.'
+      );
+      if (!confirmed) return;
+
+      const res = await fetch(`/api/one-on-ones/${oneOnOneId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: 'archived',
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        setStatus('error');
+        setErrorMessage(text || 'Failed to delete this 1:1 prep.');
+        return;
+      }
+
+      router.push('/prep');
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage('Network error while deleting this 1:1 prep.');
+    }
+  }
+
+  async function handleRegenerateClick(oneOnOneId: string) {
+    try {
+      setStatus('loading');
+
+      const timezone =
+        typeof Intl !== 'undefined'
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : 'UTC';
+      const res = await fetch(`/api/one-on-ones/${oneOnOneId}/regenerate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ timezone }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        setStatus('error');
+        setErrorMessage(text || 'Failed to regenerate this 1:1 prep.');
+        return;
+      }
+
+      const { data } = await res.json();
+      setPrep(data.prep);
+      setStatus('ready');
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage('Network error while regenerating this 1:1 prep.');
+    }
+  }
+
+  if (status === 'loading') {
+    return (
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <HeaderSkeleton />
+        <BodySkeleton />
+      </main>
+    );
+  }
+
+  if (status === 'not_found') {
+    return (
+      <ProblemState
+        title="This 1:1 prep couldn’t be found"
+        body="It may have been deleted, or the link is incorrect. You can create a new 1:1 prep from the prep home."
+      />
+    );
+  }
+
+  if (status === 'error' || !prep) {
+    return (
+      <ProblemState
+        title="We couldn’t load this 1:1 prep"
+        body={
+          errorMessage ??
+          'Something went wrong while fetching this prep. Try refreshing the page or going back to the prep home.'
+        }
+      />
+    );
+  }
 
   return (
     <>
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="sticky top-0 pt-5 z-20 pb-3 bg-background border-b border-white/15">
-          <OneOnOneHeader prep={prep} />
+          <OneOnOneHeader
+            prep={prep}
+            onDeleteClick={(id) => handleDeleteClick(id)}
+            onRegenerateClick={(id) => handleRegenerateClick(id)}
+          />
         </div>
 
         <div className="pb-8 pt-10">
           <OneOnOneBody
             prep={prep}
             onClickInsight={(insight) => {
-              console.log('clicked insight');
               setSelectedInsight(insight);
             }}
           />

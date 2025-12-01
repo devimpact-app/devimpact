@@ -55,15 +55,15 @@ const ACTIONS: ActionConfig[] = [
     status: 'coming_soon',
     primaryCtaLabel: 'Start review packet (soon)',
   },
-  {
-    key: 'promotion',
-    label: 'Promotion readiness',
-    description:
-      'Map your recent work to expectations for the next level and spot evidence gaps.',
-    icon: <ArrowUpCircle className="h-5 w-5" />,
-    status: 'coming_soon',
-    primaryCtaLabel: 'View readiness (soon)',
-  },
+  // {
+  //   key: 'promotion',
+  //   label: 'Promotion readiness',
+  //   description:
+  //     'Map your recent work to expectations for the next level and spot evidence gaps.',
+  //   icon: <ArrowUpCircle className="h-5 w-5" />,
+  //   status: 'coming_soon',
+  //   primaryCtaLabel: 'View readiness (soon)',
+  // },
   {
     key: 'job_search',
     label: 'Job search packet',

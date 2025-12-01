@@ -42,7 +42,7 @@ export const OneOnOneMetricChipSchema = z.object({
   tooltip: z.string().optional(), // "Median from ready → merge"
 });
 
-export const OneOnOneStatusEnum = z.enum(['draft', 'final', 'archived']);
+export const OneOnOneStatusEnum = z.enum(['ready', 'archived']);
 export const CounterpartTypeEnum = z.enum([
   'manager',
   'peer',
@@ -116,5 +116,12 @@ export type TOneOnOneListResponse = z.infer<typeof OneOnOneListResponse>;
 
 export const RegenerateOneOnOneInput = z.object({
   windowWeeks: z.union([z.literal(1), z.literal(2), z.literal(4)]).optional(),
+  timezone: z.string(),
 });
 export type TRegenerateOneOnOneInput = z.infer<typeof RegenerateOneOnOneInput>;
+
+export const UpdateOneOnOneInput = z.object({
+  status: OneOnOneStatusEnum.optional(),
+});
+
+export type TUpdateOneOnOneInput = z.infer<typeof UpdateOneOnOneInput>;
