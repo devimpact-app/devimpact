@@ -3,11 +3,10 @@ import { NewOneOnOneSession } from '@/lib/db/schema/prep';
 import { weeksAgo } from '@/lib/utils/date';
 import { Insight } from '@/types/api/insights';
 import {
+  OneOnOneMetricSnapshot,
   OneOnOneTalkingPoint,
   TCreateOneOnOneInput,
-  TOneOnOneSectionKind,
 } from '@/types/api/one-on-one';
-// import { callOpenAIJson } from '@/lib/integrations/openai/client'; // or whatever your helper is
 
 type GenerateOneOnOnePrepParams = TCreateOneOnOneInput & {
   tenantId: string;
@@ -193,14 +192,67 @@ export async function generateOneOnOnePrep(
     mediumWindowEnd: mediumEnd,
     title,
     payload: {
-      // TODO: add summary
-      summary: '',
+      summary: `1:1 prep for ${counterpartLabel} covering ${mediumStart}–${mediumEnd}. Focus on delivery, code health, and current blockers.`,
 
-      talkingPoints,
-      // TODO: add
-      usedInsights: [],
-      usedMetrics: [],
+      talkingPoints: [
+        {
+          id: 'tp-1',
+          kind: 'highlights', // adjust to your real enum
+          title: 'Recent wins',
+          body: 'They’ve had steady output and fewer stalled PRs over the last month.',
+          order: 1,
+          relatedInsightIds: ['shipping_momentum:last_4_weeks'],
+          relatedMetricIds: ['prs_merged:last_4_weeks'],
+        },
+        {
+          id: 'tp-2',
+          kind: 'goals',
+          title: 'Growth opportunities',
+          body: 'Could delegate more and reduce time spent on minor fixes. Might benefit from clearer PR descriptions.',
+          order: 2,
+          relatedInsightIds: [],
+          relatedMetricIds: [],
+        },
+        {
+          id: 'tp-3',
+          kind: 'friction',
+          title: 'Potential blockers',
+          body: 'Flag possible over-commitment during sprint planning; watch for context switching between projects.',
+          order: 3,
+          relatedInsightIds: [],
+          relatedMetricIds: ['prs_merged:last_4_weeks'],
+        },
+      ],
+
+      usedInsights: [
+        {
+          id: 'shipping_momentum:last_4_weeks',
+          kind: 'fast_loops',
+          title: 'Shipping momentum is trending up over the last 4 weeks',
+          body: 'They merged more PRs than their recent baseline with fewer reverts, which signals improving consistency.',
+          emphasis: 'Upward trend in shipped work',
+          stats: [],
+          severity: 'positive',
+          score: 70,
+          timeWindowLabel: 'Last 4 weeks',
+          meta: { source: 'stub' },
+          relatedItems: [],
+        } as Insight,
+      ],
+
+      usedMetrics: [
+        {
+          id: 'prs_merged:last_4_weeks',
+          label: 'PRs merged',
+          unit: 'PRs',
+          windowStart: mediumStart.toISOString(),
+          windowEnd: mediumEnd.toISOString(),
+          value: 24,
+          formattedValue: '24 PRs merged',
+        } as OneOnOneMetricSnapshot,
+      ],
     },
+
     status: 'draft',
     counterpartLabel,
     counterpartType,

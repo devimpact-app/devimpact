@@ -87,12 +87,6 @@ export const CreateOneOnOneInput = z.object({
 
   // For the short window
   windowWeeks: z.union([z.literal(1), z.literal(2), z.literal(4)]).default(2),
-
-  // Optional extra context / focus
-  // focusAreas: z
-  //   .array(z.enum(['progress', 'friction', 'career', 'feedback', 'team']))
-  //   .optional(),
-  // freeformContext: z.string().optional(),
 });
 export type TCreateOneOnOneInput = z.infer<typeof CreateOneOnOneInput>;
 
@@ -121,7 +115,6 @@ export const OneOnOneListResponse = z.object({
 export type TOneOnOneListResponse = z.infer<typeof OneOnOneListResponse>;
 
 export const RegenerateOneOnOneInput = z.object({
-  // For the short window
   windowWeeks: z.union([z.literal(1), z.literal(2), z.literal(4)]).optional(),
 });
 export type TRegenerateOneOnOneInput = z.infer<typeof RegenerateOneOnOneInput>;

@@ -14,6 +14,20 @@ export function toLocalDate(value: string | Date, timezone: string): Date {
   return new Date(base.toLocaleString('en-US', { timeZone: timezone }));
 }
 
+export function formatDateTime(iso: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(d);
+}
+
 export function getLocalWeekdayIndex(
   value: string | Date,
   timezone: string

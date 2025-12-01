@@ -42,38 +42,69 @@ export default function OneOnOnePrepClient() {
   const [title, setTitle] = useState('');
 
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState(null);
 
-  function handleGenerate() {
-    const meetingAt =
-      meetingDate && meetingTime
-        ? new Date(`${meetingDate}T${meetingTime}:00`)
-        : meetingDate
-          ? new Date(`${meetingDate}T12:00:00`)
-          : null;
+  async function handleGenerate() {
+    setError(null);
+    setIsGenerating(true);
 
-    console.log('1:1 prep input', {
-      counterpartLabel: counterpartLabel.trim() || null,
-      counterpartType,
-      meetingAt: meetingAt?.toISOString() ?? null,
-      windowWeeks,
-      title: title.trim() || null,
-    });
+    try {
+      const timezone =
+        typeof Intl !== 'undefined'
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : 'UTC';
+      const meetingAt =
+        meetingDate && meetingTime
+          ? new Date(`${meetingDate}T${meetingTime}:00`)
+          : meetingDate
+            ? new Date(`${meetingDate}T12:00:00`)
+            : null;
+
+      const payload = {
+        counterpartLabel: counterpartLabel.trim() || undefined,
+        counterpartType,
+        meetingAt: meetingAt?.toISOString() ?? null,
+        windowWeeks,
+        title: title.trim() || undefined,
+        timezone,
+      };
+
+      const res = await fetch('/api/one-on-ones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Failed to generate 1:1 prep`);
+      }
+
+      const json = await res.json();
+      const oneOnOne = json.data?.prep ?? json;
+
+      if (!oneOnOne?.id) {
+        throw new Error('Missing 1:1 id in response');
+      }
+
+      router.push(`/prep/one-on-one/${oneOnOne.id}`);
+    } catch (e: any) {
+      console.error(e);
+      setError(e.message ?? 'Something went wrong while generating prep.');
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-5 space-y-5">
       <button
-        type="button"
         onClick={() => router.push('/prep')}
-        className="
-          flex items-center gap-1.5 rounded-full 
-          border border-slate-700/80 bg-slate-950/60 
-          px-3 py-1.5 text-[11px] font-medium text-slate-300
-          hover:bg-slate-900 hover:text-slate-50 transition-colors
-        "
+        className="text-sm text-text-secondary hover:text-text-primary"
       >
-        <ChevronLeft className="h-3.5 w-3.5" />
-        <span>Back</span>
+        ← Back
       </button>
 
       {/* Hero */}
@@ -107,9 +138,10 @@ export default function OneOnOnePrepClient() {
           <button
             type="button"
             onClick={handleGenerate}
+            disabled={isGenerating}
             className="inline-flex items-center justify-center rounded-full border border-sky-500/80 bg-sky-500/90 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-sm shadow-sky-900/50 hover:bg-sky-400 transition-colors"
           >
-            Generate 1:1 prep
+            {isGenerating ? 'Generating…' : 'Generate 1:1 prep'}
           </button>
         </div>
       </section>
@@ -310,6 +342,8 @@ export default function OneOnOnePrepClient() {
           </div>
         )}
       </section>
+
+      {error && <p className="text-[11px] text-red-300">{error}</p>}
 
       {/* Footer note */}
       <div className="pt-1">
