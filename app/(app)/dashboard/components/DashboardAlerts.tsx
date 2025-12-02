@@ -3,6 +3,7 @@
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   cliDisconnected: boolean;
@@ -12,6 +13,8 @@ type Props = {
 const STORAGE_KEY = 'devimpact:dashboardAlerts:v1';
 
 export function DashboardAlerts({ cliDisconnected, staleSyncDays }: Props) {
+  const router = useRouter();
+
   const { bannerSignature, issues } = useMemo(() => {
     const hasStaleSync = staleSyncDays !== null;
     const issues: string[] = [];
@@ -51,6 +54,7 @@ export function DashboardAlerts({ cliDisconnected, staleSyncDays }: Props) {
   if (!isHydrated || issues.length === 0 || dismissed) {
     return null;
   }
+  const buttonText = cliDisconnected ? 'Fix connection' : 'See instructions';
   const title =
     issues.length > 1
       ? 'DevImpact needs your attention'
@@ -111,12 +115,11 @@ export function DashboardAlerts({ cliDisconnected, staleSyncDays }: Props) {
             <button
               type="button"
               onClick={() => {
-                // TODO: wire to your setup / docs
-                window.open('/docs/cli', '_blank');
+                router.push('/settings');
               }}
               className="inline-flex items-center rounded-full border border-amber-400/60 bg-amber-400/15 px-3 py-1 text-[11px] font-medium text-amber-50 hover:bg-amber-400/25 transition-colors"
             >
-              Fix connection
+              {buttonText}
             </button>
 
             <button

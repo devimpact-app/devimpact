@@ -16,7 +16,13 @@ import useSWR from 'swr';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-export function CliSetupPageShell({ userName }: { userName?: string | null }) {
+export function CliSetupPageShell({
+  userName,
+  isFromSettings,
+}: {
+  userName?: string | null;
+  isFromSettings: boolean;
+}) {
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
 
@@ -41,13 +47,14 @@ export function CliSetupPageShell({ userName }: { userName?: string | null }) {
 
     if (status.onboardingState === 'synced' && status.cliLinkedAt) {
       hasRedirectedRef.current = true;
+      sessionStorage.removeItem(STORAGE_KEY);
       const timeout = setTimeout(() => {
-        router.push('/dashboard');
+        router.push(isFromSettings ? '/settings' : '/dashboard');
       }, 1500);
 
       return () => clearTimeout(timeout);
     }
-  }, [status?.onboardingState, router]);
+  }, [status?.onboardingState, status?.cliLinkedAt, isFromSettings, router]);
 
   if (isLoading || !status) {
     return (
@@ -68,17 +75,28 @@ export function CliSetupPageShell({ userName }: { userName?: string | null }) {
     );
   }
 
-  return <CliSetupPage status={status} userName={userName} />;
+  return (
+    <CliSetupPage
+      status={status}
+      userName={userName}
+      isFromSettings={isFromSettings}
+    />
+  );
 }
 
 type CliSetupPageProps = {
   userName?: string | null;
   status: CliStatus;
+  isFromSettings: boolean;
 };
 
 const STORAGE_KEY = 'devimpact_cli_token';
 
-export function CliSetupPage({ userName, status }: CliSetupPageProps) {
+export function CliSetupPage({
+  userName,
+  status,
+  isFromSettings,
+}: CliSetupPageProps) {
   const [cliToken, setCliToken] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,12 +111,6 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
       setCliToken(stored);
     }
   }, []);
-
-  useEffect(() => {
-    if (status?.onboardingState === 'synced' && typeof window !== 'undefined') {
-      sessionStorage.removeItem(STORAGE_KEY);
-    }
-  }, [status?.onboardingState]);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -129,11 +141,16 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
   const hasCliToken = !!cliToken || status.hasCliToken;
   const state = status.onboardingState;
 
-  const step1Expanded = state === 'account_created' || state === 'cli_pending';
+  const step1Expanded =
+    (!isFromSettings &&
+      (state === 'account_created' || state === 'cli_pending')) ||
+    (isFromSettings && !status.cliLinkedAt);
   const step1Completed = hasCliToken;
 
   const step2Enabled = step1Completed;
-  const step2Expanded = step2Enabled && state === 'cli_pending';
+  const step2Expanded =
+    step2Enabled &&
+    (isFromSettings || (!isFromSettings && state === 'cli_pending'));
 
   const step3Enabled = state === 'cli_linked' || state === 'syncing';
   const step3Expanded = state === 'cli_linked' || state === 'syncing';
@@ -141,11 +158,19 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
 
   return (
     <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {status.onboardingState === 'synced' && (
+      {!isFromSettings && status.onboardingState === 'synced' && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs text-emerald-50">
           <CheckCircle2 className="h-4 w-4" />
           <span>
             Your first sync is complete. Redirecting you to your dashboard…
+          </span>
+        </div>
+      )}
+      {isFromSettings && status.cliLinkedAt && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs text-emerald-50">
+          <CheckCircle2 className="h-4 w-4" />
+          <span>
+            Your CLI was reconnected. Redirecting you back to settings...
           </span>
         </div>
       )}
@@ -335,102 +360,105 @@ export function CliSetupPage({ userName, status }: CliSetupPageProps) {
             )}
           </section>
 
-          <section
-            className={`
+          {!isFromSettings && (
+            <section
+              className={`
     rounded-2xl border px-5 py-4 flex flex-col gap-3
     ${isSyncing ? 'border-[#4F46E5] bg-[#111728] animate-pulse' : 'bg-surface-alt border-border'}
     ${!step3Enabled ? 'opacity-40 pointer-events-none' : ''}
   `}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-                  Step 3 · Pull in your recent work
-                </h2>
-                <p className="text-[11px] text-text-secondary mt-0.5">
-                  Run a basic sync from a repo you work in. You&apos;ll see your
-                  dashboard update once activity comes in.
-                </p>
-                {isSyncing && (
-                  <p className="mt-1 text-[10px] text-text-secondary">
-                    A basic sync usually takes{' '}
-                    <span className="font-medium">20–60 seconds</span>,
-                    depending on repo size.
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-semibold text-text-primary tracking-tight">
+                    Step 3 · Pull in your recent work
+                  </h2>
+                  <p className="text-[11px] text-text-secondary mt-0.5">
+                    Run a basic sync from a repo you work in. You&apos;ll see
+                    your dashboard update once activity comes in.
                   </p>
-                )}
-              </div>
+                  {isSyncing && (
+                    <p className="mt-1 text-[10px] text-text-secondary">
+                      A basic sync usually takes{' '}
+                      <span className="font-medium">20–60 seconds</span>,
+                      depending on repo size.
+                    </p>
+                  )}
+                </div>
 
-              {isSyncing ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#1E293B] border border-[#4F46E5] px-2 py-0.5 text-[10px] text-[#E0E7FF]">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Syncing…
-                </span>
-              ) : (
-                step3Enabled && (
-                  <span className="text-[10px] text-text-secondary uppercase tracking-wide">
-                    Ready to sync
-                  </span>
-                )
-              )}
-            </div>
-
-            {step3Expanded && (
-              <div className="mt-2 space-y-3 text-[11px] text-text-secondary">
                 {isSyncing ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-white/30" />
-                        <span>Fetching authored PRs and code reviews…</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-white/30" />
-                        <span>Processing commits and file metadata</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-white/30" />
-                        <span>Organizing activity into your timeline…</span>
-                      </div>
-                    </div>
-
-                    <p className="text-[11px] text-text-secondary leading-snug">
-                      We only read PRs, reviews, and commits for the repo you
-                      choose via <code className="text-[10px]">gh api</code>.
-                      You can see every call in your terminal and stop syncing
-                      at any time.
-                    </p>
-
-                    <p className="text-[11px] text-text-secondary leading-snug">
-                      Once this finishes, your dashboard will unlock with your{' '}
-                      <span className="font-medium">weekly pulse</span>,{' '}
-                      <span className="font-medium">work rhythm heatmap</span>,
-                      and <span className="font-medium">1:1 prep view</span>.
-                    </p>
-                  </>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#1E293B] border border-[#4F46E5] px-2 py-0.5 text-[10px] text-[#E0E7FF]">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Syncing…
+                  </span>
                 ) : (
-                  <>
-                    <p className="font-medium text-text-primary/90">
-                      From a repo directory:
-                    </p>
-                    <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-[11px] text-[#D0E1FF] overflow-x-auto">
-                      <code>devimpact sync --repo my-org/my-service</code>
-                    </pre>
-                    <p className="text-[11px] text-text-secondary leading-snug">
-                      DevImpact will use{' '}
-                      <code className="text-[10px]">gh api</code> to read your
-                      PRs, reviews, and commits and attach them to your account.
-                      You stay in control of your GitHub auth and can revoke
-                      access at any time.
-                    </p>
-                    <p className="text-[11px] text-text-secondary leading-snug">
-                      After your first sync, head to the Dashboard to see your
-                      activity timeline, highlights, and work rhythm.
-                    </p>
-                  </>
+                  step3Enabled && (
+                    <span className="text-[10px] text-text-secondary uppercase tracking-wide">
+                      Ready to sync
+                    </span>
+                  )
                 )}
               </div>
-            )}
-          </section>
+
+              {step3Expanded && (
+                <div className="mt-2 space-y-3 text-[11px] text-text-secondary">
+                  {isSyncing ? (
+                    <>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-white/30" />
+                          <span>Fetching authored PRs and code reviews…</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-white/30" />
+                          <span>Processing commits and file metadata</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-white/30" />
+                          <span>Organizing activity into your timeline…</span>
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-text-secondary leading-snug">
+                        We only read PRs, reviews, and commits for the repo you
+                        choose via <code className="text-[10px]">gh api</code>.
+                        You can see every call in your terminal and stop syncing
+                        at any time.
+                      </p>
+
+                      <p className="text-[11px] text-text-secondary leading-snug">
+                        Once this finishes, your dashboard will unlock with your{' '}
+                        <span className="font-medium">weekly pulse</span>,{' '}
+                        <span className="font-medium">work rhythm heatmap</span>
+                        , and <span className="font-medium">1:1 prep view</span>
+                        .
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-text-primary/90">
+                        From a repo directory:
+                      </p>
+                      <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-[11px] text-[#D0E1FF] overflow-x-auto">
+                        <code>devimpact sync --repo my-org/my-service</code>
+                      </pre>
+                      <p className="text-[11px] text-text-secondary leading-snug">
+                        DevImpact will use{' '}
+                        <code className="text-[10px]">gh api</code> to read your
+                        PRs, reviews, and commits and attach them to your
+                        account. You stay in control of your GitHub auth and can
+                        revoke access at any time.
+                      </p>
+                      <p className="text-[11px] text-text-secondary leading-snug">
+                        After your first sync, head to the Dashboard to see your
+                        activity timeline, highlights, and work rhythm.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         <aside className="space-y-4">
