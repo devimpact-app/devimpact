@@ -1,5 +1,6 @@
 'use client';
 
+import { CopyableCode } from '@/components/CopyableCode';
 import { CliStatus } from '@/types/api/cli';
 import {
   Terminal,
@@ -320,41 +321,30 @@ export function CliSetupPage({
               )}
             </div>
 
-            {step2Expanded && (
+            {step2Expanded && cliToken && (
               <div className="mt-1 space-y-3 text-[11px] text-text-secondary">
                 <div>
                   <p className="mb-1 font-medium text-text-primary/90">
                     1. Install GitHub CLI
                   </p>
-                  <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-[11px] text-[#D0E1FF] overflow-x-auto">
-                    <code>
-                      brew install gh{'\n'}
-                      gh auth login
-                    </code>
-                  </pre>
+                  <CopyableCode>brew install gh</CopyableCode>
+                  <CopyableCode>gh auth login</CopyableCode>
                 </div>
 
                 <div>
                   <p className="mb-1 font-medium text-text-primary/90">
                     2. Install DevImpact CLI
                   </p>
-                  <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-[11px] text-[#D0E1FF] overflow-x-auto">
-                    <code>npm install -g @devimpact/cli</code>
-                  </pre>
+                  <CopyableCode>npm install -g @devimpact/cli</CopyableCode>
                 </div>
 
                 <div>
                   <p className="mb-1 font-medium text-text-primary/90">
                     3. Link the CLI to your account
                   </p>
-                  <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-[11px] text-[#D0E1FF] overflow-x-auto">
-                    <code>
-                      devimpact init
-                      {cliToken
-                        ? ` --cli-token ${cliToken}`
-                        : ` --cli-token <your-cli-key>`}
-                    </code>
-                  </pre>
+                  <CopyableCode>
+                    {`devimpact init --cli-token ${cliToken}`}
+                  </CopyableCode>
                 </div>
               </div>
             )}

@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import { loginWithGithub } from "./actions";
+import { GitBranch, Github } from 'lucide-react';
+import { loginWithGithub } from './actions';
 
 export default function LoginClient({
   betaCode,
@@ -20,12 +21,12 @@ export default function LoginClient({
             DevImpact
           </a>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">
-            {hasValidCode ? "Welcome!" : "Beta Access"}
+            {hasValidCode ? 'Welcome!' : 'Beta Access'}
           </h1>
           <p className="mt-2 text-text-secondary">
             {hasValidCode
-              ? "Sign in to your private impact workspace"
-              : "Enter your beta access code to continue"}
+              ? 'Sign in to your private impact workspace'
+              : 'Enter your beta access code to continue'}
           </p>
         </div>
 
@@ -87,7 +88,7 @@ export default function LoginClient({
 
         {hasValidCode && (
           <form className="mt-8" action={loginWithGithub}>
-            <input type="hidden" name="betaCode" value={betaCode ?? ""} />
+            <input type="hidden" name="betaCode" value={betaCode ?? ''} />
             <button
               type="submit"
               className="
@@ -96,18 +97,7 @@ export default function LoginClient({
                 hover:bg-background hover:ring-2 hover:ring-accent cursor-pointer
               "
             >
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M12 2C6.477 2 2 6.484 2 12.017..."
-                />
-              </svg>
+              <Github className="h-5 w-5" />
               Continue with GitHub
             </button>
           </form>

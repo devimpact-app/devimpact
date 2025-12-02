@@ -1,9 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Github, LogOut, TerminalSquare, Trash2 } from 'lucide-react';
+import {
+  Calendar,
+  Check,
+  Copy,
+  Github,
+  LogOut,
+  TerminalSquare,
+  Trash2,
+} from 'lucide-react';
 import { signOutAction } from '../dashboard/actions';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { CopyableCode } from '@/components/CopyableCode';
 
 async function postJson(url: string, body?: unknown) {
   const res = await fetch(url, {
@@ -121,10 +131,31 @@ export function SettingsClient({
                   CLI on your machine.
                 </p>
                 {!cliDisconnected && (
-                  <p className="flex items-center gap-1 text-[11px] text-slate-500">
-                    <TerminalSquare className="h-3 w-3 text-sky-300" />
-                    <span>Connected via personal CLI token</span>
-                  </p>
+                  <>
+                    <p className="flex pb-2 items-center gap-1 text-[11px] text-slate-500">
+                      <TerminalSquare className="h-3 w-3 text-sky-300" />
+                      <span>Connected via personal CLI token</span>
+                    </p>
+
+                    <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2">
+                      <p className="text-[11px] text-slate-400 mb-1">
+                        Looking for how to run a sync from the CLI?
+                      </p>
+
+                      <CopyableCode>
+                        devimpact sync --repo my-org/my-service
+                      </CopyableCode>
+
+                      <p className="mt-2 text-[11px] text-slate-400 mb-1">
+                        Or for multiple repos:
+                      </p>
+
+                      <CopyableCode>
+                        devimpact sync --repo org/frontend --repo org/api --repo
+                        org/mobile
+                      </CopyableCode>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
