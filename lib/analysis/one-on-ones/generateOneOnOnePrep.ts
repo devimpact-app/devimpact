@@ -1,13 +1,10 @@
 import { DB } from '@/lib/db/client';
 import { NewOneOnOneSession } from '@/lib/db/schema/prep';
 import { weeksAgo } from '@/lib/utils/date';
-import { Insight } from '@/types/api/insights';
-import {
-  OneOnOneTalkingPoint,
-  TCreateOneOnOneInput,
-} from '@/types/api/one-on-one';
-import { runBatchServer } from '../metrics/runBatchServer';
-import { TMetricsBatchInput } from '@/types/api/metrics';
+import { TCreateOneOnOneInput } from '@/types/api/one-on-one';
+import { OneOnOneLLMContext, OneOnOneLLMOutput } from './types';
+import { fetchMetricsForWindows } from './metrics';
+import { fetchInsightsForWindow } from './insights';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -16,110 +13,6 @@ type GenerateOneOnOnePrepParams = TCreateOneOnOneInput & {
   timezone: string;
   db: DB;
 };
-
-type OneOnOneLLMContext = {
-  shortWindow: {
-    start: string;
-    end: string;
-    summaryStats: Record<string, number | null>;
-    recentInsights: Insight[];
-  };
-  mediumWindow: {
-    start: string;
-    end: string;
-    summaryStats: Record<string, number | null>;
-    topInsights: Insight[];
-  };
-};
-
-type OneOnOneLLMOutput = {
-  talkingPoints: OneOnOneTalkingPoint[];
-  usedInsightIds?: string[];
-  usedMetricIds?: string[];
-};
-
-async function fetchInsightsForWindow(params: {
-  tenantId: string;
-  start: Date;
-  end: Date;
-  limit: number;
-  db: DB;
-}): Promise<Insight[]> {
-  const { tenantId, start, end, limit, db } = params;
-  // TODO: Call your existing insights engine / query.
-  // For v0, you can reuse the same generator behind /api/insights
-  // and pass a window override.
-  void tenantId;
-  void db;
-  void start;
-  void end;
-  void limit;
-  return [];
-}
-
-async function fetchMetricsForWindows(params: {
-  tenantId: string;
-  windows: { key: 'short' | 'medium'; start: Date; end: Date }[];
-  db: DB;
-}): Promise<Record<string, Record<string, number | null>>> {
-  const { tenantId, windows } = params;
-
-  const shortWindow = windows.find((w) => w.key === 'short');
-  const mediumWindow = windows.find((w) => w.key === 'medium');
-  if (!shortWindow || !mediumWindow)
-    return {
-      short: {},
-      medium: {},
-    };
-  const { start: shortWindowStart, end: shortWindowEnd } = shortWindow ?? {};
-  const { start: mediumWindowStart, end: mediumWindowEnd } = mediumWindow ?? {};
-
-  const metricIds = [
-    'pr.authored_merged_count.v1',
-    'pr.lead_time_seconds.v1',
-    'pr.time_to_first_review.v1',
-    'pr.time_review_to_merge.v1',
-    'pr.size_lines_changed_median.v1',
-    'pr.size_files_changed_median.v1',
-    'pr.test_rate.v1',
-    'pr.blocked_rate.v1',
-    'review.given_count.v1',
-    'review.latency_seconds.avg.v1',
-    'review.comment_count.avg.v1',
-  ];
-
-  const batchResult = await runBatchServer(
-    {
-      requests: metricIds.flatMap((metricId) => [
-        {
-          metricId,
-          input: {
-            start: shortWindowStart.toISOString(),
-            end: shortWindowEnd.toISOString(),
-            windowWeeks: 0,
-            shape: 'stat',
-            comparison: { kind: 'previous_period' },
-          },
-        },
-        {
-          metricId,
-          input: {
-            start: mediumWindowStart.toISOString(),
-            end: mediumWindowEnd.toISOString(),
-            windowWeeks: 0,
-            shape: 'timeseries',
-          },
-        },
-      ]),
-    } as TMetricsBatchInput,
-    tenantId
-  );
-
-  return {
-    short: {},
-    medium: {},
-  };
-}
 
 async function generateLLMTalkingPoints(
   ctx: OneOnOneLLMContext
@@ -172,21 +65,12 @@ export async function generateOneOnOnePrep(
   const mediumEnd = meetingAt;
   const mediumStart = weeksAgo(mediumEnd, mediumWindowWeeks);
 
-  // 2) Fetch insights + metrics in parallel
-  const [shortInsights, mediumInsights, metricsByWindow] = await Promise.all([
-    fetchInsightsForWindow({
-      tenantId,
-      start: shortStart,
-      end: shortEnd,
-      limit: 6,
-      db,
-    }),
+  const [insights, metrics] = await Promise.all([
     fetchInsightsForWindow({
       tenantId,
       start: mediumStart,
       end: mediumEnd,
-      limit: 8,
-      db,
+      timezone,
     }),
     fetchMetricsForWindows({
       tenantId,
@@ -194,44 +78,27 @@ export async function generateOneOnOnePrep(
         { key: 'short', start: shortStart, end: shortEnd },
         { key: 'medium', start: mediumStart, end: mediumEnd },
       ],
-      db,
     }),
   ]);
 
-  // 3) Assemble LLM context
   const llmContext: OneOnOneLLMContext = {
-    shortWindow: {
-      start: shortStart.toISOString(),
-      end: shortEnd.toISOString(),
-      summaryStats: metricsByWindow.short ?? {},
-      recentInsights: shortInsights,
+    meeting: {
+      meetingAtISO: meetingAt.toISOString(),
+      shortWindowStartISO: shortStart.toISOString(),
+      shortWindowEndISO: shortEnd.toISOString(),
+      mediumWindowStartISO: mediumStart.toISOString(),
+      mediumWindowEndISO: mediumEnd.toISOString(),
+      counterpartType: counterpartType ?? 'manager',
+      counterpartLabel,
     },
-    mediumWindow: {
-      start: mediumStart.toISOString(),
-      end: mediumEnd.toISOString(),
-      summaryStats: metricsByWindow.medium ?? {},
-      topInsights: mediumInsights,
-    },
+    metrics,
+    insights,
   };
 
-  // 4) Ask LLM to draft talking points + notes
   const llmOutput = await generateLLMTalkingPoints(llmContext);
 
-  const talkingPoints = llmOutput.talkingPoints ?? [];
-  const usedInsightIds = Array.from(
-    new Set(
-      (llmOutput.usedInsightIds ??
-        talkingPoints.flatMap((tp) => tp.relatedInsightIds ?? [])) as string[]
-    )
-  );
-  const usedMetricIds = Array.from(
-    new Set(
-      (llmOutput.usedMetricIds ??
-        talkingPoints.flatMap((tp) => tp.relatedMetricIds ?? [])) as string[]
-    )
-  );
+  // const talkingPoints = llmOutput.talkingPoints ?? [];
 
-  // 5) Build a human-ish title – you can refine later
   const formatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -248,7 +115,6 @@ export async function generateOneOnOnePrep(
     mediumWindowEnd: mediumEnd,
     title: finalTitle,
     payload: {
-      // summary: `1:1 prep for ${rowP} covering ${mediumStart}–${mediumEnd}. Focus on delivery, code health, and current blockers.`,
       summary: '',
       talkingPoints: [
         {

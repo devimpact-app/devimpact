@@ -11,16 +11,25 @@ export type BuildInsightContextArgs = {
   timezone: string;
   limit?: number;
   windowWeeks?: number;
+
+  startOverride?: Date;
+  endOverride?: Date;
 };
 
 export async function buildInsightContext(
   args: BuildInsightContextArgs
 ): Promise<InsightContext> {
-  const { userId, timezone, windowWeeks } = args;
-  const { start: windowStart, end: windowEnd } = getWeekBoundsFromOffset(
-    0,
-    windowWeeks ?? 4
-  );
+  const { userId, timezone, windowWeeks, startOverride, endOverride } = args;
+  let windowStart: Date;
+  let windowEnd: Date;
+  if (!startOverride || !endOverride) {
+    const { start, end } = getWeekBoundsFromOffset(0, windowWeeks ?? 4);
+    windowStart = start;
+    windowEnd = end;
+  } else {
+    windowStart = startOverride;
+    windowEnd = endOverride;
+  }
 
   const authoredPrs = await getAuthoredPrs({
     start: windowStart,
