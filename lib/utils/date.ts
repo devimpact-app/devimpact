@@ -212,6 +212,12 @@ export function inferWindowWeeks(
   return best.weeks;
 }
 
+export function getDaysDiff(start: Date, end: Date) {
+  const ms = end.getTime() - start.getTime();
+  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+  return days;
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function computeWindowEnd(start: Date, windowWeeks: number): Date {
