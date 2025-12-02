@@ -34,6 +34,8 @@ export const OneOnOneTalkingPointSchema = z.object({
   order: z.number().int(),
   relatedInsightIds: z.array(z.string()).default([]),
   relatedMetricIds: z.array(z.string()).default([]),
+  relatedPrIds: z.array(z.string()).default([]),
+  relatedReviewIds: z.array(z.string()).default([]),
 });
 export type OneOnOneTalkingPoint = z.infer<typeof OneOnOneTalkingPointSchema>;
 

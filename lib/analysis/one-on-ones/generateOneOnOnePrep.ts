@@ -1,11 +1,19 @@
 import { DB } from '@/lib/db/client';
 import { NewOneOnOneSession } from '@/lib/db/schema/prep';
 import { weeksAgo } from '@/lib/utils/date';
-import { TCreateOneOnOneInput } from '@/types/api/one-on-one';
+import {
+  OneOnOneTalkingPoint,
+  TCreateOneOnOneInput,
+} from '@/types/api/one-on-one';
 import { OneOnOneLLMContext, OneOnOneLLMOutput } from './types';
 import { fetchMetricsForWindows } from './metrics';
 import { fetchInsightsForWindow } from './insights';
 import { getActivityForOneOnOneRange } from './activity';
+import { buildTalkingPointsPrompt } from './llm';
+import { openai } from '@/lib/integrations/openai/client';
+import { AiConfig } from '@/lib/integrations/openai/config';
+import { withRetry } from '@/lib/integrations/openai/utils/retry';
+import { safeJson } from '@/lib/integrations/openai/utils/json';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -15,21 +23,112 @@ type GenerateOneOnOnePrepParams = TCreateOneOnOneInput & {
   db: DB;
 };
 
+export function extractUsedReferences(
+  talkingPoints: OneOnOneTalkingPoint[],
+  context: OneOnOneLLMContext
+) {
+  const usedMetricIds = new Set<string>();
+  const usedInsightIds = new Set<string>();
+  const usedPrIds = new Set<string>();
+  const usedReviewIds = new Set<string>();
+
+  for (const tp of talkingPoints) {
+    tp.relatedMetricIds.forEach((id) => usedMetricIds.add(id));
+    tp.relatedInsightIds.forEach((id) => usedInsightIds.add(id));
+    tp.relatedPrIds.forEach((id) => usedPrIds.add(id));
+    tp.relatedReviewIds.forEach((id) => usedReviewIds.add(id));
+  }
+
+  const usedMetrics = context.metrics.filter((m) =>
+    usedMetricIds.has(m.metricId)
+  );
+
+  const usedInsights = context.insights.filter((i) => usedInsightIds.has(i.id));
+
+  const usedPrs = context.highlightPrs.filter((pr) => usedPrIds.has(pr.id));
+
+  const usedReviews = context.highlightedReviews.filter((review) =>
+    usedReviewIds.has(review.id)
+  );
+
+  return {
+    usedMetrics,
+    usedInsights,
+    usedPrs,
+    usedReviews,
+  };
+}
+
 async function generateLLMTalkingPoints(
   ctx: OneOnOneLLMContext
 ): Promise<OneOnOneLLMOutput> {
-  // TODO: Replace this with your real OpenAI client & prompt.
-  // Keep output as strict JSON.
+  const messages = buildTalkingPointsPrompt(ctx);
+  const run = () =>
+    openai.chat.completions.create({
+      model: AiConfig.models.summarize,
+      temperature: 0.4,
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'talkingPoints',
+          schema: {
+            type: 'object',
+            properties: {
+              talkingPoints: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    kind: {
+                      type: 'string',
+                      enum: [
+                        'highlights',
+                        'friction',
+                        'asks',
+                        'feedback_for_manager',
+                        'goals',
+                        'metrics',
+                        'insights',
+                      ],
+                    },
+                    title: { type: 'string' },
+                    body: { type: 'string' },
+                    order: { type: 'integer' },
+                    relatedInsightIds: {
+                      type: 'array',
+                      items: { type: 'string' },
+                    },
+                    relatedMetricIds: {
+                      type: 'array',
+                      items: { type: 'string' },
+                    },
+                    relatedPrIds: {
+                      type: 'array',
+                      items: { type: 'string' },
+                    },
+                    relatedReviewIds: {
+                      type: 'array',
+                      items: { type: 'string' },
+                    },
+                  },
+                  required: ['id', 'kind', 'title', 'order'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['talkingPoints'],
+            additionalProperties: false,
+          },
+          strict: true,
+        },
+      },
+      messages,
+    });
 
-  // const response = await callOpenAIJson<OneOnOneLLMOutput>({
-  //   system: prompt,
-  //   user: ctx,
-  // });
-  return {
-    talkingPoints: [],
-    usedInsightIds: [],
-    usedMetricIds: [],
-  };
+  const res = await withRetry(run);
+  const content = res.choices[0]?.message?.content ?? '{}';
+  return safeJson<OneOnOneLLMOutput>(content);
 }
 
 export async function generateOneOnOnePrep(
@@ -107,7 +206,8 @@ export async function generateOneOnOnePrep(
 
   const llmOutput = await generateLLMTalkingPoints(llmContext);
 
-  // const talkingPoints = llmOutput.talkingPoints ?? [];
+  const talkingPoints = llmOutput.talkingPoints ?? [];
+  const references = extractUsedReferences(talkingPoints, llmContext);
 
   const formatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -126,91 +226,8 @@ export async function generateOneOnOnePrep(
     title: finalTitle,
     payload: {
       summary: '',
-      talkingPoints: [
-        {
-          id: 'tp-1',
-          kind: 'highlights',
-          title: 'Auth refactor PR',
-          body: 'Closed out the lingering auth cleanup PR (#4821) that had been stalled for two weeks. Reduced ~600 lines of dead code.',
-          order: 1,
-          relatedInsightIds: ['shipping_momentum:last_4_weeks'],
-          relatedMetricIds: ['pr.authored_merged_count.v1'],
-        },
-        {
-          id: 'tp-2',
-          kind: 'highlights',
-          title: 'Billing settings UI',
-          body: 'Delivered the initial settings panel. Minimal scope but unblocked design and helped backend validate API shape.',
-          order: 2,
-          relatedInsightIds: [],
-          relatedMetricIds: ['pr.authored_merged_count.v1'],
-        },
-        {
-          id: 'tp-3',
-          kind: 'friction',
-          title: 'Slow review turnaround',
-          body: 'The two PRs for notifications batching sat 4–5 days waiting for review, causing some context switching.',
-          order: 3,
-          relatedInsightIds: ['shipping_momentum:last_4_weeks'],
-          relatedMetricIds: ['pr.authored_merged_count.v1'],
-        },
-        {
-          id: 'tp-4',
-          kind: 'friction',
-          title: 'Recurring setup issues',
-          body: 'Spent multiple hours reinstalling local dependencies after the Node 20 upgrade. Seems to affect others too.',
-          order: 4,
-          relatedInsightIds: [],
-          relatedMetricIds: [],
-        },
-        {
-          id: 'tp-5',
-          kind: 'goals',
-          title: 'Time spent on small reactive fixes',
-          body: 'Last sprint had 12+ minor fixes that broke flow. Would be helpful to batch or defer some of that work.',
-          order: 5,
-          relatedInsightIds: ['shipping_momentum:last_4_weeks'],
-          relatedMetricIds: [],
-        },
-        {
-          id: 'tp-6',
-          kind: 'goals',
-          title: 'Clarity in initial PR descriptions',
-          body: 'A couple of reviewers mentioned needing more context. Small tweaks could help reduce review cycles.',
-          order: 6,
-          relatedInsightIds: [],
-          relatedMetricIds: ['prs_merged:last_4_weeks'],
-        },
-      ],
-
-      usedInsights: [
-        {
-          id: 'shipping_momentum:last_4_weeks',
-          kind: 'fast_loops',
-          title: 'Shipping momentum is trending up over the last 4 weeks',
-          body: 'They merged more PRs than their recent baseline with fewer reverts, which signals improving consistency.',
-          emphasis: 'Upward trend in shipped work',
-          stats: [],
-          severity: 'positive',
-          score: 70,
-          timeWindowLabel: 'Last 4 weeks',
-          meta: { source: 'stub' },
-          relatedItems: [],
-        },
-      ],
-
-      usedMetrics: [
-        {
-          id: 'pr.authored_merged_count.v1',
-          label: 'PRs merged',
-          unit: 'PRs',
-          windowStart: mediumStart.toISOString(),
-          windowEnd: mediumEnd.toISOString(),
-          windowKind: 'medium',
-          value: 24,
-          formattedValue: '24 PRs merged',
-        },
-      ],
+      talkingPoints,
+      ...references,
     },
 
     status: 'ready',
