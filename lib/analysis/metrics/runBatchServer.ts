@@ -52,7 +52,6 @@ export async function runBatchServer(
   const inputs = expandInputsWithDependencies(input.requests);
   const requestedKeys = new Set(input.requests.map(makeInputKey));
 
-  console.log('requestedKeys', requestedKeys);
   const planInputs: MetricInputForBatch[] = [];
   const derivedInputs: MetricInputForBatch[] = [];
 
@@ -97,7 +96,9 @@ export async function runBatchServer(
         ...r.input,
         tenantId,
         start,
-        end: computeWindowEnd(start, r.input.windowWeeks),
+        end: r.input.end
+          ? new Date(r.input.end)
+          : computeWindowEnd(start, r.input.windowWeeks),
         windowWeeks: r.input.windowWeeks,
         comparison:
           r.input.comparison?.kind === 'custom'
@@ -301,7 +302,6 @@ export async function runBatchServer(
           ...r.window,
         } as unknown as TMetricInput,
       });
-      console.log('key', key);
       return requestedKeys.has(key);
     }),
   };

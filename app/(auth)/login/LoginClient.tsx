@@ -1,6 +1,6 @@
 'use client';
 
-import { GitBranch, Github } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { loginWithGithub } from './actions';
 
 export default function LoginClient({

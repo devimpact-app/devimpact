@@ -57,6 +57,8 @@ export function getWeeklyBuckets(
       end: bucketEnd,
       status: isPartial ? 'partial' : 'complete',
     });
+
+    cursor = bucketEnd;
   }
 
   return buckets;

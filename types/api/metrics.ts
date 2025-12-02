@@ -24,6 +24,7 @@ export const Comparison = z.union([
 
 export const MetricInput = z.object({
   start: z.string(), // ISO
+  end: z.string().optional(),
   windowWeeks: z.number(), // ISO
   shape: ResultShape,
   granularity: Granularity.optional(),

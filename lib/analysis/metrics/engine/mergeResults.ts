@@ -31,12 +31,14 @@ export function mergePrimaryAndComparison(
     return mergeStat(primary as TStatResult, comparison as TStatResult);
   }
 
+  throw new Error('merging not supported for timeseries yet');
+
   // timeseries
-  return mergeTimeseries(
-    primary as TTimeseriesResult,
-    comparison as TTimeseriesResult,
-    opts
-  );
+  // return mergeTimeseries(
+  //   primary as TTimeseriesResult,
+  //   comparison as TTimeseriesResult,
+  //   opts
+  // );
 }
 
 function mergeStat(primary: TStatResult, comparison: TStatResult): TStatResult {
@@ -70,61 +72,61 @@ function valueOf(s: TStatResult): { value: number | null } {
   return { value: current.value ?? null };
 }
 
-function mergeTimeseries(
-  primary: TTimeseriesResult,
-  comparison: TTimeseriesResult,
-  opts: MergeOptions
-): TTimeseriesResult {
-  // Default: return two labeled series, untouched
-  if (!opts.alignTimeseries) {
-    return {
-      ...primary,
-      series: [
-        labelSeries(primary.series, 'Current'),
-        labelSeries(comparison.series, 'Comparison'),
-      ].flat(),
-    };
-  }
+// function mergeTimeseries(
+//   primary: TTimeseriesResult,
+//   comparison: TTimeseriesResult,
+//   opts: MergeOptions
+// ): TTimeseriesResult {
+//   // Default: return two labeled series, untouched
+//   if (!opts.alignTimeseries) {
+//     return {
+//       ...primary,
+//       series: [
+//         labelSeries(primary.series, 'Current'),
+//         labelSeries(comparison.series, 'Comparison'),
+//       ].flat(),
+//     };
+//   }
 
-  // Alignment path: build point maps for each label and intersect timestamps
-  const aligned: Series[] = [];
-  const primLabeled = labelSeries(primary.series, 'Current');
-  const compLabeled = labelSeries(comparison.series, 'Comparison');
+//   // Alignment path: build point maps for each label and intersect timestamps
+//   const aligned: Series[] = [];
+//   const primLabeled = labelSeries(primary.series, 'Current');
+//   const compLabeled = labelSeries(comparison.series, 'Comparison');
 
-  // We’ll align per-series label index, assuming both sets have same number of series
-  const maxSeries = Math.max(primLabeled.length, compLabeled.length);
-  for (let i = 0; i < maxSeries; i++) {
-    const p = primLabeled[i];
-    const c = compLabeled[i];
+//   // We’ll align per-series label index, assuming both sets have same number of series
+//   const maxSeries = Math.max(primLabeled.length, compLabeled.length);
+//   for (let i = 0; i < maxSeries; i++) {
+//     const p = primLabeled[i];
+//     const c = compLabeled[i];
 
-    if (!p || !c) {
-      // If shapes differ (e.g., aggregation changes), just push available series
-      if (p) aligned.push(p);
-      if (c) aligned.push(c);
-      continue;
-    }
+//     if (!p || !c) {
+//       // If shapes differ (e.g., aggregation changes), just push available series
+//       if (p) aligned.push(p);
+//       if (c) aligned.push(c);
+//       continue;
+//     }
 
-    const pMap = new Map(p.points.map((pt) => [pt.t, pt.v]));
-    const cMap = new Map(c.points.map((pt) => [pt.t, pt.v]));
+//     const pMap = new Map(p.points.map((pt) => [pt.t, pt.v]));
+//     const cMap = new Map(c.points.map((pt) => [pt.t, pt.v]));
 
-    // Intersect timestamps
-    const ts = intersectTimestamps(pMap, cMap);
+//     // Intersect timestamps
+//     const ts = intersectTimestamps(pMap, cMap);
 
-    const pAligned = {
-      label: p.label,
-      points: ts.map((t) => ({ t, v: (pMap.get(t) ?? null) as number | null })),
-    };
+//     const pAligned = {
+//       label: p.label,
+//       points: ts.map((t) => ({ t, v: (pMap.get(t) ?? null) as number | null })),
+//     };
 
-    const cAligned = {
-      label: c.label,
-      points: ts.map((t) => ({ t, v: (cMap.get(t) ?? null) as number | null })),
-    };
+//     const cAligned = {
+//       label: c.label,
+//       points: ts.map((t) => ({ t, v: (cMap.get(t) ?? null) as number | null })),
+//     };
 
-    aligned.push(pAligned, cAligned);
-  }
+//     aligned.push(pAligned, cAligned);
+//   }
 
-  return { ...primary, series: aligned };
-}
+//   return { ...primary, series: aligned };
+// }
 
 function labelSeries(series: Series[], suffix: string): Series[] {
   // Only add suffix if not already labeled

@@ -34,7 +34,7 @@ async function runMetricWithDefinition(
 
   const comparisonWindow = computeComparisonWindow({
     primaryStart: input.start,
-    windowWeeks: input.windowWeeks,
+    primaryEnd: input.end,
     cmp:
       input.comparison?.kind === 'custom'
         ? {

@@ -6,6 +6,8 @@ import {
   OneOnOneTalkingPoint,
   TCreateOneOnOneInput,
 } from '@/types/api/one-on-one';
+import { runBatchServer } from '../metrics/runBatchServer';
+import { TMetricsBatchInput } from '@/types/api/metrics';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -57,26 +59,65 @@ async function fetchInsightsForWindow(params: {
 
 async function fetchMetricsForWindows(params: {
   tenantId: string;
-  windows: { key: 'short' | 'medium' | 'long'; start: Date; end: Date }[];
+  windows: { key: 'short' | 'medium'; start: Date; end: Date }[];
   db: DB;
 }): Promise<Record<string, Record<string, number | null>>> {
   const { tenantId, windows } = params;
-  void tenantId;
-  void windows;
-  // TODO:
-  // - Build a MetricsBatchInput with your chosen metricIds
-  //   (e.g. cycle time, review latency, blocked ratio).
-  // - Run through your metrics engine.
-  // - Return a map like:
-  //   {
-  //     short: { 'metric.id.1': 12.3, 'metric.id.2': 0.45 },
-  //     medium: { ... },
-  //     long: { ... },
-  //   }
+
+  const shortWindow = windows.find((w) => w.key === 'short');
+  const mediumWindow = windows.find((w) => w.key === 'medium');
+  if (!shortWindow || !mediumWindow)
+    return {
+      short: {},
+      medium: {},
+    };
+  const { start: shortWindowStart, end: shortWindowEnd } = shortWindow ?? {};
+  const { start: mediumWindowStart, end: mediumWindowEnd } = mediumWindow ?? {};
+
+  const metricIds = [
+    'pr.authored_merged_count.v1',
+    'pr.lead_time_seconds.v1',
+    'pr.time_to_first_review.v1',
+    'pr.time_review_to_merge.v1',
+    'pr.size_lines_changed_median.v1',
+    'pr.size_files_changed_median.v1',
+    'pr.test_rate.v1',
+    'pr.blocked_rate.v1',
+    'review.given_count.v1',
+    'review.latency_seconds.avg.v1',
+    'review.comment_count.avg.v1',
+  ];
+
+  const batchResult = await runBatchServer(
+    {
+      requests: metricIds.flatMap((metricId) => [
+        {
+          metricId,
+          input: {
+            start: shortWindowStart.toISOString(),
+            end: shortWindowEnd.toISOString(),
+            windowWeeks: 0,
+            shape: 'stat',
+            comparison: { kind: 'previous_period' },
+          },
+        },
+        {
+          metricId,
+          input: {
+            start: mediumWindowStart.toISOString(),
+            end: mediumWindowEnd.toISOString(),
+            windowWeeks: 0,
+            shape: 'timeseries',
+          },
+        },
+      ]),
+    } as TMetricsBatchInput,
+    tenantId
+  );
+
   return {
     short: {},
     medium: {},
-    long: {},
   };
 }
 

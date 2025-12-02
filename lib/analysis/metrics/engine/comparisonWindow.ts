@@ -14,11 +14,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function computeComparisonWindow({
   primaryStart,
-  windowWeeks,
+  primaryEnd,
   cmp,
 }: {
   primaryStart: Date;
-  windowWeeks: number;
+  primaryEnd: Date;
   cmp: ComparisonSpec | undefined;
 }): ComparisonWindow {
   if (!cmp || cmp.kind === 'none') return { kind: 'none' };
@@ -28,7 +28,7 @@ export function computeComparisonWindow({
 
   switch (cmp.kind) {
     case 'previous_period': {
-      const durationMs = windowWeeks * 7 * DAY_MS;
+      const durationMs = primaryEnd.getTime() - primaryStart.getTime();
 
       const end = new Date(normStart.getTime()); // ends right before primaryStart
       const start = new Date(end.getTime() - durationMs);
@@ -39,8 +39,7 @@ export function computeComparisonWindow({
         kind: 'previous_period',
         start,
         end,
-        label:
-          windowWeeks === 1 ? 'Previous week' : `Previous ${windowWeeks} weeks`,
+        label: 'Previous period',
       };
     }
 

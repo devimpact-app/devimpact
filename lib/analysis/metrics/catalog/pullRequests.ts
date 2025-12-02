@@ -64,6 +64,37 @@ export const PR_TIME_TO_FIRST_REVIEW_V1: MetricDefinition = {
   },
 };
 
+export const PR_TIME_REVIEW_TO_MERGE_V1: MetricDefinition = {
+  id: 'pr.time_review_to_merge.v1',
+  name: 'PR Time from First Review to Merge',
+  description: 'How long your PRs take from first review before being merged',
+  entity: 'pr',
+  unit: 'hours',
+  display: {
+    label: 'PR Time from First Review to Merge',
+    description: 'How long your PRs take from first review before being merged',
+    valueFormat: {
+      scale: 1 / 3600,
+      unitSuffix: 'h',
+      decimals: 1,
+      kind: 'duration',
+    },
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: 'plan',
+    source: 'pullRequests',
+    operation: 'median',
+    column: 'reviewToMergeSeconds',
+    timeColumn: 'mergedAt',
+    where: [
+      { col: 'authorIsTenant', op: 'eq', val: true },
+      { col: 'mergedAt', op: 'between', startRef: 'start', endRef: 'end' },
+      { col: 'reviewToMergeSeconds', op: 'is_not_null' },
+    ],
+  },
+};
+
 export const AUTHORED_PRS_COUNT_V1: MetricDefinition = {
   id: 'pr.authored_merged_count.v1',
   name: 'Merged PRs authored',
@@ -156,6 +187,66 @@ export const BLOCKED_PRS_RATE_V1: MetricDefinition = {
   },
 };
 
+export const AUTHORED_PRS_WITH_TOUCHED_TESTS_V1: MetricDefinition = {
+  id: 'pr.authored_with_touched_tests_count.v1',
+  name: 'PRs touching tests',
+  description:
+    'Count of PRs authored by the tenant that touch at least one test',
+  entity: 'pr',
+  unit: 'count',
+  display: {
+    label: 'PRs touching tests',
+    description: 'Count of your PRs that touch at least one test',
+    valueFormat: {
+      scale: 1,
+      unitSuffix: 'prs',
+      decimals: 0,
+      kind: 'count',
+    },
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: 'plan',
+    source: 'pullRequests',
+    operation: 'count',
+    timeColumn: 'mergedAt',
+    where: [
+      { col: 'authorIsTenant', op: 'eq', val: true },
+      { col: 'mergedAt', op: 'between', startRef: 'start', endRef: 'end' },
+      { col: 'touchedTests', op: 'eq', val: true },
+    ],
+  },
+};
+
+export const PRS_TOUCHING_TESTS_RATE_V1: MetricDefinition = {
+  id: 'pr.test_rate.v1',
+  name: 'PRs touching tests',
+  description: 'Percentage of your merged PRs that touch at least one test',
+  entity: 'pr',
+  unit: 'percent',
+  display: {
+    label: 'PRs touching tests',
+    description: 'Percentage of your merged PRs that touch at least one test',
+    valueFormat: {
+      scale: 100,
+      unitSuffix: '%',
+      decimals: 0,
+      kind: 'ratio',
+    },
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: 'derived',
+    dependsOn: [
+      'pr.authored_with_touched_tests_count.v1',
+      'pr.authored_merged_count.v1',
+    ],
+    compute: 'ratio',
+    numerator: 'pr.authored_with_touched_tests_count.v1',
+    denominator: 'pr.authored_merged_count.v1',
+  },
+};
+
 export const PR_SIZE_LINES_CHANGED_MEDIAN_V1: MetricDefinition = {
   id: 'pr.size_lines_changed_median.v1',
   name: 'PR size (median lines changed)',
@@ -184,6 +275,38 @@ export const PR_SIZE_LINES_CHANGED_MEDIAN_V1: MetricDefinition = {
       { col: 'authorIsTenant', op: 'eq', val: true },
       { col: 'mergedAt', op: 'between', startRef: 'start', endRef: 'end' },
       { col: 'linesChanged', op: 'is_not_null' },
+    ],
+  },
+};
+
+export const PR_SIZE_FILES_CHANGED_MEDIAN_V1: MetricDefinition = {
+  id: 'pr.size_files_changed_median.v1',
+  name: 'PR size (median files changed)',
+  description:
+    'Median number of files changed per merged PR you authored in the selected window.',
+  entity: 'pr',
+  unit: 'files',
+  display: {
+    label: 'Typical PR size (files)',
+    description: 'Median files changed per merged PR you authored',
+    valueFormat: {
+      scale: 1,
+      unitSuffix: 'files',
+      decimals: 0,
+      kind: 'count',
+    },
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: 'plan',
+    source: 'pullRequests',
+    operation: 'median',
+    column: 'filesChanged',
+    timeColumn: 'mergedAt',
+    where: [
+      { col: 'authorIsTenant', op: 'eq', val: true },
+      { col: 'mergedAt', op: 'between', startRef: 'start', endRef: 'end' },
+      { col: 'filesChanged', op: 'is_not_null' },
     ],
   },
 };

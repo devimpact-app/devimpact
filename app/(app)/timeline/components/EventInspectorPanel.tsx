@@ -197,7 +197,7 @@ export function EventInspectorPanel({
 
               {summary.highlights?.length > 0 && (
                 <ul className="mt-2 space-y-1 text-[11px] text-text-secondary">
-                  {summary.highlights.map((h) => (
+                  {summary.highlights.map((h: any) => (
                     <li key={h} className="flex gap-1">
                       <span className="mt-[3px] h-[3px] w-[3px] rounded-full bg-text-tertiary" />
                       <span>{h}</span>
