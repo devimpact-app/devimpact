@@ -1,4 +1,5 @@
 import { PullRequest, Review } from '@/lib/db/schema';
+import { HighlightedReview } from '@/types/api/weekly-summary';
 
 export function scoreReview(r: Review): number {
   let score = 0;
@@ -18,10 +19,38 @@ export function isReviewWorthConsidering(r: Review): boolean {
   return (r.reviewCommentsCount ?? 0) > 0 || r.state === 'changes_requested';
 }
 
+function getHighlightedReviewFromReview({
+  review,
+  pr,
+}: {
+  review: Review;
+  pr: PullRequest;
+}): HighlightedReview {
+  return {
+    prId: pr.id,
+    repo: pr.repoFullName,
+    number: pr.prNumber,
+    title: pr.title,
+    htmlUrl: pr.htmlUrl,
+    shortSummary: buildHighlightedReviewSummary(review),
+    tags: [],
+    submittedAt: review.submittedAt
+      ? review.submittedAt.toISOString()
+      : undefined,
+    reviewLatencyHours: review.reviewLatencySeconds,
+    reviewCommentsCount: review.reviewCommentsCount,
+    isApproval: review.isApproval,
+    isBlocking: review.isBlockingReview,
+    isFirstReview: review.wasFirstReview,
+
+    highlightReason: 'other',
+  };
+}
+
 export function pickHighlightedReview(
   reviews: {
     review: Review;
-    pr?: PullRequest | null;
+    pr: PullRequest;
   }[]
 ) {
   const candidates = reviews.filter((r) => isReviewWorthConsidering(r.review));
@@ -32,7 +61,7 @@ export function pickHighlightedReview(
     .map((r) => ({ review: r, score: scoreReview(r.review) }))
     .sort((a, b) => b.score - a.score);
 
-  return scored[0].review;
+  return getHighlightedReviewFromReview(scored[0].review);
 }
 
 export function buildHighlightedReviewSummary(r: Review): string {

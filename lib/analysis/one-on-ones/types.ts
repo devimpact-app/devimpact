@@ -1,5 +1,6 @@
 import { InsightKind } from '@/types/api/insights';
 import { OneOnOneTalkingPoint } from '@/types/api/one-on-one';
+import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
 
 export type MetricWindowKind = 'short' | 'medium';
 
@@ -62,6 +63,11 @@ export interface OneOnOneInsightForLLM {
   }[];
 }
 
+export interface OneOnOneTagForLLM {
+  tag: string;
+  count: number;
+}
+
 export type OneOnOneLLMContext = {
   meeting: {
     meetingAtISO: string | null;
@@ -72,10 +78,11 @@ export type OneOnOneLLMContext = {
     counterpartType: 'manager' | 'peer' | 'direct_report' | 'other';
     counterpartLabel?: string;
   };
-
   metrics: OneOnOneMetricForLLM[];
-
   insights: OneOnOneInsightForLLM[];
+  highlightPrs: ShippedItem[];
+  highlightedReviews: HighlightedReview[];
+  tags: OneOnOneTagForLLM[];
 };
 
 export type OneOnOneLLMOutput = {

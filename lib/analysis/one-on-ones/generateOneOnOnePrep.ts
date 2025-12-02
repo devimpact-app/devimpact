@@ -5,6 +5,7 @@ import { TCreateOneOnOneInput } from '@/types/api/one-on-one';
 import { OneOnOneLLMContext, OneOnOneLLMOutput } from './types';
 import { fetchMetricsForWindows } from './metrics';
 import { fetchInsightsForWindow } from './insights';
+import { getActivityForOneOnOneRange } from './activity';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -65,7 +66,7 @@ export async function generateOneOnOnePrep(
   const mediumEnd = meetingAt;
   const mediumStart = weeksAgo(mediumEnd, mediumWindowWeeks);
 
-  const [insights, metrics] = await Promise.all([
+  const [insights, metrics, activity] = await Promise.all([
     fetchInsightsForWindow({
       tenantId,
       start: mediumStart,
@@ -78,6 +79,12 @@ export async function generateOneOnOnePrep(
         { key: 'short', start: shortStart, end: shortEnd },
         { key: 'medium', start: mediumStart, end: mediumEnd },
       ],
+    }),
+    getActivityForOneOnOneRange({
+      tenantId,
+      start: mediumStart,
+      end: mediumEnd,
+      timezone,
     }),
   ]);
 
@@ -93,6 +100,9 @@ export async function generateOneOnOnePrep(
     },
     metrics,
     insights,
+    highlightPrs: activity.highlightPrs,
+    highlightedReviews: activity.highlightedReviews,
+    tags: activity.tags,
   };
 
   const llmOutput = await generateLLMTalkingPoints(llmContext);

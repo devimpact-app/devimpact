@@ -1,4 +1,5 @@
 import { PullRequest } from '@/lib/db/schema';
+import { HighlightReason, ShippedItem } from '@/types/api/weekly-summary';
 
 function computeImpactScore(pr: PullRequest): number {
   const sizeComponent = Math.log(1 + (pr.linesChanged ?? 0));
@@ -19,16 +20,46 @@ function computeFrictionScore(pr: PullRequest): number {
   return iterationsComponent + latencyComponent + changesRequestedComponent;
 }
 
+function getShippedItemFromPr(
+  pr: PullRequest,
+  highlightReason: HighlightReason,
+  prSummariesById: Map<string, any>
+): ShippedItem {
+  const summary = prSummariesById.get(pr.id);
+  return {
+    prId: pr.id,
+    repo: pr.repoFullName,
+    number: pr.prNumber,
+    title: pr.title,
+    shortSummary: summary.shortSummary,
+    tags: summary.typeTags ?? [],
+    occurredAt: pr.mergedAt ? pr.mergedAt.toISOString() : undefined,
+    htmlUrl: pr.htmlUrl ?? undefined,
+    leadTimeHours: pr.leadTimeSeconds,
+    timeToFirstReviewHours: pr.timeToFirstReviewSeconds,
+    timeReviewToMergeHours: pr.reviewToMergeSeconds,
+    linesChanged: pr.linesChanged,
+    filesChanged: pr.filesChanged,
+    reviewRounds: pr.reviewRounds,
+    approvalsCount: pr.approvalsCount,
+    touchedTests: pr.touchedTests,
+    highlightReason,
+  } as ShippedItem;
+}
+
 export function pickHighlightedAuthoredPrs(
-  candidates: PullRequest[]
-): PullRequest[] {
+  candidates: PullRequest[],
+  prSummariesById: Map<string, any>
+): ShippedItem[] {
   if (candidates.length === 0) return [];
   if (candidates.length <= 2) {
-    return [...candidates].sort((a, b) => {
-      const aTime = a.mergedAt!.getTime();
-      const bTime = b.mergedAt!.getTime();
-      return bTime - aTime;
-    });
+    return [...candidates]
+      .sort((a, b) => {
+        const aTime = a.mergedAt!.getTime();
+        const bTime = b.mergedAt!.getTime();
+        return bTime - aTime;
+      })
+      .map((pr) => getShippedItemFromPr(pr, 'other', prSummariesById));
   }
 
   const scored = candidates.map((pr) => {
@@ -57,12 +88,19 @@ export function pickHighlightedAuthoredPrs(
     .sort((a, b) => b.combinedScore - a.combinedScore);
   const third = remaining[0];
 
-  const highlighted: PullRequest[] = [];
-  if (topImpact) highlighted.push(topImpact.pr);
-  if (topFriction) highlighted.push(topFriction.pr);
-  if (third) highlighted.push(third.pr);
+  const highlighted: ShippedItem[] = [];
+  if (topImpact)
+    highlighted.push(
+      getShippedItemFromPr(topImpact.pr, 'impact', prSummariesById)
+    );
+  if (topFriction)
+    highlighted.push(
+      getShippedItemFromPr(topFriction.pr, 'friction', prSummariesById)
+    );
+  if (third)
+    highlighted.push(getShippedItemFromPr(third.pr, 'other', prSummariesById));
 
   return Array.from(
-    new Map(highlighted.map((pr) => [pr.id, pr])).values()
+    new Map(highlighted.map((h) => [h.prId, h])).values()
   ).slice(0, 3);
 }
