@@ -1,5 +1,5 @@
+import { OneOnOneLLMContext } from '@/lib/analysis/one-on-ones/types';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { OneOnOneLLMContext } from './types';
 
 export function buildTalkingPointsPrompt(
   input: OneOnOneLLMContext
@@ -19,7 +19,7 @@ CRITICAL: You must respond with ONLY valid JSON matching this exact schema - no 
       "body": "string (2-3 sentences max, concrete and specific)",
       "order": number (0-indexed within each kind),
       "relatedInsightIds": ["array of insight IDs referenced"],
-      "relatedMetricIds": ["array of metric IDs referenced"],
+      "relatedMetricIds": ["array of metric IDs - include each metric only ONCE even if discussing multiple time windows"],
       "relatedPrIds": ["array of PR IDs referenced"],
       "relatedReviewIds": ["array of review IDs referenced"]
     }
@@ -46,7 +46,8 @@ RULES:
 7. Keep titles under 8 words, bodies under 50 words
 8. Generate 6-12 total talking points across all sections
 9. Always include at least one highlight and one metric
-10. Only include friction/asks if data suggests real issues`,
+10. Only include friction/asks if data suggests real issues
+11. IMPORTANT: Each metric has multiple time windows (short and medium). When referencing a metric in relatedMetricIds, include the metricId only ONCE, even if you discuss both time windows in the body text. Example: if discussing "PRs merged" trends across both 2-week and 4-week periods, only include the metricId once in relatedMetricIds.`,
   };
 
   const user: ChatCompletionMessageParam = {

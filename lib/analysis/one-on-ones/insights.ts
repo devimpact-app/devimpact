@@ -1,4 +1,4 @@
-import { InsightStat } from '@/types/api/insights';
+import { Insight, InsightStat } from '@/types/api/insights';
 import { buildInsights } from '../insights';
 import { OneOnOneInsightForLLM } from './types';
 
@@ -9,7 +9,10 @@ export async function fetchInsightsForWindow(params: {
   timezone: string;
   start: Date;
   end: Date;
-}): Promise<OneOnOneInsightForLLM[]> {
+}): Promise<{
+  full: Insight[];
+  llm: OneOnOneInsightForLLM[];
+}> {
   const { tenantId, timezone, start, end } = params;
 
   const { insights } = await buildInsights({
@@ -20,7 +23,7 @@ export async function fetchInsightsForWindow(params: {
     endOverride: end,
   });
 
-  return insights
+  const llmInsights = insights
     .slice()
     .sort((a, b) => b.score - a.score)
     .slice(0, maxInsights)
@@ -64,4 +67,8 @@ export async function fetchInsightsForWindow(params: {
         examples,
       };
     });
+  return {
+    full: insights,
+    llm: llmInsights,
+  };
 }

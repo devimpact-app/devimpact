@@ -7,6 +7,7 @@ import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { buildTagFrequencyMap } from '../weekly-summary/focusAreas';
 import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
 import { OneOnOneTagForLLM } from './types';
+import { PullRequest, Review } from '@/lib/db/schema';
 
 export async function getActivityForOneOnOneRange({
   tenantId,
@@ -19,7 +20,12 @@ export async function getActivityForOneOnOneRange({
   end: Date;
 }): Promise<{
   highlightPrs: ShippedItem[];
+  fullPrs: PullRequest[];
   highlightedReviews: HighlightedReview[];
+  fullReviews: {
+    review: Review;
+    pr?: PullRequest | null;
+  }[];
   tags: OneOnOneTagForLLM[];
 }> {
   const activityParams = {
@@ -59,7 +65,9 @@ export async function getActivityForOneOnOneRange({
 
   return {
     highlightPrs,
+    fullPrs: mergedPrs,
     highlightedReviews: highlightedReviewed ? [highlightedReviewed] : [],
+    fullReviews: authoredReviews,
     tags,
   };
 }

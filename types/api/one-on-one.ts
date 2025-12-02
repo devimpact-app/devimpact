@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { InsightSchema } from '@/types/api/insights';
+import { ActivityEventSchema } from './timeline';
 
 export const OneOnOneMetricSnapshotSchema = z.object({
   id: z.string(),
@@ -76,6 +77,8 @@ export const OneOnOnePrepSchema = z.object({
   talkingPoints: z.array(OneOnOneTalkingPointSchema).default([]),
   usedInsights: z.array(InsightSchema).default([]),
   usedMetrics: z.array(OneOnOneMetricSnapshotSchema).default([]),
+  usedPrs: z.array(ActivityEventSchema).default([]),
+  usedReviews: z.array(ActivityEventSchema).default([]),
 
   meta: z.object().optional(),
 });

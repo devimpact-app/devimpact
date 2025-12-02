@@ -15,6 +15,7 @@ import {
   OneOnOneTalkingPoint,
 } from '@/types/api/one-on-one';
 import { Insight } from '@/types/api/insights';
+import { ActivityEvent } from '@/types/api/timeline';
 
 export const oneOnOneStatusEnum = pgEnum('one_on_one_status', [
   'ready',
@@ -29,10 +30,11 @@ export const counterpartTypeEnum = pgEnum('one_on_one_counterpart_type', [
 ]);
 
 export type OneOnOnePayload = {
-  summary: string;
   talkingPoints: OneOnOneTalkingPoint[];
   usedInsights: Insight[];
   usedMetrics: OneOnOneMetricSnapshot[];
+  usedPrs: ActivityEvent[];
+  usedReviews: ActivityEvent[];
 };
 
 export const oneOnOneSessions = pgTable(

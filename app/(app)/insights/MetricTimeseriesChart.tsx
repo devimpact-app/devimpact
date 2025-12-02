@@ -13,6 +13,7 @@ import {
 import { toChartPoints } from './utils';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { ChartTooltip } from '@/components/ChartTooltip';
+import { formatMetricValue } from '@/lib/analysis/metrics/client';
 
 type MetricTimeseriesChartProps = {
   result: TTimeseriesResult;
@@ -21,23 +22,6 @@ type MetricTimeseriesChartProps = {
 function formatDateTick(ts: number) {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}`; // e.g. 1/23
-}
-
-export function formatMetricValue(
-  valueFormat: TMetricResult['valueFormat'],
-  rawValue: number | null
-): string {
-  if (rawValue == null) return '—';
-
-  const vf = valueFormat;
-  const scale = vf?.scale ?? 1;
-  const decimals = vf?.decimals ?? 0;
-  const unitSuffix = vf?.unitSuffix ?? '';
-
-  const scaled = rawValue * scale;
-  const formatted = scaled.toFixed(decimals);
-
-  return unitSuffix ? `${formatted} ${unitSuffix}` : formatted;
 }
 
 export function MetricTimeseriesChart({ result }: MetricTimeseriesChartProps) {

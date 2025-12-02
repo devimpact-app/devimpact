@@ -2,18 +2,24 @@ import { DB } from '@/lib/db/client';
 import { NewOneOnOneSession } from '@/lib/db/schema/prep';
 import { weeksAgo } from '@/lib/utils/date';
 import {
+  OneOnOneMetricSnapshot,
   OneOnOneTalkingPoint,
   TCreateOneOnOneInput,
 } from '@/types/api/one-on-one';
-import { OneOnOneLLMContext, OneOnOneLLMOutput } from './types';
+import { OneOnOneLLMContext } from './types';
 import { fetchMetricsForWindows } from './metrics';
 import { fetchInsightsForWindow } from './insights';
 import { getActivityForOneOnOneRange } from './activity';
-import { buildTalkingPointsPrompt } from './llm';
-import { openai } from '@/lib/integrations/openai/client';
-import { AiConfig } from '@/lib/integrations/openai/config';
-import { withRetry } from '@/lib/integrations/openai/utils/retry';
-import { safeJson } from '@/lib/integrations/openai/utils/json';
+import { PullRequest, Review } from '@/lib/db/schema';
+import { TMetricResult } from '@/types/api/metrics';
+import { Insight } from '@/types/api/insights';
+import { ActivityEvent } from '@/types/api/timeline';
+import {
+  getActivityEventForPr,
+  getActivityEventForReview,
+} from '../activity/helpers';
+import { generateLLMTalkingPoints } from '@/lib/integrations/openai/services/summarizeOneOnOne';
+import { formatMetricValue } from '../metrics/client';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -25,8 +31,25 @@ type GenerateOneOnOnePrepParams = TCreateOneOnOneInput & {
 
 export function extractUsedReferences(
   talkingPoints: OneOnOneTalkingPoint[],
-  context: OneOnOneLLMContext
-) {
+  context: {
+    prs: PullRequest[];
+    reviews: {
+      review: Review;
+      pr?: PullRequest | null;
+    }[];
+    metrics: TMetricResult[];
+    insights: Insight[];
+    shortWindowStartISO: string;
+    shortWindowEndISO: string;
+    mediumWindowStartISO: string;
+    mediumWindowEndISO: string;
+  }
+): {
+  usedMetrics: OneOnOneMetricSnapshot[];
+  usedInsights: Insight[];
+  usedPrs: ActivityEvent[];
+  usedReviews: ActivityEvent[];
+} {
   const usedMetricIds = new Set<string>();
   const usedInsightIds = new Set<string>();
   const usedPrIds = new Set<string>();
@@ -39,17 +62,43 @@ export function extractUsedReferences(
     tp.relatedReviewIds.forEach((id) => usedReviewIds.add(id));
   }
 
-  const usedMetrics = context.metrics.filter((m) =>
-    usedMetricIds.has(m.metricId)
-  );
+  const usedMetrics = context.metrics
+    .filter((m) => usedMetricIds.has(m.metricId))
+    .map((m) => {
+      let value: number | null = null;
+      let formattedValue: string | undefined = undefined;
+      if (m.shape === 'stat') {
+        const current = m.data.find((d) => d.kind === 'current');
+        value = current?.value ?? null;
+        if (value) {
+          formattedValue = formatMetricValue(m.valueFormat, value);
+        }
+      }
+      return {
+        id: m.metricId,
+        unit: m.unit,
+        windowStart: m.window.start,
+        windowEnd: m.window.end,
+        windowKind:
+          m.window.start === context.shortWindowStartISO &&
+          m.window.end === context.shortWindowEndISO
+            ? 'short'
+            : 'medium',
+        label: m.title,
+        value,
+        formattedValue,
+      } as OneOnOneMetricSnapshot;
+    });
 
   const usedInsights = context.insights.filter((i) => usedInsightIds.has(i.id));
 
-  const usedPrs = context.highlightPrs.filter((pr) => usedPrIds.has(pr.id));
+  const usedPrs = context.prs
+    .filter((pr) => usedPrIds.has(pr.id))
+    .map((pr) => getActivityEventForPr(pr));
 
-  const usedReviews = context.highlightedReviews.filter((review) =>
-    usedReviewIds.has(review.id)
-  );
+  const usedReviews = context.reviews
+    .filter((r) => usedReviewIds.has(r.review.id))
+    .map((r) => getActivityEventForReview(r.review, r.pr?.title));
 
   return {
     usedMetrics,
@@ -57,78 +106,6 @@ export function extractUsedReferences(
     usedPrs,
     usedReviews,
   };
-}
-
-async function generateLLMTalkingPoints(
-  ctx: OneOnOneLLMContext
-): Promise<OneOnOneLLMOutput> {
-  const messages = buildTalkingPointsPrompt(ctx);
-  const run = () =>
-    openai.chat.completions.create({
-      model: AiConfig.models.summarize,
-      temperature: 0.4,
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'talkingPoints',
-          schema: {
-            type: 'object',
-            properties: {
-              talkingPoints: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string' },
-                    kind: {
-                      type: 'string',
-                      enum: [
-                        'highlights',
-                        'friction',
-                        'asks',
-                        'feedback_for_manager',
-                        'goals',
-                        'metrics',
-                        'insights',
-                      ],
-                    },
-                    title: { type: 'string' },
-                    body: { type: 'string' },
-                    order: { type: 'integer' },
-                    relatedInsightIds: {
-                      type: 'array',
-                      items: { type: 'string' },
-                    },
-                    relatedMetricIds: {
-                      type: 'array',
-                      items: { type: 'string' },
-                    },
-                    relatedPrIds: {
-                      type: 'array',
-                      items: { type: 'string' },
-                    },
-                    relatedReviewIds: {
-                      type: 'array',
-                      items: { type: 'string' },
-                    },
-                  },
-                  required: ['id', 'kind', 'title', 'order'],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ['talkingPoints'],
-            additionalProperties: false,
-          },
-          strict: true,
-        },
-      },
-      messages,
-    });
-
-  const res = await withRetry(run);
-  const content = res.choices[0]?.message?.content ?? '{}';
-  return safeJson<OneOnOneLLMOutput>(content);
 }
 
 export async function generateOneOnOnePrep(
@@ -143,7 +120,6 @@ export async function generateOneOnOnePrep(
     shortWindowStart,
     counterpartLabel,
     counterpartType,
-    db,
   } = params;
 
   const meetingAt = rawMeetingAt ? new Date(rawMeetingAt) : new Date();
@@ -181,33 +157,45 @@ export async function generateOneOnOnePrep(
     }),
     getActivityForOneOnOneRange({
       tenantId,
-      start: mediumStart,
-      end: mediumEnd,
+      start: shortStart,
+      end: shortEnd,
       timezone,
     }),
   ]);
 
+  const shortWindowStartISO = shortStart.toISOString();
+  const shortWindowEndISO = shortEnd.toISOString();
+  const mediumWindowStartISO = mediumStart.toISOString();
+  const mediumWindowEndISO = mediumEnd.toISOString();
   const llmContext: OneOnOneLLMContext = {
     meeting: {
       meetingAtISO: meetingAt.toISOString(),
-      shortWindowStartISO: shortStart.toISOString(),
-      shortWindowEndISO: shortEnd.toISOString(),
-      mediumWindowStartISO: mediumStart.toISOString(),
-      mediumWindowEndISO: mediumEnd.toISOString(),
+      shortWindowStartISO,
+      shortWindowEndISO,
+      mediumWindowStartISO,
+      mediumWindowEndISO,
       counterpartType: counterpartType ?? 'manager',
       counterpartLabel,
     },
-    metrics,
-    insights,
+    metrics: metrics.llm,
+    insights: insights.llm,
     highlightPrs: activity.highlightPrs,
     highlightedReviews: activity.highlightedReviews,
     tags: activity.tags,
   };
 
   const llmOutput = await generateLLMTalkingPoints(llmContext);
-
   const talkingPoints = llmOutput.talkingPoints ?? [];
-  const references = extractUsedReferences(talkingPoints, llmContext);
+  const references = extractUsedReferences(talkingPoints, {
+    prs: activity.fullPrs,
+    reviews: activity.fullReviews,
+    insights: insights.full,
+    metrics: metrics.full,
+    shortWindowStartISO,
+    shortWindowEndISO,
+    mediumWindowStartISO,
+    mediumWindowEndISO,
+  });
 
   const formatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -225,7 +213,6 @@ export async function generateOneOnOnePrep(
     mediumWindowEnd: mediumEnd,
     title: finalTitle,
     payload: {
-      summary: '',
       talkingPoints,
       ...references,
     },

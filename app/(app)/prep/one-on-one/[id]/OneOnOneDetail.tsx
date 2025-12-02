@@ -8,6 +8,8 @@ import { OneOnOneBody } from './OneOnOneBody';
 import { Insight } from '@/types/api/insights';
 import { InsightPanel } from '@/components/insights/InsightPanel';
 import { MetricPanel } from '@/components/metrics/MetricPanel';
+import { ActivityEvent } from '@/types/api/timeline';
+import { EventInspectorPanel } from '@/app/(app)/timeline/components/EventInspectorPanel';
 
 type Status = 'loading' | 'ready' | 'error' | 'not_found';
 
@@ -82,6 +84,9 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
   const [selectedMetric, setSelectedMetric] =
     useState<OneOnOneMetricSnapshot | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(
+    null
+  );
 
   useEffect(() => {
     async function load() {
@@ -231,6 +236,9 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
             onClickMetric={(metric) => {
               setSelectedMetric(metric);
             }}
+            onClickActivity={(activity) => {
+              setSelectedEvent(activity);
+            }}
           />
         </div>
       </main>
@@ -246,6 +254,13 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
           key={selectedMetric.id}
           metric={selectedMetric}
           onClose={() => setSelectedMetric(null)}
+        />
+      )}
+      {selectedEvent && (
+        <EventInspectorPanel
+          key={selectedEvent.id}
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
         />
       )}
     </>

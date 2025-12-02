@@ -18,6 +18,8 @@ export function formatOneOnOneResponse(row: OneOnOneSession) {
     talkingPoints: payload.talkingPoints,
     usedInsights: payload.usedInsights,
     usedMetrics: payload.usedMetrics,
+    usedPrs: payload.usedPrs,
+    usedReviews: payload.usedReviews,
 
     counterpartLabel: rowProps.counterpartLabel ?? undefined,
   };

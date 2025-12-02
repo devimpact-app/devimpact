@@ -1,4 +1,5 @@
 import {
+  TMetricResult,
   TMetricsBatchInput,
   TStatResult,
   TTimeseriesResult,
@@ -13,7 +14,7 @@ import {
   OneOnOneMetricTimeseriesPointForLLM,
   OneOnOneMetricWindowForLLM,
 } from './types';
-import { formatMetricValue } from '@/app/(app)/insights/MetricTimeseriesChart';
+import { formatMetricValue } from '../metrics/client';
 
 function buildStatForLLM(
   result: TStatResult
@@ -211,12 +212,19 @@ export function buildOneOnOneMetricsFromBatch(
 export async function fetchMetricsForWindows(params: {
   tenantId: string;
   windows: { key: 'short' | 'medium'; start: Date; end: Date }[];
-}): Promise<OneOnOneMetricForLLM[]> {
+}): Promise<{
+  llm: OneOnOneMetricForLLM[];
+  full: TMetricResult[];
+}> {
   const { tenantId, windows } = params;
 
   const shortWindow = windows.find((w) => w.key === 'short');
   const mediumWindow = windows.find((w) => w.key === 'medium');
-  if (!shortWindow || !mediumWindow) return [];
+  if (!shortWindow || !mediumWindow)
+    return {
+      full: [],
+      llm: [],
+    };
   const { start: shortWindowStart, end: shortWindowEnd } = shortWindow ?? {};
   const { start: mediumWindowStart, end: mediumWindowEnd } = mediumWindow ?? {};
 
@@ -261,10 +269,15 @@ export async function fetchMetricsForWindows(params: {
     tenantId
   );
 
-  return buildOneOnOneMetricsFromBatch(batchResult, {
+  const llmMetrics = buildOneOnOneMetricsFromBatch(batchResult, {
     shortWindowStart: shortWindowStart.toISOString(),
     shortWindowEnd: shortWindowEnd.toISOString(),
     mediumWindowStart: mediumWindowStart.toISOString(),
     mediumWindowEnd: mediumWindowEnd.toISOString(),
   });
+
+  return {
+    llm: llmMetrics,
+    full: batchResult.results,
+  };
 }

@@ -3,6 +3,7 @@ import { ActivityQueryParams } from './types';
 import { getAuthoredPrs } from './getAuthoredPrs';
 import { getAuthoredReviews } from './getAuthoredReviews';
 import { getAuthoredCommits } from './getAuthoredCommits';
+import { getActivityEventForPr, getActivityEventForReview } from './helpers';
 
 export async function getActivityEventsForRange(
   params: ActivityQueryParams
@@ -45,28 +46,7 @@ export async function getActivityEventsForRange(
 
     // Merged
     if (pr.mergedAt && pr.mergedAt >= start && pr.mergedAt <= end) {
-      events.push({
-        id: `pr_merged:${pr.id}`,
-        kind: 'pr_merged',
-        source: 'github',
-        occurredAt: pr.mergedAt.toISOString(),
-        actor: {
-          login: pr.prAuthorLogin,
-        },
-        title: `Merged “${pr.title}”`,
-        subtitle: `${pr.repoFullName} • #${pr.prNumber}`,
-        meta: {
-          prTitle: pr.title,
-          prNumber: pr.prNumber,
-          repoFullName: pr.repoFullName,
-          linesChanged: pr.linesChanged ?? undefined,
-          filesChanged: pr.filesChanged ?? undefined,
-          stateLabel: pr.state,
-        },
-        links: {
-          htmlUrl: pr.htmlUrl ?? undefined,
-        },
-      });
+      events.push(getActivityEventForPr(pr));
     }
   }
 
@@ -74,28 +54,7 @@ export async function getActivityEventsForRange(
   for (const row of reviewRows) {
     const r = row.review;
     if (!r.submittedAt) continue;
-    events.push({
-      id: `review_submitted:${r.id}`,
-      kind: 'review_submitted',
-      source: 'github',
-      occurredAt: r.submittedAt.toISOString(),
-      actor: {
-        login: r.reviewerLogin,
-      },
-      title: `Reviewed PR #${r.prNumber}`,
-      subtitle: `${r.repoFullName}`,
-      meta: {
-        prTitle: row.pr?.title,
-        prNumber: r.prNumber,
-        repoFullName: r.repoFullName,
-        reviewLatencySeconds: r.reviewLatencySeconds ?? undefined,
-        reviewState: r.state,
-        isFirstResponder: r.wasFirstReview ?? undefined,
-      },
-      links: {
-        htmlUrl: r.htmlUrl ?? undefined,
-      },
-    });
+    events.push(getActivityEventForReview(r, row.pr?.title));
   }
 
   for (const row of commitRows) {

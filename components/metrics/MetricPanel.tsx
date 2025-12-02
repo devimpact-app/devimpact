@@ -1,10 +1,7 @@
 'use client';
 
-import {
-  formatMetricValue,
-  MetricTimeseriesChart,
-} from '@/app/(app)/insights/MetricTimeseriesChart';
-import { MetricsAPI } from '@/lib/analysis/metrics/client';
+import { MetricTimeseriesChart } from '@/app/(app)/insights/MetricTimeseriesChart';
+import { formatMetricValue, MetricsAPI } from '@/lib/analysis/metrics/client';
 import { cn } from '@/lib/utils';
 import { formatRange, inferWindowWeeks } from '@/lib/utils/date';
 import { TMetricsBatchInput, TMetricsBatchResult } from '@/types/api/metrics';

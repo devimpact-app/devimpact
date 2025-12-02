@@ -1,6 +1,6 @@
 'use client';
 
-import { Lightbulb, BarChart3 } from 'lucide-react';
+import { Lightbulb, BarChart3, GitPullRequest } from 'lucide-react';
 import {
   OneOnOnePrep,
   OneOnOneTalkingPoint,
@@ -8,6 +8,9 @@ import {
   OneOnOneMetricSnapshot,
 } from '@/types/api/one-on-one';
 import { Insight } from '@/types/api/insights';
+import { useMemo } from 'react';
+import { ActivityEvent } from '@/types/api/timeline';
+import { prefetchDNS } from 'react-dom';
 
 const SECTION_ORDER: { kind: TOneOnOneSectionKind; label: string }[] = [
   { kind: 'highlights', label: 'Highlights' },
@@ -22,12 +25,15 @@ export function OneOnOneBody({
   prep,
   onClickInsight,
   onClickMetric,
+  onClickActivity,
 }: {
   prep: OneOnOnePrep;
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
+  onClickActivity: (activity: ActivityEvent) => void;
 }) {
-  const { talkingPoints, usedInsights, usedMetrics } = prep;
+  const { talkingPoints, usedInsights, usedMetrics, usedPrs } = prep;
+  console.log('usedPrs', usedPrs);
 
   const sectionsWithItems = SECTION_ORDER.map((section) => {
     const items = talkingPoints
@@ -40,6 +46,17 @@ export function OneOnOneBody({
     };
   });
 
+  const metricsByMetricId = useMemo(() => {
+    const map = new Map<string, OneOnOneMetricSnapshot[]>();
+    for (const metric of usedMetrics) {
+      if (!map.has(metric.id)) {
+        map.set(metric.id, []);
+      }
+      map.get(metric.id)!.push(metric);
+    }
+    return map;
+  }, [usedMetrics]);
+
   const nonEmptySections = sectionsWithItems.filter((s) => s.items.length > 0);
   const emptySections = sectionsWithItems.filter((s) => s.items.length === 0);
 
@@ -51,9 +68,11 @@ export function OneOnOneBody({
           label={section.label}
           items={section.items}
           usedInsights={usedInsights}
-          usedMetrics={usedMetrics}
+          usedPrs={usedPrs}
           onClickInsight={onClickInsight}
           onClickMetric={onClickMetric}
+          onClickActivity={onClickActivity}
+          metricsByMetricId={metricsByMetricId}
         />
       ))}
       {emptySections.map((section) => (
@@ -77,18 +96,22 @@ type SectionProps = {
   label: string;
   items: OneOnOneTalkingPoint[];
   usedInsights: Insight[];
-  usedMetrics: OneOnOneMetricSnapshot[];
+  usedPrs: ActivityEvent[];
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
+  onClickActivity: (activity: ActivityEvent) => void;
+  metricsByMetricId: Map<string, OneOnOneMetricSnapshot[]>;
 };
 
 function OneOnOneSection({
   label,
   items,
   usedInsights,
-  usedMetrics,
+  usedPrs,
   onClickInsight,
   onClickMetric,
+  onClickActivity,
+  metricsByMetricId,
 }: SectionProps) {
   return (
     <div className="pl-3 border-l border-indigo-400/60 space-y-4">
@@ -102,10 +125,12 @@ function OneOnOneSection({
             key={tp.id}
             tp={tp}
             usedInsights={usedInsights}
-            usedMetrics={usedMetrics}
+            usedPrs={usedPrs}
             isFirst={idx === 0}
             onClickInsight={onClickInsight}
             onClickMetric={onClickMetric}
+            onClickActivity={onClickActivity}
+            metricsByMetricId={metricsByMetricId}
           />
         ))}
       </ul>
@@ -116,29 +141,32 @@ function OneOnOneSection({
 type TalkingPointProps = {
   tp: OneOnOneTalkingPoint;
   usedInsights: Insight[];
-  usedMetrics: OneOnOneMetricSnapshot[];
+  usedPrs: ActivityEvent[];
   isFirst: boolean;
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
+  onClickActivity: (activity: ActivityEvent) => void;
+  metricsByMetricId: Map<string, OneOnOneMetricSnapshot[]>;
 };
 
 function TalkingPointRow({
   tp,
   usedInsights,
-  usedMetrics,
+  usedPrs,
   onClickInsight,
   onClickMetric,
+  onClickActivity,
+  metricsByMetricId,
 }: TalkingPointProps) {
   const relatedInsights = usedInsights.filter((ins) =>
     tp.relatedInsightIds.includes(ins.id)
   );
-  const relatedMetrics = usedMetrics.filter((m) =>
-    tp.relatedMetricIds.includes(m.id)
-  );
+  const relatedMetricIds = tp.relatedMetricIds;
+  const relatedPrIds = tp.relatedPrIds.map((prId) => `pr_merged:${prId}`);
+  const relatedPrs = usedPrs.filter((pr) => relatedPrIds.includes(pr.id));
 
   return (
     <li className="flex flex-col py-1.5">
-      {/* Bullet */}
       <div className="flex flex-row items-center">
         <span className="h-1.5 w-1.5 mr-2 flex-shrink-0 rounded-full bg-white/30" />
 
@@ -151,12 +179,12 @@ function TalkingPointRow({
           {tp.body}
         </p>
       )}
-      {(relatedInsights.length > 0 || relatedMetrics.length > 0) && (
+      {(relatedInsights.length > 0 || relatedMetricIds.length > 0) && (
         <div className="mt-1.5 ml-2 flex flex-wrap gap-1.5">
-          {relatedMetrics.map((metric) => (
+          {relatedMetricIds.map((metricId) => (
             <MetricPill
-              key={metric.id}
-              metric={metric}
+              key={metricId}
+              metrics={metricsByMetricId.get(metricId) ?? []}
               onClick={onClickMetric}
             />
           ))}
@@ -167,6 +195,9 @@ function TalkingPointRow({
               onClick={onClickInsight}
             />
           ))}
+          {relatedPrs.map((pr) => (
+            <PRPill key={pr.id} pr={pr} onClick={onClickActivity} />
+          ))}
         </div>
       )}
     </li>
@@ -174,23 +205,28 @@ function TalkingPointRow({
 }
 
 function MetricPill({
-  metric,
+  metrics,
   onClick,
 }: {
-  metric: OneOnOneMetricSnapshot;
+  metrics: OneOnOneMetricSnapshot[];
   onClick: (metric: OneOnOneMetricSnapshot) => void;
 }) {
-  const label = metric.label;
+  if (metrics.length === 0) return null;
+
+  const statMetric = metrics.find((m) => !!m.value);
+  const timeseriesMetric = metrics.find((m) => !m.value);
+  if (!statMetric && !timeseriesMetric) return null;
+  const label = statMetric?.label ?? timeseriesMetric?.label;
   const value =
-    metric.formattedValue ??
-    (metric.value != null
-      ? `${metric.value}${metric.unit ? ` ${metric.unit}` : ''}`
+    statMetric?.formattedValue ??
+    (statMetric?.value != null
+      ? `${statMetric.value}${statMetric.unit ? ` ${statMetric.unit}` : ''}`
       : 'n/a');
 
   return (
     <button
       type="button"
-      onClick={() => onClick(metric)}
+      onClick={() => onClick((timeseriesMetric ?? statMetric)!)}
       className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-surface-lower px-2 py-1 text-[10px] text-text-secondary hover:bg-white/5 hover:text-text-primary transition"
     >
       <BarChart3 className="h-3 w-3" />
@@ -218,6 +254,32 @@ function InsightPill({
     >
       <Lightbulb className="h-3 w-3" />
       <span className="truncate max-w-[9rem]">{label}</span>
+    </button>
+  );
+}
+
+function PRPill({
+  pr,
+  onClick,
+}: {
+  pr: ActivityEvent;
+  onClick: (pr: ActivityEvent) => void;
+}) {
+  const prNumber = pr.meta?.prNumber;
+  const prTitle = pr.meta?.prTitle ?? pr.title;
+
+  if (!prNumber) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(pr)}
+      className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-surface-lower px-2 py-1 text-[10px] text-text-secondary hover:bg-white/5 hover:text-text-primary transition"
+    >
+      <GitPullRequest className="h-3 w-3" />
+      <span className="truncate max-w-[9rem]">
+        #{prNumber}: {prTitle}
+      </span>
     </button>
   );
 }
