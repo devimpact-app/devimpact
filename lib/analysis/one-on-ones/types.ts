@@ -1,6 +1,7 @@
 import { InsightKind } from '@/types/api/insights';
 import { OneOnOneTalkingPoint } from '@/types/api/one-on-one';
 import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
+import { WorkRhythm } from '@/types/api/work-rhythm';
 
 export type MetricWindowKind = 'short' | 'medium';
 
@@ -68,6 +69,11 @@ export interface OneOnOneTagForLLM {
   count: number;
 }
 
+export type OneOnOneWorkRhythmForLLM = Omit<
+  WorkRhythm['summary'],
+  'avgDeepWorkBlocksPerWeek'
+>;
+
 export type OneOnOneLLMContext = {
   meeting: {
     meetingAtISO: string | null;
@@ -82,6 +88,7 @@ export type OneOnOneLLMContext = {
   insights: OneOnOneInsightForLLM[];
   highlightPrs: ShippedItem[];
   highlightedReviews: HighlightedReview[];
+  workRhythm: OneOnOneWorkRhythmForLLM;
   tags: OneOnOneTagForLLM[];
 };
 

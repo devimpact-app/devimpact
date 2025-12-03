@@ -10,6 +10,7 @@ import { PullRequest } from '@/lib/db/schema';
 import { computeMedianClamped } from '@/lib/utils/math';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
+import { formatRange } from '@/lib/utils/date';
 
 type TagStats = {
   tag: ReviewTag;
@@ -209,7 +210,7 @@ export function generateFrictionThemesInsight(
     const deltaLabel = delta.toFixed(1);
 
     body =
-      `In the last 4 weeks, ${top.label} showed up in about ${pct}% of your PRs that didn’t pass on the first review. ` +
+      `In the selected period, ${top.label} showed up in about ${pct}% of your PRs that didn’t pass on the first review. ` +
       `Those PRs took around ${medianWithTagLabel} to get past the first blocking review, compared to ${baselineLabel} for your other blocked PRs (about +${deltaLabel} hours). ` +
       (descHint ? `${descHint} ` : '') +
       `When you expect ${top.label.toLowerCase()} to be a sticking point, it’s worth front-loading fixes before asking for review.`;
@@ -218,7 +219,7 @@ export function generateFrictionThemesInsight(
     emphasis = `${pct}% of blocked PRs cite ${top.label}`;
 
     body =
-      `Over the last 4 weeks, ${top.label} appeared in about ${pct}% of your PRs that didn’t pass on the first review. ` +
+      `Over the selected period, ${top.label} appeared in about ${pct}% of your PRs that didn’t pass on the first review. ` +
       (descHint
         ? `${descHint} `
         : 'Reviewers are consistently asking for similar improvements when this comes up. ') +
@@ -294,7 +295,7 @@ export function generateFrictionThemesInsight(
     title,
     emphasis,
     body,
-    timeWindowLabel: 'Last 4 weeks',
+    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
     stats,
     score,
     relatedItems,

@@ -8,6 +8,7 @@ import { buildTagFrequencyMap } from '../weekly-summary/focusAreas';
 import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
 import { OneOnOneTagForLLM } from './types';
 import { PullRequest, Review } from '@/lib/db/schema';
+import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
 
 export async function getActivityForOneOnOneRange({
   tenantId,
@@ -59,8 +60,8 @@ export async function getActivityForOneOnOneRange({
     return s?.typeTags ?? [];
   });
   const freq = buildTagFrequencyMap(allFocusTags);
-  const tags = Object.entries(freq).map(([tag, count]) => {
-    return { tag, count };
+  const tags = Object.entries(freq).map(([rawTag, count]) => {
+    return { tag: PR_TYPE_LABELS[rawTag], count };
   });
 
   return {

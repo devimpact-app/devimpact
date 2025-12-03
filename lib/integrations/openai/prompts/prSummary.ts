@@ -82,6 +82,15 @@ const PR_TYPE_VOCAB = [
   'docs_or_config',
 ];
 
+export const PR_TYPE_LABELS: Record<(typeof PR_TYPE_VOCAB)[number], string> = {
+  feature: 'Features',
+  bugfix: 'Bug fixes',
+  refactor: 'Refactors',
+  devex_or_infra: 'DevEx / Infrastructure',
+  tests_or_quality: 'Tests / Quality',
+  docs_or_config: 'Docs / Configuration',
+};
+
 const PR_DOMAIN_VOCAB = [
   'frontend',
   'backend',
@@ -91,6 +100,19 @@ const PR_DOMAIN_VOCAB = [
   'docs',
   'shared_lib_or_core',
 ];
+
+export const PR_DOMAIN_LABELS: Record<
+  (typeof PR_DOMAIN_VOCAB)[number],
+  string
+> = {
+  frontend: 'Frontend',
+  backend: 'Backend',
+  data_pipeline: 'Data pipeline',
+  infra_devops: 'Infrastructure / DevOps',
+  tests: 'Tests',
+  docs: 'Documentation',
+  shared_lib_or_core: 'Shared libraries / Core systems',
+};
 
 export const REVIEW_TAG_VOCAB = [
   'readability_or_clarity',

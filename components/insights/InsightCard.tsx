@@ -72,13 +72,15 @@ export function InsightCard({
 }) {
   const styles = severityStyles[insight.severity];
 
+  const stats = insight.stats ?? [];
+  const primaryStats = stats.filter((s) => s.importance === 'primary');
+
   return (
     <article
       className={cn(
         'rounded-2xl bg-[#111520] p-5 border flex flex-col h-full',
         styles.border,
-        'transition-all duration-150',
-        'hover:border-white/20 hover:bg-[#131824] hover:-translate-y-[1px] cursor-pointer'
+        'hover:border-white/20 hover:bg-[#131824] cursor-pointer'
       )}
       onClick={onClick}
     >
@@ -108,10 +110,10 @@ export function InsightCard({
 
       {insight.body && <InsightBody text={insight.body} />}
 
-      {insight.stats && insight.stats.length > 0 && (
+      {primaryStats.length > 0 && (
         <div className="mt-auto pt-2.5 border-white/5 border-t">
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            {insight.stats.map((s, i) => (
+            {primaryStats.map((s, i) => (
               <div key={i} className="flex flex-col leading-tight">
                 <span className="text-[13px] font-semibold text-slate-100">
                   {s.value}

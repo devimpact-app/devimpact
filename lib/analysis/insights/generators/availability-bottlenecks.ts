@@ -7,7 +7,11 @@ import {
   MAX_HOURS_CUTOFF,
   TimeOfDayBucket,
 } from './shared';
-import { getLocalWeekdayIndex, toLocalDate } from '@/lib/utils/date';
+import {
+  formatRange,
+  getLocalWeekdayIndex,
+  toLocalDate,
+} from '@/lib/utils/date';
 import { Insight } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 import { PullRequest } from '@/lib/db/schema';
@@ -135,7 +139,7 @@ export function generateAvailabilityDeadzoneInsight(
   const bucketMedianLabel = `${worst.medianLatencyHours.toFixed(1)}h`;
   const baselineLabel = `${baselineMedianHours.toFixed(1)}h`;
   const slowdownPct = Math.round((worst.slowdownRatio - 1) * 100);
-  const timeframe = 'last 4 weeks';
+  const timeframeLabel = 'Recent window';
 
   // Simple scoring heuristic for v0 ---
   const shareOfSamples = worst.count / samples.length;
@@ -183,7 +187,7 @@ export function generateAvailabilityDeadzoneInsight(
   const emphasis = `${bucketMedianLabel} median first review vs ${baselineLabel} overall`;
 
   const body = [
-    `Over the ${timeframe}, PRs you sent for review on ${dayLabel.toLowerCase()} ${timeLabel} waited much longer for a first review.`,
+    `Over the period, PRs you sent for review on ${dayLabel.toLowerCase()} ${timeLabel} waited much longer for a first review.`,
     `Median time to first review in that window was ${bucketMedianLabel}, about ${slowdownPct}% slower than your overall median of ${baselineLabel}.`,
     `When it’s possible, avoid opening or marking PRs ready for review during that window, or set expectations with reviewers that anything opened then may not be seen until the next day.`,
   ].join(' ');
@@ -246,7 +250,7 @@ export function generateAvailabilityDeadzoneInsight(
     title,
     emphasis,
     body,
-    timeWindowLabel: 'Last 4 weeks',
+    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
     stats: [
       {
         label: 'Median in that window',

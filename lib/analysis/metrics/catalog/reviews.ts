@@ -12,7 +12,7 @@ export const REVIEWS_GIVEN_COUNT_V1: MetricDefinition = {
     description: 'Reviews you submitted in this period',
     valueFormat: {
       scale: 1,
-      unitSuffix: 'reviews',
+      unitSuffix: ``,
       decimals: 0,
       kind: 'count',
     },
@@ -42,7 +42,7 @@ export const REVIEWS_COMMENT_AVG_V1: MetricDefinition = {
     description: 'Average comments per review by the tenant',
     valueFormat: {
       scale: 1,
-      unitSuffix: 'comments',
+      unitSuffix: ``,
       decimals: 1,
       kind: 'count',
     },

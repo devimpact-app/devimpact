@@ -62,8 +62,12 @@ export async function getActivityEventsForRange(
     const committedAt = commit.committedAt ?? commit.fetchedAt;
     if (!committedAt) continue;
 
-    // Use first line of commit message as title
-    const firstLine = commit.message.split('\n')[0];
+    let title;
+    if (pr?.title) {
+      title = `Commit in "${pr?.title}"`;
+    } else {
+      title = 'Commit in PR';
+    }
     const subtitleParts: string[] = [];
     if (pr?.repoFullName) subtitleParts.push(pr.repoFullName);
     if (pr?.prNumber) subtitleParts.push(`#${pr.prNumber}`);
@@ -77,7 +81,7 @@ export async function getActivityEventsForRange(
       actor: {
         login: commit.authorGithubLogin,
       },
-      title: firstLine,
+      title,
       subtitle,
       meta: {
         prTitle: pr?.title,

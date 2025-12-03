@@ -14,9 +14,11 @@ import { toChartPoints } from './utils';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { ChartTooltip } from '@/components/ChartTooltip';
 import { formatMetricValue } from '@/lib/analysis/metrics/client';
+import { cn } from '@/lib/utils';
 
 type MetricTimeseriesChartProps = {
   result: TTimeseriesResult;
+  onClick?: (result: TTimeseriesResult) => void;
 };
 
 function formatDateTick(ts: number) {
@@ -24,7 +26,10 @@ function formatDateTick(ts: number) {
   return `${d.getMonth() + 1}/${d.getDate()}`; // e.g. 1/23
 }
 
-export function MetricTimeseriesChart({ result }: MetricTimeseriesChartProps) {
+export function MetricTimeseriesChart({
+  result,
+  onClick,
+}: MetricTimeseriesChartProps) {
   const points = toChartPoints(result);
   const isCount =
     result.aggregation?.op === 'count' || result.aggregation?.op === 'sum';
@@ -76,11 +81,27 @@ export function MetricTimeseriesChart({ result }: MetricTimeseriesChartProps) {
     <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-xs font-semibold text-slate-100">
-            {result.title}
-            {result.aggregation ? ` (${result.aggregation.op}, weekly)` : ''}
-          </h3>
+          {onClick ? (
+            <button
+              type="button"
+              onClick={() => onClick(result)}
+              className={cn(
+                'text-left text-xs font-semibold text-slate-100',
+                'hover:underline hover:decoration-slate-300',
+                'focus:outline-none focus:ring-1 focus:ring-slate-600 rounded-sm'
+              )}
+            >
+              {result.title}
+              {result.aggregation ? ` (${result.aggregation.op}, weekly)` : ''}
+            </button>
+          ) : (
+            <h3 className="text-xs font-semibold text-slate-100">
+              {result.title}
+              {result.aggregation ? ` (${result.aggregation.op}, weekly)` : ''}
+            </h3>
+          )}
         </div>
+
         {result.description && <InfoTooltip description={description} />}
       </div>
 

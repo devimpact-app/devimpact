@@ -144,8 +144,7 @@ export function ActivityLog({
 
       {mode === 'full' && !loading && displayEvents.length > 0 && (
         <p className="mt-3 text-[10px] text-slate-500">
-          Showing all activity in the selected range. Use timeline filters to
-          narrow things down.
+          Showing all activity in the selected range.
         </p>
       )}
     </section>

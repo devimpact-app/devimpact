@@ -30,6 +30,15 @@ export function getActivityEventForReview(
   r: Review,
   prTitle?: string
 ): ActivityEvent {
+  let title: string;
+  let subtitle: string;
+  if (prTitle) {
+    title = `Reviewed "${prTitle}"`;
+    subtitle = `${r.repoFullName} • #${r.prNumber}`;
+  } else {
+    title = `Reviewed PR #${r.prNumber}`;
+    subtitle = `${r.repoFullName}`;
+  }
   return {
     id: `review_submitted:${r.id}`,
     kind: 'review_submitted',
@@ -38,8 +47,8 @@ export function getActivityEventForReview(
     actor: {
       login: r.reviewerLogin,
     },
-    title: `Reviewed PR #${r.prNumber}`,
-    subtitle: `${r.repoFullName}`,
+    title,
+    subtitle,
     meta: {
       prTitle: prTitle,
       prNumber: r.prNumber,

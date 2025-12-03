@@ -8,6 +8,10 @@ import { KeyMetricsPanel } from './KeyMetricsView';
 import { useState } from 'react';
 import { Insight } from '@/types/api/insights';
 import { InsightPanel } from '../../../components/insights/InsightPanel';
+import { TTimeseriesResult } from '@/types/api/metrics';
+import { OneOnOneMetricSnapshot } from '@/types/api/one-on-one';
+import { MetricPanel } from '@/components/metrics/MetricPanel';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   user: {
@@ -19,8 +23,11 @@ type Props = {
 };
 
 export default function InsightsClient({ user }: Props) {
+  const router = useRouter();
   const { range, setRange, label, subLabel, numWeeks, start, end } = useRange();
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
+  const [selectedMetric, setSelectedMetric] =
+    useState<OneOnOneMetricSnapshot | null>(null);
   const { insights, error, isLoading } = useInsights({
     limit: 50,
     windowWeeks: numWeeks,
@@ -28,6 +35,17 @@ export default function InsightsClient({ user }: Props) {
 
   const highlightedInsights = insights.slice(0, 2);
   const libraryInsights = insights.slice(2);
+
+  const handleClickMetric = (result: TTimeseriesResult) => {
+    setSelectedMetric({
+      id: result.metricId,
+      label: result.title!,
+      windowStart: result.window.start,
+      windowEnd: result.window.end,
+      windowKind: 'medium',
+      value: null,
+    });
+  };
 
   return (
     <>
@@ -80,8 +98,15 @@ export default function InsightsClient({ user }: Props) {
             />
           </div>
 
-          <aside className="hidden no-scrollbar lg:block overflow-y-auto pl-2">
-            <KeyMetricsPanel start={start} windowWeeks={numWeeks} />
+          <aside className="hidden lg:block pl-2">
+            <KeyMetricsPanel
+              start={start}
+              windowWeeks={numWeeks}
+              onClickMetric={handleClickMetric}
+              onViewAll={() => {
+                router.push('/insights/metrics');
+              }}
+            />
           </aside>
         </section>
       </main>
@@ -90,6 +115,13 @@ export default function InsightsClient({ user }: Props) {
           key={selectedInsight.id}
           insight={selectedInsight}
           onClose={() => setSelectedInsight(null)}
+        />
+      )}
+      {selectedMetric && (
+        <MetricPanel
+          key={selectedMetric.id}
+          metric={selectedMetric}
+          onClose={() => setSelectedMetric(null)}
         />
       )}
     </>

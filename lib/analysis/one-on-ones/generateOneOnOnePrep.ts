@@ -20,6 +20,7 @@ import {
 } from '../activity/helpers';
 import { generateLLMTalkingPoints } from '@/lib/integrations/openai/services/summarizeOneOnOne';
 import { formatMetricValue } from '../metrics/client';
+import { buildWorkRhythm } from '../work-rhythm/buildWorkRhythm';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -141,7 +142,7 @@ export async function generateOneOnOnePrep(
   const mediumEnd = meetingAt;
   const mediumStart = weeksAgo(mediumEnd, mediumWindowWeeks);
 
-  const [insights, metrics, activity] = await Promise.all([
+  const [insights, metrics, activity, workRhythm] = await Promise.all([
     fetchInsightsForWindow({
       tenantId,
       start: mediumStart,
@@ -161,7 +162,18 @@ export async function generateOneOnOnePrep(
       end: shortEnd,
       timezone,
     }),
+    buildWorkRhythm({
+      userId: tenantId,
+      timezone,
+      startOverride: mediumStart,
+      endOverride: mediumEnd,
+    }),
   ]);
+
+  const {
+    avgDeepWorkBlocksPerWeek: _avgDeepWorkBlocksPerWeek,
+    ...workSummary
+  } = workRhythm.summary;
 
   const shortWindowStartISO = shortStart.toISOString();
   const shortWindowEndISO = shortEnd.toISOString();
@@ -182,6 +194,7 @@ export async function generateOneOnOnePrep(
     highlightPrs: activity.highlightPrs,
     highlightedReviews: activity.highlightedReviews,
     tags: activity.tags,
+    workRhythm: workSummary,
   };
 
   const llmOutput = await generateLLMTalkingPoints(llmContext);

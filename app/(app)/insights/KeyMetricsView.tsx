@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { TMetricsBatchResult } from '@/types/api/metrics';
+import type {
+  TMetricsBatchResult,
+  TTimeseriesResult,
+} from '@/types/api/metrics';
 import { TMetricsBatchInput } from '@/types/api/metrics';
 import { MetricsAPI } from '@/lib/analysis/metrics/client';
 import { MetricTimeseriesChart } from './MetricTimeseriesChart';
@@ -9,6 +12,8 @@ import { MetricTimeseriesChart } from './MetricTimeseriesChart';
 type KeyMetricsPanelProps = {
   start: Date;
   windowWeeks: number;
+  onClickMetric: (result: TTimeseriesResult) => void;
+  onViewAll: () => void;
 };
 
 type KeyMetricsState = {
@@ -96,24 +101,40 @@ function useKeyMetrics({
   return state;
 }
 
-export function KeyMetricsPanel({ start, windowWeeks }: KeyMetricsPanelProps) {
+export function KeyMetricsPanel({
+  start,
+  windowWeeks,
+  onClickMetric,
+  onViewAll,
+}: KeyMetricsPanelProps) {
   const { data, isLoading, error } = useKeyMetrics({
     start,
     windowWeeks,
+    onClickMetric,
+    onViewAll,
   });
 
   return (
     <aside className="lg:sticky lg:top-24">
       <div className="rounded-2xl border border-slate-800/80 bg-[#0b0f1a]/80 p-4 shadow-sm shadow-black/40">
-        <header className="mb-3 flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+        <header className="mb-3 flex flex-col gap-1">
+          <div className="flex items-baseline">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-300 mr-2">
               Key metrics
             </h2>
-            <p className="mt-0.5 text-[11px] text-slate-400">
-              High-level trends for this period
-            </p>
+            {onViewAll && (
+              <button
+                onClick={onViewAll}
+                className="text-[11px] text-sky-500 hover:text-sky-400 font-medium inline-flex items-center gap-1"
+              >
+                View all →
+              </button>
+            )}
           </div>
+
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            High-level trends for this period
+          </p>
         </header>
 
         {isLoading && (
@@ -135,12 +156,13 @@ export function KeyMetricsPanel({ start, windowWeeks }: KeyMetricsPanelProps) {
             {data.results.map((result) => {
               const isTimeseries = result.shape === 'timeseries';
               return (
-                <div>
+                <div key={result.metricId}>
                   {isTimeseries && (
                     <>
                       <MetricTimeseriesChart
                         key={result.metricId}
                         result={result}
+                        onClick={onClickMetric}
                       />
                     </>
                   )}

@@ -52,6 +52,7 @@ export function WorkRhythmCard({
   error,
   onViewTimelineClick,
 }: WorkRhythmCardProps) {
+  console.log('rhythm', rhythm);
   // Build a 4x7 grid from backend buckets
   const { grid, maxCount } = useMemo(() => {
     const base: number[][] = Array.from({ length: TIME_BANDS }, () =>
@@ -229,15 +230,23 @@ export function WorkRhythmCard({
         </p>
 
         {summary?.protectWindows?.length ? (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {summary.protectWindows.map((w) => (
-              <span
-                key={`${w.day}-${w.band}`}
-                className="rounded-full border border-[#3B4A78] px-2.5 py-1 text-[11px] text-[#C7D2FF]"
-              >
-                {w.label}
-              </span>
-            ))}
+          <div className="flex flex-col gap-1.5 pt-2">
+            {/* Label */}
+            <p className="text-[11px] text-slate-500 leading-tight">
+              Suggested focus windows during daytime work hours
+            </p>
+
+            {/* Chips */}
+            <div className="flex flex-wrap gap-2">
+              {summary.protectWindows.map((w) => (
+                <span
+                  key={`${w.day}-${w.band}`}
+                  className="rounded-full border border-[#3B4A78] px-2.5 py-1 text-[11px] text-[#C7D2FF]"
+                >
+                  {w.label}
+                </span>
+              ))}
+            </div>
           </div>
         ) : null}
 

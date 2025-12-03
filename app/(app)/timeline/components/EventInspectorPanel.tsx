@@ -103,6 +103,10 @@ export function EventInspectorPanel({
     event.meta?.stateLabel;
 
   const githubUrl = event.links?.htmlUrl;
+  const summaryComingSoon =
+    summaryState === 'idle' && !summary && event.kind === 'review_submitted';
+  const hideSummary =
+    summaryState === 'idle' && !summary && event.kind === 'pr_commit';
 
   return (
     <aside
@@ -179,59 +183,61 @@ export function EventInspectorPanel({
           </a>
         ) : null}
 
-        <section>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-1.5 flex items-center gap-1">
-            Summary
-            {summaryState === 'loading' && (
-              <span className="text-[10px] text-text-tertiary">
-                · generating…
-              </span>
-            )}
-          </h3>
-
-          {summaryState === 'ready' && summary && (
-            <>
-              <p className="text-xs leading-relaxed text-text-secondary">
-                {summary.shortSummary}
-              </p>
-
-              {summary.highlights?.length > 0 && (
-                <ul className="mt-2 space-y-1 text-[11px] text-text-secondary">
-                  {summary.highlights.map((h: any) => (
-                    <li key={h} className="flex gap-1">
-                      <span className="mt-[3px] h-[3px] w-[3px] rounded-full bg-text-tertiary" />
-                      <span>{h}</span>
-                    </li>
-                  ))}
-                </ul>
+        {!hideSummary && (
+          <section>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-text-tertiary mb-1.5 flex items-center gap-1">
+              Summary {summaryComingSoon ? '(Coming soon)' : ''}
+              {summaryState === 'loading' && (
+                <span className="text-[10px] text-text-tertiary">
+                  · generating…
+                </span>
               )}
-            </>
-          )}
+            </h3>
 
-          {summaryState === 'loading' && (
-            <p className="text-xs leading-relaxed text-text-secondary animate-pulse">
-              Pulling in a quick summary of this PR’s changes and review…
-            </p>
-          )}
+            {summaryState === 'ready' && summary && (
+              <>
+                <p className="text-xs leading-relaxed text-text-secondary">
+                  {summary.shortSummary}
+                </p>
 
-          {summaryState === 'error' && (
-            <p className="text-xs leading-relaxed text-text-secondary">
-              Couldn&apos;t load a summary right now. You can still open the PR
-              on GitHub for full details.
-            </p>
-          )}
+                {summary.highlights?.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-[11px] text-text-secondary">
+                    {summary.highlights.map((h: any) => (
+                      <li key={h} className="flex gap-1">
+                        <span className="mt-[3px] h-[3px] w-[3px] rounded-full bg-text-tertiary" />
+                        <span>{h}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
 
-          {summaryState === 'idle' && !summary && (
-            <p className="text-xs leading-relaxed text-text-secondary">
-              This is a recent{' '}
-              <span className="text-text-primary/80">
-                {kindLabel(event.kind).toLowerCase()}
-              </span>{' '}
-              in your timeline. DevImpact will show a brief narrative here based
-              on the PR changes and review once summarization runs.
-            </p>
-          )}
-        </section>
+            {summaryState === 'loading' && (
+              <p className="text-xs leading-relaxed text-text-secondary animate-pulse">
+                Pulling in a quick summary of this PR’s changes and review…
+              </p>
+            )}
+
+            {summaryState === 'error' && (
+              <p className="text-xs leading-relaxed text-text-secondary">
+                Couldn&apos;t load a summary right now. You can still open the
+                PR on GitHub for full details.
+              </p>
+            )}
+
+            {summaryComingSoon && (
+              <p className="text-xs leading-relaxed text-text-secondary">
+                This is a recent{' '}
+                <span className="text-text-primary/80">
+                  {kindLabel(event.kind).toLowerCase()}
+                </span>{' '}
+                in your timeline. A brief narrative will appear here once review
+                summarization is available.
+              </p>
+            )}
+          </section>
+        )}
 
         {hasMeta && (
           <section>

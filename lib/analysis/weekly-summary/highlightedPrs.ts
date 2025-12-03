@@ -1,4 +1,5 @@
 import { PullRequest } from '@/lib/db/schema';
+import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
 import { HighlightReason, ShippedItem } from '@/types/api/weekly-summary';
 
 function computeImpactScore(pr: PullRequest): number {
@@ -32,7 +33,7 @@ function getShippedItemFromPr(
     number: pr.prNumber,
     title: pr.title,
     shortSummary: summary.shortSummary,
-    tags: summary.typeTags ?? [],
+    tags: (summary.typeTags ?? []).map((rawTag: any) => PR_TYPE_LABELS[rawTag]),
     occurredAt: pr.mergedAt ? pr.mergedAt.toISOString() : undefined,
     htmlUrl: pr.htmlUrl ?? undefined,
     leadTimeHours: pr.leadTimeSeconds,
