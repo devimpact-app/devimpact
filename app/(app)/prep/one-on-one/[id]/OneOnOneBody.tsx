@@ -1,6 +1,6 @@
 'use client';
 
-import { Lightbulb, BarChart3, GitPullRequest } from 'lucide-react';
+import { Lightbulb, BarChart3, GitPullRequest, GitCompare } from 'lucide-react';
 import {
   OneOnOnePrep,
   OneOnOneTalkingPoint,
@@ -10,7 +10,6 @@ import {
 import { Insight } from '@/types/api/insights';
 import { useMemo } from 'react';
 import { ActivityEvent } from '@/types/api/timeline';
-import { prefetchDNS } from 'react-dom';
 
 const SECTION_ORDER: { kind: TOneOnOneSectionKind; label: string }[] = [
   { kind: 'highlights', label: 'Highlights' },
@@ -32,8 +31,8 @@ export function OneOnOneBody({
   onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
 }) {
-  const { talkingPoints, usedInsights, usedMetrics, usedPrs } = prep;
-  console.log('usedPrs', usedPrs);
+  const { talkingPoints, usedInsights, usedMetrics, usedPrs, usedReviews } =
+    prep;
 
   const sectionsWithItems = SECTION_ORDER.map((section) => {
     const items = talkingPoints
@@ -69,6 +68,7 @@ export function OneOnOneBody({
           items={section.items}
           usedInsights={usedInsights}
           usedPrs={usedPrs}
+          usedReviews={usedReviews}
           onClickInsight={onClickInsight}
           onClickMetric={onClickMetric}
           onClickActivity={onClickActivity}
@@ -97,6 +97,7 @@ type SectionProps = {
   items: OneOnOneTalkingPoint[];
   usedInsights: Insight[];
   usedPrs: ActivityEvent[];
+  usedReviews: ActivityEvent[];
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
@@ -108,6 +109,7 @@ function OneOnOneSection({
   items,
   usedInsights,
   usedPrs,
+  usedReviews,
   onClickInsight,
   onClickMetric,
   onClickActivity,
@@ -126,6 +128,7 @@ function OneOnOneSection({
             tp={tp}
             usedInsights={usedInsights}
             usedPrs={usedPrs}
+            usedReviews={usedReviews}
             isFirst={idx === 0}
             onClickInsight={onClickInsight}
             onClickMetric={onClickMetric}
@@ -142,6 +145,7 @@ type TalkingPointProps = {
   tp: OneOnOneTalkingPoint;
   usedInsights: Insight[];
   usedPrs: ActivityEvent[];
+  usedReviews: ActivityEvent[];
   isFirst: boolean;
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: OneOnOneMetricSnapshot) => void;
@@ -153,6 +157,7 @@ function TalkingPointRow({
   tp,
   usedInsights,
   usedPrs,
+  usedReviews,
   onClickInsight,
   onClickMetric,
   onClickActivity,
@@ -164,6 +169,12 @@ function TalkingPointRow({
   const relatedMetricIds = tp.relatedMetricIds;
   const relatedPrIds = tp.relatedPrIds.map((prId) => `pr_merged:${prId}`);
   const relatedPrs = usedPrs.filter((pr) => relatedPrIds.includes(pr.id));
+  const relatedReviewIds = tp.relatedReviewIds.map(
+    (rId) => `review_submitted:${rId}`
+  );
+  const relatedReviews = usedReviews.filter((r) =>
+    relatedReviewIds.includes(r.id)
+  );
 
   return (
     <li className="flex flex-col py-1.5">
@@ -197,6 +208,9 @@ function TalkingPointRow({
           ))}
           {relatedPrs.map((pr) => (
             <PRPill key={pr.id} pr={pr} onClick={onClickActivity} />
+          ))}
+          {relatedReviews.map((r) => (
+            <ReviewPill key={r.id} review={r} onClick={onClickActivity} />
           ))}
         </div>
       )}
@@ -280,6 +294,26 @@ function PRPill({
       <span className="truncate max-w-[9rem]">
         #{prNumber}: {prTitle}
       </span>
+    </button>
+  );
+}
+
+function ReviewPill({
+  review,
+  onClick,
+}: {
+  review: ActivityEvent;
+  onClick: (pr: ActivityEvent) => void;
+}) {
+  const title = review.title;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(review)}
+      className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-surface-lower px-2 py-1 text-[10px] text-text-secondary hover:bg-white/5 hover:text-text-primary transition"
+    >
+      <GitCompare className="h-3 w-3" />
+      <span className="truncate max-w-[9rem]">{title}</span>
     </button>
   );
 }
