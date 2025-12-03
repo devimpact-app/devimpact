@@ -137,23 +137,58 @@ export function SettingsClient({
                       <span>Connected via personal CLI token</span>
                     </p>
 
-                    <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2">
-                      <p className="text-[11px] text-slate-400 mb-1">
-                        Looking for how to run a sync from the CLI?
-                      </p>
+                    <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2 space-y-2">
+                      <div>
+                        <p className="text-[11px] text-slate-400 mb-1">
+                          Run a one-off sync:
+                        </p>
+                        <CopyableCode>
+                          devimpact sync --repo my-org/my-service
+                        </CopyableCode>
+                      </div>
 
-                      <CopyableCode>
-                        devimpact sync --repo my-org/my-service
-                      </CopyableCode>
+                      <div>
+                        <p className="text-[11px] text-slate-400 mb-1">
+                          Or sync multiple repos:
+                        </p>
+                        <CopyableCode>
+                          devimpact sync --repo org/frontend --repo org/api
+                          --repo org/mobile
+                        </CopyableCode>
+                      </div>
 
-                      <p className="mt-2 text-[11px] text-slate-400 mb-1">
-                        Or for multiple repos:
-                      </p>
+                      <div className="mt-3 rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2">
+                        <p className="text-[11px] text-slate-400 mb-1">
+                          Want DevImpact to stay up to date automatically? Add a
+                          simple cron job to run a sync every few hours:
+                        </p>
 
-                      <CopyableCode>
-                        devimpact sync --repo org/frontend --repo org/api --repo
-                        org/mobile
-                      </CopyableCode>
+                        <p className="text-[11px] text-slate-500 mb-1">
+                          First, find the full path to the CLI:
+                        </p>
+                        <CopyableCode>which devimpact</CopyableCode>
+
+                        <p className="mt-2 text-[11px] text-slate-500 mb-1">
+                          Then add a cron entry (every 3 hours, for example):
+                        </p>
+                        <CopyableCode>
+                          0 */3 * * * /path/to/devimpact sync --repo
+                          my-org/my-service
+                        </CopyableCode>
+
+                        <p className="mt-2 text-[11px] text-slate-500">
+                          Replace{' '}
+                          <code className="text-[10px] text-slate-200">
+                            /path/to/devimpact
+                          </code>{' '}
+                          with the path from{' '}
+                          <code className="text-[10px] text-slate-200">
+                            which devimpact
+                          </code>
+                          , and make sure the cron runs as the same user that
+                          configured DevImpact.
+                        </p>
+                      </div>
                     </div>
                   </>
                 )}

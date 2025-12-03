@@ -53,7 +53,10 @@ function InsightBody({ text }: { text: string }) {
       {shouldClamp && (
         <button
           type="button"
-          onClick={() => setExpanded((x) => !x)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((x) => !x);
+          }}
           className="mt-1 text-sky-400 hover:text-sky-300 text-[12px] font-medium"
         >
           {expanded ? 'Show less' : 'See more'}

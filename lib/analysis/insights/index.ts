@@ -9,6 +9,7 @@ import { generateAvailabilityDeadzoneInsight } from './generators/availability-b
 // import { generateContentBottlenecksInsight } from './generators/content-bottlenecks';
 import { pickTopInsights } from './scoring';
 import { generatePullRequestFingerprintInsight } from './generators/pr-fingerprint';
+import { generateCollaborationSnapshotInsight } from './generators/collaboration-snapshot';
 
 const GENERATORS = [
   generateFastLoopsInsight,
@@ -16,6 +17,7 @@ const GENERATORS = [
   generateReviewerBottleneckInsight,
   generateAvailabilityDeadzoneInsight,
   generatePullRequestFingerprintInsight,
+  generateCollaborationSnapshotInsight,
   // generateContentBottlenecksInsight,
 ];
 

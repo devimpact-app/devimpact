@@ -3,7 +3,7 @@ import { InsightContext } from '../types';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 import { MAX_HOURS_CUTOFF } from './shared';
-import { formatRange } from '@/lib/utils/date';
+import { formatHours, formatRange } from '@/lib/utils/date';
 
 const THRESHOLD_MIN_MERGED_PRS = 4;
 
@@ -113,12 +113,6 @@ function describeLeadTime(medianHours: number | null): string {
   if (medianHours <= 12) return 'fast to ship';
   if (medianHours <= 36) return 'steady to ship';
   return 'slow to ship';
-}
-
-function formatHours(hours: number | null): string {
-  if (hours == null) return '—';
-  if (hours < 1) return `${(hours * 60).toFixed(0)}m`;
-  return `${hours.toFixed(1)}h`;
 }
 
 function formatPercent(rate: number | null): string {
@@ -297,30 +291,30 @@ export function generatePullRequestFingerprintInsight(
     stats: [...primaryStats, ...secondaryStats],
     score,
     relatedItems,
-    transparency: {
-      summary:
-        'This profile summarizes medians and simple ratios across your merged PRs in the recent window — no LLM, just straightforward aggregations.',
-      bullets: [
-        `We only include PRs that were merged in this window (minimum ${THRESHOLD_MIN_MERGED_PRS} to show this insight).`,
-        `Typical size is based on median lines and files changed across those PRs.`,
-        `Timing stats like lead time and time to first review ignore outliers above ${MAX_HOURS_CUTOFF}h.`,
-        `The test touch rate is the share of merged PRs that modified test files or were marked as touching tests.`,
-      ],
-      thresholds: [
-        {
-          key: 'minMergedPrs',
-          label: 'Minimum merged PRs to compute a fingerprint',
-          actual: sampleCount,
-          condition: `>= ${THRESHOLD_MIN_MERGED_PRS}`,
-        },
-        {
-          key: 'leadTimeCutoffHours',
-          label: 'Max hours included when computing timing medians',
-          actual: MAX_HOURS_CUTOFF,
-          condition: `<= ${MAX_HOURS_CUTOFF}h`,
-        },
-      ],
-    },
+    // transparency: {
+    //   summary:
+    //     'This profile summarizes medians and simple ratios across your merged PRs in the recent window — no LLM, just straightforward aggregations.',
+    //   bullets: [
+    //     `We only include PRs that were merged in this window (minimum ${THRESHOLD_MIN_MERGED_PRS} to show this insight).`,
+    //     `Typical size is based on median lines and files changed across those PRs.`,
+    //     `Timing stats like lead time and time to first review ignore outliers above ${MAX_HOURS_CUTOFF}h.`,
+    //     `The test touch rate is the share of merged PRs that modified test files or were marked as touching tests.`,
+    //   ],
+    //   thresholds: [
+    //     {
+    //       key: 'minMergedPrs',
+    //       label: 'Minimum merged PRs to compute a fingerprint',
+    //       actual: sampleCount,
+    //       condition: `>= ${THRESHOLD_MIN_MERGED_PRS}`,
+    //     },
+    //     {
+    //       key: 'leadTimeCutoffHours',
+    //       label: 'Max hours included when computing timing medians',
+    //       actual: MAX_HOURS_CUTOFF,
+    //       condition: `<= ${MAX_HOURS_CUTOFF}h`,
+    //     },
+    //   ],
+    // },
   };
 
   return insight;

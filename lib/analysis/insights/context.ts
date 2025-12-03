@@ -5,6 +5,7 @@ import { getReviewsOnAuthoredPrs } from '../activity/getReviewsOnAuthoredPrs';
 import { db } from '@/lib/db/client';
 import { prSummaries } from '@/lib/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
+import { getAuthoredReviews } from '../activity/getAuthoredReviews';
 
 export type BuildInsightContextArgs = {
   userId: string;
@@ -41,6 +42,14 @@ export async function buildInsightContext(
     end: windowEnd,
     tenantId: userId,
   });
+  const authoredReviews = await getAuthoredReviews(
+    {
+      start: windowStart,
+      end: windowEnd,
+      tenantId: userId,
+    },
+    { joinWithPrs: true }
+  );
   const queriedSummaries = await db
     .select()
     .from(prSummaries)
@@ -67,5 +76,6 @@ export async function buildInsightContext(
     authoredPrs,
     reviewsOnAuthoredPrs: reviewsOnAuthoredPrs.map((r) => r.review),
     prSummariesByPrId,
+    authoredReviews: authoredReviews.filter((r) => !!r.pr) as any,
   };
 }

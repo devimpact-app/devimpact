@@ -14,6 +14,10 @@ export type InsightContext = {
   windowEnd: Date;
 
   authoredPrs: PullRequest[];
+  authoredReviews: {
+    pr: PullRequest;
+    review: Review;
+  }[];
   reviewsOnAuthoredPrs: Review[];
   prSummariesByPrId: Map<string, PrSummary>;
 

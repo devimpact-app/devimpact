@@ -52,8 +52,6 @@ export function WorkRhythmCard({
   error,
   onViewTimelineClick,
 }: WorkRhythmCardProps) {
-  console.log('rhythm', rhythm);
-  // Build a 4x7 grid from backend buckets
   const { grid, maxCount } = useMemo(() => {
     const base: number[][] = Array.from({ length: TIME_BANDS }, () =>
       Array.from({ length: DAY_COLUMNS }, () => 0)
@@ -184,7 +182,7 @@ export function WorkRhythmCard({
                       key={`${bandIdx}-${dayIdx}`}
                       className="
                         rounded-full 
-                        transition-transform transition-colors duration-150 
+                        transition-transform duration-150 
                         hover:scale-[1.03]
                       "
                       style={{

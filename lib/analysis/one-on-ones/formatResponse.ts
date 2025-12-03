@@ -27,7 +27,6 @@ export function formatOneOnOneResponse(row: OneOnOneSession) {
   const parsed = OneOnOneResponse.safeParse({ prep });
 
   if (!parsed.success) {
-    console.log(parsed.error);
     throw new Error('Failed to format one-on-one response');
   }
 

@@ -5,6 +5,13 @@ import { batchNormalizeUserReviews } from '@/lib/analysis/normalizers/review-nor
 import { RepoSyncPayload } from '@/types/api/sync';
 import { getSyncStatus, isInitialSync, updateSyncStatus } from './sync-status';
 import { upsertGithubRepoForTenant } from './upsert-repo';
+import {
+  getDefaultWeekOffset,
+  getWeekBoundsFromOffset,
+} from '@/lib/utils/date';
+import { getAuthoredPrs } from '@/lib/analysis/activity/getAuthoredPrs';
+import { mapWithConcurrency } from '@/lib/utils/concurrency';
+import { getOrGeneratePrSummary } from '../../openai/services/summarizePR';
 
 export async function runSync({
   tenantId,
@@ -42,16 +49,32 @@ export async function runSync({
     const normalizedPrIds = await batchNormalizeUserPRs(tenantId, username);
     await batchNormalizeUserReviews(tenantId, username, normalizedPrIds);
 
+    // Summarize PRs for week that will be shown first
+    const weekOffset = getDefaultWeekOffset();
+    const { start, end } = getWeekBoundsFromOffset(weekOffset);
+    const authoredPrs = await getAuthoredPrs({
+      tenantId,
+      start,
+      end,
+    });
+    const mergedPrs = authoredPrs.filter((pr) => !!pr.mergedAt);
+    await mapWithConcurrency(mergedPrs, 5, async (pr) => {
+      const { row } = await getOrGeneratePrSummary({
+        tenantId,
+        prId: pr.id,
+      });
+      return { prId: pr.id, row };
+    });
+
     await updateSyncStatus({
       tenantId,
       syncWindow: payload.syncWindow,
       userLastSyncAt: syncStatus?.lastSyncAt,
     });
-  }
 
-  // TODO:
-  // See what week will be shown on dashboard first - do PR summaries for that week
-  // Queue up rest of last 4 weeks of PR summaries in background
+    // TODO:
+    // Queue up rest of last 4 weeks of PR summaries in background
+  }
 
   return {
     sync_type: initialSync ? 'initial' : 'incremental',

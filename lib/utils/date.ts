@@ -113,8 +113,8 @@ export function getDefaultWeekOffset(): number {
   const today = new Date();
   const day = today.getDay(); // 0 = Sun, 1 = Mon, ... 4 = Thu, 5 = Fri
 
-  // If it's Thu or Fri, show "This week" by default.
-  if (day === 4 || day === 5) {
+  // If it's Wed+, show "This week" by default.
+  if (day >= 3) {
     return 0;
   }
 
@@ -223,4 +223,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export function computeWindowEnd(start: Date, windowWeeks: number): Date {
   const duration = windowWeeks * 7 * DAY_MS;
   return new Date(start.getTime() + duration);
+}
+
+export function formatHours(hours: number | null): string {
+  if (hours == null) return '—';
+  if (hours < 1) return `${(hours * 60).toFixed(0)}m`;
+  return `${hours.toFixed(1)}h`;
 }

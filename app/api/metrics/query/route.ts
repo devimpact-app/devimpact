@@ -27,7 +27,6 @@ export const POST = withSentryUser(async (req: NextRequest) => {
     const json = await req.json();
     const parse = MetricsBatchInput.safeParse(json);
     if (!parse.success) {
-      console.log(parse.error);
       return jsonBadRequest('Invalid input shape');
     }
     const body: TMetricsBatchInput = parse.data;
@@ -36,7 +35,6 @@ export const POST = withSentryUser(async (req: NextRequest) => {
       body,
       tenantId
     );
-    console.log('results', results);
     const out = MetricsBatchResult.parse({ results });
     return jsonOK(out);
   } catch (err) {

@@ -64,7 +64,6 @@ export const POST = withSentryUser(
       counterpartType: row.counterpartType,
       tenantId: userId,
     });
-    console.log('prepPayload', prepPayload.payload);
 
     const [updated] = await db
       .update(oneOnOneSessions)

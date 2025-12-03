@@ -29,7 +29,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      fullName={user.fullName}
+      fullName={user.fullName!}
       cliDisconnected={cliDisconnected}
       staleSyncDays={staleSyncDays}
     />

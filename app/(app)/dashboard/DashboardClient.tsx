@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { DashboardAlerts } from './components/DashboardAlerts';
 import { InsightPanel } from '@/components/insights/InsightPanel';
 import { Insight } from '@/types/api/insights';
+import { usePrSummaryBackfill } from './usePrSummaryBackfill';
 
 type Props = {
   fullName: string;
@@ -28,6 +29,9 @@ export default function DashboardClient({
 
   const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
     useWeekNavigation();
+
+  // TODO: replace with async worker
+  usePrSummaryBackfill();
 
   const startISO = start.toISOString();
   const endISO = end.toISOString();
