@@ -15,8 +15,21 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const timezone = searchParams.get('timezone') ?? 'UTC';
   const start = startISO ? new Date(startISO) : null;
   const end = endISO ? new Date(endISO) : null;
-  if (!start || !end) {
-    return jsonBadRequest('Start and end not valid ISO strings');
+  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return jsonBadRequest('Start and end must be valid ISO date strings');
+  }
+
+  const diffMs = end.getTime() - start.getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = diffMs / dayMs;
+  if (diffDays <= 0) {
+    return jsonBadRequest('End date must be after start date');
+  }
+  const MAX_DAYS = 14;
+  if (diffDays > MAX_DAYS) {
+    return jsonBadRequest(
+      `Weekly summary supports at most ${MAX_DAYS} days. Try a narrower range.`
+    );
   }
 
   const summary = await buildWeeklySummary({

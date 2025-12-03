@@ -16,6 +16,7 @@ import {
   inferredTeamMemberships,
 } from '@/lib/db/schema/github-normalized';
 import { eq } from 'drizzle-orm';
+import { oneOnOneSessions } from '../db/schema';
 
 /**
  * Hard-deletes all synced + derived GitHub data for a given user/tenant.
@@ -23,6 +24,9 @@ import { eq } from 'drizzle-orm';
  */
 export async function deleteUserSyncedData(tenantId: string) {
   await db.transaction(async (tx) => {
+    await tx
+      .delete(oneOnOneSessions)
+      .where(eq(oneOnOneSessions.tenantId, tenantId));
     await tx.delete(prSummaries).where(eq(prSummaries.tenantId, tenantId));
 
     await tx.delete(pullRequests).where(eq(pullRequests.tenantId, tenantId));
