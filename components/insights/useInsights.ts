@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { InsightsResponse, InsightsResponseSchema } from '@/types/api/insights';
+import { getTimezone } from '@/lib/utils/date';
 
 async function fetchInsights(
   timezone: string,
@@ -36,11 +37,7 @@ type UseInsightsArgs = {
 };
 
 export function useInsights({ timezone, limit, windowWeeks }: UseInsightsArgs) {
-  const tz =
-    timezone ??
-    (typeof Intl !== 'undefined'
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone
-      : 'UTC');
+  const tz = timezone ?? getTimezone();
 
   const key: [string, string, number | undefined, number | undefined] = [
     '/api/insights',

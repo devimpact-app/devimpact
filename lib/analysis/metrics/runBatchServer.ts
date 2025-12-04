@@ -8,7 +8,7 @@ import {
 import { runMetric } from './engine/runMetric';
 import { db } from '@/lib/db/client';
 import { METRIC_CATALOG_MAP } from './catalog';
-import { computeWindowEnd, toDate } from '@/lib/utils/date';
+import { computeWindowEnd, toDate, toLocalDate } from '@/lib/utils/date';
 import { StatDataset, StatResult } from './types/output';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 
@@ -77,7 +77,7 @@ export async function runBatchServer(
 
   const rawPlanResults = await mapWithConcurrency(planInputs, 5, async (r) => {
     const def = METRIC_CATALOG_MAP[r.metricId];
-    const start = toDate(r.input.start);
+    const start = toLocalDate(r.input.start, r.input.timezone);
     if (!start) {
       // Push invalid date error if bad range
       const errorResult = {

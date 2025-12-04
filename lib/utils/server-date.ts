@@ -1,3 +1,6 @@
+import { endOfWeek, getDay, startOfWeek } from 'date-fns';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+
 export function toLocalDateServer(
   value: string | Date,
   timezone: string
@@ -5,29 +8,17 @@ export function toLocalDateServer(
   const base = typeof value === 'string' ? new Date(value) : value;
   if (!(base instanceof Date) || isNaN(base.getTime())) return base;
 
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).formatToParts(base);
-
-  const get = (type: string) =>
-    Number(parts.find((p) => p.type === type)?.value);
-
-  const year = get('year');
-  const month = get('month');
-  const day = get('day');
-  const hour = get('hour');
-  const minute = get('minute');
-  const second = get('second');
-
-  // Construct a Date *in UTC* representing the local wall time
-  return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  const zonedDate = toZonedTime(base, timezone);
+  return new Date(
+    Date.UTC(
+      zonedDate.getFullYear(),
+      zonedDate.getMonth(),
+      zonedDate.getDate(),
+      zonedDate.getHours(),
+      zonedDate.getMinutes(),
+      zonedDate.getSeconds()
+    )
+  );
 }
 
 /**
@@ -75,29 +66,10 @@ export function formatRangeServer(
   )}`;
 }
 
-/**
- * Get the weekday (0=Monday … 6=Sunday) for a date in a specific timezone.
- */
 export function getWeekdayServer(date: Date, timezone: string): number {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    weekday: 'short',
-  });
-
-  const parts = fmt.formatToParts(date);
-  const weekdayStr = parts.find((p) => p.type === 'weekday')?.value ?? 'Mon';
-
-  const map: Record<string, number> = {
-    Mon: 0,
-    Tue: 1,
-    Wed: 2,
-    Thu: 3,
-    Fri: 4,
-    Sat: 5,
-    Sun: 6,
-  };
-
-  return map[weekdayStr] ?? 0;
+  const zonedDate = toZonedTime(date, timezone);
+  const day = getDay(zonedDate); // 0=Sunday, 1=Monday, ...
+  return day === 0 ? 6 : day - 1;
 }
 
 function getYMDInTZ(
@@ -126,21 +98,20 @@ function getYMDInTZ(
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function startOfWeekServer(date: Date, timezone: string): Date {
-  const { year, month, day } = getYMDInTZ(date, timezone);
-  const weekday = getWeekdayServer(date, timezone); // 0 = Mon, ..., 6 = Sun
+  // Convert UTC date to the user's timezone
+  const zonedDate = toZonedTime(date, timezone);
 
-  const mondayDay = day - weekday;
+  // Get start of week in that timezone (Monday midnight)
+  const zonedStartOfWeek = startOfWeek(zonedDate, { weekStartsOn: 1 });
 
-  const mondayUTC = new Date(Date.UTC(year, month - 1, mondayDay, 0, 0, 0, 0));
-  return mondayUTC;
+  // Convert back to UTC
+  return fromZonedTime(zonedStartOfWeek, timezone);
 }
 
 export function endOfWeekServer(date: Date, timezone: string): Date {
-  const start = startOfWeekServer(date, timezone);
-
-  const end = new Date(start.getTime() + 7 * DAY_MS - 1);
-
-  return end;
+  const zonedDate = toZonedTime(date, timezone);
+  const zonedEndOfWeek = endOfWeek(zonedDate, { weekStartsOn: 1 });
+  return fromZonedTime(zonedEndOfWeek, timezone);
 }
 
 export function getWeekBoundsFromOffsetServer(
