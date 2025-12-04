@@ -20,10 +20,10 @@ export const OneOnOneSectionKind = z.enum([
   'highlights',
   'friction',
   'asks',
-  'feedback_for_manager',
+  'collaboration',
+  'growth',
+  'focus_areas',
   'goals',
-  'metrics',
-  'insights',
 ]);
 export type TOneOnOneSectionKind = z.infer<typeof OneOnOneSectionKind>;
 

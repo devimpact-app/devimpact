@@ -15,9 +15,10 @@ const SECTION_ORDER: { kind: TOneOnOneSectionKind; label: string }[] = [
   { kind: 'highlights', label: 'Highlights' },
   { kind: 'friction', label: 'Friction & blockers' },
   { kind: 'asks', label: 'Asks' },
-  { kind: 'feedback_for_manager', label: 'Feedback for your manager' },
+  { kind: 'collaboration', label: 'Collaboration' },
+  { kind: 'growth', label: 'Growth' },
+  { kind: 'focus_areas', label: 'Focus Areas' },
   { kind: 'goals', label: 'Goals & next steps' },
-  // we’ll handle 'metrics' and 'insights' kinds later if we need them
 ];
 
 export function OneOnOneBody({
@@ -190,7 +191,10 @@ function TalkingPointRow({
           {tp.body}
         </p>
       )}
-      {(relatedInsights.length > 0 || relatedMetricIds.length > 0) && (
+      {(relatedInsights.length > 0 ||
+        relatedMetricIds.length > 0 ||
+        relatedPrs.length > 0 ||
+        relatedReviews.length > 0) && (
         <div className="mt-1.5 ml-2 flex flex-wrap gap-1.5">
           {relatedMetricIds.map((metricId) => (
             <MetricPill
@@ -281,6 +285,7 @@ function PRPill({
 }) {
   const prNumber = pr.meta?.prNumber;
   const prTitle = pr.meta?.prTitle ?? pr.title;
+  console.log('pr', pr);
 
   if (!prNumber) return null;
 

@@ -1,7 +1,7 @@
 export const AiConfig = {
   models: {
-    summarize: 'gpt-4o-mini', // fast & cheap; upgrade to "gpt-5" if needed
-    themes: 'gpt-4o-mini',
+    summarize: 'gpt-4o', // fast & cheap; upgrade to "gpt-5" if needed
+    themes: 'gpt-4o',
     // quarterly: "claude-4.5-sonnet",
     // embed: "text-embedding-3-large",
   },
