@@ -4,6 +4,7 @@ import { MetricInput } from '../types/input';
 import { DB } from '@/lib/db/client';
 import { pullRequests, reviews } from '@/lib/db/schema';
 import { TMetricResult } from '@/types/api/metrics';
+import { startOfWeek } from '@/lib/utils/date';
 
 export const TABLES = {
   pullRequests,
@@ -11,24 +12,50 @@ export const TABLES = {
 };
 export type TableId = keyof typeof TABLES;
 
-function getWeeklyBuckets(
+export function getWeeklyBuckets(
   start: Date,
-  end: Date
-): Array<{ start: Date; end: Date }> {
-  // normalize to avoid mutating original
-  let cursor = new Date(start);
-  cursor.setHours(0, 0, 0, 0);
+  end: Date | undefined,
+  windowWeeks: number,
+  opts?: { now?: Date }
+) {
+  const now = opts?.now ?? new Date();
 
-  const buckets: { start: Date; end: Date }[] = [];
+  const buckets: {
+    start: Date;
+    end: Date;
+    status: 'partial' | 'complete';
+  }[] = [];
 
-  while (cursor < end) {
+  const firstStart = startOfWeek(start);
+  let cursor = firstStart;
+
+  for (let i = 0; i < windowWeeks; i++) {
     const bucketStart = new Date(cursor);
     const bucketEnd = new Date(bucketStart);
-    bucketEnd.setDate(bucketEnd.getDate() + 7);
+    bucketEnd.setUTCDate(bucketEnd.getUTCDate() + 7);
+
+    const isPartial = bucketEnd > now;
 
     buckets.push({
       start: bucketStart,
-      end: bucketEnd > end ? end : bucketEnd,
+      end: bucketEnd,
+      status: isPartial ? 'partial' : 'complete',
+    });
+
+    cursor = bucketEnd;
+  }
+
+  if (end && cursor < end) {
+    const bucketStart = new Date(cursor);
+    const bucketEnd = new Date(bucketStart);
+    bucketEnd.setUTCDate(bucketEnd.getUTCDate() + 7);
+
+    const isPartial = bucketEnd > now;
+
+    buckets.push({
+      start: bucketStart,
+      end: bucketEnd,
+      status: isPartial ? 'partial' : 'complete',
     });
 
     cursor = bucketEnd;
@@ -199,7 +226,7 @@ export async function executePlanFormula(
   }
 
   if (input.shape === 'timeseries') {
-    const buckets = getWeeklyBuckets(input.start, input.end);
+    const buckets = getWeeklyBuckets(input.start, input.end, input.windowWeeks);
 
     const points = await Promise.all(
       buckets.map(async (bucket) => {
@@ -219,6 +246,7 @@ export async function executePlanFormula(
             (bucket.start.getTime() + bucket.end.getTime()) / 2
           ).toISOString(),
           value,
+          status: bucket.status,
         };
       })
     );

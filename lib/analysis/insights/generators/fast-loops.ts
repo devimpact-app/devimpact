@@ -2,7 +2,11 @@ import { InsightContext } from '../types';
 import { PullRequest } from '@/lib/db/schema';
 import { diffSecondsRounded } from '../../normalizers/helpers';
 import { computeMedianClamped } from '@/lib/utils/math';
-import { getLocalWeekdayIndex, toLocalDate } from '@/lib/utils/date';
+import {
+  formatRange,
+  getLocalWeekdayIndex,
+  toLocalDate,
+} from '@/lib/utils/date';
 import {
   DayBucket,
   formatDayBucketLabel,
@@ -280,7 +284,7 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
     fastMedianHours,
     fastCount: fast.length,
     totalCount: candidates.length,
-    timeframeLabel: 'last 4 weeks',
+    timeframeLabel: 'recent period',
   });
 
   const improvementRatio =
@@ -357,7 +361,7 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
     title,
     emphasis,
     body,
-    timeWindowLabel: 'Last 4 weeks',
+    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
     stats: [
       {
         label: 'Fast-loop PRs',
@@ -381,7 +385,7 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
       summary:
         'We highlighted this because this pattern of PRs consistently merges faster than your typical PRs in this period.',
       bullets: [
-        `Looked at ${candidates.length} merged PRs with a ready-for-review and merge time in the last 4 weeks.`,
+        `Looked at ${candidates.length} merged PRs with a ready-for-review and merge time in the selected time period.`,
         `Computed a baseline median cycle time of ${baselineMedianHours.toFixed(
           1
         )}h from ready-for-review to merge.`,

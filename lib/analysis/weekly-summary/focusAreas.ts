@@ -1,3 +1,5 @@
+import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
+
 export function buildTagFrequencyMap(tags: string[]): Map<string, number> {
   const freq = new Map<string, number>();
   for (const tag of tags) {
@@ -21,7 +23,7 @@ export function pickTopFocusAreas(
 
   const finalList = (filtered.length > 0 ? filtered : sorted)
     .slice(0, maxAreas)
-    .map(([tag]) => tag);
+    .map(([tag]) => PR_TYPE_LABELS[tag]);
 
   return finalList;
 }

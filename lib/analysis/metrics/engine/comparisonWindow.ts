@@ -1,14 +1,16 @@
-import { toDate } from "@/lib/utils/date";
-import { ComparisonSpec } from "../types/input";
+import { toDate } from '@/lib/utils/date';
+import { ComparisonSpec } from '../types/input';
 
 export type ComparisonWindow =
-  | { kind: "none" }
+  | { kind: 'none' }
   | {
-      kind: Exclude<ComparisonSpec["kind"], "none">;
+      kind: Exclude<ComparisonSpec['kind'], 'none'>;
       start: Date;
       end: Date;
       label: string;
     };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function computeComparisonWindow({
   primaryStart,
@@ -19,30 +21,39 @@ export function computeComparisonWindow({
   primaryEnd: Date;
   cmp: ComparisonSpec | undefined;
 }): ComparisonWindow {
-  if (!cmp || cmp.kind === "none") return { kind: "none" };
+  if (!cmp || cmp.kind === 'none') return { kind: 'none' };
 
   const normStart = toDate(primaryStart);
-  const normEnd = toDate(primaryEnd);
-  if (!(normStart < normEnd)) return { kind: "none" }; // guard
+  if (!normStart) return { kind: 'none' };
 
   switch (cmp.kind) {
-    case "previous_period": {
-      const durMs = normEnd.getTime() - normStart.getTime();
-      const end = new Date(normStart.getTime()); // shifts back by duration
-      const start = new Date(end.getTime() - durMs);
+    case 'previous_period': {
+      const durationMs = primaryEnd.getTime() - primaryStart.getTime();
+
+      const end = new Date(normStart.getTime()); // ends right before primaryStart
+      const start = new Date(end.getTime() - durationMs);
+
+      if (!(start < end)) return { kind: 'none' };
+
       return {
-        kind: "previous_period",
+        kind: 'previous_period',
         start,
         end,
-        label: "Previous period",
+        label: 'Previous period',
       };
     }
 
-    case "custom": {
+    case 'custom': {
       const start = toDate(cmp.start);
       const end = toDate(cmp.end);
-      if (!(start < end)) return { kind: "none" };
-      return { kind: "custom", start, end, label: "Custom comparison" };
+      if (!start || !end || !(start < end)) return { kind: 'none' };
+
+      return {
+        kind: 'custom',
+        start,
+        end,
+        label: 'Custom comparison',
+      };
     }
   }
 }

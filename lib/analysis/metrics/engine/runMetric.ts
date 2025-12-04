@@ -6,7 +6,7 @@ import { computeComparisonWindow } from './comparisonWindow';
 import { toDate } from '@/lib/utils/date';
 import { mergePrimaryAndComparison } from './mergeResults';
 import { executeMetric } from './executeMetric';
-import { TMetricResult } from '@/types/api/metrics';
+import { TMetricInput, TMetricResult } from '@/types/api/metrics';
 
 export async function runMetric(
   metric: string | MetricDefinition,

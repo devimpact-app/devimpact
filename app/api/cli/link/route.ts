@@ -6,16 +6,25 @@ import { jsonBadRequest, jsonUnauthorized } from '../../_lib/http';
 import { hashCliToken } from '@/lib/utils/crypto';
 import { withSentryUser } from '@/lib/withSentryUser';
 
+import { z } from 'zod';
+
+const CliLinkBodySchema = z
+  .object({
+    cliToken: z.string().min(5).max(256),
+    githubLogin: z.string().min(1).max(100),
+  })
+  .strict();
+
 export const POST = withSentryUser(async (req: NextRequest) => {
   try {
-    const body = await req.json();
+    const json = await req.json().catch(() => null);
+    const parsed = CliLinkBodySchema.safeParse(json);
 
-    const cliToken = body.cliToken as string | undefined;
-    const githubLogin = body.githubLogin as string | undefined;
-
-    if (!cliToken || !githubLogin) {
-      return jsonBadRequest('Missing cliToken or githubLogin');
+    if (!parsed.success) {
+      return jsonBadRequest('Invalid request payload');
     }
+
+    const { cliToken, githubLogin } = parsed.data;
 
     const user = await db.query.users.findFirst({
       where: eq(users.githubUsername, githubLogin),

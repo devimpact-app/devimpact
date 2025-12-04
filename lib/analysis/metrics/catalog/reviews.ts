@@ -12,7 +12,7 @@ export const REVIEWS_GIVEN_COUNT_V1: MetricDefinition = {
     description: 'Reviews you submitted in this period',
     valueFormat: {
       scale: 1,
-      unitSuffix: 'reviews',
+      unitSuffix: ``,
       decimals: 0,
       kind: 'count',
     },
@@ -27,6 +27,36 @@ export const REVIEWS_GIVEN_COUNT_V1: MetricDefinition = {
       { col: 'reviewerIsTenant', op: 'eq', val: true },
       { col: 'submittedAt', op: 'between', startRef: 'start', endRef: 'end' },
       { col: 'submittedAt', op: 'is_not_null' },
+    ],
+  },
+};
+
+export const REVIEWS_COMMENT_AVG_V1: MetricDefinition = {
+  id: 'review.comment_count.avg.v1',
+  name: 'Comments per review',
+  description: 'Average comments per review by the tenant',
+  entity: 'review',
+  unit: 'count',
+  display: {
+    label: 'Comments per review',
+    description: 'Average comments per review by the tenant',
+    valueFormat: {
+      scale: 1,
+      unitSuffix: ``,
+      decimals: 1,
+      kind: 'count',
+    },
+  },
+  cacheTtlSeconds: 300,
+  formula: {
+    kind: 'plan',
+    source: 'reviews',
+    operation: 'avg',
+    column: 'reviewCommentsCount',
+    timeColumn: 'submittedAt',
+    where: [
+      { col: 'reviewerIsTenant', op: 'eq', val: true },
+      { col: 'submittedAt', op: 'between', startRef: 'start', endRef: 'end' },
     ],
   },
 };

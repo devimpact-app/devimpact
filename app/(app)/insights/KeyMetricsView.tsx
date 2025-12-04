@@ -1,21 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { z } from 'zod';
-import type { TMetricsBatchResult } from '@/types/api/metrics';
+import { useEffect, useState } from 'react';
+import type {
+  TMetricsBatchResult,
+  TTimeseriesResult,
+} from '@/types/api/metrics';
 import { TMetricsBatchInput } from '@/types/api/metrics';
 import { MetricsAPI } from '@/lib/analysis/metrics/client';
-import { MetricSparkline } from './MetricSparkline';
-import { toChartPoints } from './utils';
 import { MetricTimeseriesChart } from './MetricTimeseriesChart';
 
-type DateRange = {
-  start: Date;
-  end: Date;
-};
-
 type KeyMetricsPanelProps = {
-  range: DateRange;
+  start: Date;
+  windowWeeks: number;
+  onClickMetric: (result: TTimeseriesResult) => void;
+  onViewAll: () => void;
 };
 
 type KeyMetricsState = {
@@ -24,7 +22,10 @@ type KeyMetricsState = {
   error: string | null;
 };
 
-function useKeyMetrics(range: DateRange): KeyMetricsState {
+function useKeyMetrics({
+  start,
+  windowWeeks,
+}: KeyMetricsPanelProps): KeyMetricsState {
   const [state, setState] = useState<KeyMetricsState>({
     data: null,
     isLoading: true,
@@ -32,13 +33,7 @@ function useKeyMetrics(range: DateRange): KeyMetricsState {
   });
 
   // Keep a stable ISO window for the API
-  const windowIso = useMemo(
-    () => ({
-      start: range.start.toISOString(),
-      end: range.end.toISOString(),
-    }),
-    [range.start, range.end]
-  );
+  const startIso = start?.toISOString();
 
   useEffect(() => {
     let cancelled = false;
@@ -70,8 +65,8 @@ function useKeyMetrics(range: DateRange): KeyMetricsState {
             metricId: id,
             input: {
               shape: 'timeseries',
-              start: windowIso.start,
-              end: windowIso.end,
+              start: startIso,
+              windowWeeks,
             },
           })),
         };
@@ -101,26 +96,45 @@ function useKeyMetrics(range: DateRange): KeyMetricsState {
     return () => {
       cancelled = true;
     };
-  }, [windowIso.start, windowIso.end]);
+  }, [startIso, windowWeeks]);
 
   return state;
 }
 
-export function KeyMetricsPanel({ range }: KeyMetricsPanelProps) {
-  const { data, isLoading, error } = useKeyMetrics(range);
+export function KeyMetricsPanel({
+  start,
+  windowWeeks,
+  onClickMetric,
+  onViewAll,
+}: KeyMetricsPanelProps) {
+  const { data, isLoading, error } = useKeyMetrics({
+    start,
+    windowWeeks,
+    onClickMetric,
+    onViewAll,
+  });
 
   return (
     <aside className="lg:sticky lg:top-24">
       <div className="rounded-2xl border border-slate-800/80 bg-[#0b0f1a]/80 p-4 shadow-sm shadow-black/40">
-        <header className="mb-3 flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+        <header className="mb-3 flex flex-col gap-1">
+          <div className="flex items-baseline">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-300 mr-2">
               Key metrics
             </h2>
-            <p className="mt-0.5 text-[11px] text-slate-400">
-              High-level trends for this period
-            </p>
+            {onViewAll && (
+              <button
+                onClick={onViewAll}
+                className="text-[11px] text-sky-500 hover:text-sky-400 font-medium inline-flex items-center gap-1"
+              >
+                View all →
+              </button>
+            )}
           </div>
+
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            High-level trends for this period
+          </p>
         </header>
 
         {isLoading && (
@@ -142,12 +156,13 @@ export function KeyMetricsPanel({ range }: KeyMetricsPanelProps) {
             {data.results.map((result) => {
               const isTimeseries = result.shape === 'timeseries';
               return (
-                <div>
+                <div key={result.metricId}>
                   {isTimeseries && (
                     <>
                       <MetricTimeseriesChart
                         key={result.metricId}
                         result={result}
+                        onClick={onClickMetric}
                       />
                     </>
                   )}

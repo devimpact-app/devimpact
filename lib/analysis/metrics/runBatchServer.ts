@@ -8,20 +8,14 @@ import {
 import { runMetric } from './engine/runMetric';
 import { db } from '@/lib/db/client';
 import { METRIC_CATALOG_MAP } from './catalog';
-import { toDate } from '@/lib/utils/date';
+import { computeWindowEnd, inferWindowWeeks, toDate } from '@/lib/utils/date';
 import { StatDataset, StatResult } from './types/output';
+import { mapWithConcurrency } from '@/lib/utils/concurrency';
 
 type MetricInputForBatch = TMetricsBatchInput['requests'][0];
 
 function makeInputKey(input: MetricInputForBatch): string {
-  return [input.metricId, input.input.start, input.input.end].join('|');
-}
-
-function sameContext(a: TMetricInput, b: TMetricInput): boolean {
-  return (
-    makeInputKey({ input: a, metricId: '' }) ===
-    makeInputKey({ input: b, metricId: '' })
-  );
+  return [input.metricId, input.input.start, input.input.shape].join('|');
 }
 
 function expandInputsWithDependencies(
@@ -79,32 +73,34 @@ export async function runBatchServer(
   // Run non-derived metrics
   const planResults: TMetricResult[] = [];
   const resultByKey = new Map<string, TMetricResult>();
-  for (const r of planInputs) {
+  const ctx = { db };
+
+  const rawPlanResults = await mapWithConcurrency(planInputs, 5, async (r) => {
     const def = METRIC_CATALOG_MAP[r.metricId];
     const start = toDate(r.input.start);
-    const end = toDate(r.input.end);
-    if (!start || !end || start > end) {
+    if (!start) {
       // Push invalid date error if bad range
-      planResults.push({
+      const errorResult = {
         metricId: r.metricId,
         shape: r.input.shape,
         ...(r.input.shape === 'stat'
           ? { data: [{ kind: 'current', value: null }] }
           : { series: [] }),
         error: { code: 'INVALID_DATES', message: 'Invalid date window' },
-      } as TMetricResult);
-      continue;
+      } as TMetricResult;
+      resultByKey.set(makeInputKey(r), errorResult);
     }
 
-    // Run metric
-    const ctx = { db };
     const result = await runMetric(
       def,
       {
         ...r.input,
         tenantId,
         start,
-        end,
+        end: r.input.end
+          ? new Date(r.input.end)
+          : computeWindowEnd(start, r.input.windowWeeks),
+        windowWeeks: r.input.windowWeeks,
         comparison:
           r.input.comparison?.kind === 'custom'
             ? {
@@ -117,14 +113,18 @@ export async function runBatchServer(
       ctx
     );
 
-    planResults.push({
+    const decorated: TMetricResult = {
       ...result,
+      metricId: r.metricId,
       valueFormat: def.display.valueFormat ?? undefined,
       aggregation:
         def.formula.kind === 'plan' ? { op: def.formula.operation } : undefined,
-    });
-    resultByKey.set(makeInputKey(r), result);
-  }
+    };
+
+    resultByKey.set(makeInputKey(r), decorated);
+    return decorated;
+  });
+  planResults.push(...rawPlanResults);
 
   const derivedResults: TMetricResult[] = [];
 
@@ -196,10 +196,7 @@ export async function runBatchServer(
           title: def.display?.label ?? def.name,
           description: def.display?.description ?? def.description,
           data: datasets,
-          window: {
-            start: input.input.start,
-            end: input.input.end,
-          },
+          window: numRes.window,
           valueFormat: def.display.valueFormat ?? undefined,
         };
 
@@ -227,6 +224,7 @@ export async function runBatchServer(
             bucketEnd: string;
             bucketMidpoint: string;
             value: number | null;
+            status: 'partial' | 'complete';
           }
         >();
         for (const p of denSeries.points) {
@@ -248,6 +246,7 @@ export async function runBatchServer(
             bucketEnd: p.bucketEnd,
             bucketMidpoint: p.bucketMidpoint,
             value: v,
+            status: p.status,
           };
         });
 
@@ -257,10 +256,7 @@ export async function runBatchServer(
           title: def.display?.label ?? def.name,
           description: def.display?.description ?? def.description,
           unit: def.unit,
-          window: {
-            start: input.input.start,
-            end: input.input.end,
-          },
+          window: numRes.window,
           series: [
             {
               label: def.display?.label ?? def.name,
@@ -285,10 +281,7 @@ export async function runBatchServer(
         shape: input.input.shape, // whatever was requested
         title: def.display?.label ?? def.name,
         unit: def.unit,
-        window: {
-          start: input.input.start,
-          end: input.input.end,
-        },
+        window: numRes.window,
         ...(input.input.shape === 'stat'
           ? { data: [{ kind: 'current', value: null }] }
           : { series: [] }),
@@ -312,7 +305,8 @@ export async function runBatchServer(
         metricId: r.metricId,
         input: {
           ...r.window,
-        } as TMetricInput,
+          shape: r.shape,
+        } as unknown as TMetricInput,
       });
       return requestedKeys.has(key);
     }),

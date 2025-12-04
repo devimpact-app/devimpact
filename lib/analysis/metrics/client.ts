@@ -2,24 +2,25 @@ import {
   CatalogResponse,
   MetricsBatchInput,
   MetricsBatchResult,
-} from "@/types/api/metrics";
-import { z } from "zod";
+  TMetricResult,
+} from '@/types/api/metrics';
+import { z } from 'zod';
 
 async function fetchJSON<T>(
   url: string,
   init?: RequestInit,
-  schema?: z.ZodSchema<T>,
+  schema?: z.ZodSchema<T>
 ): Promise<T> {
   const res = await fetch(url, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...(init?.headers || {}),
     },
-    cache: "no-store",
+    cache: 'no-store',
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
+    const text = await res.text().catch(() => '');
     throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
   }
   const resJson = (await res.json()) as unknown;
@@ -28,20 +29,37 @@ async function fetchJSON<T>(
   return data as T;
 }
 
+export function formatMetricValue(
+  valueFormat: TMetricResult['valueFormat'],
+  rawValue: number | null
+): string {
+  if (rawValue == null) return '—';
+
+  const vf = valueFormat;
+  const scale = vf?.scale ?? 1;
+  const decimals = vf?.decimals ?? 0;
+  const unitSuffix = vf?.unitSuffix ?? '';
+
+  const scaled = rawValue * scale;
+  const formatted = scaled.toFixed(decimals);
+
+  return unitSuffix ? `${formatted} ${unitSuffix}` : formatted;
+}
+
 export const MetricsAPI = {
   async getCatalog() {
     return fetchJSON(
-      "/api/metrics/catalog",
-      { method: "GET" },
-      CatalogResponse,
+      '/api/metrics/catalog',
+      { method: 'GET' },
+      CatalogResponse
     );
   },
 
   async runBatch(input: z.infer<typeof MetricsBatchInput>) {
     return fetchJSON(
-      "/api/metrics/query",
-      { method: "POST", body: JSON.stringify(input) },
-      MetricsBatchResult,
+      '/api/metrics/query',
+      { method: 'POST', body: JSON.stringify(input) },
+      MetricsBatchResult
     );
   },
 };

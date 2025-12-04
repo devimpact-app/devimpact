@@ -3,6 +3,7 @@ import { computeMedianClamped } from '@/lib/utils/math';
 import { MAX_HOURS_CUTOFF } from './shared';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
+import { formatRange } from '@/lib/utils/date';
 
 type ReviewerStats = {
   reviewer: string;
@@ -126,7 +127,7 @@ export function generateReviewerBottleneckInsight(
   const reviewerLabel = best.reviewer;
   const reviewerMedianLabel = `${best.medianLatencyHours.toFixed(1)}h`;
   const baselineLabel = `${baselineMedianHours.toFixed(1)}h`;
-  const timeframe = 'last 4 weeks';
+  const timeframe = 'recent period';
 
   const title = `You're heavily reliant on ${reviewerLabel} for first reviews`;
   const emphasis = `${pctFirst}% of your first reviews, ${reviewerMedianLabel} median response time`;
@@ -202,7 +203,7 @@ export function generateReviewerBottleneckInsight(
     title,
     emphasis,
     body,
-    timeWindowLabel: 'Last 4 weeks',
+    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
     stats: [
       {
         label: 'Share of first reviews',

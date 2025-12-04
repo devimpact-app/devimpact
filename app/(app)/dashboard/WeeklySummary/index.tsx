@@ -30,9 +30,11 @@ async function fetchWeeklySummary(
 export default function WeeklySummaryCardContainer({
   startISO,
   endISO,
+  handleOneOnOne,
 }: {
   startISO: string;
   endISO: string;
+  handleOneOnOne: () => void;
 }) {
   const timezone =
     typeof Intl !== 'undefined'
@@ -50,7 +52,7 @@ export default function WeeklySummaryCardContainer({
       summary={data}
       isLoading={isLoading}
       error={error?.message ?? null}
-      onOpenOneOnOne={() => {}}
+      handleOneOnOne={handleOneOnOne}
     />
   );
 }

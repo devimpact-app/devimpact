@@ -2,7 +2,6 @@
 import { InferSelectModel } from 'drizzle-orm';
 import { db as defaultDb } from '@/lib/db/client';
 import { githubPrFiles, githubPrs } from '@/lib/db/schema';
-import { SQL, and, eq } from 'drizzle-orm';
 
 type DB = typeof defaultDb;
 type PRRow = InferSelectModel<typeof githubPrs>;

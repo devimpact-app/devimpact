@@ -1,27 +1,28 @@
-import { DB } from "@/lib/db/client";
+import { DB } from '@/lib/db/client';
 
 export type ResultShape =
-  | "stat" // single number (optionally with comparison)
-  | "timeseries"; // points over time
+  | 'stat' // single number (optionally with comparison)
+  | 'timeseries'; // points over time
 
-export type Granularity = "hour" | "day" | "week" | "month" | "quarter";
+export type Granularity = 'hour' | 'day' | 'week' | 'month' | 'quarter';
 
 export type Breakdown = {
-  by: "repo" | "reviewer" | "team" | "state";
+  by: 'repo' | 'reviewer' | 'team' | 'state';
   limit?: number;
-  order?: "asc" | "desc";
+  order?: 'asc' | 'desc';
 };
 
 export type ComparisonSpec =
-  | { kind: "none" }
-  | { kind: "previous_period" } // same length window prior to {start,end}
-  | { kind: "custom"; start: Date; end: Date }; // explicit
+  | { kind: 'none' }
+  | { kind: 'previous_period' } // same length window prior to {start,end}
+  | { kind: 'custom'; start: Date; end: Date }; // explicit
 
 export type MetricInput = {
   tenantId: string;
   // time window
   start: Date;
   end: Date;
+  windowWeeks: number;
 
   // shape & options requested by the FE
   shape: ResultShape;

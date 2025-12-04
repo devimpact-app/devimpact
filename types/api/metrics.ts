@@ -24,7 +24,8 @@ export const Comparison = z.union([
 
 export const MetricInput = z.object({
   start: z.string(), // ISO
-  end: z.string(), // ISO
+  end: z.string().optional(),
+  windowWeeks: z.number(), // ISO
   shape: ResultShape,
   granularity: Granularity.optional(),
   breakdowns: z.array(Breakdown).optional(),
@@ -118,6 +119,7 @@ export const TimeSeriesPoint = z.object({
   bucketEnd: z.string(),
   bucketMidpoint: z.string(),
   value: z.number().nullable(),
+  status: z.enum(['complete', 'partial']).default('complete'),
 });
 export const TimeSeries = z.object({
   label: z.string(),

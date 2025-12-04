@@ -8,12 +8,16 @@ import { generateReviewerBottleneckInsight } from './generators/reviewer-bottlen
 import { generateAvailabilityDeadzoneInsight } from './generators/availability-bottlenecks';
 // import { generateContentBottlenecksInsight } from './generators/content-bottlenecks';
 import { pickTopInsights } from './scoring';
+import { generatePullRequestFingerprintInsight } from './generators/pr-fingerprint';
+import { generateCollaborationSnapshotInsight } from './generators/collaboration-snapshot';
 
 const GENERATORS = [
   generateFastLoopsInsight,
   generateFrictionThemesInsight,
   generateReviewerBottleneckInsight,
   generateAvailabilityDeadzoneInsight,
+  generatePullRequestFingerprintInsight,
+  generateCollaborationSnapshotInsight,
   // generateContentBottlenecksInsight,
 ];
 

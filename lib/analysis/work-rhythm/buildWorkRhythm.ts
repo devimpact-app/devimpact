@@ -16,6 +16,8 @@ import { buildWorkRhythmDescription } from './description';
 export type BuildWorkRhythmArgs = {
   userId: string;
   timezone: string;
+  startOverride?: Date;
+  endOverride?: Date;
 };
 
 function computeEveningSharePercent(buckets: WorkRhythmBucket[]): number {
@@ -44,8 +46,19 @@ function computeEveningSharePercent(buckets: WorkRhythmBucket[]): number {
 export async function buildWorkRhythm({
   userId,
   timezone,
+  startOverride,
+  endOverride,
 }: BuildWorkRhythmArgs): Promise<WorkRhythm> {
-  const { start, end } = getWeekBoundsFromOffset(0, 4);
+  let start: Date;
+  let end: Date;
+  if (startOverride && endOverride) {
+    start = startOverride;
+    end = endOverride;
+  } else {
+    const bounds = getWeekBoundsFromOffset(0, 4);
+    start = bounds.start;
+    end = bounds.end;
+  }
   const range: WorkRhythm['range'] = {
     startISO: start.toISOString(),
     endISO: end.toISOString(),

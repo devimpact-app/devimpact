@@ -1,5 +1,9 @@
 import { formatRange } from '@/lib/utils/date';
-import { WeeklySummary, WeeklySummarySchema } from '@/types/api/weekly-summary';
+import {
+  ShippedItem,
+  WeeklySummary,
+  WeeklySummarySchema,
+} from '@/types/api/weekly-summary';
 import { getAuthoredPrs } from '../activity/getAuthoredPrs';
 import { getAuthoredReviews } from '../activity/getAuthoredReviews';
 import { getAuthoredCommits } from '../activity/getAuthoredCommits';
@@ -17,6 +21,7 @@ import {
 } from './highlightedReviews';
 import { deriveFrictionFollowups } from './frictionItems';
 import { buildWeeklyHeadline } from './headline';
+import { mapWithConcurrency } from '@/lib/utils/concurrency';
 
 export type BuildWeeklySummaryArgs = {
   userId: string;
@@ -73,30 +78,18 @@ export async function buildWeeklySummary({
 
   // Highlighted shipped PRs
   const summariesByPrId = new Map<string, any>();
-  for (const pr of mergedPrs) {
+  const summaryResults = await mapWithConcurrency(mergedPrs, 5, async (pr) => {
     const { row } = await getOrGeneratePrSummary({
       tenantId: userId,
       prId: pr.id,
     });
-    summariesByPrId.set(pr.id, row);
+    return { prId: pr.id, row };
+  });
+  for (const { prId, row } of summaryResults) {
+    summariesByPrId.set(prId, row);
   }
 
-  const highlightedAuthored = pickHighlightedAuthoredPrs(mergedPrs);
-  const shipped = await Promise.all(
-    highlightedAuthored.map(async (pr) => {
-      const summary = summariesByPrId.get(pr.id);
-
-      return {
-        prId: pr.id,
-        repo: pr.repoFullName,
-        number: pr.prNumber,
-        title: pr.title,
-        shortSummary: summary.shortSummary,
-        tags: summary.typeTags ?? [],
-        htmlUrl: pr.htmlUrl ?? undefined,
-      } as WeeklySummary['shipped'][0];
-    })
-  );
+  const shipped = pickHighlightedAuthoredPrs(mergedPrs, summariesByPrId);
 
   // What you worked on - focus
   const allFocusTags = mergedPrs.flatMap((pr) => {
@@ -117,18 +110,9 @@ export async function buildWeeklySummary({
     firstResponderCount: authoredReviews.filter((r) => r.review.wasFirstReview)
       .length,
   };
-  const highlightedReviewed = pickHighlightedReview(authoredReviews);
+  const highlightedReviewed = pickHighlightedReview(authoredReviews as any);
   if (highlightedReviewed) {
-    const pr = highlightedReviewed.pr!;
-    reviewsCollab.highlightedReview = {
-      prId: pr.id,
-      repo: pr.repoFullName,
-      number: pr.prNumber,
-      title: pr.title,
-      htmlUrl: pr.htmlUrl,
-      shortSummary: buildHighlightedReviewSummary(highlightedReviewed.review),
-      tags: [],
-    };
+    reviewsCollab.highlightedReview = highlightedReviewed;
   }
 
   // friction & follow-ups

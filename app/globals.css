@@ -19,7 +19,7 @@
   --color-warning: #facc15;
   --color-danger: #ef4444;
 
-  --font-sans: "Inter", ui-sans-serif, system-ui;
+  --font-sans: 'Inter', ui-sans-serif, system-ui;
 
   --radius-xl: 0.75rem; /* 12px */
   --radius-2xl: 1rem; /* 16px */
@@ -33,6 +33,23 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateX(24px);
+    opacity: 0;
+    filter: blur(2px);
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 180ms ease-out;
 }
 
 /* Global baseline */

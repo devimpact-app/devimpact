@@ -17,7 +17,7 @@ function weeksForRange(value: RangeValue): number {
 }
 
 export function useRange() {
-  const [range, setRange] = useState<RangeValue>('8w');
+  const [range, setRange] = useState<RangeValue>('4w');
 
   const { start, end } = useMemo(
     () => getWeekBoundsFromOffset(0, weeksForRange(range)),

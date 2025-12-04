@@ -37,7 +37,7 @@ export function InsightsSection({
           {onViewAll && (
             <button
               onClick={onViewAll}
-              className="text-[11px] text-sky-300 hover:text-sky-200 font-medium inline-flex items-center gap-1"
+              className="text-[11px] text-sky-500 hover:text-sky-400 font-medium inline-flex items-center gap-1"
             >
               View all →
             </button>
@@ -79,8 +79,10 @@ export function InsightsSection({
       )}
 
       {!isLoading && !error && insights && insights.length === 0 && (
-        <p className="text-xs text-slate-500">
-          Not enough recent activity to surface insights yet.
+        <p className="text-[11px] text-slate-500">
+          {isHighlight
+            ? 'We didn’t surface any strong patterns in this window yet. As more activity accumulates, your strongest insights will appear here.'
+            : 'We didn’t identify additional insights in this window. As your activity grows, more will show up here.'}
         </p>
       )}
     </section>

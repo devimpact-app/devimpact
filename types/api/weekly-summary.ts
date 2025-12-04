@@ -25,15 +25,47 @@ export const PRReferenceSchema = z.object({
   htmlUrl: z.string(),
 });
 
+export const HighlightReasonSchema = z.enum([
+  'impact', // big / important work
+  'friction', // slow, blocked, lots of back-and-forth
+  'fast_loop', // small + fast wins
+  'other',
+]);
+export type HighlightReason = z.infer<typeof HighlightReasonSchema>;
+
 export const ShippedItemSchema = PRReferenceSchema.extend({
   shortSummary: z.string(), // from LLM
   tags: z.array(z.string()).default([]), // "feature-x", "infra", "tests"
+  occurredAt: z.string().datetime().optional(),
+
+  leadTimeHours: z.number().nullable().optional(), // first commit -> merge
+  timeToFirstReviewHours: z.number().nullable().optional(), // ready -> first review
+  timeReviewToMergeHours: z.number().nullable().optional(), // first review -> merge
+
+  linesChanged: z.number().int().nullable().optional(),
+  filesChanged: z.number().int().nullable().optional(),
+  reviewRounds: z.number().int().nullable().optional(),
+  approvalsCount: z.number().int().nullable().optional(),
+  touchedTests: z.boolean().optional(),
+
+  highlightReason: HighlightReasonSchema.optional(),
 }).catchall(z.any());
+export type ShippedItem = z.infer<typeof ShippedItemSchema>;
 
 export const HighlightedReviewSchema = PRReferenceSchema.extend({
   shortSummary: z.string(), // from LLM
   tags: z.array(z.string()).default([]), // "architecture", "tests"
+  submittedAt: z.string().optional(),
+
+  reviewLatencyHours: z.number().nullable().optional(),
+  reviewCommentsCount: z.number().int().nullable().optional(),
+  isApproval: z.boolean().optional(),
+  isBlocking: z.boolean().optional(),
+  isFirstReview: z.boolean().optional(),
+
+  highlightReason: HighlightReasonSchema.optional(),
 }).catchall(z.any());
+export type HighlightedReview = z.infer<typeof HighlightedReviewSchema>;
 
 export const ReviewsCollabSchema = z
   .object({

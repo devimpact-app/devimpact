@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // Gate: must have completed onboarding
   // Assuming you store onboardingState on session.user
   const state = session.user.onboardingState ?? null;
-  // if (state !== "complete") redirect("/onboarding");
+  if (state !== 'synced') redirect('/onboarding');
 
   return (
     <SentryUserBridge

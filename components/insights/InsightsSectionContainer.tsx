@@ -1,9 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { InsightsSection } from './InsightsSection';
 import { useInsights } from './useInsights';
+import { Insight } from '@/types/api/insights';
 
-export default function InsightsSectionContainer() {
+export default function InsightsSectionContainer({
+  onClickInsight,
+}: {
+  onClickInsight: (insight: Insight) => void;
+}) {
+  const router = useRouter();
   const { insights, error, isLoading } = useInsights({
     limit: 3,
     windowWeeks: 4,
@@ -14,7 +21,10 @@ export default function InsightsSectionContainer() {
       insights={insights}
       isLoading={isLoading}
       error={error?.message ?? null}
-      onViewAll={() => {}}
+      onViewAll={() => {
+        router.push('/insights');
+      }}
+      onInsightClick={onClickInsight}
     />
   );
 }
