@@ -1,14 +1,13 @@
-import { db } from '@/lib/db/client'
-import { githubTimelineEvents } from '@/lib/db/schema'
-import { GitHubTimelineEvent } from '../api/types'
-import { SanitizedPRTimelineEvent } from '../types'
+import { db } from '@/lib/db/client';
+import { githubTimelineEvents } from '@/lib/db/schema';
+import { SanitizedPRTimelineEvent } from '../types';
 
 export async function storeTimelineEvents(
   prId: string,
   userId: string,
   events: SanitizedPRTimelineEvent[]
 ): Promise<void> {
-  if (!events?.length) return
+  if (!events?.length) return;
 
   await db
     .insert(githubTimelineEvents)
@@ -18,54 +17,52 @@ export async function storeTimelineEvents(
         .filter((e) => e.event !== 'committed' && e.event !== 'deployed')
         .map((e) => {
           // —— Defaults
-          let requestedTargetType: 'user' | 'team' | null = null
-          let requestedReviewerLogin: string | null = null
-          let requestedTeamSlug: string | null = null
-          let requestedTeamOrg: string | null = null
-          let assigneeLogin: string | null = null
-          let labelName: string | null = null
+          let requestedTargetType: 'user' | 'team' | null = null;
+          let requestedReviewerLogin: string | null = null;
+          let requestedTeamSlug: string | null = null;
+          let requestedTeamOrg: string | null = null;
+          let assigneeLogin: string | null = null;
+          let labelName: string | null = null;
 
           // Prefer submitted_at for reviewed; otherwise fall back to created_at
           const dateStr =
             (e.event === 'reviewed' ? (e as any).submitted_at : null) ??
             (e as any).created_at ??
-            null
+            null;
 
           // Actor: GitHub timeline payloads sometimes use actor or user
           const actor =
-            (e as any).actor?.login ?? (e as any).user?.login ?? null
+            (e as any).actor?.login ?? (e as any).user?.login ?? null;
 
-          // URL normalization
-          const url = (e as any).url ?? (e as any).html_url ?? null
+          const url = (e as any).url ?? (e as any).html_url ?? null;
 
-          // ---- Event-specific normalization
           if (
             e.event === 'review_requested' ||
             e.event === 'review_request_removed'
           ) {
             // Individual request
-            const rr = (e as any).requested_reviewer
+            const rr = e.requested_reviewer;
             if (rr?.login) {
-              requestedTargetType = 'user'
-              requestedReviewerLogin = rr.login
+              requestedTargetType = 'user';
+              requestedReviewerLogin = rr.login;
             }
 
             // Team request
-            const rt = (e as any).requested_team
+            const rt = e.requested_team;
             if (rt?.slug) {
-              requestedTargetType = 'team'
-              requestedTeamSlug = rt.slug
-              requestedTeamOrg = rt.organization?.login ?? null
+              requestedTargetType = 'team';
+              requestedTeamSlug = rt.slug;
+              requestedTeamOrg = rt.org ?? null;
               // Ensure we don't also set requestedReviewerLogin for team case
-              if (requestedTargetType === 'team') requestedReviewerLogin = null
+              if (requestedTargetType === 'team') requestedReviewerLogin = null;
             }
           } else if (e.event === 'assigned' && (e as any).assignee) {
-            assigneeLogin = (e as any).assignee.login ?? null
+            assigneeLogin = (e as any).assignee.login ?? null;
           } else if (
             (e.event === 'labeled' || e.event === 'unlabeled') &&
             (e as any).label
           ) {
-            labelName = (e as any).label.name ?? null
+            labelName = (e as any).label.name ?? null;
           }
 
           return {
@@ -92,10 +89,8 @@ export async function storeTimelineEvents(
 
             createdAt: dateStr ? new Date(dateStr) : new Date(),
             url,
-          }
+          };
         })
     )
-    // Events are append-only; rely on your unique constraints
-    // unique(prId, eventId) or fallback composite unique
-    .onConflictDoNothing()
+    .onConflictDoNothing();
 }

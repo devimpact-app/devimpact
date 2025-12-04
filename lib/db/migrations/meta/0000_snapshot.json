@@ -1,5 +1,5 @@
 {
-  "id": "63667c01-69c2-4ba4-8ad9-ecfd6051afef",
+  "id": "b75ee605-5842-4ad9-984e-ab64b3161889",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -197,6 +197,187 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.pr_summaries": {
+      "name": "pr_summaries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pull_request_id": {
+          "name": "pull_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "repo_full_name": {
+          "name": "repo_full_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pr_number": {
+          "name": "pr_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_summary": {
+          "name": "short_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "long_summary": {
+          "name": "long_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "highlights": {
+          "name": "highlights",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "type_tags": {
+          "name": "type_tags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "domain_tags": {
+          "name": "domain_tags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "review_friction_tags": {
+          "name": "review_friction_tags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "input_hash": {
+          "name": "input_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prompt_version": {
+          "name": "prompt_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pr_updated_at": {
+          "name": "pr_updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pr_summaries_tenant_idx": {
+          "name": "pr_summaries_tenant_idx",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pr_summaries_tenant_id_users_id_fk": {
+          "name": "pr_summaries_tenant_id_users_id_fk",
+          "tableFrom": "pr_summaries",
+          "tableTo": "users",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pr_summaries_pull_request_id_pull_requests_id_fk": {
+          "name": "pr_summaries_pull_request_id_pull_requests_id_fk",
+          "tableFrom": "pr_summaries",
+          "tableTo": "pull_requests",
+          "columnsFrom": [
+            "pull_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "pr_summaries_pull_request_id_unique": {
+          "name": "pr_summaries_pull_request_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "pull_request_id"
+          ]
+        },
+        "pr_summaries_tenant_id_pull_request_id_unique": {
+          "name": "pr_summaries_tenant_id_pull_request_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "pull_request_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.pull_requests": {
       "name": "pull_requests",
       "schema": "",
@@ -254,19 +435,21 @@
           "name": "html_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "body": {
           "name": "body",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "''"
         },
         "author_is_tenant": {
           "name": "author_is_tenant",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -338,174 +521,189 @@
           "name": "lines_added",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "lines_deleted": {
           "name": "lines_deleted",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "lines_changed": {
           "name": "lines_changed",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "files_changed": {
           "name": "files_changed",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "files_added": {
           "name": "files_added",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "files_modified": {
           "name": "files_modified",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "files_deleted": {
           "name": "files_deleted",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "files_renamed": {
           "name": "files_renamed",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "touched_tests": {
           "name": "touched_tests",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "test_files_changed": {
           "name": "test_files_changed",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "largest_file_changed": {
           "name": "largest_file_changed",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "avg_changes_per_file": {
           "name": "avg_changes_per_file",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
         },
         "commits_count": {
           "name": "commits_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "reviews_count": {
           "name": "reviews_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "unique_reviewers": {
           "name": "unique_reviewers",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "self_review_comments_count": {
           "name": "self_review_comments_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "review_comments_count": {
           "name": "review_comments_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "approvals_count": {
           "name": "approvals_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "changes_requested_count": {
           "name": "changes_requested_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
+          "default": 0
+        },
+        "blocking_review_count": {
+          "name": "blocking_review_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "non_blocking_review_count": {
+          "name": "non_blocking_review_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
           "default": 0
         },
         "review_rounds": {
           "name": "review_rounds",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "was_approved_before_merge": {
           "name": "was_approved_before_merge",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "had_force_pushes": {
           "name": "had_force_pushes",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "normalized_at": {
           "name": "normalized_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         },
         "source_updated_at": {
           "name": "source_updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         },
         "normalization_version": {
           "name": "normalization_version",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 1
         }
       },
@@ -651,8 +849,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "github_pr_id": {
-          "name": "github_pr_id",
+        "pr_id": {
+          "name": "pr_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -710,13 +908,14 @@
           "name": "html_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "body": {
           "name": "body",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "''"
         },
         "review_latency": {
           "name": "review_latency",
@@ -734,7 +933,7 @@
           "name": "review_anchor_type",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "anchor_team_slug": {
           "name": "anchor_team_slug",
@@ -746,62 +945,77 @@
           "name": "is_approval",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "is_change_request": {
           "name": "is_change_request",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "is_comment_only": {
           "name": "is_comment_only",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "was_directly_requested": {
           "name": "was_directly_requested",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "was_first_review": {
           "name": "was_first_review",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_blocking_review": {
+          "name": "is_blocking_review",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_non_blocking_review": {
+          "name": "is_non_blocking_review",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
           "default": false
         },
         "review_comments_count": {
           "name": "review_comments_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
         },
         "normalized_at": {
           "name": "normalized_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         },
         "source_updated_at": {
           "name": "source_updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         },
         "normalization_version": {
           "name": "normalization_version",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 1
         }
       },
@@ -912,7 +1126,7 @@
               "nulls": "last"
             },
             {
-              "expression": "github_pr_id",
+              "expression": "pr_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -999,12 +1213,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "reviews_github_pr_id_github_prs_id_fk": {
-          "name": "reviews_github_pr_id_github_prs_id_fk",
+        "reviews_pr_id_pull_requests_id_fk": {
+          "name": "reviews_pr_id_pull_requests_id_fk",
           "tableFrom": "reviews",
-          "tableTo": "github_prs",
+          "tableTo": "pull_requests",
           "columnsFrom": [
-            "github_pr_id"
+            "pr_id"
           ],
           "columnsTo": [
             "id"
@@ -1232,7 +1446,7 @@
           "name": "file_extension",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "directory": {
           "name": "directory",
@@ -2638,6 +2852,157 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.one_on_one_sessions": {
+      "name": "one_on_one_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "meeting_at": {
+          "name": "meeting_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "counterpart_label": {
+          "name": "counterpart_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "counterpart_type": {
+          "name": "counterpart_type",
+          "type": "one_on_one_counterpart_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'manager'"
+        },
+        "short_window_weeks": {
+          "name": "short_window_weeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "short_window_start": {
+          "name": "short_window_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_window_end": {
+          "name": "short_window_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "medium_window_start": {
+          "name": "medium_window_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "medium_window_end": {
+          "name": "medium_window_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "one_on_one_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ready'"
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "one_on_one_sessions_tenant_idx": {
+          "name": "one_on_one_sessions_tenant_idx",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "one_on_one_sessions_tenant_id_users_id_fk": {
+          "name": "one_on_one_sessions_tenant_id_users_id_fk",
+          "tableFrom": "one_on_one_sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "one_on_one_sessions_tenant_id_meeting_at_counterpart_type_unique": {
+          "name": "one_on_one_sessions_tenant_id_meeting_at_counterpart_type_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "meeting_at",
+            "counterpart_type"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -2656,6 +3021,24 @@
         "low",
         "medium",
         "high"
+      ]
+    },
+    "public.one_on_one_counterpart_type": {
+      "name": "one_on_one_counterpart_type",
+      "schema": "public",
+      "values": [
+        "manager",
+        "peer",
+        "direct_report",
+        "other"
+      ]
+    },
+    "public.one_on_one_status": {
+      "name": "one_on_one_status",
+      "schema": "public",
+      "values": [
+        "ready",
+        "archived"
       ]
     }
   },

@@ -15,4 +15,8 @@ export interface SanitizedPRTimelineEvent {
   requested_reviewer?: {
     login: string;
   };
+  requested_team?: {
+    slug: string;
+    org?: string;
+  };
 }

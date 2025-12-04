@@ -1,5 +1,7 @@
 CREATE TYPE "public"."membership_source" AS ENUM('heuristic', 'api');--> statement-breakpoint
 CREATE TYPE "public"."team_confidence" AS ENUM('low', 'medium', 'high');--> statement-breakpoint
+CREATE TYPE "public"."one_on_one_counterpart_type" AS ENUM('manager', 'peer', 'direct_report', 'other');--> statement-breakpoint
+CREATE TYPE "public"."one_on_one_status" AS ENUM('ready', 'archived');--> statement-breakpoint
 CREATE TABLE "inferred_team_memberships" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"tenant_id" uuid NOT NULL,
@@ -17,6 +19,28 @@ CREATE TABLE "inferred_team_memberships" (
 	CONSTRAINT "itm_unique_per_source" UNIQUE("tenant_id","github_login","org","team_slug","source")
 );
 --> statement-breakpoint
+CREATE TABLE "pr_summaries" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	"pull_request_id" uuid NOT NULL,
+	"repo_full_name" text NOT NULL,
+	"pr_number" integer NOT NULL,
+	"short_summary" text NOT NULL,
+	"long_summary" text,
+	"highlights" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"type_tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"domain_tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"review_friction_tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"input_hash" text,
+	"model" text NOT NULL,
+	"prompt_version" text NOT NULL,
+	"pr_updated_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "pr_summaries_pull_request_id_unique" UNIQUE("pull_request_id"),
+	CONSTRAINT "pr_summaries_tenant_id_pull_request_id_unique" UNIQUE("tenant_id","pull_request_id")
+);
+--> statement-breakpoint
 CREATE TABLE "pull_requests" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"github_pr_id" uuid NOT NULL,
@@ -26,9 +50,9 @@ CREATE TABLE "pull_requests" (
 	"title" text NOT NULL,
 	"state" text NOT NULL,
 	"pr_author_login" text NOT NULL,
-	"html_url" text,
-	"body" text,
-	"author_is_tenant" boolean,
+	"html_url" text NOT NULL,
+	"body" text DEFAULT '' NOT NULL,
+	"author_is_tenant" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
 	"merged_at" timestamp with time zone,
 	"closed_at" timestamp with time zone,
@@ -40,31 +64,33 @@ CREATE TABLE "pull_requests" (
 	"review_to_merge_seconds" integer,
 	"lead_time_seconds" integer,
 	"time_to_first_approval_seconds" integer,
-	"lines_added" integer DEFAULT 0,
-	"lines_deleted" integer DEFAULT 0,
-	"lines_changed" integer DEFAULT 0,
-	"files_changed" integer DEFAULT 0,
-	"files_added" integer DEFAULT 0,
-	"files_modified" integer DEFAULT 0,
-	"files_deleted" integer DEFAULT 0,
-	"files_renamed" integer DEFAULT 0,
-	"touched_tests" boolean DEFAULT false,
-	"test_files_changed" integer DEFAULT 0,
-	"largest_file_changed" integer DEFAULT 0,
-	"avg_changes_per_file" real,
-	"commits_count" integer DEFAULT 0,
-	"reviews_count" integer DEFAULT 0,
-	"unique_reviewers" integer DEFAULT 0,
-	"self_review_comments_count" integer DEFAULT 0,
-	"review_comments_count" integer DEFAULT 0,
-	"approvals_count" integer DEFAULT 0,
-	"changes_requested_count" integer DEFAULT 0,
-	"review_rounds" integer DEFAULT 0,
-	"was_approved_before_merge" boolean DEFAULT false,
-	"had_force_pushes" boolean DEFAULT false,
-	"normalized_at" timestamp with time zone DEFAULT now(),
-	"source_updated_at" timestamp with time zone DEFAULT now(),
-	"normalization_version" integer DEFAULT 1,
+	"lines_added" integer DEFAULT 0 NOT NULL,
+	"lines_deleted" integer DEFAULT 0 NOT NULL,
+	"lines_changed" integer DEFAULT 0 NOT NULL,
+	"files_changed" integer DEFAULT 0 NOT NULL,
+	"files_added" integer DEFAULT 0 NOT NULL,
+	"files_modified" integer DEFAULT 0 NOT NULL,
+	"files_deleted" integer DEFAULT 0 NOT NULL,
+	"files_renamed" integer DEFAULT 0 NOT NULL,
+	"touched_tests" boolean DEFAULT false NOT NULL,
+	"test_files_changed" integer DEFAULT 0 NOT NULL,
+	"largest_file_changed" integer DEFAULT 0 NOT NULL,
+	"avg_changes_per_file" real DEFAULT 0 NOT NULL,
+	"commits_count" integer DEFAULT 0 NOT NULL,
+	"reviews_count" integer DEFAULT 0 NOT NULL,
+	"unique_reviewers" integer DEFAULT 0 NOT NULL,
+	"self_review_comments_count" integer DEFAULT 0 NOT NULL,
+	"review_comments_count" integer DEFAULT 0 NOT NULL,
+	"approvals_count" integer DEFAULT 0 NOT NULL,
+	"changes_requested_count" integer DEFAULT 0 NOT NULL,
+	"blocking_review_count" integer DEFAULT 0 NOT NULL,
+	"non_blocking_review_count" integer DEFAULT 0 NOT NULL,
+	"review_rounds" integer DEFAULT 0 NOT NULL,
+	"was_approved_before_merge" boolean DEFAULT false NOT NULL,
+	"had_force_pushes" boolean DEFAULT false NOT NULL,
+	"normalized_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"source_updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"normalization_version" integer DEFAULT 1 NOT NULL,
 	CONSTRAINT "pull_requests_github_pr_id_unique" UNIQUE("github_pr_id")
 );
 --> statement-breakpoint
@@ -72,7 +98,7 @@ CREATE TABLE "reviews" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"github_review_id" uuid NOT NULL,
 	"tenant_id" uuid NOT NULL,
-	"github_pr_id" uuid NOT NULL,
+	"pr_id" uuid NOT NULL,
 	"pr_number" integer NOT NULL,
 	"repo_full_name" text NOT NULL,
 	"pr_author_login" text NOT NULL,
@@ -81,21 +107,23 @@ CREATE TABLE "reviews" (
 	"state" text NOT NULL,
 	"submitted_at" timestamp with time zone,
 	"commit_id" text,
-	"html_url" text,
-	"body" text,
+	"html_url" text NOT NULL,
+	"body" text DEFAULT '' NOT NULL,
 	"review_latency" real,
 	"review_anchor_at" timestamp with time zone,
-	"review_anchor_type" text,
+	"review_anchor_type" text NOT NULL,
 	"anchor_team_slug" text,
-	"is_approval" boolean DEFAULT false,
-	"is_change_request" boolean DEFAULT false,
-	"is_comment_only" boolean DEFAULT false,
-	"was_directly_requested" boolean DEFAULT false,
-	"was_first_review" boolean DEFAULT false,
-	"review_comments_count" integer,
-	"normalized_at" timestamp with time zone DEFAULT now(),
-	"source_updated_at" timestamp with time zone DEFAULT now(),
-	"normalization_version" integer DEFAULT 1,
+	"is_approval" boolean DEFAULT false NOT NULL,
+	"is_change_request" boolean DEFAULT false NOT NULL,
+	"is_comment_only" boolean DEFAULT false NOT NULL,
+	"was_directly_requested" boolean DEFAULT false NOT NULL,
+	"was_first_review" boolean DEFAULT false NOT NULL,
+	"is_blocking_review" boolean DEFAULT false NOT NULL,
+	"is_non_blocking_review" boolean DEFAULT false NOT NULL,
+	"review_comments_count" integer DEFAULT 0 NOT NULL,
+	"normalized_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"source_updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"normalization_version" integer DEFAULT 1 NOT NULL,
 	CONSTRAINT "reviews_github_review_id_unique" UNIQUE("github_review_id")
 );
 --> statement-breakpoint
@@ -123,7 +151,7 @@ CREATE TABLE "github_pr_files" (
 	"additions" integer NOT NULL,
 	"deletions" integer NOT NULL,
 	"changes" integer NOT NULL,
-	"file_extension" text,
+	"file_extension" text NOT NULL,
 	"directory" text,
 	"is_test_file" boolean DEFAULT false,
 	"blob_url" text,
@@ -275,12 +303,33 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_github_username_unique" UNIQUE("github_username")
 );
 --> statement-breakpoint
+CREATE TABLE "one_on_one_sessions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"meeting_at" timestamp with time zone NOT NULL,
+	"counterpart_label" text,
+	"counterpart_type" "one_on_one_counterpart_type" DEFAULT 'manager' NOT NULL,
+	"short_window_weeks" integer DEFAULT 2 NOT NULL,
+	"short_window_start" timestamp with time zone NOT NULL,
+	"short_window_end" timestamp with time zone NOT NULL,
+	"medium_window_start" timestamp with time zone NOT NULL,
+	"medium_window_end" timestamp with time zone NOT NULL,
+	"status" "one_on_one_status" DEFAULT 'ready' NOT NULL,
+	"title" text,
+	"payload" jsonb NOT NULL,
+	CONSTRAINT "one_on_one_sessions_tenant_id_meeting_at_counterpart_type_unique" UNIQUE("tenant_id","meeting_at","counterpart_type")
+);
+--> statement-breakpoint
 ALTER TABLE "inferred_team_memberships" ADD CONSTRAINT "inferred_team_memberships_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pr_summaries" ADD CONSTRAINT "pr_summaries_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pr_summaries" ADD CONSTRAINT "pr_summaries_pull_request_id_pull_requests_id_fk" FOREIGN KEY ("pull_request_id") REFERENCES "public"."pull_requests"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pull_requests" ADD CONSTRAINT "pull_requests_github_pr_id_github_prs_id_fk" FOREIGN KEY ("github_pr_id") REFERENCES "public"."github_prs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pull_requests" ADD CONSTRAINT "pull_requests_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_github_review_id_github_reviews_id_fk" FOREIGN KEY ("github_review_id") REFERENCES "public"."github_reviews"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_github_pr_id_github_prs_id_fk" FOREIGN KEY ("github_pr_id") REFERENCES "public"."github_prs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_pr_id_pull_requests_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."pull_requests"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "github_pr_commits" ADD CONSTRAINT "github_pr_commits_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "github_pr_commits" ADD CONSTRAINT "github_pr_commits_pr_id_github_prs_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."github_prs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "github_pr_files" ADD CONSTRAINT "github_pr_files_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -296,9 +345,11 @@ ALTER TABLE "github_reviews" ADD CONSTRAINT "github_reviews_tenant_id_users_id_f
 ALTER TABLE "github_timeline_events" ADD CONSTRAINT "github_timeline_events_pr_id_github_prs_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."github_prs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "github_timeline_events" ADD CONSTRAINT "github_timeline_events_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "integration_tokens" ADD CONSTRAINT "integration_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "one_on_one_sessions" ADD CONSTRAINT "one_on_one_sessions_tenant_id_users_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "itm_tenant_login_idx" ON "inferred_team_memberships" USING btree ("tenant_id","github_login");--> statement-breakpoint
 CREATE INDEX "itm_tenant_team_idx" ON "inferred_team_memberships" USING btree ("tenant_id","org","team_slug");--> statement-breakpoint
 CREATE INDEX "itm_tenant_score_idx" ON "inferred_team_memberships" USING btree ("tenant_id","score");--> statement-breakpoint
+CREATE INDEX "pr_summaries_tenant_idx" ON "pr_summaries" USING btree ("tenant_id");--> statement-breakpoint
 CREATE INDEX "pull_requests_tenant_idx" ON "pull_requests" USING btree ("tenant_id");--> statement-breakpoint
 CREATE INDEX "pull_requests_repo_idx" ON "pull_requests" USING btree ("repo_full_name");--> statement-breakpoint
 CREATE INDEX "pull_requests_state_idx" ON "pull_requests" USING btree ("state");--> statement-breakpoint
@@ -308,7 +359,7 @@ CREATE INDEX "reviews_tenant_idx" ON "reviews" USING btree ("tenant_id");--> sta
 CREATE INDEX "reviews_repo_idx" ON "reviews" USING btree ("tenant_id","repo_full_name");--> statement-breakpoint
 CREATE INDEX "reviews_reviewer_idx" ON "reviews" USING btree ("tenant_id","reviewer_login","submitted_at");--> statement-breakpoint
 CREATE INDEX "reviews_review_anchor_idx" ON "reviews" USING btree ("tenant_id","reviewer_login","review_anchor_type","submitted_at");--> statement-breakpoint
-CREATE INDEX "reviews_pr_idx" ON "reviews" USING btree ("tenant_id","github_pr_id","submitted_at");--> statement-breakpoint
+CREATE INDEX "reviews_pr_idx" ON "reviews" USING btree ("tenant_id","pr_id","submitted_at");--> statement-breakpoint
 CREATE INDEX "reviews_state_idx" ON "reviews" USING btree ("tenant_id","state");--> statement-breakpoint
 CREATE INDEX "reviews_submitted_at_idx" ON "reviews" USING btree ("tenant_id","submitted_at");--> statement-breakpoint
 CREATE INDEX "github_pr_commits_tenant_idx" ON "github_pr_commits" USING btree ("tenant_id");--> statement-breakpoint
@@ -332,4 +383,5 @@ CREATE INDEX "github_timeline_events_pr_id_idx" ON "github_timeline_events" USIN
 CREATE INDEX "github_timeline_events_event_type_idx" ON "github_timeline_events" USING btree ("event_type");--> statement-breakpoint
 CREATE INDEX "github_timeline_events_github_login_idx" ON "github_timeline_events" USING btree ("actor_github_login");--> statement-breakpoint
 CREATE INDEX "github_timeline_events_created_at_idx" ON "github_timeline_events" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "github_timeline_events_tenant_idx" ON "github_timeline_events" USING btree ("tenant_id");
+CREATE INDEX "github_timeline_events_tenant_idx" ON "github_timeline_events" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "one_on_one_sessions_tenant_idx" ON "one_on_one_sessions" USING btree ("tenant_id");
