@@ -1,5 +1,5 @@
-import { DB } from '@/lib/db/client';
-import { NewOneOnOneSession } from '@/lib/db/schema/prep';
+import { db, DB } from '@/lib/db/client';
+import { NewOneOnOneSession, oneOnOneSessions } from '@/lib/db/schema/prep';
 import { weeksAgo } from '@/lib/utils/date';
 import {
   OneOnOneMetricSnapshot,
@@ -28,6 +28,7 @@ type GenerateOneOnOnePrepParams = TCreateOneOnOneInput & {
   tenantId: string;
   timezone: string;
   db: DB;
+  updateDb?: boolean;
 };
 
 export function extractUsedReferences(
@@ -121,6 +122,7 @@ export async function generateOneOnOnePrep(
     shortWindowStart,
     counterpartLabel,
     counterpartType,
+    updateDb = false,
   } = params;
 
   const meetingAt = rawMeetingAt ? new Date(rawMeetingAt) : new Date();
@@ -235,6 +237,32 @@ export async function generateOneOnOnePrep(
     counterpartLabel,
     counterpartType,
   };
+
+  if (updateDb) {
+    await db
+      .insert(oneOnOneSessions)
+      .values(prep)
+      .onConflictDoUpdate({
+        target: [
+          oneOnOneSessions.tenantId,
+          oneOnOneSessions.meetingAt,
+          oneOnOneSessions.counterpartType,
+        ],
+        set: {
+          title: prep.title,
+          shortWindowStart: prep.shortWindowStart,
+          shortWindowEnd: prep.shortWindowEnd,
+          mediumWindowStart: prep.mediumWindowStart,
+          mediumWindowEnd: prep.mediumWindowEnd,
+          payload: prep.payload,
+          status: prep.status,
+          counterpartLabel: prep.counterpartLabel,
+          counterpartType: prep.counterpartType,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+  }
 
   return prep;
 }

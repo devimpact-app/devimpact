@@ -46,7 +46,7 @@ export const OneOnOneMetricChipSchema = z.object({
   tooltip: z.string().optional(), // "Median from ready → merge"
 });
 
-export const OneOnOneStatusEnum = z.enum(['ready', 'archived']);
+export const OneOnOneStatusEnum = z.enum(['generating', 'ready', 'archived']);
 export const CounterpartTypeEnum = z.enum([
   'manager',
   'peer',

@@ -3,8 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import { CounterpartType } from '@/types/api/one-on-one';
+import { CounterpartType, TCreateOneOnOneInput } from '@/types/api/one-on-one';
 import { getTimezone } from '@/lib/utils/date';
+import { createOneOnOneWithGeneration } from './actions';
 
 function getDefaultMeetingDateTime() {
   const now = new Date();
@@ -67,36 +68,38 @@ export function OneOnOnePrepClient({
             ? new Date(`${meetingDate}T12:00:00`)
             : null;
 
-      const payload = {
+      const payload: TCreateOneOnOneInput = {
         counterpartLabel: counterpartLabel.trim() || undefined,
         counterpartType,
-        meetingAt: meetingAt?.toISOString() ?? null,
+        meetingAt: meetingAt ? meetingAt.toISOString() : undefined,
         windowWeeks: windowWeeks ?? undefined,
         title: title.trim() || undefined,
         timezone,
         shortWindowStart: shortWindowStart ?? undefined,
       };
 
-      const res = await fetch('/api/one-on-ones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
+      const { id: oneOnOneId } = await createOneOnOneWithGeneration(payload);
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `Failed to generate 1:1 prep`);
-      }
+      // const res = await fetch('/api/one-on-ones', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   credentials: 'include',
+      //   body: JSON.stringify(payload),
+      // });
 
-      const json = await res.json();
-      const oneOnOne = json.data?.prep ?? json;
+      // if (!res.ok) {
+      //   const text = await res.text().catch(() => '');
+      //   throw new Error(text || `Failed to generate 1:1 prep`);
+      // }
 
-      if (!oneOnOne?.id) {
-        throw new Error('Missing 1:1 id in response');
-      }
+      // const json = await res.json();
+      // const oneOnOne = json.data?.prep ?? json;
 
-      router.push(`/prep/one-on-one/${oneOnOne.id}`);
+      // if (!oneOnOne?.id) {
+      //   throw new Error('Missing 1:1 id in response');
+      // }
+
+      router.push(`/prep/one-on-one/${oneOnOneId}`);
     } catch (e: any) {
       console.error(e);
       setError(e.message ?? 'Something went wrong while generating prep.');

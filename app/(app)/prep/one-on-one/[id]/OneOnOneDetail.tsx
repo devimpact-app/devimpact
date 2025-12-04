@@ -90,6 +90,9 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
   );
 
   useEffect(() => {
+    let pollTimeout: NodeJS.Timeout;
+    let isActive = true;
+
     async function load() {
       try {
         if (!id) {
@@ -114,7 +117,17 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
 
         const { data } = await res.json();
         setPrep(data.prep);
-        setStatus('ready');
+
+        // Check if still generating
+        if (data.prep.status === 'generating') {
+          setStatus('loading');
+          // Poll again in 2 seconds if component is still mounted
+          if (isActive) {
+            pollTimeout = setTimeout(load, 2000);
+          }
+        } else {
+          setStatus('ready');
+        }
       } catch (err) {
         setStatus('error');
         setErrorMessage('Network error while loading this 1:1 prep.');
@@ -122,6 +135,14 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
     }
 
     load();
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isActive = false;
+      if (pollTimeout) {
+        clearTimeout(pollTimeout);
+      }
+    };
   }, [id]);
 
   async function handleDeleteClick(oneOnOneId: string) {
@@ -184,10 +205,21 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
     }
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' && !prep) {
     return (
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <HeaderSkeleton />
+        <BodySkeleton />
+      </main>
+    );
+  }
+
+  if (status === 'loading' && !!prep) {
+    return (
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="sticky top-0 pt-5 z-20 pb-3 bg-background border-b border-white/15">
+          <OneOnOneHeader prep={prep} />
+        </div>
         <BodySkeleton />
       </main>
     );
