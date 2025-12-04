@@ -78,7 +78,7 @@ export function formatRangeServer(
 /**
  * Get the weekday (0=Monday … 6=Sunday) for a date in a specific timezone.
  */
-function getWeekdayServer(date: Date, timezone: string): number {
+export function getWeekdayServer(date: Date, timezone: string): number {
   const fmt = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     weekday: 'short',
