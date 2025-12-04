@@ -51,6 +51,10 @@ export async function batchNormalizeUserPRs(
         )
       )
     );
+  console.log('Starting normalization', {
+    prsToNormalize: prsNeedingNormalization.length,
+    timestamp: new Date().toISOString(),
+  });
 
   if (prsNeedingNormalization.length === 0) return [];
 
@@ -104,36 +108,54 @@ export async function batchNormalizeUserPRs(
   const timelineByPrId = groupBy(allTimeline, 'prId');
 
   console.log('Calculating metrics...');
-  await db.transaction(async (tx) => {
-    for (const row of prsNeedingNormalization) {
-      const pr = row.raw;
-      const existingNorm = row.norm;
+  const normStartTime = Date.now();
+  let processed = 0;
+  try {
+    await db.transaction(async (tx) => {
+      for (const row of prsNeedingNormalization) {
+        const pr = row.raw;
+        const existingNorm = row.norm;
 
-      const metrics = calculateMetrics({
-        pr,
-        timeline: timelineByPrId[pr.id] || [],
-        userCommits: (commitsByPrId[pr.id] || []).filter(
-          (c) => c.authorGithubLogin === username
-        ),
-        reviews: reviewsByPrId[pr.id] || [],
-        reviewComments: commentsByPrId[pr.id] || [],
-        userGithubLogin: username,
-        prFiles: filesByPrId[pr.id] || [],
-      });
+        const metrics = calculateMetrics({
+          pr,
+          timeline: timelineByPrId[pr.id] || [],
+          userCommits: (commitsByPrId[pr.id] || []).filter(
+            (c) => c.authorGithubLogin === username
+          ),
+          reviews: reviewsByPrId[pr.id] || [],
+          reviewComments: commentsByPrId[pr.id] || [],
+          userGithubLogin: username,
+          prFiles: filesByPrId[pr.id] || [],
+        });
 
-      if (!existingNorm) {
-        await tx.insert(pullRequests).values(metrics);
-      } else {
-        const { githubPrId, tenantId, ...updateFields } = metrics;
-        await tx
-          .update(pullRequests)
-          .set(updateFields)
-          .where(eq(pullRequests.id, existingNorm.id));
+        if (!existingNorm) {
+          await tx.insert(pullRequests).values(metrics);
+          console.log('Inserted normalized PR', {
+            prId: pr.id,
+            githubPrId: metrics.githubPrId,
+          });
+        } else {
+          const { githubPrId, tenantId, ...updateFields } = metrics;
+          await tx
+            .update(pullRequests)
+            .set(updateFields)
+            .where(eq(pullRequests.id, existingNorm.id));
+
+          console.log('Updated normalized PR', { prId: existingNorm.id });
+        }
+        processed += 1;
       }
-    }
-  });
+    });
+  } catch (err) {
+    console.error('PR normalization FAILED', {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      duration: Date.now() - normStartTime,
+    });
+    throw err;
+  }
 
-  console.log(`✓ Normalized ${prsNeedingNormalization.length} PRs`);
+  console.log(`✓ Normalized ${processed} PRs`);
   return prIds;
 }
 

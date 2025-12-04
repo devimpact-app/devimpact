@@ -138,35 +138,54 @@ export async function batchNormalizeUserReviews(
   const timelineByPrId = groupBy(timeline, 'prId');
   const commentsByReviewId = groupBy(comments, 'reviewId');
 
-  await db.transaction(async (tx) => {
-    for (const row of reviewsNeedingNormalization) {
-      const review = row.raw;
-      const existingNorm = row.norm;
+  const reviewStartTime = Date.now();
+  let processed = 0;
+  try {
+    await db.transaction(async (tx) => {
+      for (const row of reviewsNeedingNormalization) {
+        const review = row.raw;
+        const existingNorm = row.norm;
 
-      const pr = prById.get(review.prId);
-      if (!pr) break;
+        const pr = prById.get(review.prId);
+        if (!pr) break;
 
-      const metrics = calculateMetrics({
-        pr,
-        timeline: timelineByPrId[review.prId] || [],
-        review,
-        allReviews: reviewsByPrId[review.prId] || [],
-        reviewComments: commentsByReviewId[review.id] || [],
-        userGithubLogin: username,
-        inferredTeams: inferredTeamsSet,
-      });
+        const metrics = calculateMetrics({
+          pr,
+          timeline: timelineByPrId[review.prId] || [],
+          review,
+          allReviews: reviewsByPrId[review.prId] || [],
+          reviewComments: commentsByReviewId[review.id] || [],
+          userGithubLogin: username,
+          inferredTeams: inferredTeamsSet,
+        });
 
-      if (!existingNorm) {
-        await tx.insert(reviews).values(metrics);
-      } else {
-        const { githubReviewId, tenantId, ...updateFields } = metrics;
-        await tx
-          .update(reviews)
-          .set(updateFields)
-          .where(eq(reviews.id, existingNorm.id));
+        if (!existingNorm) {
+          await tx.insert(reviews).values(metrics);
+          console.log('Inserted normalized review', { reviewId: review.id });
+        } else {
+          const { githubReviewId, tenantId, ...updateFields } = metrics;
+          await tx
+            .update(reviews)
+            .set(updateFields)
+            .where(eq(reviews.id, existingNorm.id));
+          console.log('Updated normalized review', {
+            reviewId: existingNorm.id,
+          });
+        }
+        processed += 1;
       }
-    }
-  });
+      console.log(
+        `Review normalization transaction complete: ${processed} processed`
+      );
+    });
+  } catch (err) {
+    console.error('Review normalization FAILED', {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      duration: Date.now() - reviewStartTime,
+    });
+    throw err;
+  }
 
   console.log(`✓ Normalized ${reviewsNeedingNormalization.length} reviews`);
   return reviewsNeedingNormalization.length;
