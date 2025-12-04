@@ -218,7 +218,7 @@ export async function seedPrFiles(params: {
         directory: dir,
         isTestFile: f.isTestFile,
         blobUrl,
-      })
+      } as any)
       .onConflictDoUpdate({
         target: [githubPrFiles.prId, githubPrFiles.filename],
         set: {
@@ -227,7 +227,7 @@ export async function seedPrFiles(params: {
           additions: a,
           deletions: d,
           changes: a + d,
-          fileExtension: fileExt ?? null,
+          fileExtension: (fileExt ?? null) as any,
           directory: dir,
           isTestFile: f.isTestFile,
           blobUrl,

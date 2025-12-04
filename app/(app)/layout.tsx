@@ -3,6 +3,9 @@ import { auth } from '@/lib/auth'; // your NextAuth server helper
 import { redirect } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { SentryUserBridge } from '@/components/SentryUserBridge';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await auth();
@@ -11,9 +14,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!session?.user?.id) redirect('/login');
   const sessionUser = session.user;
 
-  // Gate: must have completed onboarding
-  // Assuming you store onboardingState on session.user
-  const state = session.user.onboardingState ?? null;
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, sessionUser.id))
+    .limit(1);
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  const state = user.onboardingState ?? null;
   if (state !== 'synced') redirect('/onboarding');
 
   return (

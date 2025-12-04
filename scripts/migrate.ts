@@ -1,22 +1,22 @@
-import 'dotenv/config'
+import 'dotenv/config';
 
-import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { closeDb, db } from '@/lib/db/client'
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { closeDb, db } from '@/lib/db/client';
 
 async function main() {
-  console.log('Running database migrations…')
+  console.log('Running database migrations…');
 
-  await migrate(db, {
+  await migrate(db as any, {
     migrationsFolder: 'lib/db/migrations',
-  })
+  });
 
-  console.log('Migrations completed ✅')
+  console.log('Migrations completed ✅');
 
-  await closeDb()
+  await closeDb();
 }
 
 main().catch((err) => {
-  console.error('Migration failed ❌')
-  console.error(err)
-  process.exit(1)
-})
+  console.error('Migration failed ❌');
+  console.error(err);
+  process.exit(1);
+});
