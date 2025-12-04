@@ -35,7 +35,6 @@ export const POST = withSentryUser(async (req: NextRequest) => {
 
   const draft = await generateOneOnOnePrep({
     tenantId: userId,
-    db,
     ...body,
     timezone,
   });

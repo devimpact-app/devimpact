@@ -2,7 +2,7 @@
 
 import { OneOnOneMetricSnapshot, OneOnOnePrep } from '@/types/api/one-on-one';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { OneOnOneHeader } from './Header';
 import { OneOnOneBody } from './OneOnOneBody';
 import { Insight } from '@/types/api/insights';
@@ -89,6 +89,8 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
     null
   );
 
+  const hasTriggeredGeneration = useRef(false);
+
   useEffect(() => {
     let pollTimeout: NodeJS.Timeout;
     let isActive = true;
@@ -118,10 +120,29 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
         const { data } = await res.json();
         setPrep(data.prep);
 
-        // Check if still generating
-        if (data.prep.status === 'generating') {
+        if (data.prep.status === 'pending' && !hasTriggeredGeneration.current) {
+          hasTriggeredGeneration.current = true;
+          const timezone = getTimezone();
+          fetch(`/api/one-on-ones/${id}/regenerate`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timezone }),
+          }).catch((err) => {
+            console.error('Failed to trigger generation:', err);
+            setStatus('error');
+            setErrorMessage('Failed to generate talking points.');
+          });
+
           setStatus('loading');
-          // Poll again in 2 seconds if component is still mounted
+        }
+
+        // Check if still generating
+        if (
+          data.prep.status === 'pending' ||
+          data.prep.status === 'generating'
+        ) {
+          setStatus('loading');
           if (isActive) {
             pollTimeout = setTimeout(load, 2000);
           }

@@ -27,7 +27,6 @@ const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 type GenerateOneOnOnePrepParams = TCreateOneOnOneInput & {
   tenantId: string;
   timezone: string;
-  db: DB;
   updateDb?: boolean;
 };
 
@@ -110,21 +109,22 @@ export function extractUsedReferences(
   };
 }
 
-export async function generateOneOnOnePrep(
-  params: GenerateOneOnOnePrepParams
-): Promise<NewOneOnOneSession> {
-  const {
-    tenantId,
-    timezone,
-    title,
-    meetingAt: rawMeetingAt,
-    windowWeeks,
-    shortWindowStart,
-    counterpartLabel,
-    counterpartType,
-    updateDb = false,
-  } = params;
-
+export function getDatesForOneOnOne({
+  shortWindowStart,
+  rawMeetingAt,
+  windowWeeks,
+}: {
+  shortWindowStart?: string;
+  rawMeetingAt?: string;
+  windowWeeks: TCreateOneOnOneInput['windowWeeks'];
+}): {
+  meetingAt: Date;
+  shortWindowStart: Date;
+  shortWindowEnd: Date;
+  shortWindowWeeks: number;
+  mediumWindowStart: Date;
+  mediumWindowEnd: Date;
+} {
   const meetingAt = rawMeetingAt ? new Date(rawMeetingAt) : new Date();
 
   let shortStart = null;
@@ -143,6 +143,44 @@ export async function generateOneOnOnePrep(
   const mediumWindowWeeks = Math.max(4, shortWindowWeeks);
   const mediumEnd = meetingAt;
   const mediumStart = weeksAgo(mediumEnd, mediumWindowWeeks);
+
+  return {
+    shortWindowWeeks,
+    shortWindowStart: shortStart,
+    shortWindowEnd: shortEnd,
+    mediumWindowStart: mediumStart,
+    mediumWindowEnd: mediumEnd,
+    meetingAt,
+  };
+}
+
+export async function generateOneOnOnePrep(
+  params: GenerateOneOnOnePrepParams
+): Promise<NewOneOnOneSession> {
+  const {
+    tenantId,
+    timezone,
+    title,
+    meetingAt: rawMeetingAt,
+    windowWeeks,
+    shortWindowStart,
+    counterpartLabel,
+    counterpartType,
+    updateDb = false,
+  } = params;
+
+  const {
+    shortWindowWeeks,
+    shortWindowStart: shortStart,
+    shortWindowEnd: shortEnd,
+    mediumWindowStart: mediumStart,
+    mediumWindowEnd: mediumEnd,
+    meetingAt,
+  } = getDatesForOneOnOne({
+    shortWindowStart,
+    rawMeetingAt,
+    windowWeeks,
+  });
 
   const [insights, metrics, activity, workRhythm] = await Promise.all([
     fetchInsightsForWindow({

@@ -1,6 +1,9 @@
 'use server';
 
-import { generateOneOnOnePrep } from '@/lib/analysis/one-on-ones/generateOneOnOnePrep';
+import {
+  generateOneOnOnePrep,
+  getDatesForOneOnOne,
+} from '@/lib/analysis/one-on-ones/generateOneOnOnePrep';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { oneOnOneSessions } from '@/lib/db/schema';
@@ -21,20 +24,31 @@ export async function createOneOnOneWithGeneration(
   }
   const input = parseResponse.data;
 
-  // Create placeholder
-  const placeholderDate = new Date();
+  const {
+    shortWindowStart,
+    shortWindowEnd,
+    mediumWindowStart,
+    mediumWindowEnd,
+    meetingAt,
+    shortWindowWeeks,
+  } = getDatesForOneOnOne({
+    shortWindowStart: input.shortWindowStart,
+    windowWeeks: input.windowWeeks,
+    rawMeetingAt: input.meetingAt,
+  });
   const [row] = await db
     .insert(oneOnOneSessions)
     .values({
       tenantId: session.user.id,
       title: input.title,
-      shortWindowStart: placeholderDate,
-      shortWindowEnd: placeholderDate,
-      mediumWindowStart: placeholderDate,
-      mediumWindowEnd: placeholderDate,
+      shortWindowStart,
+      shortWindowEnd,
+      mediumWindowStart,
+      mediumWindowEnd,
+      shortWindowWeeks,
       payload: {} as any,
-      status: 'generating',
-      meetingAt: input.meetingAt ? new Date(input.meetingAt) : new Date(),
+      status: 'pending',
+      meetingAt,
       counterpartLabel: input.counterpartLabel,
       counterpartType: input.counterpartType,
     } as any)
@@ -46,27 +60,20 @@ export async function createOneOnOneWithGeneration(
       ],
       set: {
         title: input.title,
-        shortWindowStart: placeholderDate,
-        shortWindowEnd: placeholderDate,
-        mediumWindowStart: placeholderDate,
-        mediumWindowEnd: placeholderDate,
+        shortWindowStart,
+        shortWindowEnd,
+        mediumWindowStart,
+        mediumWindowEnd,
+        shortWindowWeeks,
+        meetingAt,
         payload: {} as any,
-        status: 'generating',
+        status: 'pending',
         counterpartLabel: input.counterpartLabel,
         counterpartType: input.counterpartType,
         updatedAt: new Date(),
       },
     })
     .returning();
-
-  // Kick off generation (doesn't wait)
-  generateOneOnOnePrep({
-    ...input,
-    tenantId: session.user.id,
-    timezone: input.timezone,
-    db,
-    updateDb: true,
-  });
 
   // Return the ID so client can navigate
   return { id: row.id };

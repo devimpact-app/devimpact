@@ -15,6 +15,13 @@
       "when": 1764840459295,
       "tag": "0001_one_on_one_status",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764870254603,
+      "tag": "0002_one_on_one_status_2",
+      "breakpoints": true
     }
   ]
 }

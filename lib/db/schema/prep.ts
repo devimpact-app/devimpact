@@ -18,6 +18,7 @@ import { Insight } from '@/types/api/insights';
 import { ActivityEvent } from '@/types/api/timeline';
 
 export const oneOnOneStatusEnum = pgEnum('one_on_one_status', [
+  'pending',
   'generating',
   'ready',
   'archived',

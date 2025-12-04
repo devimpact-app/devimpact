@@ -1,0 +1,1 @@
+ALTER TYPE "public"."one_on_one_status" ADD VALUE 'pending' BEFORE 'generating';

@@ -54,11 +54,18 @@ export const POST = withSentryUser(
       return jsonNotFound('One-on-one not found');
     }
 
+    await db
+      .update(oneOnOneSessions)
+      .set({
+        status: 'generating',
+      })
+      .where(eq(oneOnOneSessions.id, id))
+      .returning();
+
     const prepPayload = await generateOneOnOnePrep({
       windowWeeks: row.shortWindowWeeks as any,
       title: row.title ?? undefined,
       timezone,
-      db,
       counterpartLabel: row.counterpartLabel ?? undefined,
       counterpartType: row.counterpartType,
       tenantId: userId,
