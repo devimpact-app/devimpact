@@ -45,36 +45,6 @@ export function formatDateServer(date: Date, timezone: string): string {
   return fmt.format(date);
 }
 
-/**
- * Constructs a Date at midnight in the given timezone.
- * Returns a real UTC Date representing that moment.
- */
-export function makeDateAtMidnightServer(ymd: string, timezone: string): Date {
-  const [year, month, day] = ymd.split('-').map(Number);
-  const dtf = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
-
-  const localMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-  const parts = dtf.formatToParts(localMidnight);
-
-  const map: any = {};
-  for (const p of parts) {
-    if (p.type !== 'literal') map[p.type] = parseInt(p.value, 10);
-  }
-
-  return new Date(
-    Date.UTC(map.year, map.month - 1, map.day, map.hour, map.minute, map.second)
-  );
-}
-
 export function formatRangeServer(
   start: Date,
   end: Date,
@@ -108,13 +78,14 @@ export function formatRangeServer(
 /**
  * Get the weekday (0=Monday … 6=Sunday) for a date in a specific timezone.
  */
-export function getWeekdayServer(date: Date, timezone: string): number {
+function getWeekdayServer(date: Date, timezone: string): number {
   const fmt = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     weekday: 'short',
   });
 
-  const wd = fmt.format(date); // "Mon", "Tue", etc.
+  const parts = fmt.formatToParts(date);
+  const weekdayStr = parts.find((p) => p.type === 'weekday')?.value ?? 'Mon';
 
   const map: Record<string, number> = {
     Mon: 0,
@@ -126,17 +97,42 @@ export function getWeekdayServer(date: Date, timezone: string): number {
     Sun: 6,
   };
 
-  return map[wd];
+  return map[weekdayStr] ?? 0;
+}
+
+function getYMDInTZ(
+  date: Date,
+  timezone: string
+): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const parts = fmt.formatToParts(date);
+  const year = Number(parts.find((p) => p.type === 'year')?.value ?? '1970');
+  const month = Number(parts.find((p) => p.type === 'month')?.value ?? '01');
+  const day = Number(parts.find((p) => p.type === 'day')?.value ?? '01');
+
+  return { year, month, day };
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function startOfWeekServer(date: Date, timezone: string): Date {
-  const ymd = formatDateServer(date, timezone);
-  let cursor = makeDateAtMidnightServer(ymd, timezone);
-  const weekday = getWeekdayServer(cursor, timezone); // 0 = Monday, 6 = Sunday
-  const start = new Date(cursor.getTime() - weekday * DAY_MS);
-  return start; // UTC Date representing Monday 00:00 in user's timezone
+  const { year, month, day } = getYMDInTZ(date, timezone);
+  const weekday = getWeekdayServer(date, timezone); // 0 = Mon, ..., 6 = Sun
+
+  const mondayDay = day - weekday;
+
+  const mondayUTC = new Date(Date.UTC(year, month - 1, mondayDay, 0, 0, 0, 0));
+  return mondayUTC;
 }
 
 export function endOfWeekServer(date: Date, timezone: string): Date {

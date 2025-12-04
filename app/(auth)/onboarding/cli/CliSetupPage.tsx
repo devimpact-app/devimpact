@@ -17,6 +17,47 @@ import useSWR from 'swr';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+const POLL_INTERVAL_MS = 5_000;
+const MAX_POLL_DURATION_MS = 10 * 60_000; // 10 minutes
+
+export function useCliStatus() {
+  const pollStartedAtRef = useRef<number | null>(null);
+
+  const {
+    data: res,
+    isLoading,
+    error,
+  } = useSWR<{ data: CliStatus }>('/api/cli/status', fetcher, {
+    refreshInterval(res) {
+      if (!res) return 0;
+
+      const { onboardingState, cliLinkedAt } = res.data;
+
+      // Start timer on first successful response
+      if (pollStartedAtRef.current === null) {
+        pollStartedAtRef.current = Date.now();
+      }
+
+      const now = Date.now();
+      const elapsed = now - pollStartedAtRef.current;
+
+      const isDone = onboardingState === 'synced' && Boolean(cliLinkedAt);
+
+      const timedOut = elapsed > MAX_POLL_DURATION_MS;
+
+      // stop polling if done or timed out
+      if (isDone || timedOut) return 0;
+
+      return POLL_INTERVAL_MS;
+    },
+    revalidateOnFocus: false,
+  });
+
+  const status = res?.data;
+
+  return { status, isLoading, error };
+}
+
 export function CliSetupPageShell({
   userName,
   isFromSettings,
@@ -27,20 +68,7 @@ export function CliSetupPageShell({
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
 
-  const { data: res, isLoading } = useSWR<{ data: CliStatus }>(
-    '/api/cli/status',
-    fetcher,
-    {
-      // don't start polling until we have data
-      refreshInterval(res) {
-        if (!res) return 0;
-        const stopPolling =
-          res.data.onboardingState === 'synced' && res.data.cliLinkedAt;
-        return stopPolling ? 0 : 5_000;
-      },
-    }
-  );
-  const status = res?.data;
+  const { status, isLoading, error: _error } = useCliStatus();
 
   useEffect(() => {
     if (!status) return;
