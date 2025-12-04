@@ -81,7 +81,7 @@ export function InsightCard({
   return (
     <article
       className={cn(
-        'rounded-2xl bg-[#111520] p-5 border flex flex-col h-full',
+        'rounded-2xl bg-[#111520] p-5 border flex flex-col',
         styles.border,
         'hover:border-white/20 hover:bg-[#131824] cursor-pointer'
       )}

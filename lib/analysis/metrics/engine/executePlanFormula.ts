@@ -45,7 +45,8 @@ export function getWeeklyBuckets(
     cursor = bucketEnd;
   }
 
-  if (end && cursor < end) {
+  // If using manual window, use this loop
+  if (windowWeeks === 0 && end && cursor < end) {
     const bucketStart = new Date(cursor);
     const bucketEnd = new Date(bucketStart);
     bucketEnd.setUTCDate(bucketEnd.getUTCDate() + 7);
