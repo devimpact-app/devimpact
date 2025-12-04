@@ -9,12 +9,21 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import Image from 'next/image';
 
-const BulletPoint = ({ children }: { children: string }) => {
+const BulletPoint = ({
+  children,
+  bold,
+}: {
+  children: string;
+  bold?: boolean;
+}) => {
   return (
     <li className="flex items-start gap-2">
-      <span className="mt-[6px] h-[3px] w-[3px] rounded-full bg-slate-500" />
-      <span>{children}</span>
+      <span className="flex h-3 w-3 items-start justify-center pt-[6px]">
+        <span className="h-[3px] w-[3px] rounded-full bg-slate-500" />
+      </span>
+      <span className={bold ? `font-bold` : ''}>{children}</span>
     </li>
   );
 };
@@ -58,34 +67,19 @@ export default async function WelcomePage({
               </h2>
             </div>
             <ul className="space-y-1.5 text-xs text-slate-400">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-[2px] h-3 w-3 text-emerald-400" />
-                <span>
-                  Generate focused 1:1 prep packets from your last 1–4 weeks of
-                  work.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-[2px] h-3.5 w-3.5 text-emerald-400" />
-                <span>
-                  See your week as a timeline of PRs, reviews, and commits and
-                  understand when your best focus times are.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-[2px] h-3.5 w-3.5 text-emerald-400" />
-                <span>
-                  Track simple shipping and review metrics without building your
-                  own dashboards.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-[2px] h-3.5 w-3.5 text-emerald-400" />
-                <span>
-                  Spot patterns and bottlenecks in how your work actually flows
-                  week to week.
-                </span>
-              </li>
+              {[
+                'Generate focused 1:1 prep packets from your last 1–4 weeks of work.',
+                'See your week as a timeline of PRs, reviews, and commits and understand when your best focus times are.',
+                'Track simple shipping and review metrics without building your own dashboards.',
+                'Spot patterns and bottlenecks in how your work actually flows week to week.',
+              ].map((text, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="flex h-3.5 w-3.5 items-start justify-center pt-[2px]">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                  </span>
+                  <span>{text}</span>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -213,7 +207,7 @@ export default async function WelcomePage({
                 <h3 className="text-[11px] font-semibold text-slate-200">
                   We sync
                 </h3>
-                <ul className="space-y-1 text-[11px] text-slate-400">
+                <ul className="space-y-1 text-[11px] text-slate-400 list-none pl-0 m-0">
                   <BulletPoint>
                     PR metadata (Ex: title, repo, timestamps, state) for PRs you
                     are involved in.
@@ -268,11 +262,66 @@ export default async function WelcomePage({
                 DevImpact is just for you — we don&apos;t message your manager
                 or team, and nothing is posted back to GitHub.
               </BulletPoint>
-              <BulletPoint>
+              <BulletPoint bold>
                 You can delete all synced data for your account at any time from
                 the settings page. We treat that as a hard delete.
               </BulletPoint>
             </ul>
+          </div>
+        </section>
+
+        {/* Product preview */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/80 px-5 py-5 shadow-sm shadow-black/40 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-100">
+                A quick look inside
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-400 max-w-xl">
+                This beta focuses on helping you see a clean weekly picture of
+                your work and turn that into concrete talking points for 1:1s.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <figure className="group rounded-xl border border-slate-800/80 bg-slate-950/80 overflow-hidden shadow-sm shadow-black/40">
+              <div className="relative aspect-[16/9]">
+                <Image
+                  src="/images/beta/dashboard.png"
+                  alt="DevImpact weekly dashboard with summary, insights, and recent activity."
+                  fill
+                  className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  priority
+                />
+              </div>
+              <figcaption className="border-t border-slate-800/80 px-3.5 py-2.5">
+                <p className="text-[11px] text-slate-300">
+                  Weekly dashboard – see what you shipped, where you spent time,
+                  and the strongest patterns from the last few weeks.
+                </p>
+              </figcaption>
+            </figure>
+
+            <figure className="group rounded-xl border border-slate-800/80 bg-slate-950/80 overflow-hidden shadow-sm shadow-black/40">
+              <div className="relative aspect-[16/9]">
+                <Image
+                  src="/images/beta/insight-panel.png"
+                  alt="DevImpact insights page"
+                  fill
+                  className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                />
+              </div>
+              <figcaption className="border-t border-slate-800/80 px-3.5 py-2.5">
+                <p className="text-[11px] text-slate-300">
+                  Insights — explore review dynamics, shipping habits, and
+                  friction patterns. Selecting an insight opens a deeper view
+                  with supporting examples.
+                </p>
+              </figcaption>
+            </figure>
           </div>
         </section>
       </div>

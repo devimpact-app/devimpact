@@ -33,8 +33,8 @@ export default function InsightsClient({ user }: Props) {
     windowWeeks: numWeeks,
   });
 
-  const highlightedInsights = insights.slice(0, 2);
-  const libraryInsights = insights.slice(2);
+  const highlightedInsights = insights.slice(0, 3);
+  const libraryInsights = insights.slice(3);
 
   const handleClickMetric = (result: TTimeseriesResult) => {
     setSelectedMetric({
