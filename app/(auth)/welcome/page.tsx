@@ -178,7 +178,7 @@ export default async function WelcomePage({
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500/15 text-sky-300 text-[10px]">
                   3
                 </span>
-                Run your first sync
+                Run your first sync (last 90 days)
               </div>
               <p className="text-[11px] text-slate-400">
                 Point the CLI at one or more repos. DevImpact will pull PR,

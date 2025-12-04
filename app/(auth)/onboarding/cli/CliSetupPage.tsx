@@ -179,7 +179,9 @@ export function CliSetupPage({
   const step2Enabled = step1Completed;
   const step2Expanded =
     step2Enabled &&
-    (isFromSettings || (!isFromSettings && state === 'cli_pending'));
+    (isFromSettings ||
+      (!isFromSettings &&
+        (state === 'cli_pending' || state === 'account_created')));
 
   const step3Enabled = state === 'cli_linked' || state === 'syncing';
   const step3Expanded = state === 'cli_linked' || state === 'syncing';
@@ -214,7 +216,7 @@ export function CliSetupPage({
             <span className="text-text-primary/90">your</span> machine, using
             the official GitHub CLI under your account. You stay in control of
             your code and permissions&mdash;we only see the activity data you
-            choose to sync.
+            choose to sync. We use a lookback window of 90 days.
           </p>
         </div>
       </header>
@@ -389,7 +391,7 @@ export function CliSetupPage({
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-                    Step 3 · Pull in your recent work
+                    Step 3 · Pull in your recent work (last 90 days)
                   </h2>
                   <p className="text-[11px] text-text-secondary mt-0.5">
                     Run a basic sync from a repo you work in. You&apos;ll see
