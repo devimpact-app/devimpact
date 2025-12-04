@@ -4,7 +4,7 @@ import { MetricInput } from '../types/input';
 import { DB } from '@/lib/db/client';
 import { pullRequests, reviews } from '@/lib/db/schema';
 import { TMetricResult } from '@/types/api/metrics';
-import { startOfWeek } from '@/lib/utils/date';
+import { startOfWeekServer, endOfWeekServer } from '@/lib/utils/server-date';
 
 export const TABLES = {
   pullRequests,
@@ -12,13 +12,16 @@ export const TABLES = {
 };
 export type TableId = keyof typeof TABLES;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = DAY_MS * 7;
+
 export function getWeeklyBuckets(
   start: Date,
   end: Date | undefined,
   windowWeeks: number,
-  opts?: { now?: Date }
+  opts: { now?: Date; timezone: string }
 ) {
-  const now = opts?.now ?? new Date();
+  const { timezone, now = new Date() } = opts;
 
   const buckets: {
     start: Date;
@@ -26,40 +29,46 @@ export function getWeeklyBuckets(
     status: 'partial' | 'complete';
   }[] = [];
 
-  const firstStart = startOfWeek(start);
+  // Anchor to start of week in the user's timezone (Monday 00:00 local)
+  const firstStart = startOfWeekServer(start, timezone);
   let cursor = firstStart;
 
-  for (let i = 0; i < windowWeeks; i++) {
-    const bucketStart = new Date(cursor);
-    const bucketEnd = new Date(bucketStart);
-    bucketEnd.setUTCDate(bucketEnd.getUTCDate() + 7);
+  // Mode 1: fixed number of weeks (most metric calls)
+  if (windowWeeks > 0) {
+    for (let i = 0; i < windowWeeks; i++) {
+      const bucketStart = new Date(cursor);
+      const bucketEnd = new Date(cursor.getTime() + WEEK_MS);
 
-    const isPartial = bucketEnd > now;
+      const isPartial = bucketEnd > now;
 
-    buckets.push({
-      start: bucketStart,
-      end: bucketEnd,
-      status: isPartial ? 'partial' : 'complete',
-    });
+      buckets.push({
+        start: bucketStart,
+        end: bucketEnd,
+        status: isPartial ? 'partial' : 'complete',
+      });
 
-    cursor = bucketEnd;
+      cursor = bucketEnd;
+    }
   }
+  // Mode 2: manual window (windowWeeks === 0, respect explicit end)
+  else if (end) {
+    // Snap end to the end-of-week that contains it
+    const windowEnd = endOfWeekServer(end, timezone);
 
-  // If using manual window, use this loop
-  if (windowWeeks === 0 && end && cursor < end) {
-    const bucketStart = new Date(cursor);
-    const bucketEnd = new Date(bucketStart);
-    bucketEnd.setUTCDate(bucketEnd.getUTCDate() + 7);
+    while (cursor < windowEnd) {
+      const bucketStart = new Date(cursor);
+      const bucketEnd = new Date(cursor.getTime() + WEEK_MS);
 
-    const isPartial = bucketEnd > now;
+      const isPartial = bucketEnd > now;
 
-    buckets.push({
-      start: bucketStart,
-      end: bucketEnd,
-      status: isPartial ? 'partial' : 'complete',
-    });
+      buckets.push({
+        start: bucketStart,
+        end: bucketEnd,
+        status: isPartial ? 'partial' : 'complete',
+      });
 
-    cursor = bucketEnd;
+      cursor = bucketEnd;
+    }
   }
 
   return buckets;
@@ -227,7 +236,14 @@ export async function executePlanFormula(
   }
 
   if (input.shape === 'timeseries') {
-    const buckets = getWeeklyBuckets(input.start, input.end, input.windowWeeks);
+    const buckets = getWeeklyBuckets(
+      input.start,
+      input.end,
+      input.windowWeeks,
+      {
+        timezone: input.timezone,
+      }
+    );
 
     const points = await Promise.all(
       buckets.map(async (bucket) => {

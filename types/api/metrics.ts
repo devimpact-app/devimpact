@@ -26,6 +26,7 @@ export const MetricInput = z.object({
   start: z.string(), // ISO
   end: z.string().optional(),
   windowWeeks: z.number(), // ISO
+  timezone: z.string(),
   shape: ResultShape,
   granularity: Granularity.optional(),
   breakdowns: z.array(Breakdown).optional(),

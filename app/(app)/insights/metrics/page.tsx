@@ -6,6 +6,7 @@ import { MetricsAPI } from '@/lib/analysis/metrics/client';
 import { TMetricsBatchInput, TMetricsBatchResult } from '@/types/api/metrics';
 import { useEffect, useState } from 'react';
 import { MetricTimeseriesChart } from '../MetricTimeseriesChart';
+import { getTimezone } from '@/lib/utils/date';
 
 type AllMetricsState = {
   data: TMetricsBatchResult | null;
@@ -50,6 +51,7 @@ function useKeyMetrics({
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
+        const timezone = getTimezone();
         const batchInput: TMetricsBatchInput = {
           requests: metricIds.map((id) => ({
             metricId: id,
@@ -57,6 +59,7 @@ function useKeyMetrics({
               shape: 'timeseries',
               start: startIso,
               windowWeeks,
+              timezone,
             },
           })),
         };

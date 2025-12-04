@@ -139,7 +139,7 @@ export function CliSetupPage({
     } catch {}
   }
 
-  const hasCliToken = !!cliToken || status.hasCliToken;
+  const hasCliToken = !!cliToken;
   const state = status.onboardingState;
 
   const step1Expanded =

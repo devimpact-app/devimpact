@@ -1,10 +1,11 @@
 import { computeMedianClamped } from '@/lib/utils/math';
-import { formatHours, formatRange } from '@/lib/utils/date';
+import { formatRangeServer } from '@/lib/utils/server-date';
 import { InsightContext } from '../types';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 import { MAX_HOURS_CUTOFF } from './shared';
 import { PullRequest, Review } from '@/lib/db/schema';
+import { formatHours } from '@/lib/utils/date';
 
 const THRESHOLD_MIN_REVIEWS = 5;
 const THRESHOLD_MIN_GROUP_REVIEWS = 3;
@@ -438,7 +439,11 @@ export function generateCollaborationSnapshotInsight(
     title,
     emphasis,
     body,
-    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
+    timeWindowLabel: formatRangeServer(
+      ctx.windowStart,
+      ctx.windowEnd,
+      ctx.timezone
+    ),
     stats: [...primaryStats, ...secondaryStats],
     score,
     relatedItems,

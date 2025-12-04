@@ -52,7 +52,9 @@ export function InsightsSection({
         </div>
       )}
 
-      {error && !isLoading && <p className="text-xs text-red-400">{error}</p>}
+      {error && !isLoading && (
+        <p className="text-xs text-red-400">An error occurred</p>
+      )}
 
       {!isLoading && !error && insights && insights.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

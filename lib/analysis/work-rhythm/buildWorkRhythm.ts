@@ -3,7 +3,10 @@ import {
   WorkRhythmBucket,
   WorkRhythmSchema,
 } from '@/types/api/work-rhythm';
-import { formatRange, getWeekBoundsFromOffset } from '@/lib/utils/date';
+import {
+  formatRangeServer,
+  getWeekBoundsFromOffsetServer,
+} from '@/lib/utils/server-date';
 import { getActivityEventsForRange } from '../activity/getActivityEventsForRange';
 import { bucketEventsByDayAndBand } from './bucket';
 import {
@@ -55,14 +58,14 @@ export async function buildWorkRhythm({
     start = startOverride;
     end = endOverride;
   } else {
-    const bounds = getWeekBoundsFromOffset(0, 4);
+    const bounds = getWeekBoundsFromOffsetServer(0, 4, timezone);
     start = bounds.start;
     end = bounds.end;
   }
   const range: WorkRhythm['range'] = {
     startISO: start.toISOString(),
     endISO: end.toISOString(),
-    label: formatRange(start, end),
+    label: formatRangeServer(start, end, timezone),
   };
 
   const events = await getActivityEventsForRange({

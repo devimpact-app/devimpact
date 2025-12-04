@@ -9,6 +9,7 @@ import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer
 import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
 import { WeekNavigator } from '@/components/dates/WeekPicker';
 import { OneWeekSkeleton } from './components/OneWeekView';
+import { getTimezone } from '@/lib/utils/date';
 
 type Props = {
   user: {
@@ -29,10 +30,7 @@ export default function TimelineClient({ user }: Props) {
   const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
     useWeekNavigation();
 
-  const timezone =
-    typeof Intl !== 'undefined'
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone
-      : 'UTC';
+  const timezone = getTimezone();
   const { startISO, endISO } = useMemo(() => {
     return {
       startISO: start.toISOString(),

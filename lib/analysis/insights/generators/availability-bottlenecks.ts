@@ -8,10 +8,10 @@ import {
   TimeOfDayBucket,
 } from './shared';
 import {
-  formatRange,
-  getLocalWeekdayIndex,
-  toLocalDate,
-} from '@/lib/utils/date';
+  formatRangeServer,
+  getWeekdayServer,
+  toLocalDateServer,
+} from '@/lib/utils/server-date';
 import { Insight } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 import { PullRequest } from '@/lib/db/schema';
@@ -58,8 +58,8 @@ export function generateAvailabilityDeadzoneInsight(
     const hours = seconds / 3600;
     if (hours <= 0 || hours > MAX_HOURS_CUTOFF) continue;
 
-    const readyLocal = toLocalDate(pr.lastReadyForReviewAt, timezone);
-    const weekdayIdx = getLocalWeekdayIndex(pr.lastReadyForReviewAt, timezone); // 0–6 in that tz
+    const readyLocal = toLocalDateServer(pr.lastReadyForReviewAt, timezone);
+    const weekdayIdx = getWeekdayServer(pr.lastReadyForReviewAt, timezone); // 0–6 in that tz
     const timeBucket = getTimeOfDayBucket(readyLocal.getHours());
     const bucketKey = `${weekdayIdx}:${timeBucket}`;
 
@@ -200,12 +200,13 @@ export function generateAvailabilityDeadzoneInsight(
   const relatedItems: Insight['relatedItems'] = worstBucketSamples.map((s) => {
     const pr = s.pr;
     const readyLocal = pr.lastReadyForReviewAt
-      ? toLocalDate(pr.lastReadyForReviewAt, timezone)
+      ? toLocalDateServer(pr.lastReadyForReviewAt, timezone)
       : null;
     const readyDateLabel = readyLocal
       ? readyLocal.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
+          timeZone: timezone,
         })
       : null;
     const timeBucketLabel = formatTimeOfDayLabel(s.timeBucket);
@@ -250,7 +251,11 @@ export function generateAvailabilityDeadzoneInsight(
     title,
     emphasis,
     body,
-    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
+    timeWindowLabel: formatRangeServer(
+      ctx.windowStart,
+      ctx.windowEnd,
+      timezone
+    ),
     stats: [
       {
         label: 'Median in that window',

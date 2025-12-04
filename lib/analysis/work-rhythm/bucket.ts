@@ -1,4 +1,4 @@
-import { toLocalDate } from '@/lib/utils/date';
+import { toLocalDateServer } from '@/lib/utils/server-date';
 import type { ActivityEvent } from '@/types/api/timeline';
 import {
   TimeBandKeySchema,
@@ -87,7 +87,7 @@ export function bucketEventsByDayAndBand(params: {
   for (const ev of events) {
     if (!ev.occurredAt) continue;
 
-    const date = toLocalDate(ev.occurredAt, timezone);
+    const date = toLocalDateServer(ev.occurredAt, timezone);
     if (isNaN(date.getTime())) continue;
 
     const day = getDayKey(date);

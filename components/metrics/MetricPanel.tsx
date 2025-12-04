@@ -3,7 +3,7 @@
 import { MetricTimeseriesChart } from '@/app/(app)/insights/MetricTimeseriesChart';
 import { formatMetricValue, MetricsAPI } from '@/lib/analysis/metrics/client';
 import { cn } from '@/lib/utils';
-import { formatRange, inferWindowWeeks } from '@/lib/utils/date';
+import { getTimezone, formatRange } from '@/lib/utils/date';
 import { TMetricsBatchInput, TMetricsBatchResult } from '@/types/api/metrics';
 import { OneOnOneMetricSnapshot } from '@/types/api/one-on-one';
 import { X } from 'lucide-react';
@@ -50,14 +50,11 @@ export function MetricPanel({ metric, onClose }: MetricDetailPanelProps) {
   });
   useEffect(() => {
     async function load() {
-      const windowWeeks = inferWindowWeeks(
-        new Date(metric.windowStart),
-        new Date(metric.windowEnd)
-      );
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
         const metricId = metric.id;
+        const timezone = getTimezone();
         const batchInput: TMetricsBatchInput = {
           requests: [
             {
@@ -65,7 +62,9 @@ export function MetricPanel({ metric, onClose }: MetricDetailPanelProps) {
               input: {
                 shape: 'stat',
                 start: metric.windowStart,
-                windowWeeks,
+                end: metric.windowEnd,
+                windowWeeks: 0,
+                timezone,
                 comparison: {
                   kind: 'previous_period',
                 },
@@ -76,7 +75,9 @@ export function MetricPanel({ metric, onClose }: MetricDetailPanelProps) {
               input: {
                 shape: 'timeseries',
                 start: metric.windowStart,
-                windowWeeks,
+                end: metric.windowEnd,
+                windowWeeks: 0,
+                timezone,
               },
             },
           ],

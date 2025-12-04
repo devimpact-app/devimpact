@@ -10,6 +10,7 @@ import { InsightPanel } from '@/components/insights/InsightPanel';
 import { MetricPanel } from '@/components/metrics/MetricPanel';
 import { ActivityEvent } from '@/types/api/timeline';
 import { EventInspectorPanel } from '@/app/(app)/timeline/components/EventInspectorPanel';
+import { getTimezone } from '@/lib/utils/date';
 
 type Status = 'loading' | 'ready' | 'error' | 'not_found';
 
@@ -157,10 +158,7 @@ export default function OneOnOneDetailClient({ id }: { id: string }) {
     try {
       setStatus('loading');
 
-      const timezone =
-        typeof Intl !== 'undefined'
-          ? Intl.DateTimeFormat().resolvedOptions().timeZone
-          : 'UTC';
+      const timezone = getTimezone();
       const res = await fetch(`/api/one-on-ones/${oneOnOneId}/regenerate`, {
         method: 'POST',
         credentials: 'include',

@@ -10,7 +10,7 @@ import { PullRequest } from '@/lib/db/schema';
 import { computeMedianClamped } from '@/lib/utils/math';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
-import { formatRange } from '@/lib/utils/date';
+import { formatRangeServer } from '@/lib/utils/server-date';
 
 type TagStats = {
   tag: ReviewTag;
@@ -295,7 +295,11 @@ export function generateFrictionThemesInsight(
     title,
     emphasis,
     body,
-    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
+    timeWindowLabel: formatRangeServer(
+      ctx.windowStart,
+      ctx.windowEnd,
+      ctx.timezone
+    ),
     stats,
     score,
     relatedItems,

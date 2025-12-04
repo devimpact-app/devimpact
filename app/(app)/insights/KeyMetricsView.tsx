@@ -8,6 +8,7 @@ import type {
 import { TMetricsBatchInput } from '@/types/api/metrics';
 import { MetricsAPI } from '@/lib/analysis/metrics/client';
 import { MetricTimeseriesChart } from './MetricTimeseriesChart';
+import { getTimezone } from '@/lib/utils/date';
 
 type KeyMetricsPanelProps = {
   start: Date;
@@ -60,6 +61,7 @@ function useKeyMetrics({
           return;
         }
 
+        const timezone = getTimezone();
         const batchInput: TMetricsBatchInput = {
           requests: metricIds.map((id) => ({
             metricId: id,
@@ -67,6 +69,7 @@ function useKeyMetrics({
               shape: 'timeseries',
               start: startIso,
               windowWeeks,
+              timezone,
             },
           })),
         };

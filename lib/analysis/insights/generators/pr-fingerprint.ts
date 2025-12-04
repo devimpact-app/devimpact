@@ -3,7 +3,8 @@ import { InsightContext } from '../types';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 import { MAX_HOURS_CUTOFF } from './shared';
-import { formatHours, formatRange } from '@/lib/utils/date';
+import { formatRangeServer } from '@/lib/utils/server-date';
+import { formatHours } from '@/lib/utils/date';
 
 const THRESHOLD_MIN_MERGED_PRS = 4;
 
@@ -287,7 +288,11 @@ export function generatePullRequestFingerprintInsight(
       `Looking at your merged PRs in this recent window, we computed a “fingerprint” of what your typical change looks like.`,
       `This isn’t a judgment of good or bad — it’s a baseline that helps put other insights, like bottlenecks or review friction, into context.`,
     ].join(' '),
-    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
+    timeWindowLabel: formatRangeServer(
+      ctx.windowStart,
+      ctx.windowEnd,
+      ctx.timezone
+    ),
     stats: [...primaryStats, ...secondaryStats],
     score,
     relatedItems,

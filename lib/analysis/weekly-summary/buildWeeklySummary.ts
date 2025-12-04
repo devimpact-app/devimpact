@@ -1,4 +1,4 @@
-import { formatRange } from '@/lib/utils/date';
+import { formatRangeServer } from '@/lib/utils/server-date';
 import {
   ShippedItem,
   WeeklySummary,
@@ -134,7 +134,7 @@ export async function buildWeeklySummary({
     range: {
       startISO: start.toISOString(),
       endISO: end.toISOString(),
-      label: formatRange(start, end),
+      label: formatRangeServer(start, end, timezone),
     },
     softStats,
     shipped,

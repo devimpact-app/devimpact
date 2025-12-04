@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import { WorkRhythmCard } from './WorkRythmCard';
 import { WorkRhythm, WorkRhythmSchema } from '@/types/api/work-rhythm';
+import { getTimezone } from '@/lib/utils/date';
 
 async function fetchWorkRhythm(timezone: string): Promise<WorkRhythm> {
   const params = new URLSearchParams({
@@ -22,10 +23,7 @@ async function fetchWorkRhythm(timezone: string): Promise<WorkRhythm> {
 }
 
 export default function WorkRhythmCardContainer() {
-  const timezone =
-    typeof Intl !== 'undefined'
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone
-      : 'UTC';
+  const timezone = getTimezone();
 
   const { data, error, isLoading } = useSWR<WorkRhythm>(
     ['/api/work-rhythm', timezone],

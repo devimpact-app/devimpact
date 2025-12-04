@@ -13,7 +13,6 @@ import {
 } from '../../../_lib/http';
 import { generateOneOnOnePrep } from '@/lib/analysis/one-on-ones/generateOneOnOnePrep';
 import { formatOneOnOneResponse } from '@/lib/analysis/one-on-ones/formatResponse';
-import { inferWindowWeeks } from '@/lib/utils/date';
 
 export const POST = withSentryUser(
   async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {

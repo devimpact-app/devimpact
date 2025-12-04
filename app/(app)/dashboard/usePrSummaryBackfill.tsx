@@ -1,5 +1,6 @@
 'use client';
 
+import { getTimezone } from '@/lib/utils/date';
 import { useEffect, useRef } from 'react';
 
 const STORAGE_KEY = 'devimpact:prSummaryBackfill:lastRun';
@@ -33,10 +34,7 @@ export function usePrSummaryBackfill() {
 
     if (typeof window === 'undefined') return;
 
-    const timezone =
-      typeof Intl !== 'undefined'
-        ? Intl.DateTimeFormat().resolvedOptions().timeZone
-        : 'UTC';
+    const timezone = getTimezone();
     const dayKey = getLocalDayKey(timezone);
     const token = `${dayKey}@${timezone ?? 'local'}`;
 

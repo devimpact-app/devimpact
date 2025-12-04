@@ -213,6 +213,7 @@ export async function generateOneOnOnePrep(
   const formatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
+    timeZone: timezone,
   });
   const finalTitle = title ?? `1:1 prep – ${formatter.format(meetingAt)}`;
 
@@ -221,7 +222,7 @@ export async function generateOneOnOnePrep(
     meetingAt,
     shortWindowStart: shortStart,
     shortWindowEnd: shortEnd,
-    shortWindowWeeks: windowWeeks,
+    shortWindowWeeks,
     mediumWindowStart: mediumStart,
     mediumWindowEnd: mediumEnd,
     title: finalTitle,

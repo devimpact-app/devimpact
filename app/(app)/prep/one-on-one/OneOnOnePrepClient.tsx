@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { CounterpartType } from '@/types/api/one-on-one';
+import { getTimezone } from '@/lib/utils/date';
 
 function getDefaultMeetingDateTime() {
   const now = new Date();
@@ -58,10 +59,7 @@ export function OneOnOnePrepClient({
     setIsGenerating(true);
 
     try {
-      const timezone =
-        typeof Intl !== 'undefined'
-          ? Intl.DateTimeFormat().resolvedOptions().timeZone
-          : 'UTC';
+      const timezone = getTimezone();
       const meetingAt =
         meetingDate && meetingTime
           ? new Date(`${meetingDate}T${meetingTime}:00`)
@@ -352,7 +350,11 @@ export function OneOnOnePrepClient({
         )}
       </section>
 
-      {error && <p className="text-[11px] text-red-300">{error}</p>}
+      {error && (
+        <p className="text-[11px] text-red-300">
+          There was an error generating your 1:1. Please try again later.
+        </p>
+      )}
 
       {/* Footer note */}
       <div className="pt-1">

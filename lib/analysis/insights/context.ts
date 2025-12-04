@@ -1,4 +1,4 @@
-import { getWeekBoundsFromOffset } from '@/lib/utils/date';
+import { getWeekBoundsFromOffsetServer } from '@/lib/utils/server-date';
 import type { InsightContext } from './types';
 import { getAuthoredPrs } from '../activity/getAuthoredPrs';
 import { getReviewsOnAuthoredPrs } from '../activity/getReviewsOnAuthoredPrs';
@@ -24,7 +24,11 @@ export async function buildInsightContext(
   let windowStart: Date;
   let windowEnd: Date;
   if (!startOverride || !endOverride) {
-    const { start, end } = getWeekBoundsFromOffset(0, windowWeeks ?? 4);
+    const { start, end } = getWeekBoundsFromOffsetServer(
+      0,
+      windowWeeks ?? 4,
+      timezone
+    );
     windowStart = start;
     windowEnd = end;
   } else {

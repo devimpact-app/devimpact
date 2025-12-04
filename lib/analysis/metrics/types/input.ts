@@ -23,6 +23,7 @@ export type MetricInput = {
   start: Date;
   end: Date;
   windowWeeks: number;
+  timezone: string;
 
   // shape & options requested by the FE
   shape: ResultShape;

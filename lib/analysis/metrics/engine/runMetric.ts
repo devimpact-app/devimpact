@@ -1,12 +1,11 @@
 import { METRIC_CATALOG_MAP } from '../catalog';
 import { MetricDefinition } from '../types/definition';
 import { MetricContext, MetricInput } from '../types/input';
-import { MetricResult } from '../types/output';
 import { computeComparisonWindow } from './comparisonWindow';
 import { toDate } from '@/lib/utils/date';
 import { mergePrimaryAndComparison } from './mergeResults';
 import { executeMetric } from './executeMetric';
-import { TMetricInput, TMetricResult } from '@/types/api/metrics';
+import { TMetricResult } from '@/types/api/metrics';
 
 export async function runMetric(
   metric: string | MetricDefinition,

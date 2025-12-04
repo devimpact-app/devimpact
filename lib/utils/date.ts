@@ -28,12 +28,8 @@ export function formatDateTime(iso: string | Date | null) {
   }).format(d);
 }
 
-export function getLocalWeekdayIndex(
-  value: string | Date,
-  timezone: string
-): number {
-  const local = toLocalDate(value, timezone);
-  const jsDay = local.getDay(); // 0–6
+export function getWeekdayIndex(value: string | Date): number {
+  const jsDay = toDate(value).getDay(); // 0–6
   return (jsDay + 6) % 7;
 }
 
@@ -122,21 +118,27 @@ export function getDefaultWeekOffset(): number {
   return -1;
 }
 
+// Monday = 1, Sunday = 0 → convert to Monday=0
 export function startOfWeek(date: Date): Date {
-  // Treat Monday as the first day of week
   const d = new Date(date);
-  const day = d.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
-  const diffToMonday = (day + 6) % 7; // 0 if Mon, 1 if Tue, ..., 6 if Sun
+
   d.setHours(0, 0, 0, 0);
+
+  const day = d.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const diffToMonday = (day + 6) % 7;
+
   d.setDate(d.getDate() - diffToMonday);
+
   return d;
 }
 
 export function endOfWeek(date: Date): Date {
   const start = startOfWeek(date);
+
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   end.setHours(23, 59, 59, 999);
+
   return end;
 }
 
@@ -182,36 +184,6 @@ export function truncateToDay(d: Date) {
   return nd;
 }
 
-export function inferWindowWeeks(
-  shortStart: Date,
-  shortEnd: Date
-): 1 | 2 | 4 | 8 | 12 {
-  const ms = shortEnd.getTime() - shortStart.getTime();
-  const days = Math.round(ms / (1000 * 60 * 60 * 24));
-
-  const options = [
-    { days: 7, weeks: 1 as const },
-    { days: 14, weeks: 2 as const },
-    { days: 28, weeks: 4 as const },
-    { days: 56, weeks: 8 as const },
-    { days: 84, weeks: 12 as const },
-  ];
-
-  // find the closest option
-  let best = options[0];
-  let smallestDiff = Math.abs(days - best.days);
-
-  for (const opt of options.slice(1)) {
-    const diff = Math.abs(days - opt.days);
-    if (diff < smallestDiff) {
-      best = opt;
-      smallestDiff = diff;
-    }
-  }
-
-  return best.weeks;
-}
-
 export function getDaysDiff(start: Date, end: Date) {
   const ms = end.getTime() - start.getTime();
   const days = Math.round(ms / (1000 * 60 * 60 * 24));
@@ -229,4 +201,12 @@ export function formatHours(hours: number | null): string {
   if (hours == null) return '—';
   if (hours < 1) return `${(hours * 60).toFixed(0)}m`;
   return `${hours.toFixed(1)}h`;
+}
+
+export function getTimezone(): string {
+  const timezone =
+    typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'UTC';
+  return timezone;
 }

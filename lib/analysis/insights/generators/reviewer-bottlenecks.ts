@@ -3,7 +3,7 @@ import { computeMedianClamped } from '@/lib/utils/math';
 import { MAX_HOURS_CUTOFF } from './shared';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
-import { formatRange } from '@/lib/utils/date';
+import { formatRangeServer } from '@/lib/utils/server-date';
 
 type ReviewerStats = {
   reviewer: string;
@@ -203,7 +203,11 @@ export function generateReviewerBottleneckInsight(
     title,
     emphasis,
     body,
-    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
+    timeWindowLabel: formatRangeServer(
+      ctx.windowStart,
+      ctx.windowEnd,
+      ctx.timezone
+    ),
     stats: [
       {
         label: 'Share of first reviews',

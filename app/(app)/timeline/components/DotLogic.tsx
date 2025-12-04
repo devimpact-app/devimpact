@@ -1,8 +1,4 @@
-import {
-  getLocalWeekdayIndex,
-  toLocalDate,
-  truncateToDay,
-} from '@/lib/utils/date';
+import { getWeekdayIndex, toDate, truncateToDay } from '@/lib/utils/date';
 import { ActivityEvent, ActivityEventKind } from '@/types/api/timeline';
 
 type Lane = 0 | 1 | 2;
@@ -76,10 +72,10 @@ export function toDotsForWeek(
     if (Number.isNaN(raw.getTime())) continue;
 
     // 0–6 (Mon–Sun) using your helper
-    const dayIndex = getLocalWeekdayIndex(raw, timezone);
+    const dayIndex = getWeekdayIndex(raw);
     if (dayIndex < 0 || dayIndex > 6) continue; // defensive, should never happen
 
-    const local = toLocalDate(raw, timezone);
+    const local = toDate(raw);
     const hours = local.getHours() + local.getMinutes() / 60;
     const timeRatio = hours / 24; // 0–1 over local day
 

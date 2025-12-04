@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { WeeklySummary, WeeklySummarySchema } from '@/types/api/weekly-summary';
+import { getTimezone } from '@/lib/utils/date';
 
 async function fetchWeeklySummary(
   start: string,
@@ -36,10 +37,7 @@ export default function WeeklySummaryCardContainer({
   endISO: string;
   handleOneOnOne: () => void;
 }) {
-  const timezone =
-    typeof Intl !== 'undefined'
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone
-      : 'UTC';
+  const timezone = getTimezone();
 
   const { data, error, isLoading } = useSWR<WeeklySummary>(
     ['/api/weekly-summary', startISO, endISO, timezone],

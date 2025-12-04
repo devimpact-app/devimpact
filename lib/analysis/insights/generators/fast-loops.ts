@@ -3,10 +3,10 @@ import { PullRequest } from '@/lib/db/schema';
 import { diffSecondsRounded } from '../../normalizers/helpers';
 import { computeMedianClamped } from '@/lib/utils/math';
 import {
-  formatRange,
-  getLocalWeekdayIndex,
-  toLocalDate,
-} from '@/lib/utils/date';
+  formatRangeServer,
+  getWeekdayServer,
+  toLocalDateServer,
+} from '@/lib/utils/server-date';
 import {
   DayBucket,
   formatDayBucketLabel,
@@ -167,12 +167,9 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
           : 0;
       const cycleTimeHours = safeSeconds / 3600;
 
-      const readyLocal = toLocalDate(pr.lastReadyForReviewAt!, timezone);
+      const readyLocal = toLocalDateServer(pr.lastReadyForReviewAt!, timezone);
       const hour = readyLocal.getHours();
-      const weekdayIdx = getLocalWeekdayIndex(
-        pr.lastReadyForReviewAt!,
-        timezone
-      );
+      const weekdayIdx = getWeekdayServer(pr.lastReadyForReviewAt!, timezone);
 
       const sizeBucket = getSizeBucket(pr.linesChanged, pr.filesChanged);
       const timeOfDay = getTimeOfDayBucket(hour);
@@ -361,7 +358,11 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
     title,
     emphasis,
     body,
-    timeWindowLabel: formatRange(ctx.windowStart, ctx.windowEnd),
+    timeWindowLabel: formatRangeServer(
+      ctx.windowStart,
+      ctx.windowEnd,
+      timezone
+    ),
     stats: [
       {
         label: 'Fast-loop PRs',
