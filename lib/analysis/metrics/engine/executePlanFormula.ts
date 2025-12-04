@@ -200,9 +200,18 @@ async function runPlanOnce(
   const debug = query.toSQL();
   console.log('SQL:', debug.sql);
 
-  const rows = await query;
-  const value = rows[0]?.value ?? null;
-  return value === null ? null : Number(value);
+  try {
+    const rows = await query;
+    const value = rows[0]?.value ?? null;
+    return value === null ? null : Number(value);
+  } catch (error) {
+    console.log('Query failed:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      query: query.toString?.() || 'Query object (no string representation)',
+    });
+    throw error;
+  }
 }
 
 export async function executePlanFormula(
