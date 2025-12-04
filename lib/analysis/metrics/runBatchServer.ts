@@ -77,7 +77,7 @@ export async function runBatchServer(
 
   const rawPlanResults = await mapWithConcurrency(planInputs, 5, async (r) => {
     const def = METRIC_CATALOG_MAP[r.metricId];
-    const start = toLocalDate(r.input.start, r.input.timezone);
+    const start = toDate(r.input.start);
     if (!start) {
       // Push invalid date error if bad range
       const errorResult = {

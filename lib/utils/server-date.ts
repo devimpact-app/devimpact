@@ -72,29 +72,6 @@ export function getWeekdayServer(date: Date, timezone: string): number {
   return day === 0 ? 6 : day - 1;
 }
 
-function getYMDInTZ(
-  date: Date,
-  timezone: string
-): {
-  year: number;
-  month: number;
-  day: number;
-} {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-
-  const parts = fmt.formatToParts(date);
-  const year = Number(parts.find((p) => p.type === 'year')?.value ?? '1970');
-  const month = Number(parts.find((p) => p.type === 'month')?.value ?? '01');
-  const day = Number(parts.find((p) => p.type === 'day')?.value ?? '01');
-
-  return { year, month, day };
-}
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function startOfWeekServer(date: Date, timezone: string): Date {
