@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { WorkRhythmCard } from './WorkRythmCard';
 import { WorkRhythm, WorkRhythmSchema } from '@/types/api/work-rhythm';
 import { getTimezone } from '@/lib/utils/date';
+import { useRouter } from 'next/navigation';
 
 async function fetchWorkRhythm(timezone: string): Promise<WorkRhythm> {
   const params = new URLSearchParams({
@@ -24,6 +25,7 @@ async function fetchWorkRhythm(timezone: string): Promise<WorkRhythm> {
 
 export default function WorkRhythmCardContainer() {
   const timezone = getTimezone();
+  const router = useRouter();
 
   const { data, error, isLoading } = useSWR<WorkRhythm>(
     ['/api/work-rhythm', timezone],
@@ -37,7 +39,7 @@ export default function WorkRhythmCardContainer() {
       loading={isLoading}
       error={error?.message ?? null}
       onViewTimelineClick={() => {
-        // e.g. router.push('/timeline?windowDays=30');
+        router.push('/timeline');
       }}
     />
   );
