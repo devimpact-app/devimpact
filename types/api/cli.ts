@@ -1,9 +1,9 @@
 export type OnboardingState =
-  | "account_created"
-  | "cli_pending"
-  | "cli_linked"
-  | "syncing"
-  | "synced";
+  | 'account_created'
+  | 'cli_pending'
+  | 'cli_linked'
+  | 'syncing'
+  | 'synced';
 
 export type CliStatus = {
   onboardingState: OnboardingState;
@@ -11,5 +11,6 @@ export type CliStatus = {
   cliLinkedAt?: string | null;
   hasActivity: boolean;
   lastSyncAt?: string | null;
+  selectedRepos: number;
   recommendedStartISO: string;
 };

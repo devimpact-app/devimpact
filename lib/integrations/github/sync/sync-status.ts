@@ -3,10 +3,10 @@
 // import { eq } from "drizzle-orm";
 // import { getActiveIntegrationToken } from "../client";
 
-import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
-import { CliStatus, OnboardingState } from "@/types/api/cli";
-import { eq } from "drizzle-orm";
+import { db } from '@/lib/db/client';
+import { githubRepos, users } from '@/lib/db/schema';
+import { CliStatus, OnboardingState } from '@/types/api/cli';
+import { and, count, eq } from 'drizzle-orm';
 
 export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
   const rows = await db
@@ -17,7 +17,7 @@ export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
   const user = rows[0] ?? null;
 
   const onboardingState: OnboardingState =
-    (user.onboardingState as OnboardingState) ?? "account_created";
+    (user.onboardingState as OnboardingState) ?? 'account_created';
   const hasCliToken = !!user.cliTokenHash;
   const cliLinkedAt = user.cliLinkedAt ? user.cliLinkedAt.toISOString() : null;
   const lastSyncAt = user.cliLastSyncAt
@@ -42,6 +42,19 @@ export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
     recommendedStartISO = start.toISOString();
   }
 
+  let selectedRepos = 0;
+  if (cliLinkedAt) {
+    const [result] = await db
+      .select({
+        totalRows: count(),
+      })
+      .from(githubRepos)
+      .where(
+        and(eq(githubRepos.tenantId, userId), eq(githubRepos.isSelected, true))
+      );
+    selectedRepos = result.totalRows;
+  }
+
   return {
     onboardingState,
     hasCliToken,
@@ -49,6 +62,7 @@ export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
     lastSyncAt,
     hasActivity: !!user.cliLastSyncAt,
     recommendedStartISO,
+    selectedRepos,
   };
 }
 
@@ -82,7 +96,7 @@ export async function updateSyncStatus({
         ? { coverageStartDate: new Date(syncWindow.startISO) }
         : {}),
       updatedAt: now,
-      onboardingState: "synced",
+      onboardingState: 'synced',
     })
     .where(eq(users.id, tenantId));
 }
