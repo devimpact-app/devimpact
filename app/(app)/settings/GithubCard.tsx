@@ -136,35 +136,6 @@ export function GithubCliCard({
             </p>
           </div>
 
-          <div className="mt-2 rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2">
-            <p className="text-[11px] text-slate-400 mb-1">
-              Keep DevImpact up to date automatically with a cron job:
-            </p>
-
-            <p className="text-[11px] text-slate-500 mb-1">
-              First, find the full path to the CLI:
-            </p>
-            <CopyableCode>which devimpact</CopyableCode>
-
-            <p className="mt-2 text-[11px] text-slate-500 mb-1">
-              Then add a cron entry (every 3 hours, for example):
-            </p>
-            <CopyableCode>0 */3 * * * /path/to/devimpact sync</CopyableCode>
-
-            <p className="mt-2 text-[11px] text-slate-500">
-              Replace{' '}
-              <code className="text-[10px] text-slate-200">
-                /path/to/devimpact
-              </code>{' '}
-              with the path from{' '}
-              <code className="text-[10px] text-slate-200">
-                which devimpact
-              </code>
-              , and make sure the cron runs as the same user that configured
-              DevImpact.
-            </p>
-          </div>
-
           <div>
             <p className="text-[11px] text-slate-400 mb-1">
               Advanced: sync specific repos:
