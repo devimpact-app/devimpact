@@ -26,7 +26,7 @@ export async function runSync({
   const username = payload.githubLogin;
 
   // Save repo info if needed
-  await upsertGithubRepoForTenant(tenantId, payload.repo);
+  await upsertGithubRepoForTenant(tenantId, [payload.repo]);
 
   const { errors } = await persistBundles(
     tenantId,

@@ -31,6 +31,12 @@ export const GET = withSentryUser(async (req: NextRequest) => {
     return jsonUnauthorized('Unauthorized');
   }
 
-  const status = await getSyncStatus(user.id);
+  const { searchParams } = new URL(req.url);
+  const repoNamesParam = searchParams.get('includeRepoNames');
+  const includeRepoNames = repoNamesParam === 'true';
+
+  const status = await getSyncStatus(user.id, {
+    includeRepoNames,
+  });
   return jsonOK(status);
 });

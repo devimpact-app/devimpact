@@ -5,8 +5,8 @@ import {
   SanitizedPRReview,
   SanitizedPRReviewComment,
   SanitizedPRTimelineEvent,
-} from '@/lib/integrations/github/types'
-import z from 'zod'
+} from '@/lib/integrations/github/types';
+import z from 'zod';
 
 export const RepoMetadataSchema = z.object({
   id: z.number(),
@@ -25,9 +25,9 @@ export const RepoMetadataSchema = z.object({
 
   createdAt: z.string().nullable(),
   pushedAt: z.string().nullable(),
-})
+});
 
-export type RepoMetadata = z.infer<typeof RepoMetadataSchema>
+export type RepoMetadata = z.infer<typeof RepoMetadataSchema>;
 
 export const HydratedPrSchema = z.object({
   pr: z.custom<SanitizedPR>(),
@@ -37,7 +37,7 @@ export const HydratedPrSchema = z.object({
   reviews: z.array(z.custom<SanitizedPRReview>()),
   reviewComments: z.array(z.custom<SanitizedPRReviewComment>()),
   timelineEvents: z.array(z.custom<SanitizedPRTimelineEvent>()),
-})
+});
 
 export const RepoSyncPayloadSchema = z.object({
   repo: RepoMetadataSchema,
@@ -48,6 +48,13 @@ export const RepoSyncPayloadSchema = z.object({
   }),
   githubLogin: z.string(),
   isLastBatch: z.boolean(),
-})
+});
 
-export type RepoSyncPayload = z.infer<typeof RepoSyncPayloadSchema>
+export type RepoSyncPayload = z.infer<typeof RepoSyncPayloadSchema>;
+
+export const AvailableReposInputSchema = z.object({
+  repos: z.array(RepoMetadataSchema),
+  githubLogin: z.string(),
+});
+
+export type AvailableReposInput = z.infer<typeof AvailableReposInputSchema>;

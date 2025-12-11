@@ -1,49 +1,50 @@
-import { db } from "@/lib/db/client";
-import { githubRepos } from "@/lib/db/schema";
-import { RepoMetadata } from "@/types/api/sync";
+import { db } from '@/lib/db/client';
+import { githubRepos } from '@/lib/db/schema';
+import { RepoMetadata } from '@/types/api/sync';
+import { sql } from 'drizzle-orm';
 
 export async function upsertGithubRepoForTenant(
   tenantId: string,
-  meta: RepoMetadata,
-) {
-  const githubRepoId = String(meta.id);
+  repos: RepoMetadata[],
+  isSelected: boolean = true
+): Promise<number> {
+  const inputs = repos.map((r) => ({
+    tenantId,
+    githubRepoId: String(r.id),
+    isSelected,
 
-  const [row] = await db
+    owner: r.ownerLogin,
+    name: r.name,
+    fullName: r.fullName,
+
+    isPrivate: r.private,
+    isArchived: r.archived,
+    visibility: r.visibility,
+
+    defaultBranch: r.defaultBranch,
+    primaryLanguage: r.primaryLanguage,
+
+    createdAtGitHub: r.createdAt ? new Date(r.createdAt) : null,
+    pushedAtGitHub: r.pushedAt ? new Date(r.pushedAt) : null,
+  }));
+  const rows = await db
     .insert(githubRepos)
-    .values({
-      tenantId,
-      githubRepoId,
-
-      owner: meta.ownerLogin,
-      name: meta.name,
-      fullName: meta.fullName,
-
-      isPrivate: meta.private,
-      isArchived: meta.archived,
-      visibility: meta.visibility,
-
-      defaultBranch: meta.defaultBranch,
-      primaryLanguage: meta.primaryLanguage,
-
-      createdAtGitHub: meta.createdAt ? new Date(meta.createdAt) : null,
-      pushedAtGitHub: meta.pushedAt ? new Date(meta.pushedAt) : null,
-    })
+    .values(inputs)
     .onConflictDoUpdate({
       target: [githubRepos.tenantId, githubRepos.githubRepoId],
       set: {
-        owner: meta.ownerLogin,
-        name: meta.name,
-        fullName: meta.fullName,
-        isPrivate: meta.private,
-        isArchived: meta.archived,
-        visibility: meta.visibility,
-        defaultBranch: meta.defaultBranch,
-        primaryLanguage: meta.primaryLanguage,
-        createdAtGitHub: meta.createdAt ? new Date(meta.createdAt) : null,
-        pushedAtGitHub: meta.pushedAt ? new Date(meta.pushedAt) : null,
+        owner: sql`excluded.owner`,
+        name: sql`excluded.name`,
+        fullName: sql`excluded.full_name`,
+        isPrivate: sql`excluded.is_private`,
+        isArchived: sql`excluded.is_archived`,
+        visibility: sql`excluded.visibility`,
+        defaultBranch: sql`excluded.default_branch`,
+        primaryLanguage: sql`excluded.primary_language`,
+        pushedAtGitHub: sql`excluded.pushed_at_github`,
       },
     })
     .returning({ id: githubRepos.id });
 
-  return row.id;
+  return rows.length;
 }
