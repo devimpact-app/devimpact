@@ -488,17 +488,11 @@ export function CliSetupPage({
                   </div>
                 </div>
 
-                {isSyncing ? (
+                {isSyncing && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#1E293B] border border-[#4F46E5] px-2 py-0.5 text-xs text-[#E0E7FF]">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Syncing…
                   </span>
-                ) : (
-                  step4Enabled && (
-                    <span className="text-xs text-text-secondary uppercase tracking-wide">
-                      Ready to sync
-                    </span>
-                  )
                 )}
               </div>
 
@@ -565,10 +559,10 @@ export function CliSetupPage({
                       </CopyableCode>
                       <p className="text-sm text-text-secondary leading-snug">
                         DevImpact will use{' '}
-                        <code className="text-xs">gh api</code> to read your
-                        PRs, reviews, and commits and attach them to your
-                        account. You stay in control of your GitHub auth and can
-                        revoke access at any time.
+                        <code className="text-xs">gh api</code> to read metadata
+                        about your PRs, reviews, and commits and attach them to
+                        your account. You stay in control of your GitHub auth
+                        and can revoke access at any time.
                       </p>
                       <p className="text-sm text-text-secondary leading-snug">
                         After your first sync, head to the Dashboard to see your

@@ -9,8 +9,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 export default function RepoSelectionClient({
   githubUsername,
+  isFromSettings,
 }: {
   githubUsername?: string | null;
+  isFromSettings: boolean;
 }) {
   const router = useRouter();
   const [repos, setRepos] = useState<AvailableGithubRepo[] | null>(null);
@@ -130,7 +132,11 @@ export default function RepoSelectionClient({
         throw new Error(`Save failed: ${res.status}`);
       }
 
-      router.push('/onboarding/cli');
+      if (isFromSettings) {
+        router.push('/settings');
+      } else {
+        router.push('/onboarding/cli');
+      }
     } catch (err) {
       setError('Couldn’t save selection. Please try again.');
     } finally {

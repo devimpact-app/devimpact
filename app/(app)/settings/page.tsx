@@ -1,9 +1,7 @@
 import { auth } from '@/lib/auth';
 import { SettingsClient } from './SettingsClient';
 import { redirect } from 'next/navigation';
-import { users } from '@/lib/db/schema';
-import { db } from '@/lib/db/client';
-import { eq } from 'drizzle-orm';
+import { getSyncStatus } from '@/lib/integrations/github/sync/sync-status';
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -12,17 +10,20 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, userFromSession.id))
-    .limit(1);
-
-  if (!user) {
+  const status = await getSyncStatus(userFromSession.id);
+  if (!status) {
     redirect('/login');
   }
 
-  const cliDisconnected = !user.cliLinkedAt;
+  const cliDisconnected = !status.cliLinkedAt;
+  const selectedReposCount = status.selectedRepos;
+  const availableReposCount = status.availableReposCount;
 
-  return <SettingsClient cliDisconnected={cliDisconnected} />;
+  return (
+    <SettingsClient
+      cliDisconnected={cliDisconnected}
+      selectedReposCount={selectedReposCount}
+      availableReposCount={availableReposCount}
+    />
+  );
 }

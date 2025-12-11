@@ -2,7 +2,15 @@ import { auth } from '@/lib/auth';
 import RepoSelectionClient from './RepoSelectionClient';
 import { redirect } from 'next/navigation';
 
-export default async function RepoSelectionPage() {
+export default async function RepoSelectionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    fromSettings?: boolean;
+  }>;
+}) {
+  const params = await searchParams;
+  const isFromSettings = params.fromSettings ?? false;
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
@@ -29,7 +37,10 @@ export default async function RepoSelectionPage() {
           </div>
         </header>
 
-        <RepoSelectionClient githubUsername={githubUsername} />
+        <RepoSelectionClient
+          githubUsername={githubUsername}
+          isFromSettings={isFromSettings}
+        />
       </main>
     </div>
   );

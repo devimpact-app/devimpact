@@ -14,6 +14,7 @@ import { signOutAction } from '../dashboard/actions';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { CopyableCode } from '@/components/CopyableCode';
+import { GithubCliCard } from './GithubCard';
 
 async function postJson(url: string, body?: unknown) {
   const res = await fetch(url, {
@@ -31,8 +32,12 @@ async function postJson(url: string, body?: unknown) {
 
 export function SettingsClient({
   cliDisconnected,
+  selectedReposCount,
+  availableReposCount,
 }: {
   cliDisconnected: boolean;
+  selectedReposCount: number;
+  availableReposCount: number;
 }) {
   const router = useRouter();
   const [resetLoading, setResetLoading] = useState(false);
@@ -112,97 +117,14 @@ export function SettingsClient({
         </div>
 
         <div className="space-y-3">
-          {/* GitHub integration */}
-          <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3.5">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900">
-                <Github className="h-4 w-4 text-slate-100" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-100">
-                  GitHub via CLI
-                </p>
-                <p className="text-xs text-slate-400">
-                  DevImpact syncs your PRs, reviews, and activity from GitHub
-                  using the{' '}
-                  <code className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] text-slate-200">
-                    devimpact
-                  </code>{' '}
-                  CLI on your machine.
-                </p>
-                {!cliDisconnected && (
-                  <>
-                    <p className="flex pb-2 items-center gap-1 text-[11px] text-slate-500">
-                      <TerminalSquare className="h-3 w-3 text-sky-300" />
-                      <span>Connected via personal CLI token</span>
-                    </p>
-
-                    <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2 space-y-2">
-                      <div>
-                        <p className="text-[11px] text-slate-400 mb-1">
-                          Run a one-off sync:
-                        </p>
-                        <CopyableCode>
-                          devimpact sync --repo my-org/my-service
-                        </CopyableCode>
-                      </div>
-
-                      <div>
-                        <p className="text-[11px] text-slate-400 mb-1">
-                          Or sync multiple repos:
-                        </p>
-                        <CopyableCode>
-                          devimpact sync --repo org/frontend --repo org/api
-                          --repo org/mobile
-                        </CopyableCode>
-                      </div>
-
-                      <div className="mt-3 rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2">
-                        <p className="text-[11px] text-slate-400 mb-1">
-                          Want DevImpact to stay up to date automatically? Add a
-                          simple cron job to run a sync every few hours:
-                        </p>
-
-                        <p className="text-[11px] text-slate-500 mb-1">
-                          First, find the full path to the CLI:
-                        </p>
-                        <CopyableCode>which devimpact</CopyableCode>
-
-                        <p className="mt-2 text-[11px] text-slate-500 mb-1">
-                          Then add a cron entry (every 3 hours, for example):
-                        </p>
-                        <CopyableCode>
-                          0 */3 * * * /path/to/devimpact sync --repo
-                          my-org/my-service
-                        </CopyableCode>
-
-                        <p className="mt-2 text-[11px] text-slate-500">
-                          Replace{' '}
-                          <code className="text-[10px] text-slate-200">
-                            /path/to/devimpact
-                          </code>{' '}
-                          with the path from{' '}
-                          <code className="text-[10px] text-slate-200">
-                            which devimpact
-                          </code>
-                          , and make sure the cron runs as the same user that
-                          configured DevImpact.
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleCliClick}
-              disabled={resetLoading}
-              className="rounded-full border border-sky-500/70 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-200 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {cliText}
-            </button>
-          </div>
+          <GithubCliCard
+            cliDisconnected={cliDisconnected}
+            resetLoading={resetLoading}
+            cliText={cliText}
+            selectedReposCount={selectedReposCount}
+            availableReposCount={availableReposCount}
+            handleCliClick={handleCliClick}
+          />
 
           {/* Google Calendar (coming soon) */}
           <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-800/70 bg-slate-950/40 px-4 py-3.5 opacity-60">
@@ -253,8 +175,8 @@ export function SettingsClient({
                   Delete all synced data
                 </p>
                 <p className="text-xs text-red-200/80">
-                  Permanently removes all PRs, reviews, activity and summaries
-                  stored by DevImpact for your account. This does{' '}
+                  Permanently removes all metadata about PRs, reviews, activity
+                  and summaries stored by DevImpact for your account. This does{' '}
                   <span className="font-semibold">not</span> affect GitHub or
                   any repositories.
                 </p>

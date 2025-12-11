@@ -15,6 +15,7 @@ export async function getSyncStatus(
     .where(eq(users.id, userId))
     .limit(1);
   const user = rows[0] ?? null;
+  if (!user) return null;
 
   const onboardingState: OnboardingState =
     (user.onboardingState as OnboardingState) ?? 'account_created';
