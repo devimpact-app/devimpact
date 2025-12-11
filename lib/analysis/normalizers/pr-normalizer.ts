@@ -119,9 +119,7 @@ export async function batchNormalizeUserPRs(
         const metrics = calculateMetrics({
           pr,
           timeline: timelineByPrId[pr.id] || [],
-          userCommits: (commitsByPrId[pr.id] || []).filter(
-            (c) => c.authorGithubLogin === username
-          ),
+          userCommits: commitsByPrId[pr.id] || [],
           reviews: reviewsByPrId[pr.id] || [],
           reviewComments: commentsByPrId[pr.id] || [],
           userGithubLogin: username,

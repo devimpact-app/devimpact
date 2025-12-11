@@ -190,7 +190,7 @@ export default function RepoSelectionClient({
         </p>
         <p className="mt-1 text-xs text-slate-300">
           <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
-            devimpact update-repos
+            devimpact discover-repos
           </code>
           , then refresh this page.
         </p>
@@ -321,7 +321,7 @@ export default function RepoSelectionClient({
             </code>{' '}
             authenticated, run{' '}
             <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
-              devimpact update-repos
+              devimpact discover-repos
             </code>
             , then refresh this page.
           </p>

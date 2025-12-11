@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Loader2,
   Check,
+  FolderCode,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -280,17 +281,7 @@ export function CliSetupPage({
                       Your personal CLI key
                     </span>
                     <div className="flex items-center gap-2">
-                      <code className="flex-1 truncate rounded-lg bg-[#050814] border border-white/10 px-3 py-1.5 text-sm text-[#E5EDFF]">
-                        {cliToken}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={handleCopy}
-                        className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#111520] px-2.5 py-1.5 text-sm text-white/80 hover:bg-[#171C2B]"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        {copied ? 'Copied' : 'Copy'}
-                      </button>
+                      <CopyableCode>{cliToken}</CopyableCode>
                     </div>
                     <button
                       type="button"
@@ -312,7 +303,7 @@ export function CliSetupPage({
                       type="button"
                       onClick={handleGenerate}
                       disabled={generating}
-                      className="inline-flex items-center gap-2 rounded-full border border-indigo-500/70 bg-indigo-600/20 px-3 py-1.5 text-sm font-medium text-indigo-100 hover:bg-indigo-600/30 disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-full border border-indigo-500/70 bg-indigo-600/20 px-3 py-1.5 text-xs font-medium text-indigo-100 hover:bg-indigo-600/30 disabled:opacity-60"
                     >
                       {generating ? (
                         <>
@@ -356,11 +347,6 @@ export function CliSetupPage({
                 </div>
               </div>
 
-              {step2Enabled && !step3Enabled && (
-                <span className="text-xs text-text-secondary uppercase tracking-wide">
-                  Next
-                </span>
-              )}
               {step3Enabled && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-200">
                   <Check className="h-3 w-3" />
@@ -376,37 +362,60 @@ export function CliSetupPage({
                     1. Install GitHub CLI
                   </p>
                   <CopyableCode>brew install gh</CopyableCode>
-                  <CopyableCode>gh auth login</CopyableCode>
                 </div>
 
                 <div>
                   <p className="mb-1 font-medium text-text-primary/90">
-                    2. Install DevImpact CLI
+                    2. Login to GitHub
+                  </p>
+                  <CopyableCode>gh auth login</CopyableCode>
+
+                  <a
+                    href="/sso"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block text-xs text-sky-400 hover:text-sky-300"
+                  >
+                    Does your org use SSO?
+                  </a>
+                </div>
+
+                <div>
+                  <p className="mb-1 font-medium text-text-primary/90">
+                    3. Install DevImpact CLI
                   </p>
                   <CopyableCode>npm install -g @devimpact/cli</CopyableCode>
                 </div>
 
                 <div>
                   <p className="mb-1 font-medium text-text-primary/90">
-                    3. Link the CLI to your account
+                    4. Link the CLI to your account
                   </p>
                   <CopyableCode>
                     {`devimpact init --cli-token ${cliToken}`}
                   </CopyableCode>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    This step also discovers which repositories your GitHub CLI
+                    can see, so you can pick your main work repos in the next
+                    step.
+                  </p>
                 </div>
               </div>
             )}
           </section>
 
-          {repoSelectionSupported && (
-            <section
-              className={`
+          <section
+            className={`
     rounded-2xl border px-5 py-4 flex flex-col gap-3
     bg-surface-alt border-border
     ${!step3Enabled ? 'opacity-40 pointer-events-none' : ''}
   `}
-            >
-              <div className="flex items-center justify-between gap-2">
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#151928] border border-white/10">
+                  <FolderCode className="h-4 w-4 text-white/80" />
+                </div>
                 <div>
                   <h2 className="text-sm font-semibold text-text-primary tracking-tight">
                     Step 3 · Choose your repos
@@ -416,41 +425,37 @@ export function CliSetupPage({
                     DevImpact will only sync activity from repos you select.
                   </p>
                 </div>
-
-                {hasSelectedRepos ? (
-                  <span className="inline-flex min-w-24 items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-200">
-                    <Check className="h-3 w-3" />
-                    {`${selectedRepoCount} selected`}
-                  </span>
-                ) : step3Enabled ? (
-                  <span className="text-xs text-text-secondary uppercase tracking-wide">
-                    Select repos
-                  </span>
-                ) : null}
               </div>
 
-              {step3Expanded && (
-                <div className="mt-2 flex flex-col gap-2 text-sm text-text-secondary">
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        router.push('/onboarding/repos');
-                      }}
-                      className="inline-flex items-center gap-2 rounded-full border border-indigo-500/70 bg-indigo-600/20 px-3 py-1.5 text-sm font-medium text-indigo-100 hover:bg-indigo-600/30"
-                    >
-                      Open repo selector
-                    </button>
-                  </div>
-                  <p className="text-xs text-text-secondary">
-                    You can change this selection later from Settings or this
-                    page. Repos you don&apos;t select are ignored, even if the
-                    CLI can see them.
-                  </p>
-                </div>
+              {hasSelectedRepos && (
+                <span className="inline-flex min-w-24 items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-200">
+                  <Check className="h-3 w-3" />
+                  {`${selectedRepoCount} selected`}
+                </span>
               )}
-            </section>
-          )}
+            </div>
+
+            {step3Expanded && (
+              <div className="mt-2 flex flex-col gap-2 text-sm text-text-secondary">
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push('/onboarding/repos');
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-indigo-500/70 bg-indigo-600/20 px-3 py-1.5 text-sm font-medium text-indigo-100 hover:bg-indigo-600/30"
+                  >
+                    Open repo selector
+                  </button>
+                </div>
+                <p className="text-xs text-text-secondary">
+                  You can change this selection later from Settings or this
+                  page. Repos you don&apos;t select are ignored, even if the CLI
+                  can see them.
+                </p>
+              </div>
+            )}
+          </section>
 
           {!isFromSettings && (
             <section
@@ -461,21 +466,26 @@ export function CliSetupPage({
   `}
             >
               <div className="flex items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-                    Step 4 · Pull in your recent work (last 90 days)
-                  </h2>
-                  <p className="text-sm text-text-secondary mt-0.5">
-                    Run a sync from repos you work in. You&apos;ll see your
-                    dashboard update once activity comes in.
-                  </p>
-                  {isSyncing && (
-                    <p className="mt-1 text-xs text-text-secondary">
-                      A basic sync usually takes{' '}
-                      <span className="font-medium">20–60 seconds</span>,
-                      depending on repo size.
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#151928] border border-white/10">
+                    <RefreshCw className="h-4 w-4 text-white/80" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-text-primary tracking-tight">
+                      Step 4 · Pull in your recent work (last 90 days)
+                    </h2>
+                    <p className="text-sm text-text-secondary mt-0.5">
+                      Run a sync from repos you work in. You&apos;ll see your
+                      dashboard update once activity comes in.
                     </p>
-                  )}
+                    {isSyncing && (
+                      <p className="mt-1 text-xs text-text-secondary">
+                        A basic sync usually takes{' '}
+                        <span className="font-medium">20–60 seconds</span>,
+                        depending on repo size.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {isSyncing ? (
@@ -532,9 +542,7 @@ export function CliSetupPage({
                         To sync the repos you selected in step 3, run this from
                         any directory:
                       </p>
-                      <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-sm text-[#D0E1FF] overflow-x-auto">
-                        <code>devimpact sync</code>
-                      </pre>
+                      <CopyableCode>devimpact sync</CopyableCode>
                       <p className="text-sm text-text-secondary leading-snug">
                         DevImpact will use{' '}
                         <code className="text-xs">gh api</code> to read metadata
@@ -552,9 +560,9 @@ export function CliSetupPage({
                       <p className="font-medium text-text-primary/90">
                         From any directory:
                       </p>
-                      <pre className="rounded-lg bg-[#050814] border border-white/10 px-3 py-2 text-sm text-[#D0E1FF] overflow-x-auto">
-                        <code>devimpact sync --repo my-org/my-service</code>
-                      </pre>
+                      <CopyableCode>
+                        devimpact sync --repo my-org/my-service
+                      </CopyableCode>
                       <p className="text-sm text-text-secondary leading-snug">
                         DevImpact will use{' '}
                         <code className="text-xs">gh api</code> to read your
@@ -579,7 +587,7 @@ export function CliSetupPage({
             <h3 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-2">
               How DevImpact uses your data
             </h3>
-            <ul className="space-y-2 text-sm text-text-secondary leading-relaxed">
+            <ul className="space-y-2 text-xs text-text-secondary leading-relaxed">
               <li>
                 • We never see your GitHub password or PAT. All API calls go
                 through your local <code className="text-[12px]">gh</code>{' '}
