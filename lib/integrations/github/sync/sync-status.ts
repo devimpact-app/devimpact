@@ -1,14 +1,14 @@
-// import { db } from "@/lib/db/client";
-// import { integrationTokens } from "@/lib/db/schema";
-// import { eq } from "drizzle-orm";
-// import { getActiveIntegrationToken } from "../client";
-
 import { db } from '@/lib/db/client';
 import { githubRepos, users } from '@/lib/db/schema';
 import { CliStatus, OnboardingState } from '@/types/api/cli';
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 
-export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
+export async function getSyncStatus(
+  userId: string,
+  opts?: {
+    includeRepoNames: boolean;
+  }
+): Promise<CliStatus | null> {
   const rows = await db
     .select()
     .from(users)
@@ -43,16 +43,30 @@ export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
   }
 
   let selectedRepos = 0;
+  let availableRepos = 0;
   if (cliLinkedAt) {
     const [result] = await db
       .select({
-        totalRows: count(),
+        totalCount: sql<number>`COUNT(*)`,
+        selectedCount: sql<number>`COUNT(*) FILTER (WHERE ${githubRepos.isSelected} = true)`,
+      })
+      .from(githubRepos)
+      .where(eq(githubRepos.tenantId, userId));
+    selectedRepos = result.selectedCount;
+    availableRepos = result.totalCount;
+  }
+
+  let selectedRepoNames;
+  if (opts?.includeRepoNames) {
+    const results = await db
+      .select({
+        fullName: githubRepos.fullName,
       })
       .from(githubRepos)
       .where(
         and(eq(githubRepos.tenantId, userId), eq(githubRepos.isSelected, true))
       );
-    selectedRepos = result.totalRows;
+    selectedRepoNames = results.map((r) => r.fullName);
   }
 
   return {
@@ -63,6 +77,8 @@ export async function getSyncStatus(userId: string): Promise<CliStatus | null> {
     hasActivity: !!user.cliLastSyncAt,
     recommendedStartISO,
     selectedRepos,
+    selectedRepoNames,
+    availableReposCount: availableRepos,
   };
 }
 

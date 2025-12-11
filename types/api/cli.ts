@@ -12,5 +12,7 @@ export type CliStatus = {
   hasActivity: boolean;
   lastSyncAt?: string | null;
   selectedRepos: number;
+  selectedRepoNames?: string[];
+  availableReposCount: number;
   recommendedStartISO: string;
 };

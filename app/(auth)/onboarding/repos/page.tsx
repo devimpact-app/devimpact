@@ -1,6 +1,13 @@
+import { auth } from '@/lib/auth';
 import RepoSelectionClient from './RepoSelectionClient';
+import { redirect } from 'next/navigation';
 
-export default function RepoSelectionPage() {
+export default async function RepoSelectionPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect('/login');
+
+  const githubUsername = session.user.githubUsername;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
       <main className="mx-auto flex max-w-6xl flex-col px-6 py-12 lg:px-10">
@@ -22,7 +29,7 @@ export default function RepoSelectionPage() {
           </div>
         </header>
 
-        <RepoSelectionClient />
+        <RepoSelectionClient githubUsername={githubUsername} />
       </main>
     </div>
   );

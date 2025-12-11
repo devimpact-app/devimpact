@@ -7,7 +7,11 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
-export default function RepoSelectionClient() {
+export default function RepoSelectionClient({
+  githubUsername,
+}: {
+  githubUsername?: string | null;
+}) {
   const router = useRouter();
   const [repos, setRepos] = useState<AvailableGithubRepo[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +36,9 @@ export default function RepoSelectionClient() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError('Couldn’t load repos. Try re-running `devimpact init`.');
+          setError(
+            'Couldn’t load repos. Try re-running `devimpact init` or `devimpact update-repos`.'
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -56,18 +62,40 @@ export default function RepoSelectionClient() {
     });
   }, [repos, search]);
 
-  const grouped = useMemo(() => {
+  const ownerGroups = useMemo(() => {
     const byOwner: Record<string, AvailableGithubRepo[]> = {};
+
     for (const repo of filteredRepos) {
       if (!byOwner[repo.owner]) byOwner[repo.owner] = [];
       byOwner[repo.owner].push(repo);
     }
-    // keep owners in stable order
+
     Object.values(byOwner).forEach((arr) =>
       arr.sort((a, b) => a.name.localeCompare(b.name))
     );
-    return byOwner;
-  }, [filteredRepos]);
+
+    const getLatestPushedAt = (repos: AvailableGithubRepo[]) =>
+      repos.reduce((latest, repo) => {
+        if (!repo.pushedAt) return latest;
+        const t = new Date(repo.pushedAt).getTime();
+        return t > latest ? t : latest;
+      }, 0);
+
+    return Object.entries(byOwner).sort(
+      ([ownerA, reposA], [ownerB, reposB]) => {
+        const isPersonalA = ownerA === githubUsername;
+        const isPersonalB = ownerB === githubUsername;
+
+        if (isPersonalA && !isPersonalB) return 1;
+        if (!isPersonalA && isPersonalB) return -1;
+
+        const latestA = getLatestPushedAt(reposA);
+        const latestB = getLatestPushedAt(reposB);
+
+        return latestB - latestA;
+      }
+    );
+  }, [filteredRepos, githubUsername]);
 
   const selectedCount = repos?.filter((r) => r.isSelected).length ?? 0;
 
@@ -146,15 +174,25 @@ export default function RepoSelectionClient() {
           We haven’t seen any repos yet for your GitHub account.
         </p>
         <p className="mt-2 text-xs text-slate-400">
-          Run{' '}
-          <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
-            devimpact init --cli-token &lt;CODE&gt;
-          </code>{' '}
-          from a machine where{' '}
+          From a machine where{' '}
           <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
             gh
           </code>{' '}
-          is authenticated, then refresh this page.
+          is authenticated, run:
+        </p>
+        <p className="mt-2 text-xs text-slate-300">
+          <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
+            devimpact init --cli-token &lt;CODE&gt;
+          </code>
+        </p>
+        <p className="mt-2 text-xs text-slate-400">
+          If you’ve already linked the CLI but don’t see your repos yet, run:
+        </p>
+        <p className="mt-1 text-xs text-slate-300">
+          <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
+            devimpact update-repos
+          </code>
+          , then refresh this page.
         </p>
       </section>
     );
@@ -162,7 +200,6 @@ export default function RepoSelectionClient() {
 
   return (
     <section className="flex flex-col gap-6 lg:flex-row">
-      {/* Left: controls + list */}
       <div className="flex-1 rounded-3xl border border-slate-800 bg-slate-900/40 px-5 py-5 shadow-sm">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
@@ -202,7 +239,7 @@ export default function RepoSelectionClient() {
         </div>
 
         <div className="max-h-[400px] space-y-4 overflow-y-auto no-scrollbar pr-1">
-          {Object.entries(grouped).map(([owner, ownerRepos]) => (
+          {ownerGroups.map(([owner, ownerRepos]) => (
             <div key={owner}>
               <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 {owner}
@@ -264,7 +301,6 @@ export default function RepoSelectionClient() {
         </div>
       </div>
 
-      {/* Right: small hint card (optional) */}
       <aside className="w-full max-w-xs space-y-3 text-xs text-slate-400">
         <div className="rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-4 shadow-sm">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
@@ -274,9 +310,20 @@ export default function RepoSelectionClient() {
             Start with 2–5 repos where you open most of your PRs and review a
             lot of code. You can always update this list later.
           </p>
-          <p>
+          <p className="mb-2">
             DevImpact ignores any repo you don’t select here, even if the CLI
             can see it.
+          </p>
+          <p className="mt-2 text-slate-500 font-semibold">
+            Not seeing a repo you expect? From a machine with{' '}
+            <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
+              gh
+            </code>{' '}
+            authenticated, run{' '}
+            <code className="rounded bg-slate-900 px-1 py-[1px] font-mono">
+              devimpact update-repos
+            </code>
+            , then refresh this page.
           </p>
         </div>
       </aside>

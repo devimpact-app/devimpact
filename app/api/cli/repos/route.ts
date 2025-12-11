@@ -14,17 +14,20 @@ import { upsertGithubRepoForTenant } from '@/lib/integrations/github/sync/upsert
 export const POST = withSentryUser(async (req: NextRequest) => {
   try {
     const cliToken = req.headers.get('x-devimpact-cli-token');
+    console.log('cliToken', cliToken);
     if (!cliToken) {
       return jsonUnauthorized('Unauthorized');
     }
 
     const user = await getUserFromCliToken(cliToken);
+    console.log('user', user);
     if (!user) {
       return jsonUnauthorized('Unauthorized');
     }
 
     const json = await req.json();
     const payload = AvailableReposInputSchema.parse(json);
+    console.log('payload', payload);
 
     if (user.githubUsername && user.githubUsername !== payload.githubLogin) {
       return jsonBadRequest('GitHub username mismatch');

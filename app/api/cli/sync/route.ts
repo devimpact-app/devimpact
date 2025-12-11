@@ -60,6 +60,7 @@ export const POST = withSentryUser(async (req: NextRequest) => {
     if (err instanceof z.ZodError) {
       return jsonBadRequest('Invalid payload');
     }
+    console.log('err', err.message);
 
     return jsonServerError('Internal server error');
   }
