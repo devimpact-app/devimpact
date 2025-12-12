@@ -30,8 +30,6 @@ export const POST = withSentryUser(async (req: NextRequest) => {
       return jsonBadRequest('GitHub username mismatch');
     }
 
-    console.log('Save available repos for user', user.id);
-
     const results = await upsertGithubRepoForTenant(
       user.id,
       payload.repos,

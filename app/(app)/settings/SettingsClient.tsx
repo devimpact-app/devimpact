@@ -35,13 +35,21 @@ export function SettingsClient({
   cliDisconnected,
   selectedReposCount,
   availableReposCount,
+  calendarDisconnected,
+  selectedCalendarsCount,
+  availableCalendarsCount,
 }: {
   cliDisconnected: boolean;
   selectedReposCount: number;
   availableReposCount: number;
+  calendarDisconnected: boolean;
+  selectedCalendarsCount: number;
+  availableCalendarsCount: number;
 }) {
   const router = useRouter();
   const [resetLoading, setResetLoading] = useState(false);
+  const [calendarDisconnectLoading, setCalendarDisconnectLoading] =
+    useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +78,28 @@ export function SettingsClient({
       setError(e.message ?? 'Failed to reset CLI connection.');
     } finally {
       setResetLoading(false);
+    }
+  }
+
+  const calendarConnectText = calendarDisconnected ? 'Connect' : 'Disconnect';
+  async function handleConnectCalendarClick() {
+    if (calendarDisconnected) {
+      router.push('/onboarding/calendar?fromSettings=true');
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setCalendarDisconnectLoading(true);
+    try {
+      await postJson('/api/settings/reset-calendar');
+      setSuccess(
+        'Calendar disconnected. You will need to follow connection instructions to get going again.'
+      );
+      router.refresh();
+    } catch (e: any) {
+      setError(e.message ?? 'Failed to reset calendar connection.');
+    } finally {
+      setCalendarDisconnectLoading(false);
     }
   }
 
@@ -127,7 +157,14 @@ export function SettingsClient({
             handleCliClick={handleCliClick}
           />
 
-          <GoogleCalendarCard isEnabled isConnected={false} />
+          <GoogleCalendarCard
+            disconnectLoading={calendarDisconnectLoading}
+            connectText={calendarConnectText}
+            handleConnectClick={handleConnectCalendarClick}
+            calendarDisconnected={calendarDisconnected}
+            selectedCalendarsCount={selectedCalendarsCount}
+            availableCalendarsCount={availableCalendarsCount}
+          />
         </div>
       </section>
 

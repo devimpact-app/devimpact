@@ -21,6 +21,7 @@ function clearCookies(res: NextResponse) {
   res.cookies.set('gcal_code_verifier', '', clear);
   res.cookies.set('gcal_uid', '', clear);
   res.cookies.set('gcal_return_to', '', clear);
+  res.cookies.set('from_settings', '', clear);
 }
 
 function handleError(redirectBase: URL, errorReason: string, detail?: string) {
@@ -47,8 +48,13 @@ export async function GET(req: NextRequest) {
   const stateCookie = req.cookies.get('gcal_state')?.value;
   const verifier = req.cookies.get('gcal_code_verifier')?.value;
   const uidCookie = req.cookies.get('gcal_uid')?.value;
+  const fromSettings = req.cookies.get('from_settings')?.value;
+  const isFromSettings = fromSettings === 'true';
   const returnTo = '/onboarding/calendar';
   const redirectBase = new URL(returnTo, process.env.NEXTAUTH_URL);
+  if (isFromSettings) {
+    redirectBase.searchParams.set('fromSettings', 'true');
+  }
 
   // handle explicit OAuth errors (user denied, etc.)
   if (error) {
@@ -78,8 +84,6 @@ export async function GET(req: NextRequest) {
       code_verifier: verifier,
     }),
   });
-
-  console.log('tokenRes', tokenRes);
 
   if (!tokenRes.ok) {
     return handleError(redirectBase, 'token_exchange_failed');

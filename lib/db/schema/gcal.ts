@@ -111,7 +111,10 @@ export const calendarEvents = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
 
     tenantId: uuid('tenant_id').notNull(),
-    integrationTokenId: uuid('integration_token_id').notNull(),
+    integrationTokenId: uuid('integration_token_id').references(
+      () => integrationTokens.id,
+      { onDelete: 'set null' }
+    ),
 
     calendarId: text('calendar_id').notNull(),
     googleEventId: text('google_event_id').notNull(),

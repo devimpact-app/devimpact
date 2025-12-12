@@ -17,6 +17,11 @@ import {
 } from '@/lib/db/schema/github-normalized';
 import { eq } from 'drizzle-orm';
 import { oneOnOneSessions } from '../db/schema';
+import {
+  calendarEvents,
+  calendarSelections,
+  calendarSyncRuns,
+} from '../db/schema/gcal';
 
 /**
  * Hard-deletes all synced + derived GitHub data for a given user/tenant.
@@ -24,6 +29,16 @@ import { oneOnOneSessions } from '../db/schema';
  */
 export async function deleteUserSyncedData(tenantId: string) {
   await db.transaction(async (tx) => {
+    await tx
+      .delete(calendarEvents)
+      .where(eq(calendarEvents.tenantId, tenantId));
+    await tx
+      .delete(calendarSyncRuns)
+      .where(eq(calendarSyncRuns.tenantId, tenantId));
+    await tx
+      .delete(calendarSelections)
+      .where(eq(calendarSelections.tenantId, tenantId));
+
     await tx
       .delete(oneOnOneSessions)
       .where(eq(oneOnOneSessions.tenantId, tenantId));

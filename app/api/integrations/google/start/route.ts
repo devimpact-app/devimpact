@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -24,7 +24,7 @@ function randomUrlSafeString(bytes = 32) {
   return base64url(arr);
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.redirect(new URL('/login', process.env.NEXTAUTH_URL));
@@ -76,6 +76,10 @@ export async function GET() {
   res.cookies.set('gcal_state', state, cookieBase);
   res.cookies.set('gcal_code_verifier', codeVerifier, cookieBase);
   res.cookies.set('gcal_uid', session.user.id, cookieBase);
+
+  const passedUrl = req.nextUrl;
+  const isFromSettings = passedUrl.searchParams.get('fromSettings') ?? 'false';
+  res.cookies.set('from_settings', isFromSettings, cookieBase);
 
   return res;
 }

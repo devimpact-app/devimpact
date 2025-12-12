@@ -136,10 +136,8 @@ export default function CalendarSetupClient({
 
       await refreshStatus();
 
-      // On onboarding, you’ll likely redirect after a small success delay
-      if (!isFromSettings) {
-        setTimeout(() => router.push('/onboarding/complete'), 900);
-      }
+      const link = isFromSettings ? '/settings' : '/onboarding/complete';
+      setTimeout(() => router.push(link), 900);
     } catch (err) {
       setSyncError(
         'Calendar sync failed. Try again, or reconnect Google Calendar.'
@@ -156,8 +154,6 @@ export default function CalendarSetupClient({
       router.push('/onboarding/complete');
     }
   }
-
-  // ---------- derived ----------
 
   const selectedCount = calendars?.filter((c) => c.isSelected).length ?? 0;
   const totalCount = calendars?.length ?? 0;
@@ -237,7 +233,7 @@ export default function CalendarSetupClient({
               </span>
             ) : (
               <Link
-                href="/api/integrations/google/start"
+                href={`/api/integrations/google/start${isFromSettings ? '?fromSettings=true' : ''}`}
                 className="inline-flex h-9 items-center justify-center rounded-full bg-sky-500 px-4 text-xs font-medium text-slate-950 shadow-sm hover:bg-sky-400"
               >
                 Connect calendar (read-only)

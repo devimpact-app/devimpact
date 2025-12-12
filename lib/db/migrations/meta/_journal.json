@@ -36,6 +36,13 @@
       "when": 1765564229690,
       "tag": "0004_calendar_events",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1765572236978,
+      "tag": "0005_update_calendar_event_fk",
+      "breakpoints": true
     }
   ]
 }

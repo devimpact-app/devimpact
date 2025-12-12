@@ -1,0 +1,2 @@
+ALTER TABLE "calendar_events" ALTER COLUMN "integration_token_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_integration_token_id_integration_tokens_id_fk" FOREIGN KEY ("integration_token_id") REFERENCES "public"."integration_tokens"("id") ON DELETE set null ON UPDATE no action;

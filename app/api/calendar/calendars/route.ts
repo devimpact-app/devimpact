@@ -33,7 +33,6 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   });
 
   if (!parsed.success) {
-    console.log(parsed.error);
     return jsonServerError('Failed to parse calendar list');
   }
 
