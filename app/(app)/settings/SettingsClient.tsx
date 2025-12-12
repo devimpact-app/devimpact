@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { CopyableCode } from '@/components/CopyableCode';
 import { GithubCliCard } from './GithubCard';
+import { GoogleCalendarCard } from './GcalCard';
 
 async function postJson(url: string, body?: unknown) {
   const res = await fetch(url, {
@@ -126,26 +127,7 @@ export function SettingsClient({
             handleCliClick={handleCliClick}
           />
 
-          {/* Google Calendar (coming soon) */}
-          <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-800/70 bg-slate-950/40 px-4 py-3.5 opacity-60">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-950">
-                <Calendar className="h-4 w-4 text-slate-300" />
-              </div>
-              <div className="space-y-1">
-                <p className="flex items-center gap-2 text-sm font-medium text-slate-200">
-                  Google Calendar
-                  <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-                    Coming soon
-                  </span>
-                </p>
-                <p className="text-xs text-slate-500">
-                  Use calendar context to understand how meetings and focus time
-                  affect your review and shipping loops.
-                </p>
-              </div>
-            </div>
-          </div>
+          <GoogleCalendarCard isEnabled isConnected={false} />
         </div>
       </section>
 
