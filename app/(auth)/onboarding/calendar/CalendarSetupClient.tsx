@@ -131,11 +131,6 @@ export default function CalendarSetupClient({
     setSyncError(null);
 
     try {
-      // TODO: implement
-      // This should:
-      // - fetch last 90 days
-      // - store minimal metadata only
-      // - run heuristic categorization server-side
       const res = await fetch('/api/calendar/sync', { method: 'POST' });
       if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
 
@@ -143,7 +138,7 @@ export default function CalendarSetupClient({
 
       // On onboarding, you’ll likely redirect after a small success delay
       if (!isFromSettings) {
-        setTimeout(() => router.push('/onboarding/cli'), 900);
+        setTimeout(() => router.push('/onboarding/complete'), 900);
       }
     } catch (err) {
       setSyncError(
@@ -155,11 +150,10 @@ export default function CalendarSetupClient({
   }
 
   function handleSkip() {
-    // Optional: POST /api/gcal/skip to record skip timestamp
     if (isFromSettings) {
       router.push('/settings');
     } else {
-      router.push('/onboarding/cli');
+      router.push('/onboarding/complete');
     }
   }
 
