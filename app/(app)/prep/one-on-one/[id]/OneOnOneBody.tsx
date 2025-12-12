@@ -285,7 +285,6 @@ function PRPill({
 }) {
   const prNumber = pr.meta?.prNumber;
   const prTitle = pr.meta?.prTitle ?? pr.title;
-  console.log('pr', pr);
 
   if (!prNumber) return null;
 

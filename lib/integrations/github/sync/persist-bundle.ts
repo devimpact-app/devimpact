@@ -76,7 +76,6 @@ export async function persistBundles(
       }
 
       // Timeline (immutable; your storeTimelineEvents already on-conflict-do-nothing)
-      console.log('timeline', b.timelineEvents);
       if (b.timelineEvents?.length) {
         await storeTimelineEvents(prId, userId, b.timelineEvents);
         counts.events += b.timelineEvents.length;
