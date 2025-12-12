@@ -31,11 +31,19 @@ export type GoogleEventAttendee = {
 
 export type GoogleEventsListItem = {
   id: string;
+  recurringEventId: string;
   status?: string;
   summary?: string;
+  iCalUID?: string;
+  sequence?: number;
+  eventType?: string;
   start?: GoogleEventDateTime;
   end?: GoogleEventDateTime;
+  originalStartTime?: GoogleEventDateTime;
+  created: string;
+  updated: string;
   attendees?: GoogleEventAttendee[];
+  creator?: { email?: string; self?: boolean };
   organizer?: { email?: string; self?: boolean };
 };
 

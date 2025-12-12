@@ -27,6 +27,20 @@ export function weeksAgo(start: Date, weeks: number): Date {
   return d;
 }
 
+export function daysAgo(start: Date, days: number): Date {
+  const d = new Date(start);
+  d.setDate(d.getDate() - days);
+  return d;
+}
+
+export function minutesBetween(start: Date | null, end: Date | null) {
+  if (!start || !end) return null;
+  const ms = end.getTime() - start.getTime();
+  if (!Number.isFinite(ms)) return null;
+  const mins = Math.round(ms / 60000);
+  return mins >= 0 ? mins : null;
+}
+
 /**
  * Shift a date by N years while trying to preserve month/day.
  * Handles leap days by clamping to the last day of Feb when needed.

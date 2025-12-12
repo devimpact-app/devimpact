@@ -3,6 +3,7 @@ import {
   GoogleCalendarListItem,
   GoogleCalendarListResponse,
   GoogleEventsListItem,
+  GoogleEventsListResponse,
 } from './types';
 
 async function googleFetch<T>(accessToken: string, url: string) {
@@ -50,6 +51,9 @@ export async function listCalendars(userId: string) {
   return listCalendarsWithToken(accessToken);
 }
 
+const MAX_PAGES = 20;
+const MAX_EVENTS = 10_000;
+
 export async function listEvents(
   userId: string,
   calendarId: string,
@@ -65,7 +69,7 @@ export async function listEvents(
   const all: GoogleEventsListItem[] = [];
   let pageToken: string | undefined;
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < MAX_PAGES; i++) {
     const url = new URL(
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
         calendarId
@@ -81,16 +85,19 @@ export async function listEvents(
 
     if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-    const resp = await googleFetch<GoogleCalendarListResponse>(
+    const resp = await googleFetch<GoogleEventsListResponse>(
       accessToken,
       url.toString()
     );
 
-    if (resp.items?.length) all.push(...resp.items);
+    if (resp.items?.length) {
+      all.push(...resp.items);
+      if (all.length >= MAX_EVENTS) break;
+    }
     if (!resp.nextPageToken) break;
 
     pageToken = resp.nextPageToken;
   }
 
-  return all;
+  return { items: all, truncated: all.length >= MAX_EVENTS };
 }

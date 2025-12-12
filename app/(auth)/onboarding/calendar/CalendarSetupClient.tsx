@@ -136,7 +136,7 @@ export default function CalendarSetupClient({
       // - fetch last 90 days
       // - store minimal metadata only
       // - run heuristic categorization server-side
-      const res = await fetch('/api/gcal/sync', { method: 'POST' });
+      const res = await fetch('/api/calendar/sync', { method: 'POST' });
       if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
 
       await refreshStatus();
