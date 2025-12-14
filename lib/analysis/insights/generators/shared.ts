@@ -62,10 +62,9 @@ export function formatDayBucketLabel(bucket: DayBucket): string {
 }
 
 export function getDayBucket(localWeekdayIndex: number): DayBucket {
-  // localWeekdayIndex is JS getDay(): 0=Sun..6=Sat
-  if (localWeekdayIndex === 0 || localWeekdayIndex === 6) return 'weekend';
-  if (localWeekdayIndex === 1 || localWeekdayIndex === 2) return 'early_week';
-  if (localWeekdayIndex === 3 || localWeekdayIndex === 4) return 'mid_week';
+  if (localWeekdayIndex === 5 || localWeekdayIndex === 6) return 'weekend';
+  if (localWeekdayIndex === 0 || localWeekdayIndex === 1) return 'early_week';
+  if (localWeekdayIndex === 2 || localWeekdayIndex === 3) return 'mid_week';
   return 'late_week'; // Friday
 }
 

@@ -9,8 +9,9 @@ import {
 } from './shared';
 import {
   formatRangeServer,
-  getWeekdayServer,
-  toLocalDateServer,
+  getHourInTimezoneServer,
+  getMDInTimezoneServer,
+  getWeekdayInTimezoneServer,
 } from '@/lib/utils/server-date';
 import { Insight } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
@@ -58,9 +59,12 @@ export function generateAvailabilityDeadzoneInsight(
     const hours = seconds / 3600;
     if (hours <= 0 || hours > MAX_HOURS_CUTOFF) continue;
 
-    const readyLocal = toLocalDateServer(pr.lastReadyForReviewAt, timezone);
-    const weekdayIdx = getWeekdayServer(pr.lastReadyForReviewAt, timezone); // 0–6 in that tz
-    const timeBucket = getTimeOfDayBucket(readyLocal.getHours());
+    const weekdayIdx = getWeekdayInTimezoneServer(
+      pr.lastReadyForReviewAt,
+      timezone
+    );
+    const hour = getHourInTimezoneServer(pr.lastReadyForReviewAt, timezone);
+    const timeBucket = getTimeOfDayBucket(hour);
     const bucketKey = `${weekdayIdx}:${timeBucket}`;
 
     samples.push({
@@ -199,15 +203,8 @@ export function generateAvailabilityDeadzoneInsight(
 
   const relatedItems: Insight['relatedItems'] = worstBucketSamples.map((s) => {
     const pr = s.pr;
-    const readyLocal = pr.lastReadyForReviewAt
-      ? toLocalDateServer(pr.lastReadyForReviewAt, timezone)
-      : null;
-    const readyDateLabel = readyLocal
-      ? readyLocal.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          timeZone: timezone,
-        })
+    const readyDateLabel = pr.lastReadyForReviewAt
+      ? getMDInTimezoneServer(pr.lastReadyForReviewAt, timezone)
       : null;
     const timeBucketLabel = formatTimeOfDayLabel(s.timeBucket);
     return {

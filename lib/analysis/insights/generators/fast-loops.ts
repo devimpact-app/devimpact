@@ -4,8 +4,8 @@ import { diffSecondsRounded } from '../../normalizers/helpers';
 import { computeMedianClamped } from '@/lib/utils/math';
 import {
   formatRangeServer,
-  getWeekdayServer,
-  toLocalDateServer,
+  getHourInTimezoneServer,
+  getWeekdayInTimezoneServer,
 } from '@/lib/utils/server-date';
 import {
   DayBucket,
@@ -167,10 +167,11 @@ export function generateFastLoopsInsight(ctx: InsightContext): Insight | null {
           : 0;
       const cycleTimeHours = safeSeconds / 3600;
 
-      const readyLocal = toLocalDateServer(pr.lastReadyForReviewAt!, timezone);
-      const hour = readyLocal.getHours();
-      const weekdayIdx = getWeekdayServer(pr.lastReadyForReviewAt!, timezone);
-
+      const hour = getHourInTimezoneServer(pr.lastReadyForReviewAt!, timezone);
+      const weekdayIdx = getWeekdayInTimezoneServer(
+        pr.lastReadyForReviewAt!,
+        timezone
+      );
       const sizeBucket = getSizeBucket(pr.linesChanged, pr.filesChanged);
       const timeOfDay = getTimeOfDayBucket(hour);
       const dayBucket = getDayBucket(weekdayIdx);

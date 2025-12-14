@@ -8,7 +8,7 @@ import {
 import { runMetric } from './engine/runMetric';
 import { db } from '@/lib/db/client';
 import { METRIC_CATALOG_MAP } from './catalog';
-import { computeWindowEnd, toDate, toLocalDate } from '@/lib/utils/date';
+import { computeWindowEnd, toDate } from '@/lib/utils/date';
 import { StatDataset, StatResult } from './types/output';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 

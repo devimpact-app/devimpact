@@ -1,4 +1,7 @@
-import { toLocalDateServer } from '@/lib/utils/server-date';
+import {
+  getHourInTimezoneServer,
+  getWeekdayInTimezoneServer,
+} from '@/lib/utils/server-date';
 import type { ActivityEvent } from '@/types/api/timeline';
 import {
   TimeBandKeySchema,
@@ -20,14 +23,13 @@ const WEEKDAY_ORDER: WeekdayKey[] = [
   'sun',
 ];
 
-function getDayKey(date: Date): WeekdayKey {
-  const jsDay = date.getDay(); // 0–6 (Sun–Sat)
-  const idx = (jsDay + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
+function getDayKey(date: Date, tz: string): WeekdayKey {
+  const idx = getWeekdayInTimezoneServer(date, tz);
   return WEEKDAY_ORDER[idx];
 }
 
-function getTimeBandKey(date: Date): TimeBandKey {
-  const hour = date.getHours();
+function getTimeBandKey(date: Date, tz: string): TimeBandKey {
+  const hour = getHourInTimezoneServer(date, tz);
 
   if (hour < 6) return 'early'; // ~0–6
   if (hour < 12) return 'am'; // ~6–12
@@ -87,11 +89,11 @@ export function bucketEventsByDayAndBand(params: {
   for (const ev of events) {
     if (!ev.occurredAt) continue;
 
-    const date = toLocalDateServer(ev.occurredAt, timezone);
+    const date = new Date(ev.occurredAt);
     if (isNaN(date.getTime())) continue;
 
-    const day = getDayKey(date);
-    const band = getTimeBandKey(date);
+    const day = getDayKey(date, timezone);
+    const band = getTimeBandKey(date, timezone);
     const key = `${day}:${band}`;
 
     const bucket = bucketMap.get(key);

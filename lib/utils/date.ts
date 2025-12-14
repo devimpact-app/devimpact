@@ -2,18 +2,6 @@ export function toDate(d: Date | string): Date {
   return d instanceof Date ? d : new Date(d);
 }
 
-export function toLocalDate(value: string | Date, timezone: string): Date {
-  const base = typeof value === 'string' ? new Date(value) : value;
-
-  // Safety: handle invalid dates defensively
-  if (!(base instanceof Date) || isNaN(base.getTime())) {
-    return base;
-  }
-
-  // Convert UTC → local timezone using locale string
-  return new Date(base.toLocaleString('en-US', { timeZone: timezone }));
-}
-
 export function formatDateTime(iso: string | Date | null) {
   if (!iso) return null;
   const d = typeof iso === 'string' ? new Date(iso) : iso;

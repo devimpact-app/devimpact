@@ -1,39 +1,39 @@
 import { endOfWeek, getDay, startOfWeek } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 
-export function toLocalDateServer(
-  value: string | Date,
+export function getHourInTimezoneServer(
+  value: Date | string,
   timezone: string
-): Date {
-  const base = typeof value === 'string' ? new Date(value) : value;
-  if (!(base instanceof Date) || isNaN(base.getTime())) return base;
-
-  const zonedDate = toZonedTime(base, timezone);
-  return new Date(
-    Date.UTC(
-      zonedDate.getFullYear(),
-      zonedDate.getMonth(),
-      zonedDate.getDate(),
-      zonedDate.getHours(),
-      zonedDate.getMinutes(),
-      zonedDate.getSeconds()
-    )
-  );
+): number {
+  const d = typeof value === 'string' ? new Date(value) : value;
+  return Number(formatInTimeZone(d, timezone, 'H'));
 }
 
-/**
- * Convert a JS Date into a YYYY-MM-DD string in a given IANA timezone.
- */
-export function formatDateServer(date: Date, timezone: string): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
+export function getWeekdayInTimezoneServer(
+  value: Date | string,
+  timezone: string
+): number {
+  const d = typeof value === 'string' ? new Date(value) : value;
 
-  // returns "2025-12-04" in the target TZ
-  return fmt.format(date);
+  const isoDay = Number(formatInTimeZone(d, timezone, 'i'));
+
+  return isoDay - 1;
+}
+
+export function getYMDInTimezoneServer(
+  value: Date | string,
+  timezone: string
+): string {
+  const d = typeof value === 'string' ? new Date(value) : value;
+  return formatInTimeZone(d, timezone, 'yyyy-MM-dd');
+}
+
+export function getMDInTimezoneServer(
+  value: Date | string,
+  timezone: string
+): string {
+  const d = typeof value === 'string' ? new Date(value) : value;
+  return formatInTimeZone(d, timezone, 'MM-dd');
 }
 
 export function formatRangeServer(
@@ -64,12 +64,6 @@ export function formatRangeServer(
   return `${startStr} ${fmtYear.format(start)}–${endStr} ${fmtYear.format(
     end
   )}`;
-}
-
-export function getWeekdayServer(date: Date, timezone: string): number {
-  const zonedDate = toZonedTime(date, timezone);
-  const day = getDay(zonedDate); // 0=Sunday, 1=Monday, ...
-  return day === 0 ? 6 : day - 1;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;

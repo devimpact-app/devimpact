@@ -1,4 +1,7 @@
-import { getWeekdayServer, toLocalDateServer } from '@/lib/utils/server-date';
+import {
+  getWeekdayInTimezoneServer,
+  getYMDInTimezoneServer,
+} from '@/lib/utils/server-date';
 
 const WEEKDAY_LABELS: (
   | 'Sun'
@@ -33,18 +36,10 @@ export function computeActiveDaysAndMostActiveDay(
   for (const date of dates) {
     if (!(date instanceof Date) || isNaN(date.getTime())) continue;
 
-    const local = toLocalDateServer(date, timezone);
-
-    // Unique calendar day (YYYY-MM-DD) *in that timezone*
-    const dayKey = local.toLocaleDateString('en-CA', {
-      timeZone: timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
+    const dayKey = getYMDInTimezoneServer(date, timezone);
     dayCounts.set(dayKey, (dayCounts.get(dayKey) ?? 0) + 1);
 
-    const weekdayIndex = getWeekdayServer(date, timezone);
+    const weekdayIndex = getWeekdayInTimezoneServer(date, timezone);
     weekdayCounts.set(weekdayIndex, (weekdayCounts.get(weekdayIndex) ?? 0) + 1);
   }
 
