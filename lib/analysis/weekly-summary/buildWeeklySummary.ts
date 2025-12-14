@@ -22,6 +22,10 @@ import {
 import { deriveFrictionFollowups } from './frictionItems';
 import { buildWeeklyHeadline } from './headline';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
+import { isCalendarConnected } from '@/lib/integrations/gcal/client';
+import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
+import { CalendarEvent } from '@/lib/db/schema/gcal';
+import { getWeeklyMeetingTotals } from './calendar';
 
 export type BuildWeeklySummaryArgs = {
   userId: string;
@@ -55,6 +59,11 @@ export async function buildWeeklySummary({
   );
   const authoredCommits = await getAuthoredCommits(activityParams);
 
+  const calendarData = await getWeeklyMeetingTotals({
+    ...activityParams,
+    timezone,
+  });
+
   const allDates = (
     [
       ...authoredPrs.map((pr) => pr.createdAt),
@@ -74,6 +83,8 @@ export async function buildWeeklySummary({
     prsReviewed: uniquePrsReviewed.length,
     activeDays,
     mostActiveDay,
+    meetingMinutes: calendarData?.meetingMinutes,
+    meetingCount: calendarData?.meetingCount,
   };
 
   // Highlighted shipped PRs

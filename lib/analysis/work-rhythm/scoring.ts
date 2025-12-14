@@ -5,6 +5,7 @@ export type ScoredBucket = {
   score: number;
 
   adjustments?: {
+    workEventCount?: number;
     meetingPenaltyApplied?: boolean;
     meetingShare?: number;
     meetingPenaltyFactor?: number; // e.g. 0.88
@@ -62,6 +63,7 @@ export function scoreBucketsForRhythm(
         bucket: b,
         score: base * factor,
         adjustments: {
+          workEventCount: b.codeEvents + b.reviewEvents,
           meetingPenaltyApplied: applied,
           meetingShare: b.meetings?.meetingShare,
           meetingPenaltyFactor: applied ? factor : undefined,

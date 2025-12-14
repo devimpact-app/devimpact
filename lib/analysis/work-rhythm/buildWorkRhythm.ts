@@ -13,15 +13,17 @@ import {
   bucketEventsByDayAndBand,
   countWeekdayOccurrences,
 } from './bucket';
-import {
-  computeBestFocusWindows,
-  computeProtectWindows,
-} from './bestFocusWindows';
-import { computeAvgDeepWorkBlocksPerWeek } from './deepWork';
+// import { findBestFocusWindows } from './deep-work';
 import { buildWorkRhythmDescription } from './description';
 import { isCalendarConnected } from '@/lib/integrations/gcal/client';
 import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
 import { CalendarEvent } from '@/lib/db/schema/gcal';
+import { buildTimeSlices } from './timeSlices';
+import { computeBestFocusWindows } from './bestFocusWindows';
+import { findDeepWorkBlocks } from './deep-work';
+import { time } from 'drizzle-orm/mysql-core';
+import { differenceInCalendarDays } from 'date-fns';
+import { findProtectWindows } from './protect-windows';
 
 export type BuildWorkRhythmArgs = {
   userId: string;
@@ -69,6 +71,9 @@ export async function buildWorkRhythm({
     start = bounds.start;
     end = bounds.end;
   }
+  const days = Math.max(1, differenceInCalendarDays(start, end));
+  const weeks = Math.max(1, days / 7);
+
   const range: WorkRhythm['range'] = {
     startISO: start.toISOString(),
     endISO: end.toISOString(),
@@ -108,18 +113,36 @@ export async function buildWorkRhythm({
     weekdayOccurences,
   });
 
-  const bestFocusWindows = computeBestFocusWindows({
-    buckets,
+  const timeSlices = buildTimeSlices({
+    startUtc: start,
+    endUtc: end,
+    meetingEvents: calendarEvents,
+    workEvents: events,
+    sliceMinutes: 15,
+    includePersonalMeetings: false,
   });
 
-  const avgDeepWorkBlocksPerWeek = computeAvgDeepWorkBlocksPerWeek({
+  const bestFocusWindows = computeBestFocusWindows({
     buckets,
+    maxWindows: 3,
   });
+
+  let avgDeepWorkBlocksPerWeek = 0;
+  if (calendarConnected) {
+    const deepWorkBlocks = findDeepWorkBlocks({
+      slices: timeSlices,
+      timezone,
+      limit: 3,
+    });
+    avgDeepWorkBlocksPerWeek = deepWorkBlocks.length / weeks;
+  }
 
   const eveningSharePercent = computeEveningSharePercent(buckets);
 
-  const protectWindows = computeProtectWindows({
-    buckets,
+  const protectWindows = findProtectWindows({
+    slices: timeSlices,
+    timezone,
+    limit: 3,
   });
 
   const summary = {

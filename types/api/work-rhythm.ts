@@ -44,16 +44,37 @@ export const BestFocusWindowSchema = z.object({
   score: z.number(), // ranking score
   label: z.string(), // e.g. “Tuesday 9–11 AM”
 
-  // optional calendar stuff
+  // metadata
+  workEventCount: z.number().optional(),
   meetingShare: z.number().min(0).max(1).optional(),
-  meetingPenaltyApplied: z.boolean().optional(),
 });
 export type BestFocusWindow = z.infer<typeof BestFocusWindowSchema>;
 
-export const ProtectWindowSchema = z.object({
-  day: WeekdayKeySchema,
-  band: TimeBandKeySchema,
-  label: z.string(), // human string: "Protect 9–11 AM on Tuesdays"
+const TimeWindowSchema = z.object({
+  startUtc: z.string(),
+  endUtc: z.string(),
+  durationMinutes: z.number(),
+  label: z.string(), // e.g. "Tue 11:00 AM–1:00 PM"
+});
+
+export const DeepWorkBlockSchema = TimeWindowSchema.extend({
+  isUtilized: z.boolean(),
+  workEventCount: z.number(),
+  workSlices: z.number(),
+  totalSlices: z.number(),
+  reasons: z.array(z.string()),
+});
+export type DeepWorkBlock = z.infer<typeof DeepWorkBlockSchema>;
+
+export const ProtectWindowSchema = TimeWindowSchema.extend({
+  // optional metadata for “why”
+  score: z.number().optional(),
+  reasons: z.array(z.string()).optional(),
+
+  // optional: reflect meeting-free + how “used” it tends to be
+  workEventCount: z.number().optional(),
+  workSlices: z.number().optional(),
+  totalSlices: z.number().optional(),
 });
 export type ProtectWindow = z.infer<typeof ProtectWindowSchema>;
 

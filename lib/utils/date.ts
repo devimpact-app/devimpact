@@ -27,6 +27,10 @@ export function weeksAgo(start: Date, weeks: number): Date {
   return d;
 }
 
+export function addMinutes(d: Date, minutes: number) {
+  return new Date(d.getTime() + minutes * 60_000);
+}
+
 export function daysAgo(start: Date, days: number): Date {
   const d = new Date(start);
   d.setDate(d.getDate() - days);
@@ -109,10 +113,10 @@ export function formatRange(start: Date, end: Date) {
 
 export function getDefaultWeekOffset(): number {
   const today = new Date();
-  const day = today.getDay(); // 0 = Sun, 1 = Mon, ... 4 = Thu, 5 = Fri
+  const idx = getWeekdayIndex(today); // 0 = Sun, 1 = Mon, ... 4 = Thu, 5 = Fri
 
   // If it's Wed+, show "This week" by default.
-  if (day >= 3) {
+  if (idx >= 2) {
     return 0;
   }
 

@@ -95,6 +95,12 @@ export function WeeklySummaryCard({
             {softStats.mostActiveDay && (
               <SoftStat label="Most active" value={softStats.mostActiveDay} />
             )}
+            {softStats.meetingMinutes && (
+              <SoftStat label="Meeting time" value={softStats.meetingMinutes} />
+            )}
+            {softStats.meetingCount && (
+              <SoftStat label="# Meetings" value={softStats.meetingCount} />
+            )}
           </div>
         </div>
 

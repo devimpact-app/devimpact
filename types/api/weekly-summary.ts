@@ -14,6 +14,8 @@ export const StatsSchema = z
     mostActiveDay: z
       .enum(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
       .optional(),
+    meetingMinutes: z.number().optional(),
+    meetingCount: z.number().optional(),
   })
   .catchall(z.any());
 
@@ -121,6 +123,23 @@ export const FrictionFollowupsSchema = z
   })
   .catchall(z.any());
 
+export const WeeklyCalendarSummarySchema = z.object({
+  meetingMinutes: z.number(), // total minutes scheduled (excludes declined, excludes personal if you want)
+  meetingCount: z.number(),
+  deepWorkBlocksCount: z.number().optional(), // from your slice-based deep work finder
+  largestMeetingSize: z.number().optional(), // if you have attendeesTotal
+  categories: z
+    .array(
+      z.object({
+        key: z.string(),
+        count: z.number(),
+        minutes: z.number().optional(),
+      })
+    )
+    .optional(),
+});
+export type WeeklyCalendarSummary = z.infer<typeof WeeklyCalendarSummarySchema>;
+
 export const WeeklySummarySchema = z
   .object({
     version: z.literal(1).default(1),
@@ -138,6 +157,8 @@ export const WeeklySummarySchema = z
     whatYouWorkedOn: WhatYouWorkedOnSchema.optional(),
 
     frictionFollowups: FrictionFollowupsSchema.optional(),
+
+    calendar: WeeklyCalendarSummarySchema.optional(),
 
     meta: z
       .object({
