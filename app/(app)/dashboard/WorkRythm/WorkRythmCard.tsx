@@ -3,7 +3,11 @@
 import { WEEKDAY_LABELS } from '@/lib/utils/date';
 import { ChevronRight, BarChart3 } from 'lucide-react';
 import { useMemo } from 'react';
-import { WorkRhythm, WorkRhythmBucket } from '@/types/api/work-rhythm';
+import {
+  TimeBandKey,
+  WorkRhythm,
+  WorkRhythmBucket,
+} from '@/types/api/work-rhythm';
 import { WorkRhythmCardSkeleton } from './WorkRythmCardSkeleton';
 
 type WorkRhythmCardProps = {
@@ -27,6 +31,13 @@ const DAY_ORDER: WorkRhythmBucket['day'][] = [
   'sat',
   'sun',
 ];
+
+const TIME_BAND_LABELS: Record<TimeBandKey, string> = {
+  early: '5-9am',
+  am: '9am-12pm',
+  pm: '12-6pm',
+  eve: '6pm-5am',
+};
 
 const BAND_ORDER: WorkRhythmBucket['band'][] = ['early', 'am', 'pm', 'eve'];
 
@@ -53,13 +64,12 @@ export function WorkRhythmCard({
   onViewTimelineClick,
 }: WorkRhythmCardProps) {
   const { grid, maxCount } = useMemo(() => {
-    const base: number[][] = Array.from({ length: TIME_BANDS }, () =>
-      Array.from({ length: DAY_COLUMNS }, () => 0)
+    const base: (WorkRhythmBucket | null)[][] = Array.from(
+      { length: TIME_BANDS },
+      () => Array.from({ length: DAY_COLUMNS }, () => null)
     );
 
-    if (!rhythm) {
-      return { grid: base, maxCount: 0 };
-    }
+    if (!rhythm) return { grid: base, maxCount: 0 };
 
     const dayIndex = (day: WorkRhythmBucket['day']) => DAY_ORDER.indexOf(day);
     const bandIndex = (band: WorkRhythmBucket['band']) =>
@@ -72,16 +82,11 @@ export function WorkRhythmCard({
       const c = dayIndex(b.day);
       if (r < 0 || c < 0) continue;
 
-      base[r][c] = b.eventCount;
-      if (b.eventCount > max) {
-        max = b.eventCount;
-      }
+      base[r][c] = b;
+      if (b.eventCount > max) max = b.eventCount;
     }
 
-    // Prefer backend max if present, otherwise fallback
-    const finalMax = rhythm.maxBucketCount || max;
-
-    return { grid: base, maxCount: finalMax };
+    return { grid: base, maxCount: rhythm.maxBucketCount || max };
   }, [rhythm]);
 
   if (loading) {
@@ -142,7 +147,7 @@ export function WorkRhythmCard({
           rounded-xl 
           border border-white/5 
           bg-[#0C101A]
-          overflow-hidden 
+          overflow-visible 
           relative
         "
         >
@@ -164,7 +169,10 @@ export function WorkRhythmCard({
             </div>
             <div className="flex-1 grid grid-rows-4 grid-cols-7 gap-[4px]">
               {grid.map((row, bandIdx) =>
-                row.map((count, dayIdx) => {
+                row.map((bucket, dayIdx) => {
+                  const count = bucket?.eventCount ?? 0;
+                  const meetings = bucket?.meetings; // might be undefined if calendar not connected
+
                   const ratio = !maxCount || count === 0 ? 0 : count / maxCount;
 
                   const ZERO_COLOR = '#1A1D2A'; // no activity
@@ -177,6 +185,22 @@ export function WorkRhythmCard({
                   const glow =
                     ratio > 0.75 ? '0 0 8px rgba(52, 209, 198, 0.3)' : 'none';
 
+                  const meetingShare = bucket?.meetings?.meetingShare ?? 0;
+                  const overlayOpacity =
+                    meetingShare < 0.1
+                      ? 0
+                      : meetingShare < 0.2
+                        ? 0.08
+                        : meetingShare < 0.3
+                          ? 0.14
+                          : meetingShare < 0.5
+                            ? 0.18
+                            : 0.22;
+
+                  // Much wider stripes at low levels = less visual noise
+                  const stripeSize =
+                    meetingShare < 0.3 ? 12 : meetingShare < 0.5 ? 8 : 6;
+
                   return (
                     <div
                       key={`${bandIdx}-${dayIdx}`}
@@ -184,13 +208,49 @@ export function WorkRhythmCard({
                         rounded-full 
                         transition-transform duration-150 
                         hover:scale-[1.03]
+                        relative group
                       "
                       style={{
                         backgroundColor: fill,
                         border: border,
                         boxShadow: glow,
                       }}
-                    />
+                    >
+                      {overlayOpacity > 0 && (
+                        <div
+                          className="absolute inset-0 pointer-events-none rounded-full"
+                          style={{
+                            opacity: overlayOpacity,
+                            backgroundImage: `repeating-linear-gradient(
+            135deg,
+            rgba(255,255,255,0.85) 0 ${stripeSize / 2}px,
+            rgba(255,255,255,0) ${stripeSize / 2}px ${stripeSize}px
+          )`,
+                          }}
+                        />
+                      )}
+                      <div className="pointer-events-none absolute left-1/2 top-[-10px] z-100 hidden -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-xl border border-slate-700 bg-slate-950/95 px-2.5 py-1.5 text-[11px] text-slate-200 shadow-lg group-hover:block">
+                        <div className="font-medium capitalize text-slate-100">
+                          {bucket?.day ?? 'mon'} •{' '}
+                          {TIME_BAND_LABELS[bucket?.band || 'early']}
+                        </div>
+                        <div className="text-slate-400">
+                          Coding: {count} events
+                        </div>
+                        {meetings ? (
+                          <div className="text-slate-400">
+                            Meetings: {meetings.meetingCount} •{' '}
+                            {meetings.meetingMinutes}m •{' '}
+                            {Math.round(meetings.meetingShare * 100)}% of time
+                          </div>
+                        ) : (
+                          <div className="text-slate-500">
+                            Calendar not connected
+                          </div>
+                        )}
+                        <div className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-b border-r border-slate-700 bg-slate-950/95" />
+                      </div>
+                    </div>
                   );
                 })
               )}

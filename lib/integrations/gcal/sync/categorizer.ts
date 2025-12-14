@@ -316,7 +316,7 @@ function clamp01(x: number) {
 
 export function categorizeEvent(event: EventFeatures): {
   category: CalendarEventCategory;
-  categorySubtype?: TeamMeetingSubtype | null;
+  // categorySubtype?: TeamMeetingSubtype | null;
   categoryConfidence: number;
   categorySource: string;
   categoryVersion: number;
@@ -416,7 +416,7 @@ export function categorizeEvent(event: EventFeatures): {
 
   return {
     category: bestCat,
-    categorySubtype: subtype,
+    // categorySubtype: subtype,
     categoryConfidence: clamp01(0.55 + bestScore * 0.4), // maps ~0.5–1.0 scores to ~0.75–0.95
     categorySource: 'heuristic',
     categoryVersion: 1,

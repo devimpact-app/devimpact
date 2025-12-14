@@ -142,7 +142,7 @@ export const calendarEvents = pgTable(
     isOrganizerSelf: boolean('is_organizer_self').notNull().default(false),
 
     category: text('category'), // flexible string label
-    categorySubtype: text('category_subtype'), // e.g. for team meetings
+    // categorySubtype: text('category_subtype'), // e.g. for team meetings
     categoryConfidence: real('category_confidence'), // 0..1
     categorySource: text('category_source'), // heuristic|llm|user
     categoryVersion: integer('category_version').notNull().default(1),

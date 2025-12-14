@@ -39,6 +39,72 @@ function getDayKey(date: Date, tz: string): WeekdayKey {
   return WEEKDAY_ORDER[idx];
 }
 
+const RHYTHM_DAY_START_HOUR = 5;
+
+function getRhythmDayKey(dateUtc: Date, tz: string): WeekdayKey {
+  const h = getHourInTimezoneServer(dateUtc, tz);
+
+  // If it's before 5am local, treat it as previous local day.
+  if (h < RHYTHM_DAY_START_HOUR) {
+    const localYMD = getYMDInTimezoneServer(dateUtc, tz); // "yyyy-MM-dd" in tz
+    const prevYMD = addLocalDays(localYMD, -1);
+    // Noon avoids any DST weirdness; we only care about weekday.
+    const localNoonPrev = `${prevYMD}T12:00:00`;
+    const prevDayUtc = fromZonedTime(localNoonPrev, tz);
+    return getDayKey(prevDayUtc, tz);
+  }
+
+  return getDayKey(dateUtc, tz);
+}
+
+function floorToRhythmDayStartUtc(tUtc: Date, tz: string): Date {
+  let ymd = getYMDInTimezoneServer(tUtc, tz);
+  const h = getHourInTimezoneServer(tUtc, tz);
+  if (h < RHYTHM_DAY_START_HOUR) {
+    ymd = addLocalDays(ymd, -1);
+  }
+
+  const localStart = `${ymd}T${pad2(RHYTHM_DAY_START_HOUR)}:00:00`;
+  return fromZonedTime(localStart, tz);
+}
+
+export function countWeekdayOccurrences(params: {
+  startUtc: Date;
+  endUtc: Date;
+  timezone: string;
+}): Record<WeekdayKey, number> {
+  const { startUtc, endUtc, timezone: tz } = params;
+
+  const counts: Record<WeekdayKey, number> = {
+    mon: 0,
+    tue: 0,
+    wed: 0,
+    thu: 0,
+    fri: 0,
+    sat: 0,
+    sun: 0,
+  };
+
+  if (!(startUtc < endUtc)) return counts;
+
+  let cursorUtc = floorToRhythmDayStartUtc(startUtc, tz);
+
+  // If start is way before range, this will be safe; worst case loops ~100 times for 90d.
+  while (cursorUtc < endUtc) {
+    const idx = getWeekdayInTimezoneServer(cursorUtc, tz); // 0=Mon..6=Sun in your helper
+    const dayKey = WEEKDAY_ORDER[idx];
+    counts[dayKey] += 1;
+
+    // advance one rhythm day: (local ymd of cursor) + 1 day @ 05:00 local
+    const ymd = getYMDInTimezoneServer(cursorUtc, tz);
+    const nextYmd = addLocalDays(ymd, 1);
+    const nextLocal = `${nextYmd}T${pad2(RHYTHM_DAY_START_HOUR)}:00:00`;
+    cursorUtc = fromZonedTime(nextLocal, tz);
+  }
+
+  return counts;
+}
+
 function getTimeBandKey(date: Date, tz: string): TimeBandKey {
   const h = getHourInTimezoneServer(date, tz);
 
@@ -140,7 +206,7 @@ export function bucketEventsByDayAndBand(params: {
     const date = new Date(ev.occurredAt);
     if (isNaN(date.getTime())) continue;
 
-    const day = getDayKey(date, timezone);
+    const day = getRhythmDayKey(date, timezone);
     const band = getTimeBandKey(date, timezone);
     const key = `${day}:${band}`;
 
@@ -178,10 +244,9 @@ export function applyMeetingOverlay(params: {
   buckets: WorkRhythmBucket[];
   meetingEvents: CalendarEvent[];
   timezone: string;
+  weekdayOccurences: Record<WeekdayKey, number>;
 }): WorkRhythmBucket[] {
   const { buckets, meetingEvents, timezone } = params;
-
-  const bucketMap = createBucketByKeyMap(buckets);
 
   const shouldAttach = meetingEvents.length > 0;
   if (!shouldAttach) return buckets;
@@ -215,7 +280,7 @@ export function applyMeetingOverlay(params: {
     const touchedBuckets = new Set<string>();
 
     while (cursorUtc < endUtc) {
-      const day = getDayKey(cursorUtc, timezone);
+      const day = getRhythmDayKey(cursorUtc, timezone);
       const band = getTimeBandKey(cursorUtc, timezone);
 
       const bandEndUtc = getBandEnd(cursorUtc, band, timezone);
@@ -234,7 +299,6 @@ export function applyMeetingOverlay(params: {
           meetingCount: 0,
           meetingMinutes: 0,
           meetingShare: 0,
-          bandMinutes: BAND_MINUTES[cur.band],
         };
         meetingData.meetingMinutes += minutes;
 
@@ -252,6 +316,11 @@ export function applyMeetingOverlay(params: {
 
   // Add meeting share
   for (const bucket of out) {
+    if (bucket.meetings) {
+      bucket.meetings.bandMinutes =
+        (BAND_MINUTES[bucket.band] ?? 0) *
+        (params.weekdayOccurences[bucket.day] ?? 0);
+    }
     if (bucket.meetings && bucket.meetings.meetingMinutes > 0) {
       bucket.meetings.meetingShare = Math.min(
         1,

@@ -8,7 +8,11 @@ import {
   getWeekBoundsFromOffsetServer,
 } from '@/lib/utils/server-date';
 import { getActivityEventsForRange } from '../activity/getActivityEventsForRange';
-import { bucketEventsByDayAndBand } from './bucket';
+import {
+  applyMeetingOverlay,
+  bucketEventsByDayAndBand,
+  countWeekdayOccurrences,
+} from './bucket';
 import {
   computeBestFocusWindows,
   computeProtectWindows,
@@ -87,9 +91,21 @@ export async function buildWorkRhythm({
     });
   }
 
-  const { buckets, maxBucketCount } = bucketEventsByDayAndBand({
+  const bucketResp = bucketEventsByDayAndBand({
     events,
     timezone,
+  });
+  const maxBucketCount = bucketResp.maxBucketCount;
+  const weekdayOccurences = countWeekdayOccurrences({
+    startUtc: start,
+    endUtc: end,
+    timezone,
+  });
+  const buckets = applyMeetingOverlay({
+    buckets: bucketResp.buckets,
+    meetingEvents: calendarEvents,
+    timezone,
+    weekdayOccurences,
   });
 
   const bestFocusWindows = computeBestFocusWindows({
