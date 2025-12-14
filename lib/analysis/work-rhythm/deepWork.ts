@@ -13,7 +13,12 @@ export function computeAvgDeepWorkBlocksPerWeek(params: {
   if (scored.length === 0) return 0;
 
   const MIN_SCORE = 2;
-  const allowedBands: WorkRhythmBucket['band'][] = ['early', 'am', 'pm'];
+  const allowedBands: WorkRhythmBucket['band'][] = [
+    'early',
+    'morning',
+    'midday',
+    'afternoon',
+  ];
 
   const deepBlocks = scored.filter(
     ({ bucket, score }) =>

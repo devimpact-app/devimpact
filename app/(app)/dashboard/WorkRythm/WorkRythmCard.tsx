@@ -9,6 +9,7 @@ import {
   WorkRhythmBucket,
 } from '@/types/api/work-rhythm';
 import { WorkRhythmCardSkeleton } from './WorkRythmCardSkeleton';
+import { TIME_BAND_LABELS } from '@/lib/analysis/work-rhythm/bestFocusWindows';
 
 type WorkRhythmCardProps = {
   rhythm?: WorkRhythm;
@@ -17,8 +18,7 @@ type WorkRhythmCardProps = {
   onViewTimelineClick?: () => void;
 };
 
-// 4 time bands: early, morning, afternoon, evening
-const TIME_BANDS = 4;
+const TIME_BANDS = 5;
 const DAY_COLUMNS = 7;
 
 // These correspond to the backend bucket keys
@@ -32,14 +32,13 @@ const DAY_ORDER: WorkRhythmBucket['day'][] = [
   'sun',
 ];
 
-const TIME_BAND_LABELS: Record<TimeBandKey, string> = {
-  early: '5-9am',
-  am: '9am-12pm',
-  pm: '12-6pm',
-  eve: '6pm-5am',
-};
-
-const BAND_ORDER: WorkRhythmBucket['band'][] = ['early', 'am', 'pm', 'eve'];
+const BAND_ORDER: WorkRhythmBucket['band'][] = [
+  'early',
+  'morning',
+  'midday',
+  'afternoon',
+  'eve',
+];
 
 function lerpColor(c1: string, c2: string, t: number) {
   const r1 = parseInt(c1.slice(1, 3), 16);
@@ -55,6 +54,40 @@ function lerpColor(c1: string, c2: string, t: number) {
   const b = Math.round(b1 + (b2 - b1) * t);
 
   return `rgb(${r}, ${g}, ${b})`;
+}
+
+function WorkRhythmLegend({
+  showMeetings,
+  stripeSize = 5,
+}: {
+  showMeetings: boolean;
+  stripeSize?: number;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/45">
+      <div className="inline-flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-[#34D1C6]/80 ring-1 ring-white/10" />
+        <span>Coding activity</span>
+      </div>
+
+      {showMeetings && (
+        <div className="inline-flex items-center gap-2">
+          <span
+            className="h-3 w-3 rounded-full ring-1 ring-white/15"
+            style={{
+              opacity: 0.4,
+              backgroundImage: `repeating-linear-gradient(
+135deg,
+rgba(255,255,255,0.85) 0 ${stripeSize / 2}px,
+rgba(255,255,255,0) ${stripeSize / 2}px ${stripeSize}px
+)`,
+            }}
+          />
+          <span>Meetings scheduled</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function WorkRhythmCard({
@@ -87,6 +120,11 @@ export function WorkRhythmCard({
     }
 
     return { grid: base, maxCount: rhythm.maxBucketCount || max };
+  }, [rhythm]);
+
+  const showMeetingsLegend = useMemo(() => {
+    if (!rhythm?.buckets?.length) return false;
+    return rhythm.buckets.some((b) => (b.meetings?.meetingMinutes ?? 0) > 0);
   }, [rhythm]);
 
   if (loading) {
@@ -140,10 +178,20 @@ export function WorkRhythmCard({
         </button>
       </header>
 
+      <div className="flex items-center justify-between">
+        <WorkRhythmLegend showMeetings={showMeetingsLegend} />
+
+        {!showMeetingsLegend && (
+          <span className="text-[11px] text-white/30">
+            Connect Calendar to overlay meetings.
+          </span>
+        )}
+      </div>
+
       <div className="relative flex flex-col gap-2">
         <div
           className="
-          w-full h-24 
+          w-full h-32 
           rounded-xl 
           border border-white/5 
           bg-[#0C101A]
@@ -157,8 +205,8 @@ export function WorkRhythmCard({
           </div>
 
           <div className="absolute inset-1 flex">
-            <div className="flex flex-col justify-between mr-1">
-              {['Early', 'AM', 'PM', 'Eve'].map((t) => (
+            <div className="flex flex-col justify-between mr-2">
+              {['Early', 'Morning', 'Midday', 'Afternoon', 'Eve'].map((t) => (
                 <span
                   key={t}
                   className="text-[9px] text-white/30 leading-none translate-y-1"
@@ -167,7 +215,7 @@ export function WorkRhythmCard({
                 </span>
               ))}
             </div>
-            <div className="flex-1 grid grid-rows-4 grid-cols-7 gap-[4px]">
+            <div className="flex-1 grid grid-rows-5 grid-cols-7 gap-[4px]">
               {grid.map((row, bandIdx) =>
                 row.map((bucket, dayIdx) => {
                   const count = bucket?.eventCount ?? 0;
@@ -277,9 +325,9 @@ export function WorkRhythmCard({
       </div>
 
       <div className="mt-3 space-y-2">
-        <p className="text-[11px] text-[#7C86A8] leading-normal">
-          We aggregate your coding and review activity into a typical week so
-          you can spot when your focus time naturally happens.
+        <p className="text-xs text-[#7C86A8] leading-normal">
+          We map your coding and review activity into a typical week, layering
+          in meetings to reveal how focus and collaboration interact.
         </p>
 
         <p className="text-xs text-[#C7D2FF] leading-relaxed">

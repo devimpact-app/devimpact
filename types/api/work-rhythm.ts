@@ -1,4 +1,3 @@
-import { connect } from 'http2';
 import { z } from 'zod';
 
 export const WeekdayKeySchema = z.enum([
@@ -13,10 +12,11 @@ export const WeekdayKeySchema = z.enum([
 export type WeekdayKey = z.infer<typeof WeekdayKeySchema>;
 
 export const TimeBandKeySchema = z.enum([
-  'early', // ~5–9am
-  'am', // ~9–12pm
-  'pm', // ~12–6pm
-  'eve', // ~6–10pm
+  'early', // ~5–8am
+  'morning', // ~8–11am
+  'midday', // ~11am–2pm
+  'afternoon', // ~2pm-6pm
+  'eve', // ~6pm-5am
 ]);
 export type TimeBandKey = z.infer<typeof TimeBandKeySchema>;
 
@@ -43,6 +43,10 @@ export const BestFocusWindowSchema = z.object({
   band: TimeBandKeySchema,
   score: z.number(), // ranking score
   label: z.string(), // e.g. “Tuesday 9–11 AM”
+
+  // optional calendar stuff
+  meetingShare: z.number().min(0).max(1).optional(),
+  meetingPenaltyApplied: z.boolean().optional(),
 });
 export type BestFocusWindow = z.infer<typeof BestFocusWindowSchema>;
 

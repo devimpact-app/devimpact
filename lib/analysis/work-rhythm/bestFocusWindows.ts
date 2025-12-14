@@ -18,11 +18,12 @@ const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   sun: 'Sunday',
 };
 
-const BAND_LABELS: Record<TimeBandKey, string> = {
-  early: 'early morning',
-  am: '9–12 AM',
-  pm: '12–5 PM',
-  eve: 'evening',
+export const TIME_BAND_LABELS: Record<TimeBandKey, string> = {
+  early: '5-8am',
+  morning: '8-11am',
+  midday: '11am-2pm',
+  afternoon: '2-6pm',
+  eve: '6pm-5am',
 };
 
 export function computeBestFocusWindows(params: {
@@ -48,7 +49,7 @@ export function computeBestFocusWindows(params: {
     }
 
     const dayLabel = WEEKDAY_LABELS[bucket.day];
-    const bandLabel = BAND_LABELS[bucket.band];
+    const bandLabel = TIME_BAND_LABELS[bucket.band];
     results.push({
       day: bucket.day,
       band: bucket.band,
@@ -69,7 +70,7 @@ export function computeBestFocusWindows(params: {
       if (exists) continue;
 
       const dayLabel = WEEKDAY_LABELS[bucket.day];
-      const bandLabel = BAND_LABELS[bucket.band];
+      const bandLabel = TIME_BAND_LABELS[bucket.band];
 
       results.push({
         day: bucket.day,
@@ -93,7 +94,7 @@ export function computeProtectWindows(params: {
   if (best.length === 0) return [];
 
   const weekdaySet: WeekdayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri'];
-  const nonEvening: TimeBandKey[] = ['early', 'am', 'pm'];
+  const nonEvening: TimeBandKey[] = ['early', 'morning', 'midday', 'afternoon'];
 
   const primary = best.filter(
     (w) => weekdaySet.includes(w.day) && nonEvening.includes(w.band)

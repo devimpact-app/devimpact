@@ -28,10 +28,11 @@ const WEEKDAY_ORDER: WeekdayKey[] = [
 ];
 
 const BAND_MINUTES: Record<TimeBandKey, number> = {
-  early: (9 - 5) * 60, // 240
-  am: (12 - 9) * 60, // 180
-  pm: (18 - 12) * 60, // 360
-  eve: (29 - 18) * 60, // 660
+  early: (8 - 5) * 60,
+  morning: (11 - 8) * 60,
+  midday: (14 - 11) * 60,
+  afternoon: (18 - 2) * 60,
+  eve: (29 - 18) * 60,
 };
 
 function getDayKey(date: Date, tz: string): WeekdayKey {
@@ -108,9 +109,10 @@ export function countWeekdayOccurrences(params: {
 function getTimeBandKey(date: Date, tz: string): TimeBandKey {
   const h = getHourInTimezoneServer(date, tz);
 
-  if (h >= 5 && h < 9) return 'early';
-  if (h >= 9 && h < 12) return 'am';
-  if (h >= 12 && h < 18) return 'pm';
+  if (h >= 5 && h < 8) return 'early';
+  if (h >= 8 && h < 11) return 'morning';
+  if (h >= 11 && h < 14) return 'midday';
+  if (h >= 14 && h < 18) return 'afternoon';
   return 'eve';
 }
 
@@ -119,10 +121,12 @@ export function bandEndHour(band: TimeBandKey): number {
     case 'eve':
       return 5;
     case 'early':
-      return 9;
-    case 'am':
-      return 12;
-    case 'pm':
+      return 8;
+    case 'morning':
+      return 11;
+    case 'midday':
+      return 14;
+    case 'afternoon':
       return 18;
   }
 }
