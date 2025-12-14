@@ -5,6 +5,11 @@ import { and, eq } from 'drizzle-orm';
 
 type GoogleTokenRow = typeof integrationTokens.$inferSelect;
 
+export async function isCalendarConnected(userId: string): Promise<boolean> {
+  const row = await loadGoogleToken(userId);
+  return !!row;
+}
+
 async function loadGoogleToken(userId: string): Promise<GoogleTokenRow | null> {
   const [row] = await db
     .select()

@@ -1,7 +1,9 @@
 import {
   getHourInTimezoneServer,
   getWeekdayInTimezoneServer,
+  getYMDInTimezoneServer,
 } from '@/lib/utils/server-date';
+import { CalendarEvent } from '@/lib/db/schema/gcal';
 import type { ActivityEvent } from '@/types/api/timeline';
 import {
   TimeBandKeySchema,
@@ -12,6 +14,8 @@ import type {
   TimeBandKey,
   WorkRhythmBucket,
 } from '@/types/api/work-rhythm';
+import { fromZonedTime } from 'date-fns-tz';
+import { addDays, format, parseISO } from 'date-fns';
 
 const WEEKDAY_ORDER: WeekdayKey[] = [
   'mon',
@@ -23,18 +27,38 @@ const WEEKDAY_ORDER: WeekdayKey[] = [
   'sun',
 ];
 
+const BAND_MINUTES: Record<TimeBandKey, number> = {
+  early: (9 - 5) * 60, // 240
+  am: (12 - 9) * 60, // 180
+  pm: (18 - 12) * 60, // 360
+  eve: (29 - 18) * 60, // 660
+};
+
 function getDayKey(date: Date, tz: string): WeekdayKey {
   const idx = getWeekdayInTimezoneServer(date, tz);
   return WEEKDAY_ORDER[idx];
 }
 
 function getTimeBandKey(date: Date, tz: string): TimeBandKey {
-  const hour = getHourInTimezoneServer(date, tz);
+  const h = getHourInTimezoneServer(date, tz);
 
-  if (hour < 6) return 'early'; // ~0–6
-  if (hour < 12) return 'am'; // ~6–12
-  if (hour < 18) return 'pm'; // ~12–18
-  return 'eve'; // ~18–24
+  if (h >= 5 && h < 9) return 'early';
+  if (h >= 9 && h < 12) return 'am';
+  if (h >= 12 && h < 18) return 'pm';
+  return 'eve';
+}
+
+export function bandEndHour(band: TimeBandKey): number {
+  switch (band) {
+    case 'eve':
+      return 5;
+    case 'early':
+      return 9;
+    case 'am':
+      return 12;
+    case 'pm':
+      return 18;
+  }
 }
 
 function classifyEventForRhythm(
@@ -50,6 +74,36 @@ function classifyEventForRhythm(
     default:
       return 'other';
   }
+}
+
+function createBucketByKeyMap(
+  buckets: WorkRhythmBucket[]
+): Map<string, WorkRhythmBucket> {
+  const map = new Map<string, WorkRhythmBucket>();
+  for (const b of buckets) {
+    const key = `${b.day}:${b.band}`;
+    map.set(key, b);
+  }
+  return map;
+}
+
+function addLocalDays(dateStrYYYYMMDD: string, days: number) {
+  const d = parseISO(dateStrYYYYMMDD);
+  return format(addDays(d, days), 'yyyy-MM-dd');
+}
+
+function pad2(n: number) {
+  return String(n).padStart(2, '0');
+}
+
+function getBandEnd(cursorUtc: Date, band: TimeBandKey, tz: string) {
+  const endHour = bandEndHour(band);
+  const localYMD = getYMDInTimezoneServer(cursorUtc, tz);
+  const localHour = getHourInTimezoneServer(cursorUtc, tz);
+  const endDateStr =
+    endHour <= localHour ? addLocalDays(localYMD, 1) : localYMD;
+  const localEnd = `${endDateStr}T${pad2(endHour)}:00:00`;
+  return fromZonedTime(localEnd, tz);
 }
 
 /**
@@ -79,13 +133,7 @@ export function bucketEventsByDayAndBand(params: {
     }
   }
 
-  // Index for fast lookup: key = `${day}:${band}`
-  const bucketMap = new Map<string, WorkRhythmBucket>();
-  for (const b of initialBuckets) {
-    bucketMap.set(`${b.day}:${b.band}`, b);
-  }
-
-  // Fill buckets
+  const bucketMap = createBucketByKeyMap(initialBuckets);
   for (const ev of events) {
     if (!ev.occurredAt) continue;
 
@@ -124,4 +172,93 @@ export function bucketEventsByDayAndBand(params: {
     buckets: parsed,
     maxBucketCount,
   };
+}
+
+export function applyMeetingOverlay(params: {
+  buckets: WorkRhythmBucket[];
+  meetingEvents: CalendarEvent[];
+  timezone: string;
+}): WorkRhythmBucket[] {
+  const { buckets, meetingEvents, timezone } = params;
+
+  const bucketMap = createBucketByKeyMap(buckets);
+
+  const shouldAttach = meetingEvents.length > 0;
+  if (!shouldAttach) return buckets;
+
+  // Clone buckets
+  const out: WorkRhythmBucket[] = buckets.map((b) => {
+    if (!shouldAttach) return { ...b };
+    const bandMinutes = BAND_MINUTES[b.band as keyof typeof BAND_MINUTES] ?? 0;
+    return {
+      ...b,
+      meetings: {
+        bandMinutes,
+        meetingMinutes: 0,
+        meetingCount: 0,
+        meetingShare: 0,
+      },
+    };
+  });
+  const outByKey = new Map<string, WorkRhythmBucket>();
+  for (const b of out) outByKey.set(`${b.day}:${b.band}`, b);
+
+  for (const ev of meetingEvents) {
+    if (ev.isAllDay) continue;
+
+    const startUtc = new Date(ev.startAt);
+    const endUtc = new Date(ev.endAt);
+    if (!(startUtc < endUtc)) continue;
+
+    let cursorUtc = startUtc;
+
+    const touchedBuckets = new Set<string>();
+
+    while (cursorUtc < endUtc) {
+      const day = getDayKey(cursorUtc, timezone);
+      const band = getTimeBandKey(cursorUtc, timezone);
+
+      const bandEndUtc = getBandEnd(cursorUtc, band, timezone);
+      const segmentEndUtc = bandEndUtc < endUtc ? bandEndUtc : endUtc;
+
+      const minutes = Math.max(
+        0,
+        Math.round((segmentEndUtc.getTime() - cursorUtc.getTime()) / 60000)
+      );
+      if (minutes > 0) {
+        const key = `${day}:${band}`;
+        const cur = outByKey.get(key);
+        if (!cur) throw new Error('Missing bucket in meeting overlay');
+
+        let meetingData = cur.meetings ?? {
+          meetingCount: 0,
+          meetingMinutes: 0,
+          meetingShare: 0,
+          bandMinutes: BAND_MINUTES[cur.band],
+        };
+        meetingData.meetingMinutes += minutes;
+
+        if (!touchedBuckets.has(key)) {
+          meetingData.meetingCount += 1;
+          touchedBuckets.add(key);
+        }
+
+        outByKey.set(key, cur);
+      }
+
+      cursorUtc = segmentEndUtc;
+    }
+  }
+
+  // Add meeting share
+  for (const bucket of out) {
+    if (bucket.meetings && bucket.meetings.meetingMinutes > 0) {
+      bucket.meetings.meetingShare = Math.min(
+        1,
+        bucket.meetings.meetingMinutes / bucket.meetings.bandMinutes
+      );
+    }
+  }
+
+  return out;
 }

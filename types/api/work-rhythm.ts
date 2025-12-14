@@ -1,3 +1,4 @@
+import { connect } from 'http2';
 import { z } from 'zod';
 
 export const WeekdayKeySchema = z.enum([
@@ -26,6 +27,14 @@ export const WorkRhythmBucketSchema = z.object({
   eventCount: z.number(), // raw count used for heatmap intensity
   codeEvents: z.number(), // optional: commits / authored PR work
   reviewEvents: z.number(), // optional: review activity
+  meetings: z
+    .object({
+      bandMinutes: z.number(), // total mins in band
+      meetingMinutes: z.number(), // minutes scheduled in meetings
+      meetingCount: z.number(), // # of meeting events intersecting this band
+      meetingShare: z.number().min(0).max(1), // meetingMinutes / bandMinutes
+    })
+    .optional(),
 });
 export type WorkRhythmBucket = z.infer<typeof WorkRhythmBucketSchema>;
 
@@ -59,6 +68,9 @@ export const WorkRhythmSchema = z.object({
     startISO: z.string(), // last X days
     endISO: z.string(),
     label: z.string(),
+  }),
+  calendar: z.object({
+    connected: z.boolean(),
   }),
   buckets: z.array(WorkRhythmBucketSchema), // FLATTENED list, easier for FE
   maxBucketCount: z.number(), // for heatmap normalization

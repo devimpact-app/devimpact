@@ -15,6 +15,9 @@ import {
 } from './bestFocusWindows';
 import { computeAvgDeepWorkBlocksPerWeek } from './deepWork';
 import { buildWorkRhythmDescription } from './description';
+import { isCalendarConnected } from '@/lib/integrations/gcal/client';
+import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
+import { CalendarEvent } from '@/lib/db/schema/gcal';
 
 export type BuildWorkRhythmArgs = {
   userId: string;
@@ -74,6 +77,16 @@ export async function buildWorkRhythm({
     end,
   });
 
+  const calendarConnected = await isCalendarConnected(userId);
+  let calendarEvents: CalendarEvent[] = [];
+  if (calendarConnected) {
+    calendarEvents = await getCalendarEventsForRange({
+      tenantId: userId,
+      start,
+      end,
+    });
+  }
+
   const { buckets, maxBucketCount } = bucketEventsByDayAndBand({
     events,
     timezone,
@@ -111,6 +124,9 @@ export async function buildWorkRhythm({
     buckets,
     maxBucketCount,
     summary,
+    calendar: {
+      connected: calendarConnected,
+    },
   };
 
   return WorkRhythmSchema.parse(analysis);

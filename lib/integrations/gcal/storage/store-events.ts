@@ -8,6 +8,7 @@ import {
 import { db } from '@/lib/db/client';
 import { calendarEvents } from '@/lib/db/schema/gcal';
 import { sql } from 'drizzle-orm';
+import { categorizeEvent } from '../sync/categorizer';
 
 type UpsertCalendarEventsArgs = {
   tenantId: string;
@@ -27,19 +28,30 @@ export async function upsertCalendarEvents({
   if (!events.length) return { upserted: 0 };
 
   const rows = events
-    // optional: ignore events missing start/end
+    // Cancelled should already not be returned, but add here just incase
+    .filter((e) => e.status !== 'cancelled')
     .map((e) => {
       const startAt = parseGoogleDateTime(e.start);
       const endAt = parseGoogleDateTime(e.end);
       if (!startAt || !endAt) return null;
 
       const isAllDay = Boolean(e.start?.date && !e.start?.dateTime);
+      const durationMinutes = !isAllDay ? minutesBetween(startAt, endAt) : null;
 
       const originalStartAt = parseGoogleDateTime(e.originalStartTime);
 
       const attendeeAgg = summarizeAttendees(e.attendees);
 
       const tz = e.start?.timeZone ?? e.end?.timeZone ?? null;
+
+      const categoryInfo = categorizeEvent({
+        title: e.summary,
+        eventType: e.eventType,
+        attendeeInfo: attendeeAgg,
+        isAllDay,
+        durationMinutes,
+        isRecurring: !!e.recurringEventId,
+      });
 
       return {
         tenantId,
@@ -56,7 +68,7 @@ export async function upsertCalendarEvents({
 
         startAt,
         endAt,
-        durationMinutes: minutesBetween(startAt, endAt),
+        durationMinutes,
         originalStartAt,
 
         isAllDay,
@@ -65,11 +77,7 @@ export async function upsertCalendarEvents({
         titleRedacted: redactTitle(e.summary ?? null),
 
         ...attendeeAgg,
-
-        // categorization later
-        category: null,
-        categoryConfidence: null,
-        categorySource: null,
+        ...categoryInfo,
 
         createdAtGoogle: e.created ? new Date(e.created) : null,
         updatedAtGoogle: e.updated ? new Date(e.updated) : null,
