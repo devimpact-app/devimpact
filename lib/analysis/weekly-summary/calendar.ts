@@ -84,7 +84,7 @@ export async function getWeeklyMeetingTotals(params: {
   return {
     meetingMinutes,
     meetingCount,
-    categories,
+    categories: categories as any,
     deepWorkBlocksCount: deepWorkBlocks.length,
   };
 }

@@ -21,7 +21,7 @@ async function sha256(input: string) {
 function randomUrlSafeString(bytes = 32) {
   const arr = new Uint8Array(bytes);
   crypto.getRandomValues(arr);
-  return base64url(arr);
+  return base64url(arr as any);
 }
 
 export async function GET(req: NextRequest) {

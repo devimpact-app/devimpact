@@ -23,6 +23,7 @@ import {
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { signOutAction } from './dashboard/actions';
+import Image from 'next/image';
 
 type NavItem = {
   href: string;
@@ -82,7 +83,14 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
   return (
     <nav className="relative flex flex-col bg-gradient-to-b from-indigo-950/40 via-indigo-950/30 to-indigo-950/20 backdrop-blur border-r border-white/15 text-white w-[90px] p-4">
       <div className="relative mx-auto mt-1 mb-6 flex h-11 w-11 items-center justify-center">
-        <Orbit className="h-7 w-7 text-indigo-400" />
+        <Image
+          src="/images/landing/devimpact-logo-light.svg"
+          alt=""
+          width={36}
+          height={36}
+          className="opacity-90 rounded-lg border-2 border-indigo-400"
+        />
+        {/* <Orbit className="h-7 w-7 text-indigo-400" /> */}
       </div>
 
       <div className="flex h-full flex-col gap-1">
