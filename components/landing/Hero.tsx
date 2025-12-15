@@ -53,13 +53,12 @@ export function HeroSection() {
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-white">
           Protect your leverage
           <br className="hidden sm:block" />
-          in an AI-accelerated world
+          as engineering evolves
         </h1>
 
         <p className="max-w-2xl text-base sm:text-lg text-white/80 leading-relaxed">
-          DevImpact gives you a clear, objective view of how your time, focus,
-          and impact actually unfold — so you can adapt faster than the role
-          itself is changing.
+          DevImpact shows you how your time, focus, and impact actually unfold,
+          so you can adapt faster than the role itself is changing.
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
