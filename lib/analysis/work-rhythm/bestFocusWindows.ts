@@ -4,9 +4,9 @@ import type {
   ProtectWindow,
 } from '@/types/api/work-rhythm';
 import { scoreBucketsForRhythm } from './scoring';
+import { TIME_BAND_LABELS_SIMPLE } from './labels';
 
 type WeekdayKey = WorkRhythmBucket['day'];
-type TimeBandKey = WorkRhythmBucket['band'];
 
 const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   mon: 'Monday',
@@ -16,13 +16,6 @@ const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   fri: 'Friday',
   sat: 'Saturday',
   sun: 'Sunday',
-};
-
-const BAND_LABELS: Record<TimeBandKey, string> = {
-  early: 'early morning',
-  am: '9–12 AM',
-  pm: '12–5 PM',
-  eve: 'evening',
 };
 
 export function computeBestFocusWindows(params: {
@@ -37,7 +30,7 @@ export function computeBestFocusWindows(params: {
   const results: BestFocusWindow[] = [];
   const usedDays = new Set<WeekdayKey>();
 
-  for (const { bucket, score } of scored) {
+  for (const { bucket, score, adjustments } of scored) {
     if (results.length >= maxWindows) break;
 
     // Slight bias: prefer spreading across days
@@ -48,12 +41,14 @@ export function computeBestFocusWindows(params: {
     }
 
     const dayLabel = WEEKDAY_LABELS[bucket.day];
-    const bandLabel = BAND_LABELS[bucket.band];
+    const bandLabel = TIME_BAND_LABELS_SIMPLE[bucket.band];
     results.push({
       day: bucket.day,
       band: bucket.band,
       score,
       label: `${dayLabel} ${bandLabel}`,
+      workEventCount: adjustments?.workEventCount,
+      meetingShare: adjustments?.meetingShare,
     });
 
     usedDays.add(bucket.day);
@@ -61,7 +56,7 @@ export function computeBestFocusWindows(params: {
 
   // If we skipped some due to day spreading and still have slots, fill them
   if (results.length < maxWindows) {
-    for (const { bucket, score } of scored) {
+    for (const { bucket, score, adjustments } of scored) {
       if (results.length >= maxWindows) break;
       const exists = results.some(
         (w) => w.day === bucket.day && w.band === bucket.band
@@ -69,57 +64,18 @@ export function computeBestFocusWindows(params: {
       if (exists) continue;
 
       const dayLabel = WEEKDAY_LABELS[bucket.day];
-      const bandLabel = BAND_LABELS[bucket.band];
+      const bandLabel = TIME_BAND_LABELS_SIMPLE[bucket.band];
 
       results.push({
         day: bucket.day,
         band: bucket.band,
         score,
         label: `${dayLabel} ${bandLabel}`,
+        workEventCount: adjustments?.workEventCount,
+        meetingShare: adjustments?.meetingShare,
       });
     }
   }
 
   return results;
-}
-
-export function computeProtectWindows(params: {
-  buckets: WorkRhythmBucket[];
-  maxWindows?: number;
-}): ProtectWindow[] {
-  const { buckets, maxWindows = 2 } = params;
-
-  const best = computeBestFocusWindows({ buckets, maxWindows: 4 });
-  if (best.length === 0) return [];
-
-  const weekdaySet: WeekdayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri'];
-  const nonEvening: TimeBandKey[] = ['early', 'am', 'pm'];
-
-  const primary = best.filter(
-    (w) => weekdaySet.includes(w.day) && nonEvening.includes(w.band)
-  );
-
-  const picked: ProtectWindow[] = [];
-  for (const w of primary) {
-    if (picked.length >= maxWindows) break;
-    picked.push({
-      day: w.day,
-      band: w.band,
-      // Make this more relevant for meeting times
-      label: w.label.replace('early morning', '9–11 AM'),
-    });
-  }
-
-  if (picked.length === 0) {
-    for (const w of best) {
-      if (picked.length >= maxWindows) break;
-      picked.push({
-        day: w.day,
-        band: w.band,
-        label: w.label,
-      });
-    }
-  }
-
-  return picked;
 }

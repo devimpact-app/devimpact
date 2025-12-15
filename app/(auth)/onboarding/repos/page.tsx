@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import RepoSelectionClient from './RepoSelectionClient';
 import { redirect } from 'next/navigation';
+import { SentryUserBridge } from '@/components/SentryUserBridge';
 
 export default async function RepoSelectionPage({
   searchParams,
@@ -13,8 +14,14 @@ export default async function RepoSelectionPage({
   const isFromSettings = params.fromSettings ?? false;
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
+  const userFromSession = session.user;
 
   const githubUsername = session.user.githubUsername;
+
+  const user = {
+    id: userFromSession.id,
+    email: userFromSession.email ?? undefined,
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
@@ -37,10 +44,12 @@ export default async function RepoSelectionPage({
           </div>
         </header>
 
-        <RepoSelectionClient
-          githubUsername={githubUsername}
-          isFromSettings={isFromSettings}
-        />
+        <SentryUserBridge user={user}>
+          <RepoSelectionClient
+            githubUsername={githubUsername}
+            isFromSettings={isFromSettings}
+          />
+        </SentryUserBridge>
       </main>
     </div>
   );

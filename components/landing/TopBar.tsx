@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export default function TopBar() {
   return (
     <header
@@ -14,11 +16,17 @@ export default function TopBar() {
         "
       >
         <div className="flex items-center justify-between px-6 py-4">
-          <a
-            href="/"
-            className="text-2xl font-semibold text-text-primary tracking-tight"
-          >
-            DevImpact
+          <a href="/" className="flex items-center gap-2">
+            <Image
+              src="/images/landing/devimpact-logo-light.svg"
+              alt=""
+              width={24}
+              height={24}
+              className="opacity-90"
+            />
+            <span className="text-lg font-semibold tracking-tight text-white">
+              DevImpact
+            </span>
           </a>
 
           <nav className="flex items-center gap-4">

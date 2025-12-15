@@ -5,7 +5,7 @@ export default function TermsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Terms of Service</h1>
 
         <p className="text-sm text-text-secondary">
-          Last updated: November 2025 • DevImpact (operated by ExportLogic LLC)
+          Last updated: December 2025 • DevImpact (operated by ExportLogic LLC)
         </p>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
@@ -33,10 +33,12 @@ export default function TermsPage() {
             3. Description of the Service
           </h2>
           <p>
-            DevImpact analyzes GitHub activity — including pull requests,
-            reviews, comments, and related metadata — to generate insights,
-            summaries, and work patterns. We never modify your GitHub data.
+            DevImpact analyzes activity data you choose to connect—such as
+            GitHub metadata (pull requests, reviews, comments, and related
+            metadata) and, if you enable it, Google Calendar read-only event
+            metadata—to generate insights, summaries, and work patterns.
           </p>
+          <p>DevImpact does not modify your GitHub or Google Calendar data.</p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
@@ -53,7 +55,18 @@ export default function TermsPage() {
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            5. User Responsibilities
+            5. AI-Generated Insights
+          </h2>
+          <p>
+            Some DevImpact features may generate summaries or suggestions using
+            automated systems. These outputs may be inaccurate or incomplete and
+            should not be relied on for critical decisions.
+          </p>
+        </section>
+
+        <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
+          <h2 className="text-base font-semibold text-text-primary">
+            6. User Responsibilities
           </h2>
           <p>You agree not to misuse the Service in any way, including:</p>
           <ul className="list-disc list-inside space-y-1">
@@ -65,21 +78,26 @@ export default function TermsPage() {
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            6. Your Data
+            7. Your Data
           </h2>
           <p>
-            You give DevImpact permission to retrieve and analyze GitHub data
-            you opt into syncing. See our{" "}
+            You give DevImpact permission to retrieve and analyze data from
+            integrations you explicitly connect (such as GitHub and Google
+            Calendar). You can revoke access at any time by disconnecting an
+            integration in the app.
+          </p>
+          <p>
+            See our{' '}
             <a href="/privacy" className="text-accent underline">
               Privacy Policy
-            </a>{" "}
+            </a>{' '}
             for details.
           </p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            7. Intellectual Property
+            8. Intellectual Property
           </h2>
           <p>
             All DevImpact software and designs are owned by ExportLogic LLC. You
@@ -89,7 +107,7 @@ export default function TermsPage() {
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            8. Termination
+            9. Termination
           </h2>
           <p>
             You may stop using DevImpact at any time. We may suspend access for
@@ -99,7 +117,7 @@ export default function TermsPage() {
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            9. Limitation of Liability
+            10. Limitation of Liability
           </h2>
           <p>
             To the fullest extent permitted by law, DevImpact and ExportLogic
@@ -109,17 +127,17 @@ export default function TermsPage() {
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            10. Governing Law
+            11. Governing Law
           </h2>
           <p>These Terms are governed by the laws of Arizona, USA.</p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed pb-12">
           <h2 className="text-base font-semibold text-text-primary">
-            11. Contact
+            12. Contact
           </h2>
           <p>
-            For questions or concerns, contact{" "}
+            For questions or concerns, contact{' '}
             <a
               href="mailto:ian@devimpact.app"
               className="text-accent underline"

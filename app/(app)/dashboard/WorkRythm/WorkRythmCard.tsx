@@ -3,8 +3,13 @@
 import { WEEKDAY_LABELS } from '@/lib/utils/date';
 import { ChevronRight, BarChart3 } from 'lucide-react';
 import { useMemo } from 'react';
-import { WorkRhythm, WorkRhythmBucket } from '@/types/api/work-rhythm';
+import {
+  TimeBandKey,
+  WorkRhythm,
+  WorkRhythmBucket,
+} from '@/types/api/work-rhythm';
 import { WorkRhythmCardSkeleton } from './WorkRythmCardSkeleton';
+import { TIME_BAND_LABELS } from '@/lib/analysis/work-rhythm/labels';
 
 type WorkRhythmCardProps = {
   rhythm?: WorkRhythm;
@@ -13,8 +18,7 @@ type WorkRhythmCardProps = {
   onViewTimelineClick?: () => void;
 };
 
-// 4 time bands: early, morning, afternoon, evening
-const TIME_BANDS = 4;
+const TIME_BANDS = 5;
 const DAY_COLUMNS = 7;
 
 // These correspond to the backend bucket keys
@@ -28,7 +32,13 @@ const DAY_ORDER: WorkRhythmBucket['day'][] = [
   'sun',
 ];
 
-const BAND_ORDER: WorkRhythmBucket['band'][] = ['early', 'am', 'pm', 'eve'];
+const BAND_ORDER: WorkRhythmBucket['band'][] = [
+  'early',
+  'morning',
+  'midday',
+  'afternoon',
+  'eve',
+];
 
 function lerpColor(c1: string, c2: string, t: number) {
   const r1 = parseInt(c1.slice(1, 3), 16);
@@ -46,6 +56,40 @@ function lerpColor(c1: string, c2: string, t: number) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+function WorkRhythmLegend({
+  showMeetings,
+  stripeSize = 5,
+}: {
+  showMeetings: boolean;
+  stripeSize?: number;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/45">
+      <div className="inline-flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-[#34D1C6]/80 ring-1 ring-white/10" />
+        <span>Coding activity</span>
+      </div>
+
+      {showMeetings && (
+        <div className="inline-flex items-center gap-2">
+          <span
+            className="h-3 w-3 rounded-full ring-1 ring-white/15"
+            style={{
+              opacity: 0.4,
+              backgroundImage: `repeating-linear-gradient(
+135deg,
+rgba(255,255,255,0.85) 0 ${stripeSize / 2}px,
+rgba(255,255,255,0) ${stripeSize / 2}px ${stripeSize}px
+)`,
+            }}
+          />
+          <span>Meetings scheduled</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function WorkRhythmCard({
   rhythm,
   loading,
@@ -53,13 +97,12 @@ export function WorkRhythmCard({
   onViewTimelineClick,
 }: WorkRhythmCardProps) {
   const { grid, maxCount } = useMemo(() => {
-    const base: number[][] = Array.from({ length: TIME_BANDS }, () =>
-      Array.from({ length: DAY_COLUMNS }, () => 0)
+    const base: (WorkRhythmBucket | null)[][] = Array.from(
+      { length: TIME_BANDS },
+      () => Array.from({ length: DAY_COLUMNS }, () => null)
     );
 
-    if (!rhythm) {
-      return { grid: base, maxCount: 0 };
-    }
+    if (!rhythm) return { grid: base, maxCount: 0 };
 
     const dayIndex = (day: WorkRhythmBucket['day']) => DAY_ORDER.indexOf(day);
     const bandIndex = (band: WorkRhythmBucket['band']) =>
@@ -72,16 +115,16 @@ export function WorkRhythmCard({
       const c = dayIndex(b.day);
       if (r < 0 || c < 0) continue;
 
-      base[r][c] = b.eventCount;
-      if (b.eventCount > max) {
-        max = b.eventCount;
-      }
+      base[r][c] = b;
+      if (b.eventCount > max) max = b.eventCount;
     }
 
-    // Prefer backend max if present, otherwise fallback
-    const finalMax = rhythm.maxBucketCount || max;
+    return { grid: base, maxCount: rhythm.maxBucketCount || max };
+  }, [rhythm]);
 
-    return { grid: base, maxCount: finalMax };
+  const showMeetingsLegend = useMemo(() => {
+    if (!rhythm?.buckets?.length) return false;
+    return rhythm.buckets.some((b) => (b.meetings?.meetingMinutes ?? 0) > 0);
   }, [rhythm]);
 
   if (loading) {
@@ -135,14 +178,24 @@ export function WorkRhythmCard({
         </button>
       </header>
 
+      <div className="flex items-center justify-between">
+        <WorkRhythmLegend showMeetings={showMeetingsLegend} />
+
+        {!showMeetingsLegend && (
+          <span className="text-[11px] text-white/30">
+            Connect Calendar to overlay meetings.
+          </span>
+        )}
+      </div>
+
       <div className="relative flex flex-col gap-2">
         <div
           className="
-          w-full h-24 
+          w-full h-32 
           rounded-xl 
           border border-white/5 
           bg-[#0C101A]
-          overflow-hidden 
+          overflow-visible 
           relative
         "
         >
@@ -152,8 +205,8 @@ export function WorkRhythmCard({
           </div>
 
           <div className="absolute inset-1 flex">
-            <div className="flex flex-col justify-between mr-1">
-              {['Early', 'AM', 'PM', 'Eve'].map((t) => (
+            <div className="flex flex-col justify-between mr-2">
+              {['Early', 'Morning', 'Midday', 'Afternoon', 'Eve'].map((t) => (
                 <span
                   key={t}
                   className="text-[9px] text-white/30 leading-none translate-y-1"
@@ -162,9 +215,12 @@ export function WorkRhythmCard({
                 </span>
               ))}
             </div>
-            <div className="flex-1 grid grid-rows-4 grid-cols-7 gap-[4px]">
+            <div className="flex-1 grid grid-rows-5 grid-cols-7 gap-[4px]">
               {grid.map((row, bandIdx) =>
-                row.map((count, dayIdx) => {
+                row.map((bucket, dayIdx) => {
+                  const count = bucket?.eventCount ?? 0;
+                  const meetings = bucket?.meetings; // might be undefined if calendar not connected
+
                   const ratio = !maxCount || count === 0 ? 0 : count / maxCount;
 
                   const ZERO_COLOR = '#1A1D2A'; // no activity
@@ -177,6 +233,22 @@ export function WorkRhythmCard({
                   const glow =
                     ratio > 0.75 ? '0 0 8px rgba(52, 209, 198, 0.3)' : 'none';
 
+                  const meetingShare = bucket?.meetings?.meetingShare ?? 0;
+                  const overlayOpacity =
+                    meetingShare < 0.1
+                      ? 0
+                      : meetingShare < 0.2
+                        ? 0.08
+                        : meetingShare < 0.3
+                          ? 0.14
+                          : meetingShare < 0.5
+                            ? 0.18
+                            : 0.22;
+
+                  // Much wider stripes at low levels = less visual noise
+                  const stripeSize =
+                    meetingShare < 0.3 ? 12 : meetingShare < 0.5 ? 8 : 6;
+
                   return (
                     <div
                       key={`${bandIdx}-${dayIdx}`}
@@ -184,13 +256,49 @@ export function WorkRhythmCard({
                         rounded-full 
                         transition-transform duration-150 
                         hover:scale-[1.03]
+                        relative group
                       "
                       style={{
                         backgroundColor: fill,
                         border: border,
                         boxShadow: glow,
                       }}
-                    />
+                    >
+                      {overlayOpacity > 0 && (
+                        <div
+                          className="absolute inset-0 pointer-events-none rounded-full"
+                          style={{
+                            opacity: overlayOpacity,
+                            backgroundImage: `repeating-linear-gradient(
+            135deg,
+            rgba(255,255,255,0.85) 0 ${stripeSize / 2}px,
+            rgba(255,255,255,0) ${stripeSize / 2}px ${stripeSize}px
+          )`,
+                          }}
+                        />
+                      )}
+                      <div className="pointer-events-none absolute left-1/2 top-[-10px] z-100 hidden -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-xl border border-slate-700 bg-slate-950/95 px-2.5 py-1.5 text-[11px] text-slate-200 shadow-lg group-hover:block">
+                        <div className="font-medium capitalize text-slate-100">
+                          {bucket?.day ?? 'mon'} •{' '}
+                          {TIME_BAND_LABELS[bucket?.band || 'early']}
+                        </div>
+                        <div className="text-slate-400">
+                          Coding: {count} events
+                        </div>
+                        {meetings ? (
+                          <div className="text-slate-400">
+                            Meetings: {meetings.meetingCount} •{' '}
+                            {meetings.meetingMinutes}m •{' '}
+                            {Math.round(meetings.meetingShare * 100)}% of time
+                          </div>
+                        ) : (
+                          <div className="text-slate-500">
+                            Calendar not connected
+                          </div>
+                        )}
+                        <div className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-b border-r border-slate-700 bg-slate-950/95" />
+                      </div>
+                    </div>
                   );
                 })
               )}
@@ -217,9 +325,9 @@ export function WorkRhythmCard({
       </div>
 
       <div className="mt-3 space-y-2">
-        <p className="text-[11px] text-[#7C86A8] leading-normal">
-          We aggregate your coding and review activity into a typical week so
-          you can spot when your focus time naturally happens.
+        <p className="text-xs text-[#7C86A8] leading-normal">
+          We map your coding and review activity into a typical week, layering
+          in meetings to reveal how focus and collaboration interact.
         </p>
 
         <p className="text-xs text-[#C7D2FF] leading-relaxed">
@@ -229,16 +337,14 @@ export function WorkRhythmCard({
 
         {summary?.protectWindows?.length ? (
           <div className="flex flex-col gap-1.5 pt-2">
-            {/* Label */}
             <p className="text-[11px] text-slate-500 leading-tight">
-              Suggested focus windows during daytime work hours
+              Suggested times to protect during daytime work hours
             </p>
 
-            {/* Chips */}
             <div className="flex flex-wrap gap-2">
               {summary.protectWindows.map((w) => (
                 <span
-                  key={`${w.day}-${w.band}`}
+                  key={`${w.startUtc}-${w.endUtc}`}
                   className="rounded-full border border-[#3B4A78] px-2.5 py-1 text-[11px] text-[#C7D2FF]"
                 >
                   {w.label}

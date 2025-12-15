@@ -41,7 +41,7 @@ export function WorkRhythmCardSkeleton() {
       <div className="relative flex flex-col gap-2">
         <div
           className="
-            w-full h-24 
+            w-full h-32 
             rounded-xl 
             border border-white/5 
             bg-[#0C101A]
@@ -51,11 +51,11 @@ export function WorkRhythmCardSkeleton() {
         >
           <div className="absolute inset-1 flex">
             <div className="flex flex-col justify-between mr-1">
-              {['Early', 'AM', 'PM', 'Eve'].map((t) => (
+              {['Early', 'Morning', 'Midday', 'Afternoon', 'Eve'].map((t) => (
                 <span key={t} className="h-2 w-6 rounded bg-[#151A28]" />
               ))}
             </div>
-            <div className="flex-1 grid grid-rows-4 grid-cols-7 gap-[4px]">
+            <div className="flex-1 grid grid-rows-5 grid-cols-7 gap-[4px]">
               {Array.from({ length: 4 * 7 }).map((_, i) => (
                 <div key={i} className="rounded-full bg-[#1A2234]" />
               ))}

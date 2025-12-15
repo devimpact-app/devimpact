@@ -75,7 +75,6 @@ export async function persistBundles(
         counts.reviewComments += reviewComments.length;
       }
 
-      // Timeline (immutable; your storeTimelineEvents already on-conflict-do-nothing)
       if (b.timelineEvents?.length) {
         await storeTimelineEvents(prId, userId, b.timelineEvents);
         counts.events += b.timelineEvents.length;

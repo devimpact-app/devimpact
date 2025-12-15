@@ -8,13 +8,22 @@ import {
   getWeekBoundsFromOffsetServer,
 } from '@/lib/utils/server-date';
 import { getActivityEventsForRange } from '../activity/getActivityEventsForRange';
-import { bucketEventsByDayAndBand } from './bucket';
 import {
-  computeBestFocusWindows,
-  computeProtectWindows,
-} from './bestFocusWindows';
-import { computeAvgDeepWorkBlocksPerWeek } from './deepWork';
+  applyMeetingOverlay,
+  bucketEventsByDayAndBand,
+  countWeekdayOccurrences,
+} from './bucket';
+// import { findBestFocusWindows } from './deep-work';
 import { buildWorkRhythmDescription } from './description';
+import { isCalendarConnected } from '@/lib/integrations/gcal/client';
+import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
+import { CalendarEvent } from '@/lib/db/schema/gcal';
+import { buildTimeSlices } from './timeSlices';
+import { computeBestFocusWindows } from './bestFocusWindows';
+import { findDeepWorkBlocks } from './deep-work';
+import { time } from 'drizzle-orm/mysql-core';
+import { differenceInCalendarDays } from 'date-fns';
+import { findProtectWindows } from './protect-windows';
 
 export type BuildWorkRhythmArgs = {
   userId: string;
@@ -62,6 +71,9 @@ export async function buildWorkRhythm({
     start = bounds.start;
     end = bounds.end;
   }
+  const days = Math.max(1, differenceInCalendarDays(start, end));
+  const weeks = Math.max(1, days / 7);
+
   const range: WorkRhythm['range'] = {
     startISO: start.toISOString(),
     endISO: end.toISOString(),
@@ -74,23 +86,63 @@ export async function buildWorkRhythm({
     end,
   });
 
-  const { buckets, maxBucketCount } = bucketEventsByDayAndBand({
+  const calendarConnected = await isCalendarConnected(userId);
+  let calendarEvents: CalendarEvent[] = [];
+  if (calendarConnected) {
+    calendarEvents = await getCalendarEventsForRange({
+      tenantId: userId,
+      start,
+      end,
+    });
+  }
+
+  const bucketResp = bucketEventsByDayAndBand({
     events,
     timezone,
+  });
+  const maxBucketCount = bucketResp.maxBucketCount;
+  const weekdayOccurences = countWeekdayOccurrences({
+    startUtc: start,
+    endUtc: end,
+    timezone,
+  });
+  const buckets = applyMeetingOverlay({
+    buckets: bucketResp.buckets,
+    meetingEvents: calendarEvents,
+    timezone,
+    weekdayOccurences,
+  });
+
+  const timeSlices = buildTimeSlices({
+    startUtc: start,
+    endUtc: end,
+    meetingEvents: calendarEvents,
+    workEvents: events,
+    sliceMinutes: 15,
+    includePersonalMeetings: false,
   });
 
   const bestFocusWindows = computeBestFocusWindows({
     buckets,
+    maxWindows: 3,
   });
 
-  const avgDeepWorkBlocksPerWeek = computeAvgDeepWorkBlocksPerWeek({
-    buckets,
-  });
+  let avgDeepWorkBlocksPerWeek = 0;
+  if (calendarConnected) {
+    const deepWorkBlocks = findDeepWorkBlocks({
+      slices: timeSlices,
+      timezone,
+      limit: 3,
+    });
+    avgDeepWorkBlocksPerWeek = deepWorkBlocks.length / weeks;
+  }
 
   const eveningSharePercent = computeEveningSharePercent(buckets);
 
-  const protectWindows = computeProtectWindows({
-    buckets,
+  const protectWindows = findProtectWindows({
+    slices: timeSlices,
+    timezone,
+    limit: 3,
   });
 
   const summary = {
@@ -111,6 +163,9 @@ export async function buildWorkRhythm({
     buckets,
     maxBucketCount,
     summary,
+    calendar: {
+      connected: calendarConnected,
+    },
   };
 
   return WorkRhythmSchema.parse(analysis);

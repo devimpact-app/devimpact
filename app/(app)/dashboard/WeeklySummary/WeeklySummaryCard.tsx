@@ -1,5 +1,9 @@
-import { WeeklySummary } from '@/types/api/weekly-summary';
+import {
+  CalendarEventCategory,
+  WeeklySummary,
+} from '@/types/api/weekly-summary';
 import { SoftStat } from './SoftStat';
+import { formatMinutes } from '@/lib/utils/date';
 
 type WeeklySummaryCardProps = {
   summary?: WeeklySummary;
@@ -8,12 +12,28 @@ type WeeklySummaryCardProps = {
   handleOneOnOne: () => void;
 };
 
+const CALENDAR_EVENT_CATEGORY_LABELS: Record<CalendarEventCategory, string> = {
+  oneOnOne: '1:1s',
+  team: 'Team meetings',
+  org: 'Org-wide',
+  interview: 'Interviews',
+  incident: 'Incidents',
+  focus: 'Focus time',
+  ooo: 'Out of office',
+  personal: 'Personal',
+  other: 'Other',
+};
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
       {children}
     </h3>
   );
+}
+
+function prettyCategory(key: CalendarEventCategory): string {
+  return CALENDAR_EVENT_CATEGORY_LABELS[key] ?? key.replace(/_/g, ' ');
 }
 
 export function WeeklySummaryCard({
@@ -66,6 +86,7 @@ export function WeeklySummaryCard({
     reviewsCollab,
     whereYouSpentTime,
     frictionFollowups,
+    calendar,
   } = summary;
 
   const what = summary.whatYouWorkedOn;
@@ -88,12 +109,17 @@ export function WeeklySummaryCard({
               isFirst
             />
             <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-700" />
-            <SoftStat label="PRs reviewed" value={softStats.prsReviewed} />
-            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-700" />
             <SoftStat label="Active days" value={softStats.activeDays} />
             <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-700" />
             {softStats.mostActiveDay && (
               <SoftStat label="Most active" value={softStats.mostActiveDay} />
+            )}
+            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-slate-700" />
+            {softStats.meetingMinutes && (
+              <SoftStat
+                label="Meeting load"
+                value={formatMinutes(softStats.meetingMinutes)}
+              />
             )}
           </div>
         </div>
@@ -250,9 +276,60 @@ export function WeeklySummaryCard({
             </section>
           )}
 
+          {calendar && (
+            <section className="">
+              <SectionLabel>Calendar & meetings</SectionLabel>
+
+              <p className="mt-1 text-sm text-slate-300">
+                You had {calendar.meetingCount}{' '}
+                {calendar.meetingCount === 1 ? 'meeting' : 'meetings'} totaling{' '}
+                {formatMinutes(calendar.meetingMinutes)}.
+                {typeof calendar.deepWorkBlocksCount === 'number' ? (
+                  <>
+                    {' '}
+                    You had {calendar.deepWorkBlocksCount}{' '}
+                    {calendar.deepWorkBlocksCount === 1
+                      ? 'deep work block'
+                      : 'deep work blocks'}{' '}
+                    available.
+                  </>
+                ) : null}
+              </p>
+
+              {calendar.categories && calendar.categories.length > 0 && (
+                <div className="mt-4 border-l border-slate-700/70 pl-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-2">
+                    Breakdown
+                  </p>
+
+                  <div className="space-y-2">
+                    {calendar.categories.map((c) => (
+                      <div
+                        key={c.key}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="text-sm text-slate-200">
+                          {prettyCategory(c.key)}
+                          <span className="text-slate-500">
+                            {' '}
+                            · {c.count} {c.count === 1 ? 'event' : 'events'}
+                          </span>
+                        </div>
+
+                        <div className="text-sm text-slate-400 tabular-nums">
+                          {formatMinutes(c.minutes ?? 0)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
           {frictionFollowups && frictionFollowups.items.length > 0 && (
             <>
-              <div className="my-5 h-px w-full bg-slate-800/50" />
+              <div className="mt-5 h-px w-full bg-slate-800/50" />
               <section className="rounded-xl border border-slate-800 bg-slate-950/80 px-4 py-3">
                 <SectionLabel>Friction & follow-ups</SectionLabel>
                 <ul className="mt-1 space-y-1.5 text-sm text-slate-300">

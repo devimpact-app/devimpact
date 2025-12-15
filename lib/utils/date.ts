@@ -27,6 +27,24 @@ export function weeksAgo(start: Date, weeks: number): Date {
   return d;
 }
 
+export function addMinutes(d: Date, minutes: number) {
+  return new Date(d.getTime() + minutes * 60_000);
+}
+
+export function daysAgo(start: Date, days: number): Date {
+  const d = new Date(start);
+  d.setDate(d.getDate() - days);
+  return d;
+}
+
+export function minutesBetween(start: Date | null, end: Date | null) {
+  if (!start || !end) return null;
+  const ms = end.getTime() - start.getTime();
+  if (!Number.isFinite(ms)) return null;
+  const mins = Math.round(ms / 60000);
+  return mins >= 0 ? mins : null;
+}
+
 /**
  * Shift a date by N years while trying to preserve month/day.
  * Handles leap days by clamping to the last day of Feb when needed.
@@ -95,10 +113,10 @@ export function formatRange(start: Date, end: Date) {
 
 export function getDefaultWeekOffset(): number {
   const today = new Date();
-  const day = today.getDay(); // 0 = Sun, 1 = Mon, ... 4 = Thu, 5 = Fri
+  const idx = getWeekdayIndex(today); // 0 = Sun, 1 = Mon, ... 4 = Thu, 5 = Fri
 
   // If it's Wed+, show "This week" by default.
-  if (day >= 3) {
+  if (idx >= 2) {
     return 0;
   }
 
@@ -189,6 +207,12 @@ export function formatHours(hours: number | null): string {
   if (hours == null) return '—';
   if (hours < 1) return `${(hours * 60).toFixed(0)}m`;
   return `${hours.toFixed(1)}h`;
+}
+
+export function formatMinutes(minutes: number | null): string {
+  if (minutes == null) return '—';
+  if (minutes < 60) return `${minutes.toFixed(0)}m`;
+  return `${(minutes / 60).toFixed(1)}h`;
 }
 
 export function getTimezone(): string {
