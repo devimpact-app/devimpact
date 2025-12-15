@@ -209,6 +209,12 @@ export function formatHours(hours: number | null): string {
   return `${hours.toFixed(1)}h`;
 }
 
+export function formatMinutes(minutes: number | null): string {
+  if (minutes == null) return '—';
+  if (minutes < 60) return `${minutes.toFixed(0)}m`;
+  return `${(minutes / 60).toFixed(1)}h`;
+}
+
 export function getTimezone(): string {
   const timezone =
     typeof Intl !== 'undefined'

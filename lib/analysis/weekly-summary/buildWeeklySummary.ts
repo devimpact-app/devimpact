@@ -22,9 +22,6 @@ import {
 import { deriveFrictionFollowups } from './frictionItems';
 import { buildWeeklyHeadline } from './headline';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
-import { isCalendarConnected } from '@/lib/integrations/gcal/client';
-import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
-import { CalendarEvent } from '@/lib/db/schema/gcal';
 import { getWeeklyMeetingTotals } from './calendar';
 
 export type BuildWeeklySummaryArgs = {
@@ -153,6 +150,7 @@ export async function buildWeeklySummary({
     reviewsCollab,
     frictionFollowups,
     headline,
+    calendar: calendarData,
     meta: {
       generatedAt: new Date().toISOString(),
     },

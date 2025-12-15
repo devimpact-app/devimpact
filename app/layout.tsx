@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'DevImpact - For Engineers',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/devimpact-logo-32.png',
   },
 };
 

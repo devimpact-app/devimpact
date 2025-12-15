@@ -123,15 +123,27 @@ export const FrictionFollowupsSchema = z
   })
   .catchall(z.any());
 
+export const CalendarEventCategorySchema = z.enum([
+  'personal',
+  'ooo',
+  'focus',
+  'oneOnOne',
+  'team',
+  'org',
+  'interview',
+  'incident',
+  'other',
+]);
+
+export type CalendarEventCategory = z.infer<typeof CalendarEventCategorySchema>;
 export const WeeklyCalendarSummarySchema = z.object({
   meetingMinutes: z.number(), // total minutes scheduled (excludes declined, excludes personal if you want)
   meetingCount: z.number(),
-  deepWorkBlocksCount: z.number().optional(), // from your slice-based deep work finder
-  largestMeetingSize: z.number().optional(), // if you have attendeesTotal
+  deepWorkBlocksCount: z.number().optional(),
   categories: z
     .array(
       z.object({
-        key: z.string(),
+        key: CalendarEventCategorySchema,
         count: z.number(),
         minutes: z.number().optional(),
       })

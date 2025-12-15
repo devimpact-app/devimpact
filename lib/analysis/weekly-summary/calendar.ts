@@ -2,6 +2,8 @@ import { WeeklyCalendarSummary } from '@/types/api/weekly-summary';
 import { isCalendarConnected } from '@/lib/integrations/gcal/client';
 import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
 import { minutesBetween } from '@/lib/utils/date';
+import { findDeepWorkBlocks } from '../work-rhythm/deep-work';
+import { buildTimeSlices } from '../work-rhythm/timeSlices';
 
 export async function getWeeklyMeetingTotals(params: {
   tenantId: string;
@@ -24,6 +26,14 @@ export async function getWeeklyMeetingTotals(params: {
   let meetingMinutes = 0;
   let meetingCount = 0;
 
+  const categoryMap: Record<
+    string,
+    {
+      key: string;
+      count: number;
+      minutes: number;
+    }
+  > = {};
   for (const ev of events) {
     if (ev.deletedAt) continue;
     if (ev.isAllDay) continue;
@@ -39,7 +49,42 @@ export async function getWeeklyMeetingTotals(params: {
 
     meetingMinutes += minutesBetween(clampedStart, clampedEnd) ?? 0;
     meetingCount += 1;
+
+    // Category
+    if (ev.category) {
+      const categoryMapItem = categoryMap[ev.category] || {
+        key: ev.category,
+        count: 0,
+        minutes: 0,
+      };
+      categoryMapItem.count += 1;
+      categoryMapItem.minutes += minutesBetween(clampedStart, clampedEnd) ?? 0;
+      categoryMap[ev.category] = categoryMapItem;
+    }
   }
 
-  return { meetingMinutes, meetingCount };
+  const slices = buildTimeSlices({
+    startUtc: params.start,
+    endUtc: params.end,
+    sliceMinutes: 15,
+    meetingEvents: events,
+    // Don't need to care about work events for deep work blocks
+    workEvents: [],
+    includePersonalMeetings: false,
+  });
+  const deepWorkBlocks = findDeepWorkBlocks({
+    slices,
+    timezone: params.timezone,
+    limit: 3,
+  });
+  const categories = Object.values(categoryMap).sort(
+    (a, b) => b.minutes - a.minutes
+  );
+
+  return {
+    meetingMinutes,
+    meetingCount,
+    categories,
+    deepWorkBlocksCount: deepWorkBlocks.length,
+  };
 }
