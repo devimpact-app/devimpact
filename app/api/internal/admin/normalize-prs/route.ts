@@ -31,11 +31,6 @@ export const GET = withSentryUser(async (req: NextRequest) => {
       return jsonBadRequest('Missing tenantId or username.');
     }
 
-    // Hard gate: only allow operating on the admin tenant id
-    if (tenantId !== ADMIN_TENANT_ID) {
-      return jsonBadRequest('Forbidden tenantId.');
-    }
-
     const startedAt = Date.now();
 
     const normalizedPrIds = await batchNormalizeUserPRs(tenantId, username);
