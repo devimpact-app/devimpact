@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   url.searchParams.set(
     'scope',
     [
-      'https://www.googleapis.com/auth/calendar.events.readonly',
+      // 'https://www.googleapis.com/auth/calendar.events.readonly',
       'https://www.googleapis.com/auth/calendar.readonly',
     ].join(' ')
   );

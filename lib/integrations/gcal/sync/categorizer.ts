@@ -193,6 +193,20 @@ function hasAnyPhrase(titleNorm: string, phrases: string[]) {
   return false;
 }
 
+function hasAnyTeamSubtype(f: ExtractedEventFeatures) {
+  const k = f.keywords;
+  return (
+    k.standup ||
+    k.planning ||
+    k.retro ||
+    k.grooming ||
+    k.demo ||
+    k.designReview ||
+    k.architecture ||
+    k.status
+  );
+}
+
 function extractAdditionalFeatures(
   event: EventFeatures
 ): ExtractedEventFeatures {
@@ -316,7 +330,7 @@ function clamp01(x: number) {
 
 export function categorizeEvent(event: EventFeatures): {
   category: CalendarEventCategory;
-  // categorySubtype?: TeamMeetingSubtype | null;
+  categorySubtype?: TeamMeetingSubtype | null;
   categoryConfidence: number;
   categorySource: string;
   categoryVersion: number;
@@ -377,7 +391,9 @@ export function categorizeEvent(event: EventFeatures): {
   if (f.isRecurring) scoreOneOnOne += 0.05;
   if (external >= 1) scoreOneOnOne -= 0.1;
 
+  // Team
   if (f.keywords.teamMeetingHint) scoreTeam += 0.45;
+  if (hasAnyTeamSubtype(f)) scoreTeam += 0.55;
   if (total >= 4 && total <= 12) scoreTeam += 0.35;
   if (f.isRecurring) scoreTeam += 0.1;
   if (f.durationMinutes && f.durationMinutes <= 30) scoreTeam += 0.05;
@@ -416,7 +432,7 @@ export function categorizeEvent(event: EventFeatures): {
 
   return {
     category: bestCat,
-    // categorySubtype: subtype,
+    categorySubtype: subtype,
     categoryConfidence: clamp01(0.55 + bestScore * 0.4), // maps ~0.5–1.0 scores to ~0.75–0.95
     categorySource: 'heuristic',
     categoryVersion: 1,

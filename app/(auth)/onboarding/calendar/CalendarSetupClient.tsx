@@ -217,9 +217,17 @@ export default function CalendarSetupClient({
         <div className="mb-5 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-lg font-semibold text-slate-100">
-                Google Calendar
-              </h1>
+              <div className="flex items-center gap-2">
+                <img
+                  src="/images/integrations/gcal-icon.svg"
+                  alt="Google Calendar"
+                  className="h-5 w-5"
+                />
+
+                <h1 className="text-lg font-semibold text-slate-100">
+                  Google Calendar
+                </h1>
+              </div>
               <p className="mt-1 text-sm text-slate-400 max-w-xl">
                 DevImpact uses only read-only calendar and event metadata from
                 Google
@@ -236,7 +244,7 @@ export default function CalendarSetupClient({
                 href={`/api/integrations/google/start${isFromSettings ? '?fromSettings=true' : ''}`}
                 className="inline-flex h-9 items-center justify-center rounded-full bg-sky-500 px-4 text-xs font-medium text-slate-950 shadow-sm hover:bg-sky-400"
               >
-                Connect calendar (read-only)
+                Connect Google Calendar
               </Link>
             )}
           </div>
