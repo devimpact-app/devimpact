@@ -1,13 +1,16 @@
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="relative">
+    <section
+      id="how-it-works"
+      className="relative bg-background border-t border-white/5 + bg-gradient-to-b from-indigo-500/5 to-transparent"
+    >
       <div className="mx-auto max-w-5xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-text-primary">
             How the beta works
           </h2>
           <p className="mt-3 text-text-secondary text-lg">
-            Built for individual engineers. No team setup required.
+            Set up in minutes. Get a clear view of your time, focus, and impact.
           </p>
         </div>
 
@@ -17,18 +20,16 @@ export default function HowItWorks() {
               1
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Connect via Github & CLI (2 min)
+              Connect your work data (2-5 mins)
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>• Sign in with Github</li>
+              <li>• Sign in with Github (work or personal)</li>
+              <li>• Run the CLI once to sync your activity metadata</li>
               <li>
-                • Run npm @devimpact/cli init to let DevImpact privately read
-                metadata
+                • Optional: connect Google Calendar to map meeting load + deep
+                work time
               </li>
-              <li>
-                • You stay in control - runs from your machine using official
-                github auth
-              </li>
+              <li>• Your data stays private - no team setup, no managers </li>
             </ul>
           </li>
 
@@ -37,17 +38,19 @@ export default function HowItWorks() {
               2
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Sync your recent work
+              Get your leverage signals
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
+              <li>• Your work rhythm: where focus time actually happens</li>
               <li>
-                • DevImpact pulls your authored PRs and reviews from the last 3
-                months
+                • Meeting pressure overlay (calendar beta) + deep work blocks
               </li>
               <li>
-                • Computes helpful insights and a weekly work rythm pattern
+                • Weekly summary: shipped work + follow-ups you can use in 1:1s
               </li>
-              <li>• See a full timeline and summary for recent weeks</li>
+              <li>
+                • Trends over time (Ex: drift toward coordination vs building)
+              </li>
             </ul>
           </li>
 
@@ -56,14 +59,21 @@ export default function HowItWorks() {
               3
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Use it for 1:1s & reviews
+              Use it before 1:1s, reviews, and planning
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>
-                • Generate summaries and skim your timeline and insights before
-                1:1s
+                • Walk into 1:1s with a clean narrative: wins, blockers, themes
               </li>
-              <li>• Export a rough review packet (coming soon)</li>
+              <li>
+                • Spot what’s blocking output: meetings, review load, context
+                switching
+              </li>
+              <li>
+                • Protect your best windows and adjust your week before it
+                drifts
+              </li>
+              <li>• Export/share a packet (optional — coming soon)</li>
             </ul>
           </li>
         </ol>

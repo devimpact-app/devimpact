@@ -1,45 +1,37 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = [
     {
-      question: "Is this a surveillance tool?",
-      answer: `No. DevImpact is for you, not your manager.
-  Only you can see your dashboard unless you choose to share exports.`,
+      question: 'Is this a surveillance or manager tool?',
+      answer: `No. DevImpact is built for individual engineers. There are no manager dashboards, no team views, and nothing is shared unless you explicitly export it.`,
     },
     {
-      question: "How much does it cost?",
-      answer: "DevImpact is free during private beta. Later pricing TBD",
+      question: 'What data does DevImpact access?',
+      answer: `DevImpact reads GitHub activity metadata (PRs, reviews, timestamps) and optional calendar availability. We don’t read code contents, private messages, or anything outside what’s needed to compute patterns. You can disconnect sources anytime.`,
     },
     {
-      question: "What data do you collect?",
-      answer: `Right now: PR metadata, commits, reviews, and comments from the repos you 
-  point the CLI at. No code content is analyzed or stored in this alpha.`,
+      question: 'How long does setup take?',
+      answer: `Most people are up and running in 2–5 minutes. Once connected, you can have the tool update automatically for you.`,
     },
     {
-      question: "How long does setup take?",
-      answer: `About 1–2 minutes. Sign in with GitHub, run one CLI command, and select your repos.`,
-    },
-    {
-      question: "Do I need to use it every day?",
-      answer: `No. DevImpact isn’t something you need to check every day. A good baseline would be to use it once a week — usually before a 1:1 or when preparing a review packet. 
-        Your data updates whenever you run the CLI sync. You can run it daily, weekly, or
-just when you want an updated view of your recent work. Up to you.`,
+      question: 'Do I need to use it every day?',
+      answer: `No. DevImpact works in the background. Most people check it weekly or before 1:1s to spot patterns and prep talking points.`,
     },
   ];
 
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden bg-[#0A0F1C] py-20">
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div
           className="absolute top-1/2 left-1/2 h-160 w-160 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl opacity-20"
           style={{
             background:
-              "radial-gradient(closest-side, var(--color-accent), transparent 80%)",
+              'radial-gradient(closest-side, var(--color-accent), transparent 80%)',
           }}
         />
       </div>
@@ -69,7 +61,7 @@ just when you want an updated view of your recent work. Up to you.`,
                 </h3>
                 <svg
                   className={`w-5 h-5 text-text-secondary transition-transform ${
-                    openIndex === index ? "rotate-180" : ""
+                    openIndex === index ? 'rotate-180' : ''
                   }`}
                   fill="none"
                   stroke="currentColor"
