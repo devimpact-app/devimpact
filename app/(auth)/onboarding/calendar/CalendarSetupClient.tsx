@@ -244,7 +244,7 @@ export default function CalendarSetupClient({
                 href={`/api/integrations/google/start${isFromSettings ? '?fromSettings=true' : ''}`}
                 className="inline-flex h-9 items-center justify-center rounded-full bg-sky-500 px-4 text-xs font-medium text-slate-950 shadow-sm hover:bg-sky-400"
               >
-                Connect Google Calendar
+                Enable calendar features
               </Link>
             )}
           </div>
@@ -265,7 +265,7 @@ export default function CalendarSetupClient({
                 <li>Start/end times (time blocks)</li>
                 <li>Your RSVP status (yes/no/maybe)</li>
                 <li>Attendee count</li>
-                <li>Derived event categories (e.g. 1:1s, team meetings)</li>
+                <li>Derived meeting context (e.g. 1:1s, team meetings)</li>
               </ul>
             </div>
             <div>
@@ -439,7 +439,7 @@ export default function CalendarSetupClient({
             onClick={handleSkip}
             className="text-sky-600 hover:text-sky-400"
           >
-            Skip for now
+            Skip for now - insights and prep will be more limited
           </button>
           <span>You can connect later from Settings.</span>
         </div>

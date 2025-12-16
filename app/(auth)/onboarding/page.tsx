@@ -47,6 +47,7 @@ export default async function OnboardingPage({
 
   switch (state) {
     case 'account_created':
+      redirect('/onboarding/welcome');
     case 'cli_pending':
     case 'cli_linked':
     case 'syncing':

@@ -3,10 +3,7 @@
 import { CopyableCode } from '@/components/CopyableCode';
 import { CliStatus } from '@/types/api/cli';
 import {
-  Terminal,
-  KeyRound,
   CheckCircle2,
-  Copy,
   RefreshCw,
   Loader2,
   Check,
@@ -15,6 +12,10 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
+import { Step1 } from './Step1';
+import { Step2 } from './Step2';
+import { Step3 } from './Step3';
+import { Step4 } from './Step4';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -79,7 +80,7 @@ export function CliSetupPageShell({
       hasRedirectedRef.current = true;
       sessionStorage.removeItem(STORAGE_KEY);
       const timeout = setTimeout(() => {
-        router.push(isFromSettings ? '/settings' : '/dashboard');
+        router.push(isFromSettings ? '/settings' : '/onboarding/calendar');
       }, 1500);
 
       return () => clearTimeout(timeout);
@@ -242,337 +243,41 @@ export function CliSetupPage({
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr),minmax(0,1.4fr)]">
         <div className="space-y-4">
-          <section
-            className={`
-      rounded-2xl border px-5 py-4 flex flex-col gap-3
-      bg-surface-alt border-border
-      ${!step1Expanded ? 'opacity-80' : ''}
-    `}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#151928] border border-white/10">
-                  <KeyRound className="h-4 w-4 text-white/80" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-                    Step 1 · Generate your CLI key
-                  </h2>
-                  <p className="text-sm text-text-secondary mt-0.5">
-                    This key links your local CLI to your DevImpact account.
-                    It’s not a GitHub token and doesn’t grant access by itself.
-                  </p>
-                </div>
-              </div>
+          <Step1
+            step1Expanded={step1Expanded}
+            step1Completed={step1Completed}
+            cliToken={cliToken}
+            generating={generating}
+            handleGenerate={handleGenerate}
+          />
 
-              {step1Completed && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-200">
-                  <Check className="h-3 w-3" />
-                  Ready
-                </span>
-              )}
-            </div>
+          {step2Enabled && (
+            <Step2
+              step2Enabled={step2Enabled}
+              step2Expanded={step2Expanded}
+              step3Enabled={step3Enabled}
+              cliToken={cliToken}
+            />
+          )}
 
-            {step1Expanded && (
-              <div className="mt-2 rounded-xl border border-dashed border-border bg-background/60 px-4 py-3">
-                {cliToken ? (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-text-secondary uppercase tracking-wide">
-                      Your personal CLI key
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <CopyableCode>{cliToken}</CopyableCode>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleGenerate}
-                      disabled={generating}
-                      className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary mt-1"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                      {generating ? 'Rotating key…' : 'Rotate key'}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-text-secondary">
-                      Click below to create a one-time CLI key for this account.
-                      You can rotate or revoke it later.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleGenerate}
-                      disabled={generating}
-                      className="inline-flex items-center gap-2 rounded-full border border-indigo-500/70 bg-indigo-600/20 px-3 py-1.5 text-xs font-medium text-indigo-100 hover:bg-indigo-600/30 disabled:opacity-60"
-                    >
-                      {generating ? (
-                        <>
-                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          Generating…
-                        </>
-                      ) : (
-                        <>
-                          <KeyRound className="h-3.5 w-3.5" />
-                          Generate CLI key
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
+          {step3Enabled && (
+            <Step3
+              step3Enabled={step3Enabled}
+              step3Expanded={step3Expanded}
+              hasSelectedRepos={hasSelectedRepos}
+              selectedRepoCount={selectedRepoCount}
+              router={router}
+            />
+          )}
 
-          <section
-            className={`
-      rounded-2xl border px-5 py-4 flex flex-col gap-3
-      bg-surface-alt border-border
-      ${!step2Enabled ? 'opacity-40 pointer-events-none' : ''}
-    `}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#151928] border border-white/10">
-                  <Terminal className="h-4 w-4 text-white/80" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-                    Step 2 · Install GitHub CLI & DevImpact CLI
-                  </h2>
-                  <p className="text-sm text-text-secondary mt-0.5">
-                    DevImpact piggybacks on your existing GitHub auth. We never
-                    see your PAT or password — we only talk to{' '}
-                    <code className="text-xs">gh api</code>.
-                  </p>
-                </div>
-              </div>
-
-              {step3Enabled && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-200">
-                  <Check className="h-3 w-3" />
-                  Installed
-                </span>
-              )}
-            </div>
-
-            {step2Expanded && cliToken && (
-              <div className="mt-1 space-y-3 text-sm text-text-secondary">
-                <div>
-                  <p className="mb-1 font-medium text-text-primary/90">
-                    1. Install GitHub CLI
-                  </p>
-                  <CopyableCode>brew install gh</CopyableCode>
-                </div>
-
-                <div>
-                  <p className="mb-1 font-medium text-text-primary/90">
-                    2. Login to GitHub
-                  </p>
-                  <CopyableCode>gh auth login</CopyableCode>
-
-                  <a
-                    href="/sso"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 inline-block text-xs text-sky-400 hover:text-sky-300"
-                  >
-                    Does your org use SSO?
-                  </a>
-                </div>
-
-                <div>
-                  <p className="mb-1 font-medium text-text-primary/90">
-                    3. Install DevImpact CLI
-                  </p>
-                  <CopyableCode>npm install -g @devimpact/cli</CopyableCode>
-                </div>
-
-                <div>
-                  <p className="mb-1 font-medium text-text-primary/90">
-                    4. Link the CLI to your account
-                  </p>
-                  <CopyableCode>
-                    {`devimpact init --cli-token ${cliToken}`}
-                  </CopyableCode>
-                  <p className="mt-1 text-xs text-text-secondary">
-                    This step also discovers which repositories your GitHub CLI
-                    can see, so you can pick your main work repos in the next
-                    step.
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section
-            className={`
-    rounded-2xl border px-5 py-4 flex flex-col gap-3
-    bg-surface-alt border-border
-    ${!step3Enabled ? 'opacity-40 pointer-events-none' : ''}
-  `}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#151928] border border-white/10">
-                  <FolderCode className="h-4 w-4 text-white/80" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-                    Step 3 · Choose your repos
-                  </h2>
-                  <p className="text-sm text-text-secondary mt-0.5">
-                    Pick the repos where you do most of your day-to-day work.
-                    DevImpact will only sync activity from repos you select.
-                  </p>
-                </div>
-              </div>
-
-              {hasSelectedRepos && (
-                <span className="inline-flex min-w-24 items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 px-2 py-0.5 text-xs text-emerald-200">
-                  <Check className="h-3 w-3" />
-                  {`${selectedRepoCount} selected`}
-                </span>
-              )}
-            </div>
-
-            {step3Expanded && (
-              <div className="mt-2 flex flex-col gap-2 text-sm text-text-secondary">
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      router.push('/onboarding/repos');
-                    }}
-                    className="inline-flex items-center gap-2 rounded-full border border-indigo-500/70 bg-indigo-600/20 px-3 py-1.5 text-sm font-medium text-indigo-100 hover:bg-indigo-600/30"
-                  >
-                    Open repo selector
-                  </button>
-                </div>
-                <p className="text-xs text-text-secondary">
-                  You can change this selection later from Settings or this
-                  page. Repos you don&apos;t select are ignored, even if the CLI
-                  can see them.
-                </p>
-              </div>
-            )}
-          </section>
-
-          {!isFromSettings && (
-            <section
-              className={`
-    rounded-2xl border px-5 py-4 flex flex-col gap-3
-    ${isSyncing ? 'border-[#4F46E5] bg-[#111728] animate-pulse' : 'bg-surface-alt border-border'}
-    ${!step4Enabled ? 'opacity-40 pointer-events-none' : ''}
-  `}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-[#151928] border border-white/10">
-                    <RefreshCw className="h-4 w-4 text-white/80" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-                      Step 4 · Pull in your recent work (last 90 days)
-                    </h2>
-                    <p className="text-sm text-text-secondary mt-0.5">
-                      Run a sync from repos you work in. You&apos;ll see your
-                      dashboard update once activity comes in.
-                    </p>
-                    {isSyncing && (
-                      <p className="mt-1 text-xs text-text-secondary">
-                        A basic sync usually takes{' '}
-                        <span className="font-medium">20–60 seconds</span>,
-                        depending on repo size.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {isSyncing && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#1E293B] border border-[#4F46E5] px-2 py-0.5 text-xs text-[#E0E7FF]">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Syncing…
-                  </span>
-                )}
-              </div>
-
-              {step4Expanded && (
-                <div className="mt-2 space-y-3 text-sm text-text-secondary">
-                  {isSyncing ? (
-                    <>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-white/30" />
-                          <span>Fetching authored PRs and code reviews…</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-white/30" />
-                          <span>Processing commits and file metadata</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-white/30" />
-                          <span>Organizing activity into your timeline…</span>
-                        </div>
-                      </div>
-
-                      <p className="text-sm text-text-secondary leading-snug">
-                        We only read PRs, reviews, and commits for the repo you
-                        choose via <code className="text-xs">gh api</code>. You
-                        can see every call in your terminal and stop syncing at
-                        any time.
-                      </p>
-
-                      <p className="text-sm text-text-secondary leading-snug">
-                        Once this finishes, your dashboard will unlock with your{' '}
-                        <span className="font-medium">weekly pulse</span>,{' '}
-                        <span className="font-medium">work rhythm heatmap</span>
-                        , and <span className="font-medium">1:1 prep view</span>
-                        .
-                      </p>
-                    </>
-                  ) : repoSelectionSupported && hasSelectedRepos ? (
-                    <>
-                      <p className="font-medium text-text-primary/90">
-                        To sync the repos you selected in step 3, run this from
-                        any directory:
-                      </p>
-                      <CopyableCode>devimpact sync</CopyableCode>
-                      <p className="text-sm text-text-secondary leading-snug">
-                        DevImpact will use{' '}
-                        <code className="text-xs">gh api</code> to read metadata
-                        about your PRs, reviews, and commits and attach them to
-                        your account. You stay in control of your GitHub auth
-                        and can revoke access at any time.
-                      </p>
-                      <p className="text-sm text-text-secondary leading-snug">
-                        After your first sync, head to the Dashboard to see your
-                        activity timeline, highlights, and work rhythm.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-medium text-text-primary/90">
-                        From any directory:
-                      </p>
-                      <CopyableCode>
-                        devimpact sync --repo my-org/my-service
-                      </CopyableCode>
-                      <p className="text-sm text-text-secondary leading-snug">
-                        DevImpact will use{' '}
-                        <code className="text-xs">gh api</code> to read metadata
-                        about your PRs, reviews, and commits and attach them to
-                        your account. You stay in control of your GitHub auth
-                        and can revoke access at any time.
-                      </p>
-                      <p className="text-sm text-text-secondary leading-snug">
-                        After your first sync, head to the Dashboard to see your
-                        activity timeline, highlights, and work rhythm.
-                      </p>
-                    </>
-                  )}
-                </div>
-              )}
-            </section>
+          {!isFromSettings && step4Enabled && (
+            <Step4
+              step4Enabled={step4Enabled}
+              step4Expanded={step4Expanded}
+              isSyncing={isSyncing}
+              repoSelectionSupported={repoSelectionSupported}
+              hasSelectedRepos={hasSelectedRepos}
+            />
           )}
         </div>
 

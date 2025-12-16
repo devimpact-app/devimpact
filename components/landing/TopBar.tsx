@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-export default function TopBar() {
+export default function TopBar({ code }: { code?: string }) {
   return (
     <header
       className="
@@ -31,7 +31,7 @@ export default function TopBar() {
 
           <nav className="flex items-center gap-4">
             <a
-              href="/login"
+              href={`/login${code ? `?code=${encodeURIComponent(code)}` : ''}`}
               className="
                 rounded-xl border border-[#283047]
                 bg-transparent px-4 py-2
