@@ -46,7 +46,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const payload = await verifyReviewToken(token);
         if (!payload) return null;
 
-        const REVIEW_UID = 'b3459aa4-f2a6-469f-bdf6-5978ae78a952';
         if (payload.tid !== REVIEW_UID) return null;
 
         return {
