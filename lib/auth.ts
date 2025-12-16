@@ -1,28 +1,85 @@
-import "server-only";
-import NextAuth from "next-auth";
-import GitHub from "next-auth/providers/github";
-import { db } from "./db/client";
-import { users, integrationTokens } from "./db/schema";
-import { eq } from "drizzle-orm";
+import 'server-only';
+import NextAuth from 'next-auth';
+import GitHub from 'next-auth/providers/github';
+import Credentials from 'next-auth/providers/credentials';
+import { db } from './db/client';
+import { users, integrationTokens } from './db/schema';
+import { eq } from 'drizzle-orm';
+import { jwtVerify } from 'jose';
+
+export const REVIEW_UID = '5b09931b-1516-432f-a62a-9fe6a31a14ce';
+
+function getSecretKey() {
+  const s = process.env.REVIEW_LINK_SECRET;
+  if (!s) throw new Error('Missing REVIEW_LINK_SECRET');
+  return new TextEncoder().encode(s);
+}
+
+export async function verifyReviewToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey(), {
+      algorithms: ['HS256'],
+    });
+
+    const tid = payload.tid;
+    const purpose = payload.purpose;
+
+    if (typeof tid !== 'string') return null;
+    if (purpose !== 'review_link') return null;
+
+    return { tid };
+  } catch (e) {
+    return null;
+  }
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
+    Credentials({
+      id: 'review',
+      name: 'Review Link',
+      credentials: {
+        token: { label: 'token', type: 'text' },
+      },
+      async authorize(creds) {
+        const token = String(creds?.token ?? '');
+        const payload = await verifyReviewToken(token);
+        if (!payload) return null;
+
+        const REVIEW_UID = 'b3459aa4-f2a6-469f-bdf6-5978ae78a952';
+        if (payload.tid !== REVIEW_UID) return null;
+
+        return {
+          id: REVIEW_UID,
+          email: 'reviewer@devimpact.app',
+          name: 'Google reviewer',
+        };
+      },
+    }),
     GitHub({
       clientId: process.env.GITHUB_OAUTH_CLIENT_ID!,
       clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "read:user user:email",
+          scope: 'read:user user:email',
         },
       },
     }),
   ],
   pages: {
-    signIn: "/login",
+    signIn: '/login',
   },
   callbacks: {
     async signIn({ user, account, profile }) {
       if (!user?.email) return false;
+
+      // Shortcut for review account
+      if (account?.provider === 'review') {
+        (account as any).__userId = user.id;
+        (account as any).__githubLogin = 'test-github';
+        return true;
+      }
+
       const githubLogin = (profile as any)?.login ?? null;
       const fullName = user.name ?? null;
       const email = user.email;
@@ -67,8 +124,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .insert(integrationTokens)
           .values({
             userId: result,
-            provider: "github",
-            tokenType: "oauth",
+            provider: 'github',
+            tokenType: 'oauth',
             accessToken: account.access_token,
             refreshToken: account.refresh_token ?? null,
             expiresAt,
