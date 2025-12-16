@@ -19,6 +19,7 @@ export async function verifyReviewToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, getSecretKey(), {
       algorithms: ['HS256'],
+      clockTolerance: 60 * 60 * 24 * 365,
     });
 
     const tid = payload.tid;
