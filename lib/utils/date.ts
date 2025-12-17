@@ -63,6 +63,11 @@ export function minutesBetween(start: Date | null, end: Date | null) {
   return mins >= 0 ? mins : null;
 }
 
+function hoursSince(a?: Date | null, now = new Date()) {
+  if (!a) return Number.POSITIVE_INFINITY;
+  return (now.getTime() - a.getTime()) / (60 * 60 * 1000);
+}
+
 /**
  * Shift a date by N years while trying to preserve month/day.
  * Handles leap days by clamping to the last day of Feb when needed.

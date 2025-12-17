@@ -34,6 +34,9 @@ export const calendarSelections = pgTable(
     accessRole: text('access_role'), // owner | writer | reader | freeBusyReader
     isPrimary: boolean('is_primary').default(false),
 
+    // Cursors
+    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

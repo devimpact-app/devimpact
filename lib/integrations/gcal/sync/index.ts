@@ -2,12 +2,21 @@ import { db } from '@/lib/db/client';
 import { calendarSelections, calendarSyncRuns } from '@/lib/db/schema/gcal';
 import { and, desc, eq } from 'drizzle-orm';
 import { getIntegrationTokenId } from './sync-status';
-import { daysAgo } from '@/lib/utils/date';
-import { listEvents } from '../api';
+import { daysAgo, hoursSince } from '@/lib/utils/date';
+import { listEventsWindow } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
-import { addDays } from 'date-fns';
+import { addDays, subHours } from 'date-fns';
+import { GoogleEventsListItem } from '../types';
 
-const LOOKBACK_DAYS_DEFAULT = 90;
+const LOOKBACK_DAYS_INITIAL = 90;
+const FUTURE_LOOKAHEAD_DAYS = 14;
+
+// For incremental-ish runs (no syncToken), we still overlap a bit
+const OVERLAP_PAST_HOURS = 12;
+
+// Safety net if sync hasn’t run in a while
+const STALE_SYNC_THRESHOLD_HOURS = 48;
+const STALE_LOOKBACK_DAYS = 14;
 
 export type SyncResponse = {
   error?: {
@@ -45,21 +54,13 @@ export async function checkCurrentlyRunningSync(
   return !!running;
 }
 
-export async function getSelectedCalendars(
-  userId: string,
-  tokenId: string
-): Promise<
-  {
-    id: string;
-    calendarId: string;
-    summary: string;
-  }[]
-> {
+export async function getSelectedCalendars(userId: string, tokenId: string) {
   const selected = await db
     .select({
       id: calendarSelections.id,
       calendarId: calendarSelections.calendarId,
       summary: calendarSelections.summary,
+      lastSyncedAt: calendarSelections.lastSyncedAt,
     })
     .from(calendarSelections)
     .where(
@@ -112,12 +113,13 @@ export async function runSync(userId: string): Promise<SyncResponse> {
     };
   }
 
+  const now = new Date();
+  const windowEndAt = addDays(now, FUTURE_LOOKAHEAD_DAYS);
+
   const [lastRun] = await db
     .select({
       windowEndAt: calendarSyncRuns.windowEndAt,
       completedAt: calendarSyncRuns.completedAt,
-      mode: calendarSyncRuns.mode,
-      lookbackDays: calendarSyncRuns.lookbackDays,
     })
     .from(calendarSyncRuns)
     .where(
@@ -130,24 +132,19 @@ export async function runSync(userId: string): Promise<SyncResponse> {
     .orderBy(desc(calendarSyncRuns.completedAt))
     .limit(1);
 
-  const isFirstSync = !lastRun;
+  const isFirstSync = !lastRun?.completedAt;
 
-  const now = new Date();
-  const hardFloor = daysAgo(now, LOOKBACK_DAYS_DEFAULT);
-  const OVERLAP_HOURS = 12;
+  const hoursSinceLast = hoursSince(lastRun.completedAt, now);
+  let windowStartAt: Date;
 
-  const cursor = lastRun?.windowEndAt ?? null;
+  if (isFirstSync) {
+    windowStartAt = daysAgo(now, LOOKBACK_DAYS_INITIAL);
+  } else if (hoursSinceLast >= STALE_SYNC_THRESHOLD_HOURS) {
+    windowStartAt = daysAgo(now, STALE_LOOKBACK_DAYS);
+  } else {
+    windowStartAt = subHours(now, OVERLAP_PAST_HOURS);
+  }
 
-  const windowStartAt = cursor
-    ? new Date(
-        Math.max(
-          hardFloor.getTime(),
-          cursor.getTime() - OVERLAP_HOURS * 60 * 60 * 1000
-        )
-      )
-    : hardFloor;
-
-  const windowEndAt = addDays(now, 7); // look ahead 7 days
   const timeMinISO = windowStartAt.toISOString();
   const timeMaxISO = windowEndAt.toISOString();
 
@@ -158,7 +155,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       integrationTokenId: tokenId,
       status: 'running',
       mode: isFirstSync ? 'initial' : 'manual',
-      lookbackDays: isFirstSync ? LOOKBACK_DAYS_DEFAULT : null,
+      lookbackDays: isFirstSync ? LOOKBACK_DAYS_INITIAL : null,
       windowStartAt,
       windowEndAt,
       startedAt: now,
@@ -173,7 +170,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
 
   try {
     for (const cal of selected) {
-      const resp = await listEvents(userId, cal.calendarId, {
+      const resp = await listEventsWindow(userId, cal.calendarId, {
         timeMinISO,
         timeMaxISO,
         pageSize: 250,
@@ -209,7 +206,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       run: {
         runId: run.id,
         status: 'completed',
-        lookbackDays: LOOKBACK_DAYS_DEFAULT,
+        lookbackDays: isFirstSync ? LOOKBACK_DAYS_INITIAL : null,
         timeMinISO,
         timeMaxISO,
         calendarsSelectedCount: selected.length,
