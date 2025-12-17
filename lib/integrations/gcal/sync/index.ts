@@ -5,6 +5,7 @@ import { getIntegrationTokenId } from './sync-status';
 import { daysAgo } from '@/lib/utils/date';
 import { listEvents } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
+import { addDays } from 'date-fns';
 
 const LOOKBACK_DAYS_DEFAULT = 90;
 
@@ -146,7 +147,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       )
     : hardFloor;
 
-  const windowEndAt = now;
+  const windowEndAt = addDays(now, 7); // look ahead 7 days
   const timeMinISO = windowStartAt.toISOString();
   const timeMaxISO = windowEndAt.toISOString();
 

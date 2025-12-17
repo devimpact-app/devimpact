@@ -3,7 +3,7 @@
 import {
   generateOneOnOnePrep,
   getDatesForOneOnOne,
-} from '@/lib/analysis/one-on-ones/generateOneOnOnePrep';
+} from '@/lib/analysis/prep/one-on-ones/generateOneOnOnePrep';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { oneOnOneSessions } from '@/lib/db/schema';

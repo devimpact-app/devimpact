@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CalendarEventCategorySchema } from './prep';
 
 export const WeekRangeSchema = z.object({
   startISO: z.string(),
@@ -122,18 +123,6 @@ export const FrictionFollowupsSchema = z
     items: z.array(FrictionItemSchema).default([]),
   })
   .catchall(z.any());
-
-export const CalendarEventCategorySchema = z.enum([
-  'personal',
-  'ooo',
-  'focus',
-  'oneOnOne',
-  'team',
-  'org',
-  'interview',
-  'incident',
-  'other',
-]);
 
 export type CalendarEventCategory = z.infer<typeof CalendarEventCategorySchema>;
 export const WeeklyCalendarSummarySchema = z.object({

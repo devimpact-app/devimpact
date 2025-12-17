@@ -54,6 +54,9 @@ export async function listCalendars(userId: string) {
 const MAX_PAGES = 20;
 const MAX_EVENTS = 10_000;
 
+// TODO: incremental sync with sync token
+// TODO: also bounded fetch for upcoming horizon with no sync token
+
 export async function listEvents(
   userId: string,
   calendarId: string,

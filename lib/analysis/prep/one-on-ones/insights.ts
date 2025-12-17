@@ -1,5 +1,5 @@
 import { Insight, InsightStat } from '@/types/api/insights';
-import { buildInsights } from '../insights';
+import { buildInsights } from '../../insights';
 import { OneOnOneInsightForLLM } from './types';
 
 const maxInsights = 10;

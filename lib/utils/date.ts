@@ -16,6 +16,24 @@ export function formatDateTime(iso: string | Date | null) {
   }).format(d);
 }
 
+export function formatUpcomingTime(startIso: string) {
+  const d = new Date(startIso);
+  const now = new Date();
+  const diffMin = Math.round((d.getTime() - now.getTime()) / 60000);
+
+  if (diffMin >= 0 && diffMin < 60) return `In ${diffMin} min`;
+  if (diffMin >= 60 && diffMin < 24 * 60) {
+    const hrs = Math.round(diffMin / 60);
+    return `In ${hrs} hr${hrs === 1 ? '' : 's'}`;
+  }
+
+  return d.toLocaleString(undefined, {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export function getWeekdayIndex(value: string | Date): number {
   const jsDay = toDate(value).getDay(); // 0–6
   return (jsDay + 6) % 7;

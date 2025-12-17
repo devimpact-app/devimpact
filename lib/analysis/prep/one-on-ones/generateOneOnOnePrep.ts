@@ -17,10 +17,10 @@ import { ActivityEvent } from '@/types/api/timeline';
 import {
   getActivityEventForPr,
   getActivityEventForReview,
-} from '../activity/helpers';
+} from '../../activity/helpers';
 import { generateLLMTalkingPoints } from '@/lib/integrations/openai/services/summarizeOneOnOne';
-import { formatMetricValue } from '../metrics/client';
-import { buildWorkRhythm } from '../work-rhythm/buildWorkRhythm';
+import { formatMetricValue } from '../../metrics/client';
+import { buildWorkRhythm } from '../../work-rhythm/buildWorkRhythm';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 

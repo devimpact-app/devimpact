@@ -12,6 +12,7 @@ import { DashboardAlerts } from './components/DashboardAlerts';
 import { InsightPanel } from '@/components/insights/InsightPanel';
 import { Insight } from '@/types/api/insights';
 import { usePrSummaryBackfill } from './usePrSummaryBackfill';
+import { UpcomingPrepCardContainer } from './Prep';
 
 type Props = {
   fullName: string;
@@ -85,6 +86,8 @@ export default function DashboardClient({
               />
             </div>
           </header>
+
+          <UpcomingPrepCardContainer />
 
           <WeeklySummaryCard
             startISO={startISO}

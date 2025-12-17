@@ -3,14 +3,14 @@ import { auth } from '@/lib/auth';
 import { withSentryUser } from '@/lib/withSentryUser';
 import { db } from '@/lib/db/client';
 import { oneOnOneSessions } from '@/lib/db/schema';
-import { generateOneOnOnePrep } from '@/lib/analysis/one-on-ones/generateOneOnOnePrep';
+import { generateOneOnOnePrep } from '@/lib/analysis/prep/one-on-ones/generateOneOnOnePrep';
 import {
   CreateOneOnOneInput,
   OneOnOneListResponse,
 } from '@/types/api/one-on-one';
 import { jsonBadRequest, jsonOK, jsonUnauthorized } from '../_lib/http';
 import { and, desc, eq, lt } from 'drizzle-orm';
-import { formatOneOnOneResponse } from '@/lib/analysis/one-on-ones/formatResponse';
+import { formatOneOnOneResponse } from '@/lib/analysis/prep/one-on-ones/formatResponse';
 
 export const POST = withSentryUser(async (req: NextRequest) => {
   const session = await auth();

@@ -1,4 +1,4 @@
-import { OneOnOneLLMContext } from '@/lib/analysis/one-on-ones/types';
+import { OneOnOneLLMContext } from '@/lib/analysis/prep/one-on-ones/types';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 export function buildTalkingPointsPrompt(

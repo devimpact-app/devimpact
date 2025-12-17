@@ -1,10 +1,6 @@
 import { minutesBetween } from '@/lib/utils/date';
 import { GoogleEventsListItem } from '../types';
-import {
-  parseGoogleDateTime,
-  redactTitle,
-  summarizeAttendees,
-} from './helpers';
+import { parseGoogleDateTime, summarizeAttendees } from './helpers';
 import { db } from '@/lib/db/client';
 import { calendarEvents } from '@/lib/db/schema/gcal';
 import { sql } from 'drizzle-orm';
@@ -74,7 +70,7 @@ export async function upsertCalendarEvents({
         isAllDay,
         eventTimeZone: tz,
 
-        titleRedacted: redactTitle(e.summary ?? null),
+        titleRedacted: e.summary?.trim() ?? null,
 
         ...attendeeAgg,
         ...categoryInfo,

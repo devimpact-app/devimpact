@@ -11,7 +11,7 @@ import {
   jsonOK,
   jsonUnauthorized,
 } from '../../_lib/http';
-import { formatOneOnOneResponse } from '@/lib/analysis/one-on-ones/formatResponse';
+import { formatOneOnOneResponse } from '@/lib/analysis/prep/one-on-ones/formatResponse';
 
 export const GET = withSentryUser(
   async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {

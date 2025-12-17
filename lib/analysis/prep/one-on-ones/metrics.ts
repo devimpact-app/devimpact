@@ -4,7 +4,7 @@ import {
   TStatResult,
   TTimeseriesResult,
 } from '@/types/api/metrics';
-import { runBatchServer } from '../metrics/runBatchServer';
+import { runBatchServer } from '../../metrics/runBatchServer';
 
 import { TMetricsBatchResult } from '@/types/api/metrics';
 import {
@@ -14,7 +14,7 @@ import {
   OneOnOneMetricTimeseriesPointForLLM,
   OneOnOneMetricWindowForLLM,
 } from './types';
-import { formatMetricValue } from '../metrics/client';
+import { formatMetricValue } from '../../metrics/client';
 
 function buildStatForLLM(
   result: TStatResult

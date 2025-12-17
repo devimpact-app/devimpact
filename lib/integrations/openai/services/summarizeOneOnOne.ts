@@ -1,7 +1,7 @@
 import {
   OneOnOneLLMContext,
   OneOnOneLLMOutput,
-} from '@/lib/analysis/one-on-ones/types';
+} from '@/lib/analysis/prep/one-on-ones/types';
 import { buildTalkingPointsPrompt } from '../prompts/oneOnOneTalkingPoints';
 import { AiConfig } from '../config';
 import { openai } from '../client';
