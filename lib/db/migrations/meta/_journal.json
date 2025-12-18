@@ -50,6 +50,13 @@
       "when": 1765834607002,
       "tag": "0006_add_calendar_event_subtype",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766015489893,
+      "tag": "0007_add_calendar_sync_mode",
+      "breakpoints": true
     }
   ]
 }

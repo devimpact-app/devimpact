@@ -4,18 +4,51 @@ import { and, asc, eq, gte, isNull, lt, ne } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { calendarEvents } from '@/lib/db/schema/gcal';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
+import { maybeRefreshUpcomingEvents } from './refresh';
+import { addDays } from 'date-fns';
 
 const DEFAULT_LOOKAHEAD_DAYS = 7;
 const DEFAULT_LIMIT = 10;
 
-function addDays(d: Date, days: number) {
-  const x = new Date(d);
-  x.setUTCDate(x.getUTCDate() + days);
-  return x;
-}
-
 function minutesUntil(from: Date, to: Date) {
   return Math.floor((to.getTime() - from.getTime()) / 60000);
+}
+
+function applyPrepDisplayRules(items: UpcomingCalendarEvent[]) {
+  const singleInstanceSubtypes = new Set(['standup']);
+
+  const keep: UpcomingCalendarEvent[] = [];
+  const seen = new Set<string>();
+
+  for (const e of items) {
+    const cat = e.category;
+    const subtype = e.categorySubtype;
+
+    if (cat === 'oneOnOne') {
+      keep.push(e);
+      continue;
+    }
+
+    // Only dedupe selected team subtypes
+    if (
+      cat === 'team' &&
+      subtype &&
+      singleInstanceSubtypes.has(subtype) &&
+      e.recurringEventId
+    ) {
+      const seriesKey = e.recurringEventId;
+
+      if (seen.has(seriesKey)) continue;
+      seen.add(seriesKey);
+
+      keep.push(e);
+      continue;
+    }
+
+    keep.push(e);
+  }
+
+  return keep;
 }
 
 export async function getUpcomingCalendarEvents(params: {
@@ -33,6 +66,13 @@ export async function getUpcomingCalendarEvents(params: {
     includeAllDay = true,
   } = params;
 
+  // We want to keep upcoming events very fresh
+  const refresh = await maybeRefreshUpcomingEvents({
+    tenantId,
+    now,
+    lookaheadDays,
+  });
+
   const windowStart = now;
   const windowEnd = addDays(now, lookaheadDays);
 
@@ -45,7 +85,7 @@ export async function getUpcomingCalendarEvents(params: {
   const where = and(
     eq(calendarEvents.tenantId, tenantId),
     isNull(calendarEvents.deletedAt),
-    gte(calendarEvents.startAt, windowStart),
+    gte(calendarEvents.endAt, windowStart),
     lt(calendarEvents.startAt, windowEnd),
     ne(calendarEvents.status, 'cancelled'),
     ne(calendarEvents.selfResponseStatus, 'declined'),
@@ -77,10 +117,9 @@ export async function getUpcomingCalendarEvents(params: {
     })
     .from(calendarEvents)
     .where(where)
-    .orderBy(asc(calendarEvents.startAt))
-    .limit(limit);
+    .orderBy(asc(calendarEvents.startAt));
 
-  const items: UpcomingCalendarEvent[] = rows
+  let items: UpcomingCalendarEvent[] = rows
     .filter((r) => {
       const cat = (r.category ?? 'other') as string;
       const isPrepRelevant = !(
@@ -122,9 +161,13 @@ export async function getUpcomingCalendarEvents(params: {
       startsInMinutes: minutesUntil(now, r.startAt),
     }));
 
+  items = applyPrepDisplayRules(items);
+  items = items.slice(0, limit);
+
   return {
     nowISO: now.toISOString(),
     lookaheadDays,
     items,
+    refreshed: refresh.didRefresh,
   };
 }

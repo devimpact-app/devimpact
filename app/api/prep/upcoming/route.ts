@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { jsonOK, jsonUnauthorized } from '@/app/api/_lib/http';
 import { UpcomingCalendarEventsResponseSchema } from '@/types/api/prep';
-import { getUpcomingCalendarEvents } from '@/lib/analysis/prep/upcomingEvents';
+import { getUpcomingCalendarEvents } from '@/lib/analysis/prep/upcoming/upcomingEvents';
 import { isCalendarConnected } from '@/lib/integrations/gcal/client';
 
 export async function GET(req: NextRequest) {

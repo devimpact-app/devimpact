@@ -133,16 +133,22 @@ export async function runSync(userId: string): Promise<SyncResponse> {
     .limit(1);
 
   const isFirstSync = !lastRun?.completedAt;
-
-  const hoursSinceLast = hoursSince(lastRun.completedAt, now);
   let windowStartAt: Date;
 
   if (isFirstSync) {
     windowStartAt = daysAgo(now, LOOKBACK_DAYS_INITIAL);
-  } else if (hoursSinceLast >= STALE_SYNC_THRESHOLD_HOURS) {
-    windowStartAt = daysAgo(now, STALE_LOOKBACK_DAYS);
   } else {
-    windowStartAt = subHours(now, OVERLAP_PAST_HOURS);
+    const hoursSinceLast = hoursSince(
+      lastRun.completedAt ?? lastRun.windowEndAt ?? now,
+      now
+    );
+
+    if (hoursSinceLast >= STALE_SYNC_THRESHOLD_HOURS) {
+      windowStartAt = daysAgo(now, STALE_LOOKBACK_DAYS);
+    } else {
+      const cursor = lastRun.windowEndAt ?? now;
+      windowStartAt = subHours(cursor, OVERLAP_PAST_HOURS);
+    }
   }
 
   const timeMinISO = windowStartAt.toISOString();

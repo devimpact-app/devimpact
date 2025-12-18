@@ -11,7 +11,7 @@ async function fetchUpcomingEvents(params: {
 }): Promise<UpcomingCalendarEventsResponse> {
   const search = new URLSearchParams({
     // timezone: params.timezone,
-    days: String(params.windowDays ?? 7),
+    days: String(params.windowDays ?? 3),
   });
 
   const res = await fetch(`/api/prep/upcoming?${search.toString()}`, {

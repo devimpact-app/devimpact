@@ -63,7 +63,7 @@ export function minutesBetween(start: Date | null, end: Date | null) {
   return mins >= 0 ? mins : null;
 }
 
-function hoursSince(a?: Date | null, now = new Date()) {
+export function hoursSince(a?: Date | null, now = new Date()) {
   if (!a) return Number.POSITIVE_INFINITY;
   return (now.getTime() - a.getTime()) / (60 * 60 * 1000);
 }

@@ -34,9 +34,6 @@ export const calendarSelections = pgTable(
     accessRole: text('access_role'), // owner | writer | reader | freeBusyReader
     isPrimary: boolean('is_primary').default(false),
 
-    // Cursors
-    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
-
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -61,6 +58,7 @@ export const calendarSyncStatusEnum = pgEnum('calendar_sync_status', [
 export const calendarSyncModeEnum = pgEnum('calendar_sync_mode', [
   'initial', // first-ever backfill
   'manual', // user-triggered
+  'dashboard_refresh',
   'scheduled', // future
 ]);
 

@@ -174,12 +174,6 @@ export function UpcomingPrepCard({
           <EventList events={events} />
         )}
       </div>
-
-      {/* Footer microcopy */}
-      <p className="text-[11px] text-white/35 leading-snug">
-        Tip: connect Google Calendar to unlock meeting prep and focus
-        protection.
-      </p>
     </section>
   );
 }

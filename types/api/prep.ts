@@ -58,6 +58,7 @@ export const UpcomingCalendarEventsResponseSchema = z.object({
   lookaheadDays: z.number().int().positive(),
   items: z.array(UpcomingCalendarEventSchema),
   calendarConnected: z.boolean(),
+  refreshed: z.boolean(),
 });
 
 export type UpcomingCalendarEventsResponse = z.infer<
