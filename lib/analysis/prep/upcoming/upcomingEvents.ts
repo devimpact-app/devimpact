@@ -6,6 +6,7 @@ import { calendarEvents } from '@/lib/db/schema/gcal';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 import { maybeRefreshUpcomingEvents } from './refresh';
 import { addDays } from 'date-fns';
+import { attachPrepLinks } from './prepLinks';
 
 const DEFAULT_LOOKAHEAD_DAYS = 7;
 const DEFAULT_LIMIT = 10;
@@ -15,6 +16,7 @@ function minutesUntil(from: Date, to: Date) {
 }
 
 function applyPrepDisplayRules(items: UpcomingCalendarEvent[]) {
+  // Only show one standup at a time
   const singleInstanceSubtypes = new Set(['standup']);
 
   const keep: UpcomingCalendarEvent[] = [];
@@ -75,13 +77,6 @@ export async function getUpcomingCalendarEvents(params: {
 
   const windowStart = now;
   const windowEnd = addDays(now, lookaheadDays);
-
-  // Core filters:
-  // - not deleted
-  // - upcoming start time
-  // - not cancelled
-  // - not declined by self (optional, but usually desired)
-  // - optionally exclude all-day events (often noisy for "prep")
   const where = and(
     eq(calendarEvents.tenantId, tenantId),
     isNull(calendarEvents.deletedAt),
@@ -167,7 +162,10 @@ export async function getUpcomingCalendarEvents(params: {
   return {
     nowISO: now.toISOString(),
     lookaheadDays,
-    items,
+    items: attachPrepLinks({
+      tenantId,
+      events: items,
+    }),
     refreshed: refresh.didRefresh,
   };
 }
