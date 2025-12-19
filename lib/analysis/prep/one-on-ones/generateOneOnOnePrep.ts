@@ -1,4 +1,4 @@
-import { db, DB } from '@/lib/db/client';
+import { db } from '@/lib/db/client';
 import { NewOneOnOneSession, oneOnOneSessions } from '@/lib/db/schema/prep';
 import { weeksAgo } from '@/lib/utils/date';
 import {
@@ -231,17 +231,17 @@ export async function generateOneOnOnePrep(
     },
     metrics: metrics.llm,
     insights: insights.llm,
-    highlightPrs: activity.highlightPrs,
-    highlightedReviews: activity.highlightedReviews,
-    tags: activity.tags,
+    highlightPrs: activity.llm.highlightPrs,
+    highlightedReviews: activity.llm.highlightedReviews,
+    tags: activity.llm.tags,
     workRhythm: workSummary,
   };
 
   const llmOutput = await generateLLMTalkingPoints(llmContext);
   const talkingPoints = llmOutput.talkingPoints ?? [];
   const references = extractUsedReferences(talkingPoints, {
-    prs: activity.fullPrs,
-    reviews: activity.fullReviews,
+    prs: activity.full.fullPrs,
+    reviews: activity.full.fullReviews,
     insights: insights.full,
     metrics: metrics.full,
     shortWindowStartISO,

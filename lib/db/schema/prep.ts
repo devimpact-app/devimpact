@@ -108,7 +108,7 @@ export type PrepItemStatus =
 
 export type PrepMeetingType = 'oneOnOne' | 'standup' | 'planning' | 'retro';
 
-export type PrepPayload = OneOnOnePayload;
+export type PrepPayload = OneOnOnePayload | {};
 
 export const prepItems = pgTable(
   'prep_items',
@@ -138,6 +138,22 @@ export const prepItems = pgTable(
     isAllDay: boolean('is_all_day').notNull().default(false),
     titleRedacted: text('title_redacted'),
 
+    timezone: text('timezone').notNull(),
+    primaryWindowStartAt: timestamp('primary_window_start_at', {
+      withTimezone: true,
+    }).notNull(),
+    primaryWindowEndAt: timestamp('primary_window_end_at', {
+      withTimezone: true,
+    }).notNull(),
+    primaryWindowSource: text('primary_window_source').notNull(),
+    secondaryWindowStartAt: timestamp('secondary_window_start_at', {
+      withTimezone: true,
+    }).notNull(),
+    secondaryWindowEndAt: timestamp('secondary_window_end_at', {
+      withTimezone: true,
+    }).notNull(),
+    secondaryWindowSource: text('secondary_window_source').notNull(),
+
     category: text('category'), // 'team' | 'oneOnOne' | ...
     categorySubtype: text('category_subtype'), // 'designReview' etc
     categoryConfidence: real('category_confidence'),
@@ -148,6 +164,7 @@ export const prepItems = pgTable(
     content: jsonb('content').$type<PrepPayload>(),
     lastError: text('last_error'),
 
+    generationVersion: integer('generation_version').default(1).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -173,6 +190,8 @@ export const prepItems = pgTable(
     ),
   })
 );
+
+export type PrepItem = typeof prepItems.$inferSelect;
 
 export const prepRules = pgTable(
   'prep_rules',

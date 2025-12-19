@@ -20,14 +20,18 @@ export async function getActivityForOneOnOneRange({
   start: Date;
   end: Date;
 }): Promise<{
-  highlightPrs: ShippedItem[];
-  fullPrs: PullRequest[];
-  highlightedReviews: HighlightedReview[];
-  fullReviews: {
-    review: Review;
-    pr?: PullRequest | null;
-  }[];
-  tags: OneOnOneTagForLLM[];
+  llm: {
+    highlightPrs: ShippedItem[];
+    highlightedReviews: HighlightedReview[];
+    tags: OneOnOneTagForLLM[];
+  };
+  full: {
+    fullPrs: PullRequest[];
+    fullReviews: {
+      review: Review;
+      pr?: PullRequest | null;
+    }[];
+  };
 }> {
   const activityParams = {
     tenantId,
@@ -65,10 +69,14 @@ export async function getActivityForOneOnOneRange({
   });
 
   return {
-    highlightPrs,
-    fullPrs: mergedPrs,
-    highlightedReviews: highlightedReviewed ? [highlightedReviewed] : [],
-    fullReviews: authoredReviews,
-    tags,
+    llm: {
+      highlightPrs,
+      highlightedReviews: highlightedReviewed ? [highlightedReviewed] : [],
+      tags,
+    },
+    full: {
+      fullPrs: mergedPrs,
+      fullReviews: authoredReviews,
+    },
   };
 }

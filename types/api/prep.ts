@@ -74,13 +74,13 @@ export type UpcomingCalendarEventsResponse = z.infer<
 
 const BaseGeneratePrepRequestSchema = z.object({
   timezone: z.string().min(1),
+  prepItemId: z.uuid().optional(), // used for regen
 });
 
 export const CalendarGeneratePrepRequestSchema =
   BaseGeneratePrepRequestSchema.extend({
     source: z.literal('calendar'),
     calendarEventId: z.uuid(),
-    prepItemId: z.uuid().optional(), // used for regen
   });
 
 export const ManualGeneratePrepRequestSchema =
