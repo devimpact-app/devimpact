@@ -1,6 +1,7 @@
 import { WorkRhythm } from '@/types/api/work-rhythm';
 import { MeetingContext } from '../../context';
 import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
+import { MeetingRecapForLLM } from '../../types';
 
 export type StandupLLMContext = {
   meeting: MeetingContext;
@@ -13,7 +14,7 @@ export type StandupLLMContext = {
   };
   calendar: {
     // TODO:
-    recentMeetings: [];
+    recentMeetings: MeetingRecapForLLM;
     upcomingMeetings: [];
     upcomingOOO: [];
   };

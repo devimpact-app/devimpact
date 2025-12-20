@@ -22,6 +22,7 @@ export type FetchPrepActivityResponse = {
       review: Review;
       pr?: PullRequest | null;
     }[];
+    prSummariesById: Map<string, any>;
   };
 };
 
@@ -79,6 +80,7 @@ export async function getActivityForOneOnOneRange({
     full: {
       fullPrs: mergedPrs,
       fullReviews: authoredReviews,
+      prSummariesById: summariesByPrId,
     },
   };
 }

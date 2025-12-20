@@ -70,7 +70,7 @@ export async function upsertCalendarEvents({
         isAllDay,
         eventTimeZone: tz,
 
-        titleRedacted: e.summary?.trim() ?? null,
+        title: e.summary?.trim() ?? null,
 
         ...attendeeAgg,
         ...categoryInfo,
@@ -118,7 +118,7 @@ export async function upsertCalendarEvents({
           originalStartAt: sql`excluded.original_start_at`,
           isAllDay: sql`excluded.is_all_day`,
           eventTimeZone: sql`excluded.event_time_zone`,
-          titleRedacted: sql`excluded.title_redacted`,
+          title: sql`excluded.title_redacted`,
 
           attendeesTotal: sql`excluded.attendees_total`,
           attendeesAccepted: sql`excluded.attendees_accepted`,

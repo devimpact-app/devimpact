@@ -19,7 +19,7 @@ export function isReviewWorthConsidering(r: Review): boolean {
   return (r.reviewCommentsCount ?? 0) > 0 || r.state === 'changes_requested';
 }
 
-function getHighlightedReviewFromReview({
+export function getHighlightedReviewFromReview({
   review,
   pr,
 }: {

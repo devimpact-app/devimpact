@@ -1,6 +1,11 @@
+import { TeamMeetingSubtype } from '@/lib/integrations/gcal/sync/categorizer';
 import { InsightKind } from '@/types/api/insights';
 import { PrepTalkingPoint } from '@/types/api/prep';
-import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
+import {
+  CalendarEventCategory,
+  HighlightedReview,
+  ShippedItem,
+} from '@/types/api/weekly-summary';
 
 export type MetricWindowKind = 'short' | 'medium';
 
@@ -46,6 +51,18 @@ export interface PrepMetricForLLM {
   windows: PrepMetricWindowForLLM[]; // usually 2 items: short + medium
 }
 
+export interface MeetingRecapForLLM {
+  recap: {
+    meetingCount: number;
+    meetingMinutes: number;
+    topCategories: {
+      category: CalendarEventCategory;
+      minutes: number;
+    }[];
+  };
+  items: CalendarEventForLLM[];
+}
+
 export type PrepInsightWindowKind = 'short' | 'medium';
 
 export interface PrepInsightForLLM {
@@ -72,6 +89,19 @@ export interface PrepInsightForLLM {
 export interface PrepTagForLLM {
   tag: string;
   count: number;
+}
+
+export interface CalendarEventForLLM {
+  id: string;
+  startAt: string;
+  endAt: string | null;
+  durationMinutes: number | null;
+  isAllDay: boolean;
+  title: string | null;
+  category: CalendarEventCategory;
+  subtype: TeamMeetingSubtype;
+  attendeesTotal: number | null;
+  selfResponseStatus: string | null;
 }
 
 export type PrepLLMOutput = {

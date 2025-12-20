@@ -21,7 +21,7 @@ function computeFrictionScore(pr: PullRequest): number {
   return iterationsComponent + latencyComponent + changesRequestedComponent;
 }
 
-function getShippedItemFromPr(
+export function getShippedItemFromPr(
   pr: PullRequest,
   highlightReason: HighlightReason,
   prSummariesById: Map<string, any>

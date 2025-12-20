@@ -26,7 +26,7 @@ export function buildMeetingContext(prepItem: PrepItem): MeetingContext {
     meetingType: prepItem.meetingType as PrepMeetingType,
     meetingStartAtISO: prepItem.startAt.toISOString(),
     meetingEndAtISO: endISO,
-    title: prepItem.titleRedacted ?? null,
+    title: prepItem.title ?? null,
     timezone: prepItem.timezone,
 
     primaryWindowStartISO: prepItem.primaryWindowStartAt.toISOString(),

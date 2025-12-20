@@ -7,13 +7,10 @@ import { UpcomingCalendarEvent } from '@/types/api/prep';
 import { maybeRefreshUpcomingEvents } from './refresh';
 import { addDays } from 'date-fns';
 import { attachPrepLinks } from './prepLinks';
+import { formatCalendarEventResponse, minutesUntil } from './formatResponse';
 
 const DEFAULT_LOOKAHEAD_DAYS = 7;
 const DEFAULT_LIMIT = 10;
-
-function minutesUntil(from: Date, to: Date) {
-  return Math.floor((to.getTime() - from.getTime()) / 60000);
-}
 
 function applyPrepDisplayRules(items: UpcomingCalendarEvent[]) {
   // Only show one standup at a time
@@ -97,7 +94,7 @@ export async function getUpcomingCalendarEvents(params: {
       endAt: calendarEvents.endAt,
       durationMinutes: calendarEvents.durationMinutes,
       isAllDay: calendarEvents.isAllDay,
-      title: calendarEvents.titleRedacted,
+      title: calendarEvents.title,
       status: calendarEvents.status,
       selfResponseStatus: calendarEvents.selfResponseStatus,
       isOrganizerSelf: calendarEvents.isOrganizerSelf,
@@ -132,29 +129,7 @@ export async function getUpcomingCalendarEvents(params: {
       }
       return true;
     })
-    .map((r) => ({
-      id: r.id,
-      calendarId: r.calendarId,
-      googleEventId: r.googleEventId,
-      recurringEventId: r.recurringEventId ?? null,
-      startAtISO: r.startAt.toISOString(),
-      endAtISO: r.endAt.toISOString(),
-      durationMinutes: r.durationMinutes ?? null,
-      isAllDay: r.isAllDay,
-      title: r.title ?? null,
-      status: r.status ?? null,
-      selfResponseStatus: r.selfResponseStatus ?? null,
-      isOrganizerSelf: !!r.isOrganizerSelf,
-      attendeesTotal: r.attendeesTotal ?? 0,
-      attendeesAccepted: r.attendeesAccepted ?? 0,
-      attendeesDeclined: r.attendeesDeclined ?? 0,
-      attendeesNeedsAction: r.attendeesNeedsAction ?? 0,
-      category: (r.category as any) ?? 'other',
-      categorySubtype: (r.categorySubtype as any) ?? null,
-      categoryConfidence: r.categoryConfidence ?? null,
-      categorySource: r.categorySource ?? null,
-      startsInMinutes: minutesUntil(now, r.startAt),
-    }));
+    .map((r) => formatCalendarEventResponse(r as any, now));
 
   items = applyPrepDisplayRules(items);
   items = items.slice(0, limit);

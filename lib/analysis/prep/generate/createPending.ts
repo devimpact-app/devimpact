@@ -110,7 +110,7 @@ export async function createPendingPrepItem(params: {
         endAt: ev.endAt,
         durationMinutes: ev.durationMinutes ?? null,
         isAllDay: !!ev.isAllDay,
-        titleRedacted: ev.titleRedacted ?? null,
+        title: ev.title ?? null,
         timezone: input.timezone,
         primaryWindowStartAt: windows.primary.startAt,
         primaryWindowEndAt: windows.primary.endAt,
@@ -167,7 +167,7 @@ export async function createPendingPrepItem(params: {
           ? Math.round((endAt.getTime() - startAt.getTime()) / 60000)
           : null),
       isAllDay: false,
-      titleRedacted: input.title ?? null,
+      title: input.title ?? null,
       meetingType: input.meetingType,
       status: 'pending',
       content: {},

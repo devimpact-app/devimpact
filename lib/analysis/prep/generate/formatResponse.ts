@@ -19,7 +19,7 @@ export function formatPrepItemResponse(row: PrepItem) {
     endAt: r.endAt ? r.endAt.toISOString() : null,
     durationMinutes: r.durationMinutes ?? null,
     isAllDay: !!r.isAllDay,
-    title: r.titleRedacted ?? null,
+    title: r.title ?? null,
     timezone: r.timezone,
     primaryWindow: {
       startAt: r.primaryWindowStartAt.toISOString(),

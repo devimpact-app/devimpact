@@ -3,13 +3,14 @@ import { FetchPrepMetricsResponse } from './metrics';
 import { FetchPrepInsightsResponse } from './insights';
 import { FetchPrepWorkRhythmResponse } from './workRhythm';
 import { FetchPrepActivityResponse } from './activity';
+import { FetchMeetingsRecapResponse } from './meetings';
 
 export const FetchSpec = {
   activityPrimary: {} as FetchPrepActivityResponse,
   workRhythmSecondary: {} as FetchPrepWorkRhythmResponse,
   insightsSecondary: {} as FetchPrepInsightsResponse,
   metricsPrimaryAndSecondary: {} as FetchPrepMetricsResponse,
-  meetingsPrimary: {} as { llm: unknown; full: unknown },
+  meetingsPrimary: {} as FetchMeetingsRecapResponse,
 };
 
 export type FetchKey = keyof typeof FetchSpec;

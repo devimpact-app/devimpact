@@ -7,6 +7,9 @@ import { generateOneOnOneTalkingPoints } from './llm/oneOnOne/generate';
 import { OneOnOneLLMContext } from './llm/oneOnOne/types';
 import { PrepLLMOutput } from './types';
 import { extractUsedReferences } from './references';
+import { StandupLLMContext } from './llm/standup/types';
+import { getShippedItemFromPr } from '../../weekly-summary/highlightedPrs';
+import { getHighlightedReviewFromReview } from '../../weekly-summary/highlightedReviews';
 
 export async function generatePrepFromRequest({
   tenantId,
@@ -36,36 +39,62 @@ export async function generatePrepFromRequest({
 
   let llmOutput: PrepLLMOutput;
 
-  if (
-    !fetched.activityPrimary ||
-    !fetched.workRhythmSecondary ||
-    !fetched.meetingsPrimary
-  ) {
+  const {
+    activityPrimary,
+    workRhythmSecondary,
+    metricsPrimaryAndSecondary,
+    insightsSecondary,
+    meetingsPrimary,
+  } = fetched;
+  if (!activityPrimary || !workRhythmSecondary || !meetingsPrimary) {
     throw new Error('There was an issue fetching data for meeting prep');
   }
   switch (prepItem.meetingType as PrepMeetingType) {
-    // case 'standup': {
-    //   const ctx: StandupLLMContext = {
-    //     meeting,
-    //     workRhythm: fetched.workRhythmSecondary.llm,
-    //     // TODO: add more
-    //   } as any;
-    //   llmOutput = await generateStandup(ctx);
-    //   break;
-    // }
+    case 'standup': {
+      const ctx: StandupLLMContext = {
+        meeting,
+        workRhythm: workRhythmSecondary.llm.summary,
+        work: {
+          recentShipped: activityPrimary.full.fullPrs.map((pr) =>
+            getShippedItemFromPr(
+              pr,
+              'other',
+              activityPrimary.full.prSummariesById
+            )
+          ),
+          recentReviews: activityPrimary.full.fullReviews.map((r) =>
+            getHighlightedReviewFromReview({
+              review: r.review,
+              pr: r.pr!,
+            })
+          ),
+          // TODO:
+          inFlightPrs: [],
+          reviewQueue: [],
+        },
+        calendar: {
+          recentMeetings: meetingsPrimary.llm,
+          // TODO:
+          upcomingMeetings: [],
+          upcomingOOO: [],
+        },
+      };
+      // llmOutput = await generateStandup(ctx);
+      break;
+    }
 
     case 'oneOnOne': {
-      if (!fetched.metricsPrimaryAndSecondary || !fetched.insightsSecondary) {
+      if (!metricsPrimaryAndSecondary || !insightsSecondary) {
         throw new Error('There was an issue fetching data for meeting prep');
       }
       const ctx: OneOnOneLLMContext = {
         meeting,
-        metrics: fetched.metricsPrimaryAndSecondary.llm,
-        insights: fetched.insightsSecondary.llm,
-        activity: fetched.activityPrimary.llm,
-        workRhythm: fetched.workRhythmSecondary.llm,
-        // meetings: fetched.meetingsPrimary.llm,
-      } as any;
+        metrics: metricsPrimaryAndSecondary.llm,
+        insights: insightsSecondary.llm,
+        activity: activityPrimary.llm,
+        workRhythm: workRhythmSecondary.llm.summary,
+        meetings: fetched.meetingsPrimary.llm,
+      };
       llmOutput = await generateOneOnOneTalkingPoints(ctx);
       break;
     }

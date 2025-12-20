@@ -9,6 +9,7 @@ import {
 import { fetchInsightsForWindow } from './insights';
 import { fetchMetricsForWindows } from './metrics';
 import { fetchWorkRhythmForWindow } from './workRhythm';
+import { fetchMeetingsRecapPrimary } from './meetings';
 
 type FetchCtx = {
   tenantId: string;
@@ -50,17 +51,17 @@ export async function runFetchPlan(args: {
         break;
 
       case 'meetingsPrimary':
-        // tasks.push(
-        //   (async () => [
-        //     key,
-        //     await fetchMeetingsContext({
-        //       tenantId: ctx.tenantId,
-        //       start: ctx.primary.start,
-        //       end: ctx.primary.end,
-        //       timezone: ctx.timezone,
-        //     }),
-        //   ])()
-        // );
+        tasks.push(
+          (async () => [
+            key,
+            await fetchMeetingsRecapPrimary({
+              tenantId: ctx.tenantId,
+              start: ctx.primary.start,
+              end: ctx.primary.end,
+              timezone: ctx.timezone,
+            }),
+          ])()
+        );
         break;
 
       case 'insightsSecondary':

@@ -136,7 +136,7 @@ export const prepItems = pgTable(
     endAt: timestamp('end_at', { withTimezone: true }),
     durationMinutes: integer('duration_minutes'),
     isAllDay: boolean('is_all_day').notNull().default(false),
-    titleRedacted: text('title_redacted'),
+    title: text('title_redacted'),
 
     timezone: text('timezone').notNull(),
     primaryWindowStartAt: timestamp('primary_window_start_at', {

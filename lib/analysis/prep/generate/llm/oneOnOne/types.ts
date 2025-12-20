@@ -1,7 +1,7 @@
-import { PrepTalkingPoint } from '@/types/api/prep';
 import { MeetingContext } from '../../context';
 import {
   ActivityForLLM,
+  MeetingRecapForLLM,
   PrepInsightForLLM,
   PrepMetricForLLM,
 } from '../../types';
@@ -13,5 +13,5 @@ export type OneOnOneLLMContext = {
   insights: PrepInsightForLLM[];
   activity: ActivityForLLM;
   workRhythm: WorkRhythm['summary'];
-  // meetings: unknown;
+  meetings: MeetingRecapForLLM;
 };
