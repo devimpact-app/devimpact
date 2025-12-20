@@ -1,28 +1,18 @@
 import { CalendarEventCategory } from '@/types/api/weekly-summary';
-import { CalendarEventForLLM } from '../types';
+import { CalendarEventForLLM, MeetingRecapForLLM } from '../types';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 import { calendarEvents } from '@/lib/db/schema/gcal';
 import { db } from '@/lib/db/client';
 import { and, asc, eq, gte, isNull, lt, ne, notInArray } from 'drizzle-orm';
-import { minutesBetween } from '@/lib/utils/date';
 import { formatCalendarEventResponse } from '../../upcoming/formatResponse';
+import { minutesForRow } from './upcomingMeetings';
 
 const FULL_LIMIT = 60;
 const LLM_ITEM_LIMIT = 8;
 const TOP_CAT_LIMIT = 5;
 
 export type FetchMeetingsRecapResponse = {
-  llm: {
-    recap: {
-      meetingCount: number;
-      meetingMinutes: number;
-      topCategories: {
-        category: CalendarEventCategory;
-        minutes: number;
-      }[];
-    };
-    items: CalendarEventForLLM[];
-  };
+  llm: MeetingRecapForLLM;
   full: {
     fullMeetings: UpcomingCalendarEvent[];
   };
@@ -43,7 +33,8 @@ export async function fetchMeetingsRecapPrimary(params: {
     lt(calendarEvents.startAt, end),
     ne(calendarEvents.status, 'cancelled'),
     ne(calendarEvents.selfResponseStatus, 'declined'),
-    notInArray(calendarEvents.category, ['personal', 'focus', 'ooo'])
+    notInArray(calendarEvents.category, ['personal', 'focus', 'ooo']),
+    eq(calendarEvents.isAllDay, false)
   );
 
   const rows = await db
@@ -53,35 +44,13 @@ export async function fetchMeetingsRecapPrimary(params: {
     .orderBy(asc(calendarEvents.startAt))
     .limit(FULL_LIMIT);
 
-  const normalized = rows.map((r) => {
-    const computedMinutes =
-      r.durationMinutes ?? (r.endAt ? minutesBetween(r.startAt, r.endAt) : 0);
-
-    // Keep all-day events in the list, but don't let them blow up "meetingMinutes"
-    const effectiveMinutes = r.isAllDay ? 0 : computedMinutes;
-
-    return {
-      ...r,
-      computedMinutes,
-      effectiveMinutes,
-      category: r.category ?? 'other',
-      subtypeSafe: (r.categorySubtype ? String(r.categorySubtype) : null) as
-        | string
-        | null,
-      titleSafe: (r.title ?? null) as string | null,
-    };
-  });
-
-  const meetingCount = normalized.length;
-  const meetingMinutes = normalized.reduce(
-    (sum, r) => sum + (r.effectiveMinutes || 0),
-    0
-  );
+  const meetingCount = rows.length;
+  const meetingMinutes = rows.reduce((sum, r) => sum + minutesForRow(r), 0);
 
   const byCat = new Map<CalendarEventCategory, number>();
-  for (const r of normalized) {
+  for (const r of rows) {
     const c = r.category as CalendarEventCategory;
-    byCat.set(c, (byCat.get(c) ?? 0) + (r.effectiveMinutes || 0));
+    byCat.set(c, (byCat.get(c) ?? 0) + minutesForRow(r));
   }
 
   const topCategories = Array.from(byCat.entries())
@@ -89,9 +58,9 @@ export async function fetchMeetingsRecapPrimary(params: {
     .sort((a, b) => b.minutes - a.minutes)
     .slice(0, TOP_CAT_LIMIT);
 
-  const llmItems = [...normalized]
+  const llmItems = [...rows]
     .sort((a, b) => {
-      const dm = (b.effectiveMinutes || 0) - (a.effectiveMinutes || 0);
+      const dm = minutesForRow(b) - minutesForRow(a);
       if (dm !== 0) return dm;
       return a.startAt.getTime() - b.startAt.getTime();
     })
@@ -102,18 +71,17 @@ export async function fetchMeetingsRecapPrimary(params: {
         startAt: r.startAt.toISOString(),
         endAt: r.endAt.toISOString(),
         isAllDay: !!r.isAllDay,
-        title: r.titleSafe,
+        title: r.title,
         category: r.category as CalendarEventCategory,
-        subtype: (r.subtypeSafe as any) ?? null,
-        durationMinutes: r.computedMinutes ?? null,
-        attendeesTotal: r.attendeesTotal ?? 0,
-        selfResponseStatus: (r.selfResponseStatus ?? null) as any,
+        subtype: (r.categorySubtype as any) ?? null,
+        durationMinutes: minutesForRow(r),
+        attendeesTotal: r.attendeesTotal,
+        selfResponseStatus: r.selfResponseStatus,
       };
     });
 
-  const now = new Date();
-  const fullMeetings: UpcomingCalendarEvent[] = normalized.map((r) =>
-    formatCalendarEventResponse(r, now)
+  const fullMeetings: UpcomingCalendarEvent[] = rows.map((r) =>
+    formatCalendarEventResponse(r)
   );
 
   return {

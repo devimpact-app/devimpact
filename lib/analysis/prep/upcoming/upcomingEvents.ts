@@ -129,7 +129,7 @@ export async function getUpcomingCalendarEvents(params: {
       }
       return true;
     })
-    .map((r) => formatCalendarEventResponse(r as any, now));
+    .map((r) => formatCalendarEventResponse(r as any));
 
   items = applyPrepDisplayRules(items);
   items = items.slice(0, limit);

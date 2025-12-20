@@ -13,9 +13,9 @@ export type StandupLLMContext = {
     reviewQueue: [];
   };
   calendar: {
-    // TODO:
     recentMeetings: MeetingRecapForLLM;
-    upcomingMeetings: [];
+    upcomingMeetings: MeetingRecapForLLM;
+    // TODO:
     upcomingOOO: [];
   };
   workRhythm: WorkRhythm['summary'];

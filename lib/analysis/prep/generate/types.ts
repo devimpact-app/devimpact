@@ -99,7 +99,7 @@ export interface CalendarEventForLLM {
   isAllDay: boolean;
   title: string | null;
   category: CalendarEventCategory;
-  subtype: TeamMeetingSubtype;
+  subtype: TeamMeetingSubtype | null;
   attendeesTotal: number | null;
   selfResponseStatus: string | null;
 }

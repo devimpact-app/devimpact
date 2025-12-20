@@ -6,8 +6,7 @@ export function minutesUntil(from: Date, to: Date) {
 }
 
 export function formatCalendarEventResponse(
-  r: CalendarEvent,
-  now: Date
+  r: CalendarEvent
 ): UpcomingCalendarEvent {
   return {
     id: r.id,

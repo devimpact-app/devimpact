@@ -45,12 +45,16 @@ export async function generatePrepFromRequest({
     metricsPrimaryAndSecondary,
     insightsSecondary,
     meetingsPrimary,
+    upcomingMeetings,
   } = fetched;
   if (!activityPrimary || !workRhythmSecondary || !meetingsPrimary) {
     throw new Error('There was an issue fetching data for meeting prep');
   }
   switch (prepItem.meetingType as PrepMeetingType) {
     case 'standup': {
+      if (!upcomingMeetings) {
+        throw new Error('There was an issue fetching data for meeting prep');
+      }
       const ctx: StandupLLMContext = {
         meeting,
         workRhythm: workRhythmSecondary.llm.summary,
@@ -74,8 +78,8 @@ export async function generatePrepFromRequest({
         },
         calendar: {
           recentMeetings: meetingsPrimary.llm,
+          upcomingMeetings: upcomingMeetings.llm,
           // TODO:
-          upcomingMeetings: [],
           upcomingOOO: [],
         },
       };
@@ -93,7 +97,7 @@ export async function generatePrepFromRequest({
         insights: insightsSecondary.llm,
         activity: activityPrimary.llm,
         workRhythm: workRhythmSecondary.llm.summary,
-        meetings: fetched.meetingsPrimary.llm,
+        meetings: meetingsPrimary.llm,
       };
       llmOutput = await generateOneOnOneTalkingPoints(ctx);
       break;

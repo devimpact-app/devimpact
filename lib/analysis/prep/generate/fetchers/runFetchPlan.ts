@@ -9,7 +9,8 @@ import {
 import { fetchInsightsForWindow } from './insights';
 import { fetchMetricsForWindows } from './metrics';
 import { fetchWorkRhythmForWindow } from './workRhythm';
-import { fetchMeetingsRecapPrimary } from './meetings';
+import { fetchMeetingsRecapPrimary } from './recentMeetings';
+import { fetchMeetingsUpcoming } from './upcomingMeetings';
 
 type FetchCtx = {
   tenantId: string;
@@ -59,6 +60,20 @@ export async function runFetchPlan(args: {
               start: ctx.primary.start,
               end: ctx.primary.end,
               timezone: ctx.timezone,
+            }),
+          ])()
+        );
+        break;
+
+      case 'upcomingMeetings':
+        tasks.push(
+          (async () => [
+            key,
+            await fetchMeetingsUpcoming({
+              tenantId: ctx.tenantId,
+              timezone: ctx.timezone,
+              // Use meeting as reference for whats now
+              now: ctx.primary.end,
             }),
           ])()
         );

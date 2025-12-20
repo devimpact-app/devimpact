@@ -1,4 +1,4 @@
-import { endOfWeek, getDay, startOfWeek } from 'date-fns';
+import { endOfDay, endOfWeek, getDay, startOfWeek } from 'date-fns';
 import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 export function getHourInTimezoneServer(
@@ -82,6 +82,12 @@ export function startOfWeekServer(date: Date, timezone: string): Date {
 export function endOfWeekServer(date: Date, timezone: string): Date {
   const zonedDate = toZonedTime(date, timezone);
   const zonedEndOfWeek = endOfWeek(zonedDate, { weekStartsOn: 1 });
+  return fromZonedTime(zonedEndOfWeek, timezone);
+}
+
+export function endOfDayServer(date: Date, timezone: string) {
+  const zonedDate = toZonedTime(date, timezone);
+  const zonedEndOfWeek = endOfDay(zonedDate);
   return fromZonedTime(zonedEndOfWeek, timezone);
 }
 
