@@ -11,7 +11,7 @@ import {
   boolean,
   real,
 } from 'drizzle-orm/pg-core';
-import { integrationTokens, users } from './users';
+import { users } from './users';
 import {
   OneOnOneMetricSnapshot,
   OneOnOneTalkingPoint,
@@ -193,37 +193,37 @@ export const prepItems = pgTable(
 
 export type PrepItem = typeof prepItems.$inferSelect;
 
-export const prepRules = pgTable(
-  'prep_rules',
-  {
-    id: uuid('id').defaultRandom().primaryKey(),
-    tenantId: uuid('tenant_id').notNull(),
-    integrationTokenId: uuid('integration_token_id').references(
-      () => integrationTokens.id,
-      { onDelete: 'set null' }
-    ),
-    calendarId: text('calendar_id').notNull(),
-    recurringEventId: text('recurring_event_id').notNull(),
-    meetingType: text('meeting_type').$type<PrepMeetingType>().notNull(),
-    isEnabled: boolean('is_enabled').notNull().default(true),
-    // How far in advance to generate
-    leadTimeMinutes: integer('lead_time_minutes').notNull().default(60),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (t) => ({
-    uniqByTenantAndSeries: unique().on(
-      t.tenantId,
-      t.calendarId,
-      t.recurringEventId
-    ),
-    idxByTenantEnabled: index('prep_rules_tenant_enabled_idx').on(
-      t.tenantId,
-      t.isEnabled
-    ),
-  })
-);
+// export const prepRules = pgTable(
+//   'prep_rules',
+//   {
+//     id: uuid('id').defaultRandom().primaryKey(),
+//     tenantId: uuid('tenant_id').notNull(),
+//     integrationTokenId: uuid('integration_token_id').references(
+//       () => integrationTokens.id,
+//       { onDelete: 'set null' }
+//     ),
+//     calendarId: text('calendar_id').notNull(),
+//     recurringEventId: text('recurring_event_id').notNull(),
+//     meetingType: text('meeting_type').$type<PrepMeetingType>().notNull(),
+//     isEnabled: boolean('is_enabled').notNull().default(true),
+//     // How far in advance to generate
+//     leadTimeMinutes: integer('lead_time_minutes').notNull().default(60),
+//     createdAt: timestamp('created_at', { withTimezone: true })
+//       .notNull()
+//       .defaultNow(),
+//     updatedAt: timestamp('updated_at', { withTimezone: true })
+//       .notNull()
+//       .defaultNow(),
+//   },
+//   (t) => ({
+//     uniqByTenantAndSeries: unique().on(
+//       t.tenantId,
+//       t.calendarId,
+//       t.recurringEventId
+//     ),
+//     idxByTenantEnabled: index('prep_rules_tenant_enabled_idx').on(
+//       t.tenantId,
+//       t.isEnabled
+//     ),
+//   })
+// );

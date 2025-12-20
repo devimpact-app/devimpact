@@ -1,25 +1,16 @@
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
-import { getAuthoredPrs } from '../../activity/getAuthoredPrs';
-import { getAuthoredReviews } from '../../activity/getAuthoredReviews';
-import { pickHighlightedAuthoredPrs } from '../../weekly-summary/highlightedPrs';
-import { pickHighlightedReview } from '../../weekly-summary/highlightedReviews';
+import { getAuthoredPrs } from '../../../activity/getAuthoredPrs';
+import { getAuthoredReviews } from '../../../activity/getAuthoredReviews';
+import { pickHighlightedAuthoredPrs } from '../../../weekly-summary/highlightedPrs';
+import { pickHighlightedReview } from '../../../weekly-summary/highlightedReviews';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
-import { buildTagFrequencyMap } from '../../weekly-summary/focusAreas';
+import { buildTagFrequencyMap } from '../../../weekly-summary/focusAreas';
 import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
-import { OneOnOneTagForLLM } from './types';
+import { OneOnOneTagForLLM } from '../../one-on-ones/types';
 import { PullRequest, Review } from '@/lib/db/schema';
 import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
 
-export async function getActivityForOneOnOneRange({
-  tenantId,
-  start,
-  end,
-}: {
-  tenantId: string;
-  timezone: string;
-  start: Date;
-  end: Date;
-}): Promise<{
+export type FetchPrepActivityResponse = {
   llm: {
     highlightPrs: ShippedItem[];
     highlightedReviews: HighlightedReview[];
@@ -32,7 +23,18 @@ export async function getActivityForOneOnOneRange({
       pr?: PullRequest | null;
     }[];
   };
-}> {
+};
+
+export async function getActivityForOneOnOneRange({
+  tenantId,
+  start,
+  end,
+}: {
+  tenantId: string;
+  timezone: string;
+  start: Date;
+  end: Date;
+}): Promise<FetchPrepActivityResponse> {
   const activityParams = {
     tenantId,
     start,

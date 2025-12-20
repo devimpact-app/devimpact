@@ -1,5 +1,5 @@
 import { db } from '@/lib/db/client';
-import { prepItems, prepRules } from '@/lib/db/schema';
+import { prepItems } from '@/lib/db/schema';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 import { and, eq, inArray } from 'drizzle-orm';
 
@@ -31,43 +31,43 @@ export async function attachPrepLinks({
     prepByKey.set(`${p.calendarId}::${p.googleEventId}`, p.prepItemId);
   }
 
-  const recurringIds = Array.from(
-    new Set(events.map((e) => e.recurringEventId).filter(Boolean) as string[])
-  );
+  // const recurringIds = Array.from(
+  //   new Set(events.map((e) => e.recurringEventId).filter(Boolean) as string[])
+  // );
 
-  let ruleBySeries = new Map<string, { id: string }>();
-  if (recurringIds.length) {
-    const rules = await db
-      .select({
-        recurringEventId: prepRules.recurringEventId,
-        id: prepRules.id,
-      })
-      .from(prepRules)
-      .where(
-        and(
-          eq(prepRules.tenantId, tenantId),
-          eq(prepRules.isEnabled, true),
-          inArray(prepRules.recurringEventId, recurringIds)
-        )
-      );
+  // let ruleBySeries = new Map<string, { id: string }>();
+  // if (recurringIds.length) {
+  //   const rules = await db
+  //     .select({
+  //       recurringEventId: prepRules.recurringEventId,
+  //       id: prepRules.id,
+  //     })
+  //     .from(prepRules)
+  //     .where(
+  //       and(
+  //         eq(prepRules.tenantId, tenantId),
+  //         eq(prepRules.isEnabled, true),
+  //         inArray(prepRules.recurringEventId, recurringIds)
+  //       )
+  //     );
 
-    ruleBySeries = new Map(
-      rules.map((r) => [r.recurringEventId, { id: r.id }])
-    );
-  }
+  //   ruleBySeries = new Map(
+  //     rules.map((r) => [r.recurringEventId, { id: r.id }])
+  //   );
+  // }
 
   return events.map((e) => {
     const prepItemId =
       prepByKey.get(`${e.calendarId}::${e.googleEventId}`) ?? null;
-    const rule = e.recurringEventId
-      ? ruleBySeries.get(e.recurringEventId)
-      : undefined;
+    // const rule = e.recurringEventId
+    //   ? ruleBySeries.get(e.recurringEventId)
+    //   : undefined;
 
     return {
       ...e,
       prepItemId,
-      hasPrepRule: !!rule,
-      prepRuleId: rule?.id ?? null,
+      // hasPrepRule: !!rule,
+      // prepRuleId: rule?.id ?? null,
     };
   });
 }

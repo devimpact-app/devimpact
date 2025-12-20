@@ -7,9 +7,9 @@ import {
   TCreateOneOnOneInput,
 } from '@/types/api/one-on-one';
 import { OneOnOneLLMContext } from './types';
-import { fetchMetricsForWindows } from './metrics';
-import { fetchInsightsForWindow } from './insights';
-import { getActivityForOneOnOneRange } from './activity';
+import { fetchMetricsForWindows } from '../generate/fetchers/metrics';
+import { fetchInsightsForWindow } from '../generate/fetchers/insights';
+import { getActivityForOneOnOneRange } from '../generate/fetchers/activity';
 import { PullRequest, Review } from '@/lib/db/schema';
 import { TMetricResult } from '@/types/api/metrics';
 import { Insight } from '@/types/api/insights';

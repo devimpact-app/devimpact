@@ -12,7 +12,7 @@ import {
   PrepGenerateRequestSchema,
   type PrepGenerateRequest,
 } from '@/types/api/prep';
-import { generatePrepFromRequest } from '@/lib/analysis/prep/generate/generatePrep';
+import { createPendingPrepItem } from '@/lib/analysis/prep/generate/createPending';
 
 export const POST = withSentryUser(async (req: NextRequest) => {
   try {
@@ -38,15 +38,12 @@ export const POST = withSentryUser(async (req: NextRequest) => {
 
     const input: PrepGenerateRequest = parsed.data;
 
-    const result = await generatePrepFromRequest({
+    const result = await createPendingPrepItem({
       tenantId: session.user.id,
       input,
     });
 
-    return jsonOK({
-      ok: true,
-      data: result,
-    });
+    return jsonOK(result);
   } catch (err: any) {
     console.error('[prep.generate] failed', {
       error: err?.message ?? String(err),

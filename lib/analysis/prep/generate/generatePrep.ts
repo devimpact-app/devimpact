@@ -1,46 +1,12 @@
 import { PrepItem, PrepPayload } from '@/lib/db/schema';
 import { PrepMeetingType } from '@/types/api/prep';
 import { getWindowsFromPrepItem } from './windows';
-import { fetchInsightsForWindow } from '../one-on-ones/insights';
-import { fetchMetricsForWindows } from '../one-on-ones/metrics';
-import { getActivityForOneOnOneRange } from '../one-on-ones/activity';
-import { buildWorkRhythm } from '../../work-rhythm/buildWorkRhythm';
 import { runFetchPlan } from './fetchers/runFetchPlan';
-
-type MeetingContext = {
-  meetingType: PrepMeetingType;
-  meetingStartAtISO: string;
-  meetingEndAtISO: string | null;
-  title: string | null;
-  timezone: string;
-  primaryWindowStartISO: string;
-  primaryWindowEndISO: string;
-  secondaryWindowStartISO: string;
-  secondaryWindowEndISO: string;
-};
-
-function buildMeetingContext(prepItem: PrepItem): MeetingContext {
-  const endISO =
-    prepItem.endAt?.toISOString() ??
-    (prepItem.durationMinutes
-      ? new Date(
-          prepItem.startAt.getTime() + prepItem.durationMinutes * 60_000
-        ).toISOString()
-      : null);
-
-  return {
-    meetingType: prepItem.meetingType as PrepMeetingType,
-    meetingStartAtISO: prepItem.startAt.toISOString(),
-    meetingEndAtISO: endISO,
-    title: prepItem.titleRedacted ?? null,
-    timezone: prepItem.timezone,
-
-    primaryWindowStartISO: prepItem.primaryWindowStartAt.toISOString(),
-    primaryWindowEndISO: prepItem.primaryWindowEndAt.toISOString(),
-    secondaryWindowStartISO: prepItem.secondaryWindowStartAt.toISOString(),
-    secondaryWindowEndISO: prepItem.secondaryWindowEndAt.toISOString(),
-  };
-}
+import { buildMeetingContext } from './context';
+import { generateOneOnOneTalkingPoints } from './llm/oneOnOne/generate';
+import { OneOnOneLLMContext } from './llm/oneOnOne/types';
+import { PrepLLMOutput } from './types';
+import { extractUsedReferences } from './references';
 
 export async function generatePrepFromRequest({
   tenantId,
@@ -68,56 +34,39 @@ export async function generatePrepFromRequest({
     },
   });
 
-  let llmOutput: LLMOutput;
+  let llmOutput: PrepLLMOutput;
 
+  if (
+    !fetched.activityPrimary ||
+    !fetched.workRhythmSecondary ||
+    !fetched.meetingsPrimary
+  ) {
+    throw new Error('There was an issue fetching data for meeting prep');
+  }
   switch (prepItem.meetingType as PrepMeetingType) {
-    case 'standup': {
-      const ctx: StandupLLMContext = {
-        meeting,
-        activity: activityPrimary.llm,
-        workRhythm: workRhythm.llm,
-        meetings: meetingsPrimary.llm,
-      };
-      llmOutput = await generateStandupPrepLLM(ctx);
-      break;
-    }
+    // case 'standup': {
+    //   const ctx: StandupLLMContext = {
+    //     meeting,
+    //     workRhythm: fetched.workRhythmSecondary.llm,
+    //     // TODO: add more
+    //   } as any;
+    //   llmOutput = await generateStandup(ctx);
+    //   break;
+    // }
 
     case 'oneOnOne': {
+      if (!fetched.metricsPrimaryAndSecondary || !fetched.insightsSecondary) {
+        throw new Error('There was an issue fetching data for meeting prep');
+      }
       const ctx: OneOnOneLLMContext = {
         meeting,
-        metrics: metrics.llm,
-        insights: insights.llm,
-        activity: activityPrimary.llm,
-        workRhythm: workRhythm.llm,
-        meetings: meetingsPrimary.llm,
-      };
-      llmOutput = await generateOneOnOnePrepLLM(ctx);
-      break;
-    }
-
-    case 'planning': {
-      const ctx: PlanningLLMContext = {
-        meeting,
-        metrics: metrics.llm,
-        insights: insights.llm,
-        activity: activityPrimary.llm,
-        workRhythm: workRhythm.llm,
-        meetings: meetingsPrimary.llm,
-      };
-      llmOutput = await generatePlanningPrepLLM(ctx);
-      break;
-    }
-
-    case 'retro': {
-      const ctx: RetroLLMContext = {
-        meeting,
-        metrics: metrics.llm,
-        insights: insights.llm,
-        activity: activityPrimary.llm,
-        workRhythm: workRhythm.llm,
-        meetings: meetingsPrimary.llm,
-      };
-      llmOutput = await generateRetroPrepLLM(ctx);
+        metrics: fetched.metricsPrimaryAndSecondary.llm,
+        insights: fetched.insightsSecondary.llm,
+        activity: fetched.activityPrimary.llm,
+        workRhythm: fetched.workRhythmSecondary.llm,
+        // meetings: fetched.meetingsPrimary.llm,
+      } as any;
+      llmOutput = await generateOneOnOneTalkingPoints(ctx);
       break;
     }
 
@@ -128,23 +77,20 @@ export async function generatePrepFromRequest({
     }
   }
 
-  const references = extractUsedReferences({
-    meetingType: prepItem.meetingType as PrepMeetingType,
-    llmOutput,
-    full: {
-      insights: insights.full,
-      metrics: metrics.full,
-      activity: activityPrimary.full,
-      workRhythm: workRhythm.full,
-      meetings: meetingsPrimary.full,
-    },
+  const talkingPoints = llmOutput.talkingPoints ?? [];
+  const references = extractUsedReferences(talkingPoints, {
+    prs: fetched.activityPrimary?.full?.fullPrs ?? [],
+    reviews: fetched.activityPrimary?.full?.fullReviews ?? [],
+    insights: fetched.insightsSecondary?.full ?? [],
+    metrics: fetched.metricsPrimaryAndSecondary?.full ?? [],
+    primaryWindowStartISO: primaryStart.toISOString(),
+    primaryWindowEndISO: primaryEnd.toISOString(),
   });
 
   const payload = {
-    output: llmOutput.sections ?? {},
     talkingPoints: llmOutput.talkingPoints ?? [],
-    references,
-  } as unknown as PrepPayload;
+    ...references,
+  } as PrepPayload;
 
   return payload;
 }

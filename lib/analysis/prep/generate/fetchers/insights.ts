@@ -1,18 +1,20 @@
 import { Insight, InsightStat } from '@/types/api/insights';
-import { buildInsights } from '../../insights';
-import { OneOnOneInsightForLLM } from './types';
+import { buildInsights } from '../../../insights';
+import { OneOnOneInsightForLLM } from '../../one-on-ones/types';
 
 const maxInsights = 10;
+
+export type FetchPrepInsightsResponse = {
+  full: Insight[];
+  llm: OneOnOneInsightForLLM[];
+};
 
 export async function fetchInsightsForWindow(params: {
   tenantId: string;
   timezone: string;
   start: Date;
   end: Date;
-}): Promise<{
-  full: Insight[];
-  llm: OneOnOneInsightForLLM[];
-}> {
+}): Promise<FetchPrepInsightsResponse> {
   const { tenantId, timezone, start, end } = params;
 
   const { insights } = await buildInsights({

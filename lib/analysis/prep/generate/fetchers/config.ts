@@ -1,14 +1,26 @@
 import { PrepMeetingType } from '@/types/api/prep';
+import { FetchPrepMetricsResponse } from './metrics';
+import { FetchPrepInsightsResponse } from './insights';
+import { FetchPrepWorkRhythmResponse } from './workRhythm';
+import { FetchPrepActivityResponse } from './activity';
 
-export type FetchKey =
-  | 'activityPrimary'
-  | 'insightsSecondary'
-  | 'metricsPrimaryAndSecondary'
-  | 'workRhythmSecondary'
-  | 'meetingsPrimary'
-  // TODO: add
-  | 'inFlightPRs'
-  | 'waitingOnMeReviews';
+export const FetchSpec = {
+  activityPrimary: {} as FetchPrepActivityResponse,
+  workRhythmSecondary: {} as FetchPrepWorkRhythmResponse,
+  insightsSecondary: {} as FetchPrepInsightsResponse,
+  metricsPrimaryAndSecondary: {} as FetchPrepMetricsResponse,
+  meetingsPrimary: {} as { llm: unknown; full: unknown },
+};
+
+export type FetchKey = keyof typeof FetchSpec;
+
+export type FetchSpecMap = {
+  [K in FetchKey]: (typeof FetchSpec)[K];
+};
+
+export type FetchResults = Partial<{
+  [K in FetchKey]: FetchSpecMap[K];
+}>;
 
 export type MeetingFetchPlan = {
   keys: readonly FetchKey[];

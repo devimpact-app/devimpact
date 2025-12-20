@@ -1,9 +1,9 @@
 'use client';
 
-import { formatUpcomingTime } from '@/lib/utils/date';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 import { Calendar, ChevronRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { EventRow } from './EventRow';
 
 type UpcomingPrepCardProps = {
   calendarConnected: boolean;
@@ -179,7 +179,6 @@ export function UpcomingPrepCard({
 }
 
 function EventList({ events }: { events: UpcomingCalendarEvent[] }) {
-  // show up to 3, time-first, one CTA each
   const items = events.slice(0, 3);
 
   return (
@@ -200,62 +199,4 @@ function EventList({ events }: { events: UpcomingCalendarEvent[] }) {
       ) : null}
     </div>
   );
-}
-
-function EventRow({ event }: { event: UpcomingCalendarEvent }) {
-  const label = formatUpcomingTime(event.startAtISO);
-  const title = event.title?.trim() || 'Untitled meeting';
-
-  const cta = ctaForEvent(event);
-
-  return (
-    <div
-      className="
-        rounded-lg border border-white/5
-        bg-white/[0.03]
-        px-3 py-2
-        flex items-center justify-between gap-3
-        hover:bg-white/[0.05] transition
-      "
-    >
-      <div className="min-w-0">
-        <p className="text-[11px] text-white/45">{label}</p>
-        <p className="text-sm text-white/85 font-medium truncate">{title}</p>
-      </div>
-
-      <Link
-        href={cta.href}
-        className="
-          inline-flex items-center gap-1
-          rounded-full bg-[#1A2236]
-          border border-white/10
-          px-3 py-1.5
-          text-[11px] font-medium text-white/80
-          hover:bg-[#202A44] transition
-          shrink-0
-        "
-      >
-        <Sparkles className="h-3.5 w-3.5 text-white/60" />
-        {cta.label}
-      </Link>
-    </div>
-  );
-}
-
-function ctaForEvent(e: UpcomingCalendarEvent): {
-  label: string;
-  href: string;
-} {
-  const baseHref = `/prep?eventId=${encodeURIComponent(e.id)}`;
-
-  if (e.category === 'oneOnOne')
-    return { label: 'Prepare 1:1', href: baseHref };
-  if (e.categorySubtype === 'standup')
-    return { label: 'Prep standup', href: baseHref };
-  if (e.categorySubtype === 'planning')
-    return { label: 'Review capacity', href: baseHref };
-  if (e.categorySubtype === 'retro')
-    return { label: 'Prep retro', href: baseHref };
-
-  return { label: 'Prepare', href: baseHref };
 }

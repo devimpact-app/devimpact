@@ -1,9 +1,14 @@
 import { PrepMeetingType } from '@/types/api/prep';
-import { getActivityForOneOnOneRange } from '../../one-on-ones/activity';
-import { FetchKey, MEETING_FETCH_PLANS } from './config';
-import { fetchInsightsForWindow } from '../../one-on-ones/insights';
-import { fetchMetricsForWindows } from '../../one-on-ones/metrics';
-import { buildWorkRhythm } from '@/lib/analysis/work-rhythm/buildWorkRhythm';
+import { getActivityForOneOnOneRange } from './activity';
+import {
+  FetchKey,
+  FetchResults,
+  FetchSpecMap,
+  MEETING_FETCH_PLANS,
+} from './config';
+import { fetchInsightsForWindow } from './insights';
+import { fetchMetricsForWindows } from './metrics';
+import { fetchWorkRhythmForWindow } from './workRhythm';
 
 type FetchCtx = {
   tenantId: string;
@@ -12,7 +17,14 @@ type FetchCtx = {
   secondary: { start: Date; end: Date };
 };
 
-type FetchResults = Partial<Record<FetchKey, { llm: unknown; full: unknown }>>;
+type Task<K extends FetchKey> = Promise<readonly [K, FetchSpecMap[K]]>;
+
+function makeTask<K extends FetchKey>(
+  key: K,
+  run: () => Promise<FetchSpecMap[K]>
+): Task<K> {
+  return (async () => [key, await run()] as const)();
+}
 
 export async function runFetchPlan(args: {
   meetingType: PrepMeetingType;
@@ -21,57 +33,53 @@ export async function runFetchPlan(args: {
   const plan = MEETING_FETCH_PLANS[args.meetingType];
   const { ctx } = args;
 
-  const tasks: Array<Promise<[FetchKey, { llm: unknown; full: unknown }]>> = [];
-
+  const tasks: Promise<readonly [FetchKey, FetchSpecMap[FetchKey]]>[] = [];
   for (const key of plan.keys) {
     switch (key) {
       case 'activityPrimary':
         tasks.push(
-          (async () => [
-            key,
-            await getActivityForOneOnOneRange({
+          makeTask('activityPrimary', () =>
+            getActivityForOneOnOneRange({
               tenantId: ctx.tenantId,
               start: ctx.primary.start,
               end: ctx.primary.end,
               timezone: ctx.timezone,
-            }),
-          ])()
+            })
+          )
         );
         break;
 
       case 'meetingsPrimary':
-        tasks.push(
-          (async () => [
-            key,
-            await fetchMeetingsContext({
-              tenantId: ctx.tenantId,
-              start: ctx.primary.start,
-              end: ctx.primary.end,
-              timezone: ctx.timezone,
-            }),
-          ])()
-        );
+        // tasks.push(
+        //   (async () => [
+        //     key,
+        //     await fetchMeetingsContext({
+        //       tenantId: ctx.tenantId,
+        //       start: ctx.primary.start,
+        //       end: ctx.primary.end,
+        //       timezone: ctx.timezone,
+        //     }),
+        //   ])()
+        // );
         break;
 
       case 'insightsSecondary':
         tasks.push(
-          (async () => [
-            key,
-            await fetchInsightsForWindow({
+          makeTask('insightsSecondary', () =>
+            fetchInsightsForWindow({
               tenantId: ctx.tenantId,
               start: ctx.secondary.start,
               end: ctx.secondary.end,
               timezone: ctx.timezone,
-            }),
-          ])()
+            })
+          )
         );
         break;
 
       case 'metricsPrimaryAndSecondary':
         tasks.push(
-          (async () => [
-            key,
-            await fetchMetricsForWindows({
+          makeTask('metricsPrimaryAndSecondary', () =>
+            fetchMetricsForWindows({
               tenantId: ctx.tenantId,
               windows: [
                 {
@@ -85,38 +93,40 @@ export async function runFetchPlan(args: {
                   end: ctx.secondary.end,
                 },
               ],
-            }),
-          ])()
+            })
+          )
         );
         break;
 
       case 'workRhythmSecondary':
         tasks.push(
-          (async () => [
-            key,
-            await buildWorkRhythm({
+          makeTask('workRhythmSecondary', () =>
+            fetchWorkRhythmForWindow({
               tenantId: ctx.tenantId,
               start: ctx.secondary.start,
               end: ctx.secondary.end,
               timezone: ctx.timezone,
-            }),
-          ])()
+            })
+          )
         );
         break;
 
       // Future standup extras:
-      case 'inFlightPRs':
-        tasks.push((async () => [key, await fetchInFlightPRs(ctx)])());
-        break;
+      // case 'inFlightPRs':
+      //   tasks.push((async () => [key, await fetchInFlightPRs(ctx)])());
+      //   break;
 
-      case 'waitingOnMeReviews':
-        tasks.push((async () => [key, await fetchWaitingOnMeReviews(ctx)])());
-        break;
+      // case 'waitingOnMeReviews':
+      //   tasks.push((async () => [key, await fetchWaitingOnMeReviews(ctx)])());
+      //   break;
     }
   }
 
   const resolved = await Promise.all(tasks);
   const out: FetchResults = {};
-  for (const [k, v] of resolved) out[k] = v;
+  for (const pair of resolved) {
+    const [k, v] = pair;
+    out[k] = v as any;
+  }
   return out;
 }

@@ -4,7 +4,7 @@ import {
   TStatResult,
   TTimeseriesResult,
 } from '@/types/api/metrics';
-import { runBatchServer } from '../../metrics/runBatchServer';
+import { runBatchServer } from '../../../metrics/runBatchServer';
 
 import { TMetricsBatchResult } from '@/types/api/metrics';
 import {
@@ -13,8 +13,8 @@ import {
   OneOnOneMetricStatForLLM,
   OneOnOneMetricTimeseriesPointForLLM,
   OneOnOneMetricWindowForLLM,
-} from './types';
-import { formatMetricValue } from '../../metrics/client';
+} from '../../one-on-ones/types';
+import { formatMetricValue } from '../../../metrics/client';
 
 function buildStatForLLM(
   result: TStatResult
@@ -209,13 +209,15 @@ export function buildOneOnOneMetricsFromBatch(
   return output;
 }
 
+export type FetchPrepMetricsResponse = {
+  llm: OneOnOneMetricForLLM[];
+  full: TMetricResult[];
+};
+
 export async function fetchMetricsForWindows(params: {
   tenantId: string;
   windows: { key: 'short' | 'medium'; start: Date; end: Date }[];
-}): Promise<{
-  llm: OneOnOneMetricForLLM[];
-  full: TMetricResult[];
-}> {
+}): Promise<FetchPrepMetricsResponse> {
   const { tenantId, windows } = params;
 
   const shortWindow = windows.find((w) => w.key === 'short');

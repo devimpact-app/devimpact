@@ -162,7 +162,7 @@ export async function getUpcomingCalendarEvents(params: {
   return {
     nowISO: now.toISOString(),
     lookaheadDays,
-    items: attachPrepLinks({
+    items: await attachPrepLinks({
       tenantId,
       events: items,
     }),

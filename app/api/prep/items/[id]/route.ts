@@ -5,7 +5,6 @@ import {
   jsonUnauthorized,
 } from '@/app/api/_lib/http';
 import { formatPrepItemResponse } from '@/lib/analysis/prep/generate/formatResponse';
-import { generatePrepFromRequest } from '@/lib/analysis/prep/generate/generatePrep';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { prepItems } from '@/lib/db/schema';
@@ -13,7 +12,7 @@ import { withSentryUser } from '@/lib/withSentryUser';
 import { and, eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 
-export const POST = withSentryUser(
+export const GET = withSentryUser(
   async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
     const session = await auth();
     if (!session?.user?.id) return jsonUnauthorized('Unauthorized');
@@ -33,32 +32,9 @@ export const POST = withSentryUser(
       .limit(1);
 
     if (!row) {
-      return jsonNotFound('Prep item not found');
+      return jsonNotFound('One-on-one not found');
     }
 
-    await db
-      .update(prepItems)
-      .set({
-        status: 'generating',
-      })
-      .where(eq(prepItems.id, id))
-      .returning();
-
-    const payload = await generatePrepFromRequest({
-      prepItem: row,
-      tenantId: userId,
-    });
-
-    const [updated] = await db
-      .update(prepItems)
-      .set({
-        content: payload,
-        updatedAt: new Date(),
-        status: 'ready',
-      })
-      .where(eq(prepItems.id, id))
-      .returning();
-
-    return jsonOK(formatPrepItemResponse(updated));
+    return jsonOK(formatPrepItemResponse(row));
   }
 );
