@@ -46,13 +46,14 @@ export async function generatePrepFromRequest({
     insightsSecondary,
     meetingsPrimary,
     upcomingMeetings,
+    ooo,
   } = fetched;
   if (!activityPrimary || !workRhythmSecondary || !meetingsPrimary) {
     throw new Error('There was an issue fetching data for meeting prep');
   }
   switch (prepItem.meetingType as PrepMeetingType) {
     case 'standup': {
-      if (!upcomingMeetings) {
+      if (!upcomingMeetings || !ooo) {
         throw new Error('There was an issue fetching data for meeting prep');
       }
       const ctx: StandupLLMContext = {
@@ -79,8 +80,7 @@ export async function generatePrepFromRequest({
         calendar: {
           recentMeetings: meetingsPrimary.llm,
           upcomingMeetings: upcomingMeetings.llm,
-          // TODO:
-          upcomingOOO: [],
+          upcomingOOO: ooo.llm,
         },
       };
       // llmOutput = await generateStandup(ctx);
