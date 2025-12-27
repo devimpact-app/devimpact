@@ -6,6 +6,7 @@ import { FetchPrepActivityResponse } from './activity';
 import { FetchMeetingsRecapResponse } from './recentMeetings';
 import { FetchMeetingsUpcomingResponse } from './upcomingMeetings';
 import { FetchOOOContextResponse } from './ooo';
+import { FetchPrepInFlightResponse } from './inFlight';
 
 export const FetchSpec = {
   activityPrimary: {} as FetchPrepActivityResponse,
@@ -15,6 +16,7 @@ export const FetchSpec = {
   meetingsPrimary: {} as FetchMeetingsRecapResponse,
   upcomingMeetings: {} as FetchMeetingsUpcomingResponse,
   ooo: {} as FetchOOOContextResponse,
+  inFlight: {} as FetchPrepInFlightResponse,
 };
 
 export type FetchKey = keyof typeof FetchSpec;
@@ -42,9 +44,7 @@ export const MEETING_FETCH_PLANS: Record<PrepMeetingType, MeetingFetchPlan> = {
       'meetingsPrimary',
       'upcomingMeetings',
       'ooo',
-      // add later:
-      // 'inFlightPRs',
-      // 'waitingOnMeReviews',
+      'inFlight',
     ],
     uses: { primary: true, secondary: false },
   },

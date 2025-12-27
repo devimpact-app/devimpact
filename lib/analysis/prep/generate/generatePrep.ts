@@ -10,6 +10,7 @@ import { extractUsedReferences } from './references';
 import { StandupLLMContext } from './llm/standup/types';
 import { getShippedItemFromPr } from '../../weekly-summary/highlightedPrs';
 import { getHighlightedReviewFromReview } from '../../weekly-summary/highlightedReviews';
+import { generateStandup } from './llm/standup/generate';
 
 export async function generatePrepFromRequest({
   tenantId,
@@ -47,13 +48,14 @@ export async function generatePrepFromRequest({
     meetingsPrimary,
     upcomingMeetings,
     ooo,
+    inFlight,
   } = fetched;
   if (!activityPrimary || !workRhythmSecondary || !meetingsPrimary) {
     throw new Error('There was an issue fetching data for meeting prep');
   }
   switch (prepItem.meetingType as PrepMeetingType) {
     case 'standup': {
-      if (!upcomingMeetings || !ooo) {
+      if (!upcomingMeetings || !ooo || !inFlight) {
         throw new Error('There was an issue fetching data for meeting prep');
       }
       const ctx: StandupLLMContext = {
@@ -73,8 +75,8 @@ export async function generatePrepFromRequest({
               pr: r.pr!,
             })
           ),
-          // TODO:
-          inFlightPrs: [],
+          inFlightPrs: inFlight.llm.inFlightPrs,
+          // TODO
           reviewQueue: [],
         },
         calendar: {
@@ -83,7 +85,7 @@ export async function generatePrepFromRequest({
           upcomingOOO: ooo.llm,
         },
       };
-      // llmOutput = await generateStandup(ctx);
+      llmOutput = await generateStandup(ctx);
       break;
     }
 

@@ -11,6 +11,8 @@ import { fetchMetricsForWindows } from './metrics';
 import { fetchWorkRhythmForWindow } from './workRhythm';
 import { fetchMeetingsRecapPrimary } from './recentMeetings';
 import { fetchMeetingsUpcoming } from './upcomingMeetings';
+import { fetchOOOContext } from './ooo';
+import { fetchInFlightContext } from './inFlight';
 
 type FetchCtx = {
   tenantId: string;
@@ -72,7 +74,32 @@ export async function runFetchPlan(args: {
             await fetchMeetingsUpcoming({
               tenantId: ctx.tenantId,
               timezone: ctx.timezone,
-              // Use meeting as reference for whats now
+              now: ctx.primary.end,
+            }),
+          ])()
+        );
+        break;
+
+      case 'ooo':
+        tasks.push(
+          (async () => [
+            key,
+            await fetchOOOContext({
+              tenantId: ctx.tenantId,
+              timezone: ctx.timezone,
+              now: ctx.primary.end,
+            }),
+          ])()
+        );
+        break;
+
+      case 'inFlight':
+        tasks.push(
+          (async () => [
+            key,
+            await fetchInFlightContext({
+              tenantId: ctx.tenantId,
+              timezone: ctx.timezone,
               now: ctx.primary.end,
             }),
           ])()
@@ -126,15 +153,6 @@ export async function runFetchPlan(args: {
           )
         );
         break;
-
-      // Future standup extras:
-      // case 'inFlightPRs':
-      //   tasks.push((async () => [key, await fetchInFlightPRs(ctx)])());
-      //   break;
-
-      // case 'waitingOnMeReviews':
-      //   tasks.push((async () => [key, await fetchWaitingOnMeReviews(ctx)])());
-      //   break;
     }
   }
 

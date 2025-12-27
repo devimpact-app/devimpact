@@ -9,9 +9,8 @@ export type StandupLLMContext = {
   work: {
     recentShipped: ShippedItem[];
     recentReviews: HighlightedReview[];
-    // TODO
-    inFlightPrs: [];
-    reviewQueue: [];
+    inFlightPrs: ShippedItem[];
+    reviewQueue: ShippedItem[];
   };
   calendar: {
     recentMeetings: MeetingRecapForLLM;
