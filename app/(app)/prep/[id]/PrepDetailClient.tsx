@@ -10,6 +10,7 @@ import { EventInspectorPanel } from '@/app/(app)/timeline/components/EventInspec
 import { getTimezone } from '@/lib/utils/date';
 import { PrepHeader } from './Header';
 import { PrepItemResponse, PrepMetricSnapshot } from '@/types/api/prep';
+import { PrepBody } from './PrepBody';
 
 type Status = 'loading' | 'ready' | 'error' | 'not_found';
 
@@ -280,7 +281,7 @@ export default function PrepDetailClient({ id }: { id: string }) {
         </div>
 
         <div className="pb-8 pt-10">
-          <OneOnOneBody
+          <PrepBody
             prep={prep}
             onClickInsight={(insight) => {
               setSelectedInsight(insight);
