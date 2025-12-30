@@ -57,6 +57,7 @@ export const MEETING_FETCH_PLANS: Record<PrepMeetingType, MeetingFetchPlan> = {
       'insightsSecondary',
       'metricsPrimaryAndSecondary',
       'workRhythmSecondary',
+      'inFlight',
     ],
     uses: { primary: true, secondary: true },
   },

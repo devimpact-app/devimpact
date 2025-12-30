@@ -16,6 +16,17 @@ export function formatDateTime(iso: string | Date | null) {
   }).format(d);
 }
 
+export function formatDateOnly(iso: string | Date | null) {
+  if (!iso) return null;
+  const d = typeof iso === 'string' ? new Date(iso) : iso;
+  if (Number.isNaN(d.getTime())) return null;
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+  }).format(d);
+}
+
 export function formatUpcomingTime(startIso: string) {
   const d = new Date(startIso);
   const now = new Date();

@@ -90,7 +90,7 @@ export async function generatePrepFromRequest({
     }
 
     case 'oneOnOne': {
-      if (!metricsPrimaryAndSecondary || !insightsSecondary) {
+      if (!metricsPrimaryAndSecondary || !insightsSecondary || !inFlight) {
         throw new Error('There was an issue fetching data for meeting prep');
       }
       const ctx: OneOnOneLLMContext = {
@@ -100,6 +100,7 @@ export async function generatePrepFromRequest({
         activity: activityPrimary.llm,
         workRhythm: workRhythmSecondary.llm.summary,
         meetings: meetingsPrimary.llm,
+        inFlightPrs: inFlight.llm.inFlightPrs,
       };
       llmOutput = await generateOneOnOneTalkingPoints(ctx);
       break;
@@ -117,8 +118,12 @@ export async function generatePrepFromRequest({
     ...(fetched.meetingsPrimary?.full.fullMeetings ?? []),
     ...(fetched.upcomingMeetings?.full.fullMeetings ?? []),
   ];
+  const prs = [
+    ...(fetched.activityPrimary?.full?.fullPrs ?? []),
+    ...(fetched.inFlight?.full.fullPrs ?? []),
+  ];
   const references = extractUsedReferences(talkingPoints, {
-    prs: fetched.activityPrimary?.full?.fullPrs ?? [],
+    prs,
     reviews: fetched.activityPrimary?.full?.fullReviews ?? [],
     insights: fetched.insightsSecondary?.full ?? [],
     metrics: fetched.metricsPrimaryAndSecondary?.full ?? [],

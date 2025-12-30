@@ -1,6 +1,12 @@
 'use client';
 
-import { Lightbulb, BarChart3, GitPullRequest, GitCompare } from 'lucide-react';
+import {
+  Lightbulb,
+  BarChart3,
+  GitPullRequest,
+  GitCompare,
+  Calendar,
+} from 'lucide-react';
 import { Insight } from '@/types/api/insights';
 import { useMemo } from 'react';
 import { ActivityEvent } from '@/types/api/timeline';
@@ -9,7 +15,9 @@ import {
   PrepMetricSnapshot,
   PrepTalkingPoint,
   TPrepSectionKind,
+  UpcomingCalendarEvent,
 } from '@/types/api/prep';
+import { formatDateOnly } from '@/lib/utils/date';
 
 const SECTION_ORDER: { kind: TPrepSectionKind; label: string }[] = [
   { kind: 'highlights', label: 'Highlights' },
@@ -29,14 +37,22 @@ export function PrepBody({
   onClickInsight,
   onClickMetric,
   onClickActivity,
+  onClickCalendarEvent,
 }: {
   prep: PrepItem;
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: PrepMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
+  onClickCalendarEvent: (event: UpcomingCalendarEvent) => void;
 }) {
-  const { talkingPoints, usedInsights, usedMetrics, usedPrs, usedReviews } =
-    prep;
+  const {
+    talkingPoints,
+    usedInsights,
+    usedMetrics,
+    usedPrs,
+    usedReviews,
+    usedCalendarEvents,
+  } = prep;
 
   const sectionsWithItems = SECTION_ORDER.map((section) => {
     const items = talkingPoints
@@ -66,16 +82,18 @@ export function PrepBody({
   return (
     <section className="space-y-8">
       {nonEmptySections.map((section) => (
-        <OneOnOneSection
+        <PrepSection
           key={section.kind}
           label={section.label}
           items={section.items}
           usedInsights={usedInsights}
           usedPrs={usedPrs}
           usedReviews={usedReviews}
+          usedCalendarEvents={usedCalendarEvents}
           onClickInsight={onClickInsight}
           onClickMetric={onClickMetric}
           onClickActivity={onClickActivity}
+          onClickCalendarEvent={onClickCalendarEvent}
           metricsByMetricId={metricsByMetricId}
         />
       ))}
@@ -102,21 +120,25 @@ type SectionProps = {
   usedInsights: Insight[];
   usedPrs: ActivityEvent[];
   usedReviews: ActivityEvent[];
+  usedCalendarEvents: UpcomingCalendarEvent[];
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: PrepMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
+  onClickCalendarEvent: (event: UpcomingCalendarEvent) => void;
   metricsByMetricId: Map<string, PrepMetricSnapshot[]>;
 };
 
-function OneOnOneSection({
+function PrepSection({
   label,
   items,
   usedInsights,
   usedPrs,
   usedReviews,
+  usedCalendarEvents,
   onClickInsight,
   onClickMetric,
   onClickActivity,
+  onClickCalendarEvent,
   metricsByMetricId,
 }: SectionProps) {
   return (
@@ -133,10 +155,12 @@ function OneOnOneSection({
             usedInsights={usedInsights}
             usedPrs={usedPrs}
             usedReviews={usedReviews}
+            usedCalendarEvents={usedCalendarEvents}
             isFirst={idx === 0}
             onClickInsight={onClickInsight}
             onClickMetric={onClickMetric}
             onClickActivity={onClickActivity}
+            onClickCalendarEvent={onClickCalendarEvent}
             metricsByMetricId={metricsByMetricId}
           />
         ))}
@@ -150,10 +174,12 @@ type TalkingPointProps = {
   usedInsights: Insight[];
   usedPrs: ActivityEvent[];
   usedReviews: ActivityEvent[];
+  usedCalendarEvents: UpcomingCalendarEvent[];
   isFirst: boolean;
   onClickInsight: (insight: Insight) => void;
   onClickMetric: (metric: PrepMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
+  onClickCalendarEvent: (event: UpcomingCalendarEvent) => void;
   metricsByMetricId: Map<string, PrepMetricSnapshot[]>;
 };
 
@@ -162,9 +188,11 @@ function TalkingPointRow({
   usedInsights,
   usedPrs,
   usedReviews,
+  usedCalendarEvents,
   onClickInsight,
   onClickMetric,
   onClickActivity,
+  onClickCalendarEvent,
   metricsByMetricId,
 }: TalkingPointProps) {
   const relatedInsights = usedInsights.filter((ins) =>
@@ -175,6 +203,9 @@ function TalkingPointRow({
   const relatedPrs = usedPrs.filter((pr) => relatedPrIds.includes(pr.id));
   const relatedReviewIds = tp.relatedReviewIds.map(
     (rId) => `review_submitted:${rId}`
+  );
+  const relatedCalendarEvents = usedCalendarEvents.filter((e) =>
+    tp.relatedCalendarEventIds.includes(e.id)
   );
   const relatedReviews = usedReviews.filter((r) =>
     relatedReviewIds.includes(r.id)
@@ -197,7 +228,8 @@ function TalkingPointRow({
       {(relatedInsights.length > 0 ||
         relatedMetricIds.length > 0 ||
         relatedPrs.length > 0 ||
-        relatedReviews.length > 0) && (
+        relatedReviews.length > 0 ||
+        relatedCalendarEvents.length > 0) && (
         <div className="mt-1.5 ml-2 flex flex-wrap gap-1.5">
           {relatedMetricIds.map((metricId) => (
             <MetricPill
@@ -218,6 +250,13 @@ function TalkingPointRow({
           ))}
           {relatedReviews.map((r) => (
             <ReviewPill key={r.id} review={r} onClick={onClickActivity} />
+          ))}
+          {relatedCalendarEvents.map((e) => (
+            <CalendarEventPill
+              key={e.id}
+              event={e}
+              onClick={onClickCalendarEvent}
+            />
           ))}
         </div>
       )}
@@ -300,6 +339,32 @@ function PRPill({
       <GitPullRequest className="h-3 w-3" />
       <span className="truncate max-w-[9rem]">
         #{prNumber}: {prTitle}
+      </span>
+    </button>
+  );
+}
+
+function CalendarEventPill({
+  event,
+  onClick,
+}: {
+  event: UpcomingCalendarEvent;
+  onClick: (pr: UpcomingCalendarEvent) => void;
+}) {
+  const title = event.title;
+  const startAt = event.startAtISO;
+
+  if (!title) return;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(event)}
+      className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-surface-lower px-2 py-1 text-[10px] text-text-secondary hover:bg-white/5 hover:text-text-primary transition"
+    >
+      <Calendar className="h-3 w-3" />
+      <span className="truncate max-w-[9rem]">
+        {title} - {formatDateOnly(startAt)}
       </span>
     </button>
   );

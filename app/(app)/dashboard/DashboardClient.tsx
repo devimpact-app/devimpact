@@ -95,12 +95,6 @@ export default function DashboardClient({
             handleOneOnOne={handleOneOnOne}
           />
 
-          <InsightsSectionContainer
-            onClickInsight={(insight: Insight) => {
-              setSelectedInsight(insight);
-            }}
-          />
-
           <WorkRhythmCard />
 
           <ActivityLogContainer

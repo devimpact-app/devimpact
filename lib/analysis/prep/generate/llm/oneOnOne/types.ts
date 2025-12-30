@@ -1,3 +1,4 @@
+import { ShippedItem } from '@/types/api/weekly-summary';
 import { MeetingContext } from '../../context';
 import {
   ActivityForLLM,
@@ -14,4 +15,5 @@ export type OneOnOneLLMContext = {
   activity: ActivityForLLM;
   workRhythm: WorkRhythm['summary'];
   meetings: MeetingRecapForLLM;
+  inFlightPrs: ShippedItem[];
 };

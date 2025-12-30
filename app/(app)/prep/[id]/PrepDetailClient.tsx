@@ -9,8 +9,13 @@ import { ActivityEvent } from '@/types/api/timeline';
 import { EventInspectorPanel } from '@/app/(app)/timeline/components/EventInspectorPanel';
 import { getTimezone } from '@/lib/utils/date';
 import { PrepHeader } from './Header';
-import { PrepItemResponse, PrepMetricSnapshot } from '@/types/api/prep';
+import {
+  PrepItemResponse,
+  PrepMetricSnapshot,
+  UpcomingCalendarEvent,
+} from '@/types/api/prep';
 import { PrepBody } from './PrepBody';
+import { CalendarEventInspectorPanel } from '../../timeline/components/CalendarEventPanel';
 
 type Status = 'loading' | 'ready' | 'error' | 'not_found';
 
@@ -88,6 +93,8 @@ export default function PrepDetailClient({ id }: { id: string }) {
   const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(
     null
   );
+  const [selectedCalendarEvent, setSelectedCalendarEvent] =
+    useState<UpcomingCalendarEvent | null>(null);
 
   const hasTriggeredGeneration = useRef(false);
 
@@ -292,6 +299,9 @@ export default function PrepDetailClient({ id }: { id: string }) {
             onClickActivity={(activity) => {
               setSelectedEvent(activity);
             }}
+            onClickCalendarEvent={(event) => {
+              setSelectedCalendarEvent(event);
+            }}
           />
         </div>
       </main>
@@ -314,6 +324,13 @@ export default function PrepDetailClient({ id }: { id: string }) {
           key={selectedEvent.id}
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
+        />
+      )}
+      {selectedCalendarEvent && (
+        <CalendarEventInspectorPanel
+          key={selectedCalendarEvent.id}
+          event={selectedCalendarEvent}
+          onClose={() => setSelectedCalendarEvent(null)}
         />
       )}
     </>

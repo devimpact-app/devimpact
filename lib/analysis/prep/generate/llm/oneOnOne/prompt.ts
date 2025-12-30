@@ -21,7 +21,8 @@ CRITICAL: You must respond with ONLY valid JSON matching this exact schema - no 
       "relatedInsightIds": ["array of insight IDs referenced"],
       "relatedMetricIds": ["array of metric IDs - include each metric only ONCE even if discussing multiple time windows"],
       "relatedPrIds": ["array of PR IDs referenced"],
-      "relatedReviewIds": ["array of review IDs referenced"]
+      "relatedReviewIds": ["array of review IDs referenced"],
+      "relatedCalendarEventIds": ["array of calendar event IDs referenced"]
     }
   ]
 }
@@ -38,7 +39,8 @@ EXAMPLE:
       "relatedInsightIds": ["insight_123"],
       "relatedMetricIds": ["metric_prs_merged"],
       "relatedPrIds": ["pr_456", "pr_457", "pr_458"],
-      "relatedReviewIds": []
+      "relatedReviewIds": [],
+      "relatedCalendarEventIds": []
     }
   ]
 }
@@ -51,7 +53,7 @@ SECTION GUIDELINES:
 - collaboration: Reviews given, helping others, knowledge sharing, cross-team work (1-3 items)
 - growth: New technologies, patterns, or domains explored through recent work (1-2 items)
 - focus_areas: How time is being spent across different work types or projects (1-2 items, based on tag distribution)
-- goals: Forward-looking objectives tied to recent work patterns (1-2 items)
+- goals: Near-term direction / alignment (1-2 items). Avoid speculative promises; prefer “what I’m driving next + why”.
 
 RULES:
 1. Be specific - reference actual PRs, metrics, and insights by ID
@@ -65,7 +67,11 @@ RULES:
 9. Always include at least one highlight and one item showing collaboration or focus areas
 10. For the "kind" of talking point, you must use one from the list above
 11. Only include friction/asks if data suggests real issues
-12. IMPORTANT: When a metric has multiple time windows, include its metricId ONLY ONCE in relatedMetricIds, even if you discuss multiple periods in your body text. Example: "PR merge rate increased 30% recently but remained flat over the longer period" should only include the metricId once.`,
+12. IMPORTANT: When a metric has multiple time windows, include its metricId ONLY ONCE in relatedMetricIds, even if you discuss multiple periods in your body text. Example: "PR merge rate increased 30% recently but remained flat over the longer period" should only include the metricId once.
+13. This is not a status report. Avoid ticket recaps or vague “worked on X” phrasing; anchor claims in artifacts and outcomes.
+14. Asks must be concrete and easy to act on (decision needed, escalation, review request, priority alignment, intro).
+15. Do not invent impact (numbers, latency wins, outcomes) unless explicitly present in the provided data.
+16. If meeting load is high, mention it only as context for constraints (no excuses), and translate it into an actionable ask (e.g., protect a focus block, align priorities).`,
   };
 
   const user: ChatCompletionMessageParam = {
@@ -81,12 +87,12 @@ RULES:
         instruction: `Generate 1:1 talking points for a meeting with a manager scheduled for ${input.meeting.meetingStartAtISO}.
       
         Analyze the provided data and create relevant talking points. Focus on:
-        - Significant metric changes (>20% change between time periods)
+        - Meaningful changes or outliers worth discussing (metrics are supporting evidence, not the story)
         - High-severity insights (warning/critical)
         - Highlighted PRs and reviews showing impact and collaboration
         - Tag distribution showing focus areas and time allocation
         - Trends across different time periods
-        - Growth opportunities from working with new technologies or domains
+        - Growth only if it naturally appears in the work (don’t force it every week)
 
         Reference specific IDs in relatedInsightIds, relatedMetricIds, relatedPrIds, and relatedReviewIds fields.`,
       },

@@ -26,6 +26,7 @@ export const ONE_ON_ONE_SCHEMA = {
           relatedMetricIds: { type: 'array', items: { type: 'string' } },
           relatedPrIds: { type: 'array', items: { type: 'string' } },
           relatedReviewIds: { type: 'array', items: { type: 'string' } },
+          relatedCalendarEventIds: { type: 'array', items: { type: 'string' } },
         },
         required: [
           'id',

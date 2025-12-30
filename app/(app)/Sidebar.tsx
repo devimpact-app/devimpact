@@ -4,21 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
-  LineChart,
-  Users,
   Settings,
-  FolderKanban,
-  Compass,
-  User,
-  Target,
-  Focus,
   LogOut,
-  Sparkle,
-  Orbit,
   Lightbulb,
   CalendarClock,
-  Icon,
   ClipboardList,
+  Briefcase,
+  Compass,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
@@ -33,9 +25,9 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Home', Icon: Home },
-  { href: '/timeline', label: 'Timeline', Icon: CalendarClock },
-  { href: '/insights', label: 'Insights', Icon: Lightbulb },
   { href: '/prep', label: 'Prep', Icon: ClipboardList },
+  { href: '/career', label: 'Career', Icon: Compass },
+  { href: '/timeline', label: 'Timeline', Icon: CalendarClock },
 ];
 
 type SidebarProps = {
