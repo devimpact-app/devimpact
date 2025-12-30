@@ -51,14 +51,14 @@ export function HeroSection() {
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-white">
-          Protect your leverage
+          Protect your leverage,
           <br className="hidden sm:block" />
-          as engineering evolves
+          even as the job keeps changing
         </h1>
 
         <p className="max-w-2xl text-base sm:text-lg text-white/80 leading-relaxed">
-          DevImpact shows you how your time, focus, and impact actually unfold,
-          so you can adapt faster than the role itself is changing.
+          DevImpact quietly prepares you for meetings and performance moments by
+          tracking your real work, so nothing important gets lost.
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">

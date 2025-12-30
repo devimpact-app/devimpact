@@ -23,11 +23,11 @@ export default function HowItWorks() {
               Connect your work data (2-5 mins)
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>• Sign in with Github (work or personal)</li>
-              <li>• Run the CLI once to sync your activity metadata</li>
+              <li>• Sign in with Github</li>
+              <li>• Run a sync to pull recent activity</li>
               <li>
-                • Optional: connect Google Calendar to map meeting load + deep
-                work time
+                • Optionally connect Google Calendar to map meetings against
+                focus time
               </li>
               <li>• Your data stays private - no team setup, no managers </li>
             </ul>
@@ -38,19 +38,18 @@ export default function HowItWorks() {
               2
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Get your leverage signals
+              See what's shaping your leverage
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>• Your work rhythm: where focus time actually happens</li>
+              <li>• Where your best focus time actually happens</li>
               <li>
-                • Meeting pressure overlay (calendar beta) + deep work blocks
+                • How meetings, reviews, and coordination reshape your week
               </li>
               <li>
-                • Weekly summary: shipped work + follow-ups you can use in 1:1s
+                • A weekly summary of shipped work and follow-ups you can reuse
+                in 1:1s
               </li>
-              <li>
-                • Trends over time (Ex: drift toward coordination vs building)
-              </li>
+              <li>• Early signs of drift before it shows up in reviews</li>
             </ul>
           </li>
 
@@ -59,21 +58,21 @@ export default function HowItWorks() {
               3
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Use it before 1:1s, reviews, and planning
+              Walk into meetings prepared
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>
-                • Walk into 1:1s with a clean narrative: wins, blockers, themes
+                • Go into 1:1s with a clear narrative: wins, blockers, themes
               </li>
               <li>
-                • Spot what’s blocking output: meetings, review load, context
+                • Show what’s blocking output: meetings, review load, context
                 switching
               </li>
+              <li>• Plan your week around your best focus windows</li>
               <li>
-                • Protect your best windows and adjust your week before it
-                drifts
+                • Build a running record you can reuse for reviews and promotion
+                packets
               </li>
-              <li>• Export/share a packet (optional — coming soon)</li>
             </ul>
           </li>
         </ol>

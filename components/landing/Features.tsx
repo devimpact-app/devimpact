@@ -7,28 +7,28 @@ export default function Features() {
             Understand what shapes your impact
           </h2>
           <p className="mt-3 text-sm text-white/70 leading-relaxed">
-            DevImpact surfaces the patterns that quietly shape your
-            effectiveness — long before they show up in performance reviews.
+            DevImpact surfaces the patterns behind your effectiveness — long
+            before they show up in meetings, reviews, or promotion cycles.
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {[
             {
+              title: 'Career-grade reflection',
+              body: 'Walk into 1:1s and reviews with confidence — grounded in your real work, not memory or guesswork.',
+            },
+            {
               title: 'Work rhythm & focus',
-              body: 'See when you naturally do your best work and how meetings, reviews, and interruptions gradually reshape those windows over time.',
+              body: 'See when you naturally do your best work — and how meetings, reviews, and interruptions slowly reshape those windows over time.',
             },
             {
               title: 'Where work slows down',
-              body: 'Surface where work gets stuck — context switching, review pile-ups, coordination overhead, or tasks that consume time without moving outcomes forward.',
+              body: 'Surface where work gets stuck — context switching, review pile-ups, coordination overhead, or effort that doesn’t move outcomes forward.',
             },
             {
               title: 'Output vs coordination load',
-              body: 'Track how your time shifts between building, reviewing, and coordinating, so role creep doesn’t happen invisibly.',
-            },
-            {
-              title: 'Career-grade reflection',
-              body: 'Walk into 1:1s and reviews with confidence, grounded in real work patterns',
+              body: 'Track how your time shifts between building, reviewing, and coordinating — so role creep doesn’t happen quietly.',
             },
           ].map((item) => (
             <div
