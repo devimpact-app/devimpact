@@ -113,11 +113,16 @@ export async function generatePrepFromRequest({
   }
 
   const talkingPoints = llmOutput.talkingPoints ?? [];
+  const calendarEvents = [
+    ...(fetched.meetingsPrimary?.full.fullMeetings ?? []),
+    ...(fetched.upcomingMeetings?.full.fullMeetings ?? []),
+  ];
   const references = extractUsedReferences(talkingPoints, {
     prs: fetched.activityPrimary?.full?.fullPrs ?? [],
     reviews: fetched.activityPrimary?.full?.fullReviews ?? [],
     insights: fetched.insightsSecondary?.full ?? [],
     metrics: fetched.metricsPrimaryAndSecondary?.full ?? [],
+    calendarEvents,
     primaryWindowStartISO: primaryStart.toISOString(),
     primaryWindowEndISO: primaryEnd.toISOString(),
   });

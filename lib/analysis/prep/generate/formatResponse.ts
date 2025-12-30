@@ -42,12 +42,16 @@ export function formatPrepItemResponse(row: PrepItem) {
     usedMetrics: Array.isArray(c.usedMetrics) ? c.usedMetrics : [],
     usedPrs: Array.isArray(c.usedPrs) ? c.usedPrs : [],
     usedReviews: Array.isArray(c.usedReviews) ? c.usedReviews : [],
+    usedCalendarEvents: Array.isArray(c.usedCalendarEvents)
+      ? c.usedCalendarEvents
+      : [],
   };
 
   const parsed = PrepItemResponseSchema.safeParse({ prep });
 
   if (!parsed.success) {
-    throw new Error('Failed to format one-on-one response');
+    console.log('error', parsed.error);
+    throw new Error('Failed to format prep response');
   }
 
   return parsed.data;

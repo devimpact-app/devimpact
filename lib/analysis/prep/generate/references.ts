@@ -1,7 +1,11 @@
 import { PullRequest, Review } from '@/lib/db/schema';
 import { Insight } from '@/types/api/insights';
 import { TMetricResult } from '@/types/api/metrics';
-import { PrepMetricSnapshot, PrepTalkingPoint } from '@/types/api/prep';
+import {
+  PrepMetricSnapshot,
+  PrepTalkingPoint,
+  UpcomingCalendarEvent,
+} from '@/types/api/prep';
 import { ActivityEvent } from '@/types/api/timeline';
 import { formatMetricValue } from '../../metrics/client';
 import {
@@ -17,6 +21,7 @@ export function extractUsedReferences(
       review: Review;
       pr?: PullRequest | null;
     }[];
+    calendarEvents: UpcomingCalendarEvent[];
     metrics: TMetricResult[];
     insights: Insight[];
     primaryWindowStartISO: string;
@@ -27,17 +32,20 @@ export function extractUsedReferences(
   usedInsights: Insight[];
   usedPrs: ActivityEvent[];
   usedReviews: ActivityEvent[];
+  usedCalendarEvents: UpcomingCalendarEvent[];
 } {
   const usedMetricIds = new Set<string>();
   const usedInsightIds = new Set<string>();
   const usedPrIds = new Set<string>();
   const usedReviewIds = new Set<string>();
+  const usedCalendarEventIds = new Set<string>();
 
   for (const tp of talkingPoints) {
-    tp.relatedMetricIds.forEach((id) => usedMetricIds.add(id));
-    tp.relatedInsightIds.forEach((id) => usedInsightIds.add(id));
+    (tp.relatedMetricIds ?? []).forEach((id) => usedMetricIds.add(id));
+    (tp.relatedInsightIds ?? []).forEach((id) => usedInsightIds.add(id));
     tp.relatedPrIds.forEach((id) => usedPrIds.add(id));
     tp.relatedReviewIds.forEach((id) => usedReviewIds.add(id));
+    tp.relatedCalendarEventIds.forEach((id) => usedCalendarEventIds.add(id));
   }
 
   const usedMetrics = context.metrics
@@ -78,10 +86,15 @@ export function extractUsedReferences(
     .filter((r) => usedReviewIds.has(r.review.id))
     .map((r) => getActivityEventForReview(r.review, r.pr?.title));
 
+  const usedCalendarEvents = context.calendarEvents.filter((e) =>
+    usedCalendarEventIds.has(e.id)
+  );
+
   return {
     usedMetrics,
     usedInsights,
     usedPrs,
     usedReviews,
+    usedCalendarEvents,
   };
 }

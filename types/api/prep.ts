@@ -136,6 +136,9 @@ export const PrepSectionKind = z.enum([
   'growth',
   'focus_areas',
   'goals',
+  'yesterday',
+  'today',
+  'blockers',
 ]);
 export type TPrepSectionKind = z.infer<typeof PrepSectionKind>;
 
@@ -149,6 +152,7 @@ export const PrepTalkingPointSchema = z.object({
   relatedMetricIds: z.array(z.string()).default([]),
   relatedPrIds: z.array(z.string()).default([]),
   relatedReviewIds: z.array(z.string()).default([]),
+  relatedCalendarEventIds: z.array(z.string()).default([]),
 });
 export type PrepTalkingPoint = z.infer<typeof PrepTalkingPointSchema>;
 
@@ -195,6 +199,7 @@ export const PrepItemSchema = z.object({
   usedMetrics: z.array(PrepMetricSnapshotSchema).default([]),
   usedPrs: z.array(ActivityEventSchema).default([]),
   usedReviews: z.array(ActivityEventSchema).default([]),
+  usedCalendarEvents: z.array(UpcomingCalendarEventSchema).default([]),
 });
 
 export type PrepItem = z.infer<typeof PrepItemSchema>;

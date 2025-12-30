@@ -194,12 +194,12 @@ export default function PrepDetailClient({ id }: { id: string }) {
     }
   }
 
-  async function handleRegenerateClick(oneOnOneId: string) {
+  async function handleRegenerateClick(itemId: string) {
     try {
       setStatus('loading');
 
       const timezone = getTimezone();
-      const res = await fetch(`/api/one-on-ones/${oneOnOneId}/regenerate`, {
+      const res = await fetch(`/api/prep/items/${itemId}/generate`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -237,7 +237,10 @@ export default function PrepDetailClient({ id }: { id: string }) {
     return (
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="sticky top-0 pt-5 z-20 pb-3 bg-background border-b border-white/15">
-          <PrepHeader prep={prep} />
+          <PrepHeader
+            prep={prep}
+            onRegenerateClick={(id) => handleRegenerateClick(id)}
+          />
         </div>
         <BodySkeleton />
       </main>

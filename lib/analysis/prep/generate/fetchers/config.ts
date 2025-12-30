@@ -43,6 +43,7 @@ export const MEETING_FETCH_PLANS: Record<PrepMeetingType, MeetingFetchPlan> = {
       'activityPrimary',
       'meetingsPrimary',
       'upcomingMeetings',
+      'workRhythmSecondary',
       'ooo',
       'inFlight',
     ],

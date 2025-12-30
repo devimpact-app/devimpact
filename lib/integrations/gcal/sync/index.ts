@@ -6,7 +6,6 @@ import { daysAgo, hoursSince } from '@/lib/utils/date';
 import { listEventsWindow } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
 import { addDays, subHours } from 'date-fns';
-import { GoogleEventsListItem } from '../types';
 
 const LOOKBACK_DAYS_INITIAL = 90;
 const FUTURE_LOOKAHEAD_DAYS = 14;
@@ -60,7 +59,6 @@ export async function getSelectedCalendars(userId: string, tokenId: string) {
       id: calendarSelections.id,
       calendarId: calendarSelections.calendarId,
       summary: calendarSelections.summary,
-      lastSyncedAt: calendarSelections.lastSyncedAt,
     })
     .from(calendarSelections)
     .where(
