@@ -169,7 +169,7 @@ export function WorkRhythmCard({
           type="button"
           onClick={onViewTimelineClick}
           className="
-            text-[11px] text-[#7EA6F8] 
+            text-[11px] text-indigo-300
             hover:underline inline-flex items-center gap-1
           "
         >

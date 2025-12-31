@@ -4,6 +4,7 @@ import {
 } from '@/types/api/weekly-summary';
 import { SoftStat } from './SoftStat';
 import { formatMinutes } from '@/lib/utils/date';
+import { ChevronRight } from 'lucide-react';
 
 type WeeklySummaryCardProps = {
   summary?: WeeklySummary;
@@ -93,13 +94,26 @@ export function WeeklySummaryCard({
   const focusTags = what?.focusAreas ?? [];
   return (
     <section className="rounded-2xl border border-slate-800/80 bg-[#0B0F18] px-6 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.85)]">
-      <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-2">
-          <div>
-            <h2 className=" font-semibold text-slate-50">Weekly Summary</h2>
-            <p className="text-xs text-slate-400">{range.label}</p>
-          </div>
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className=" font-semibold text-slate-50">Weekly Summary</h2>
+          <p className="text-xs text-slate-400">{range.label}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {}}
+          className="
+            text-[11px] text-indigo-300
+            hover:underline inline-flex items-center gap-1
+          "
+        >
+          View other summaries
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </header>
 
+      <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="space-y-4 text-sm text-slate-200">
           <p className="max-w-xl text-sm text-slate-200/90">{headline}</p>
 
           <div className="mb-5 mt-2 flex flex-wrap items-start gap-x-3 gap-y-2">
@@ -122,35 +136,6 @@ export function WeeklySummaryCard({
               />
             )}
           </div>
-        </div>
-
-        <div className="mt-3 flex flex-col items-start sm:items-end gap-1">
-          <button
-            type="button"
-            onClick={handleOneOnOne}
-            className="
-                rounded-full 
-                px-3 py-1.5
-                text-xs font-medium
-                text-indigo-300
-                border border-indigo-400/30
-                hover:border-indigo-400/60
-                hover:bg-indigo-500/10
-                transition-colors
-              "
-          >
-            Start 1:1 prep with this week
-            <span className="text-sky-400">→</span>
-          </button>
-          <p className="max-w-sm text-sm text-slate-500 text-left sm:text-right">
-            Uses this whole weekly summary as your starting point. You can
-            adjust the date range inside 1:1 prep.
-          </p>
-        </div>
-      </header>
-
-      <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <div className="space-y-4 text-sm text-slate-200">
           {(what?.textSummary ||
             shipped.length > 0 ||
             focusTags.length > 0) && (

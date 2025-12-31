@@ -16,6 +16,7 @@ import {
 } from '@/types/api/prep';
 import { PrepBody } from './PrepBody';
 import { CalendarEventInspectorPanel } from '../../timeline/components/CalendarEventPanel';
+import { Info } from 'lucide-react';
 
 type Status = 'loading' | 'ready' | 'error' | 'not_found';
 
@@ -81,7 +82,13 @@ const ProblemState = ({ title, body }: { title: string; body: string }) => {
   );
 };
 
-export default function PrepDetailClient({ id }: { id: string }) {
+export default function PrepDetailClient({
+  id,
+  staleSyncHours,
+}: {
+  id: string;
+  staleSyncHours: number;
+}) {
   const router = useRouter();
 
   const [prep, setPrep] = useState<PrepItemResponse['prep'] | null>(null);
@@ -285,6 +292,32 @@ export default function PrepDetailClient({ id }: { id: string }) {
             onDeleteClick={(id) => handleDeleteClick(id)}
             onRegenerateClick={(id) => handleRegenerateClick(id)}
           />
+          {staleSyncHours >= 1 && (
+            <div
+              className="
+            mt-2 rounded-lg border border-white/10
+            bg-white/[0.03]
+            px-3 py-2
+            text-[12px] text-white/65
+            flex items-center gap-2
+          "
+            >
+              <Info className="h-4 w-4 shrink-0 text-white/40" />
+
+              <div className="leading-snug">
+                <span className="font-medium text-white/70">
+                  GitHub data may be out of date.
+                </span>{' '}
+                Last synced{' '}
+                <span className="font-medium">{staleSyncHours} hours</span> ago.
+                If something doesn’t look right, run{' '}
+                <code className="rounded bg-white/[0.06] px-1 py-[1px] font-mono text-[11px]">
+                  devimpact sync
+                </code>{' '}
+                and regenerate this {prep.meetingType}.
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="pb-8 pt-10">

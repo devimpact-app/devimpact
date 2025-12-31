@@ -160,7 +160,7 @@ export default function PrepClient({ user }: Props) {
                   return (
                     <tr
                       key={item.id}
-                      onClick={() => router.push(`/prep/one-on-one/${item.id}`)}
+                      onClick={() => router.push(`/prep/${item.id}`)}
                       className={[
                         'cursor-pointer transition-colors',
                         'hover:bg-slate-900/70',

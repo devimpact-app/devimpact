@@ -224,13 +224,20 @@ export function truncateToDay(d: Date) {
   return nd;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+
 export function getDaysDiff(start: Date, end: Date) {
   const ms = end.getTime() - start.getTime();
-  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+  const days = Math.round(ms / DAY_MS);
   return days;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+export function getHoursDiff(start: Date, end: Date) {
+  const ms = end.getTime() - start.getTime();
+  const hours = Math.round(ms / HOUR_MS);
+  return hours;
+}
 
 export function computeWindowEnd(start: Date, windowWeeks: number): Date {
   const duration = windowWeeks * 7 * DAY_MS;

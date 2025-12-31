@@ -58,7 +58,6 @@ export function PrepHeader({
           <div className="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
             {meetingLabel && <span>{meetingLabel}</span>}
             <span className="w-1 h-1 rounded-full bg-border-muted" />
-            {/* <span>{counterpartDisplay}</span> */}
           </div>
         </div>
 

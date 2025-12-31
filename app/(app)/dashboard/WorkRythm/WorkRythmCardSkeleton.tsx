@@ -32,7 +32,7 @@ export function WorkRhythmCardSkeleton() {
           </div>
         </div>
 
-        <div className="inline-flex items-center gap-1 text-[11px] text-[#4C5B86]">
+        <div className="inline-flex items-center gap-1 text-[11px] text-indigo-300">
           View timeline
           <ChevronRight className="h-3.5 w-3.5" />
         </div>
