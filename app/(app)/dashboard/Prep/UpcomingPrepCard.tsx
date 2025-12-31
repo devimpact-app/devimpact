@@ -10,6 +10,7 @@ type UpcomingPrepCardProps = {
   events: UpcomingCalendarEvent[];
   isLoading?: boolean;
   error?: string | null;
+  hideOpen?: boolean;
 };
 
 function LoadingState() {
@@ -77,7 +78,7 @@ function DisconnectedState() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ hideOpen }: { hideOpen?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
@@ -90,18 +91,20 @@ function EmptyState() {
         </p>
       </div>
 
-      <Link
-        href="/prep"
-        className="
+      {!hideOpen && (
+        <Link
+          href="/prep"
+          className="
           inline-flex h-9 items-center justify-center
           rounded-full border border-white/10 bg-white/5 px-4
           text-xs font-medium text-white/80
           hover:bg-white/8 transition
           shrink-0
         "
-      >
-        Open prep
-      </Link>
+        >
+          Open prep
+        </Link>
+      )}
     </div>
   );
 }
@@ -111,6 +114,7 @@ export function UpcomingPrepCard({
   events,
   isLoading,
   error,
+  hideOpen = false,
 }: UpcomingPrepCardProps) {
   const hasEvents = events.length > 0;
   return (
@@ -146,17 +150,19 @@ export function UpcomingPrepCard({
           </div>
         </div>
 
-        <Link
-          href="/prep"
-          className="
+        {!hideOpen && (
+          <Link
+            href="/prep"
+            className="
               text-[11px] text-[#7EA6F8]
               hover:underline inline-flex items-center gap-1
               shrink-0
             "
-        >
-          Open prep
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+          >
+            Open prep
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
       </header>
 
       {/* Body */}
@@ -169,7 +175,7 @@ export function UpcomingPrepCard({
         ) : !calendarConnected ? (
           <DisconnectedState />
         ) : !hasEvents ? (
-          <EmptyState />
+          <EmptyState hideOpen={hideOpen} />
         ) : (
           <EventList events={events} />
         )}

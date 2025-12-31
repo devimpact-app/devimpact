@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { PrepHero } from './components/Hero';
 import { PrepQuickActions } from './components/QuickActions';
-import { TOneOnOneListResponse } from '@/types/api/one-on-one';
 import { useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/utils/date';
+import { UpcomingPrepCardContainer } from '../dashboard/Prep';
+import { TPrepItemListResponse } from '@/types/api/prep';
 
 type Props = {
   user: {
@@ -19,7 +20,7 @@ type Props = {
 export default function PrepClient({ user }: Props) {
   const router = useRouter();
 
-  const [items, setItems] = useState<TOneOnOneListResponse['items'] | null>(
+  const [items, setItems] = useState<TPrepItemListResponse['items'] | null>(
     null
   );
   const [loading, setLoading] = useState(true);
@@ -27,10 +28,10 @@ export default function PrepClient({ user }: Props) {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/one-on-ones?limit=20');
+        const res = await fetch('/api/prep/items?limit=20');
         if (!res.ok) throw new Error('Failed to fetch');
         const { data } = await res.json();
-        setItems((data as TOneOnOneListResponse).items);
+        setItems((data as TPrepItemListResponse).items);
       } catch (err) {
         console.error(err);
         setItems([]);
@@ -44,15 +45,16 @@ export default function PrepClient({ user }: Props) {
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <PrepHero userName={user.name} />
+      <UpcomingPrepCardContainer variant="prep" />
+
       <PrepQuickActions
-        onPerformanceReviewClick={() => {}}
         onOneOnOnePrepClick={() => router.push('prep/one-on-one')}
       />
-      {/* Past 1:1 preps */}
+
       <section className="mt-8 space-y-3">
         <div className="flex items-baseline justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#A1A8C7]">
-            Past 1:1 preps
+            Past preps
           </h2>
           {items && items.length > 0 && (
             <span className="text-[11px] text-slate-500">
@@ -108,7 +110,7 @@ export default function PrepClient({ user }: Props) {
                         {item.title || 'Untitled 1:1 prep'}
                       </td>
                       <td className="px-4 py-3 text-slate-300">
-                        {item.meetingAt ? formatDateTime(item.meetingAt) : '—'}
+                        {item.startAt ? formatDateTime(item.startAt) : '—'}
                       </td>
                       <td className="px-4 py-3 text-slate-400">
                         {formatDateTime(item.createdAt)}

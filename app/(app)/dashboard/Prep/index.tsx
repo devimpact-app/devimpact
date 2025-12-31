@@ -24,7 +24,11 @@ async function fetchUpcomingEvents(params: {
   return UpcomingCalendarEventsResponseSchema.parse(data);
 }
 
-export function UpcomingPrepCardContainer() {
+export function UpcomingPrepCardContainer({
+  variant,
+}: {
+  variant?: 'dashboard' | 'prep';
+}) {
   const { data, error, isLoading } = useSWR(
     ['/api/prep/upcoming'],
     ([]) => fetchUpcomingEvents({}),
@@ -41,6 +45,7 @@ export function UpcomingPrepCardContainer() {
       events={data?.items ?? []}
       isLoading={isLoading}
       error={error?.message ?? null}
+      hideOpen={variant === 'prep'}
     />
   );
 }

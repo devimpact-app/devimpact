@@ -6,10 +6,8 @@ import {
   Home,
   Settings,
   LogOut,
-  Lightbulb,
   CalendarClock,
   ClipboardList,
-  Briefcase,
   Compass,
 } from 'lucide-react';
 import clsx from 'clsx';

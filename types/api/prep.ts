@@ -208,3 +208,9 @@ export const PrepItemResponseSchema = z.object({
   prep: PrepItemSchema,
 });
 export type PrepItemResponse = z.infer<typeof PrepItemResponseSchema>;
+
+export const PrepItemListResponse = z.object({
+  items: z.array(PrepItemSchema),
+  nextCursor: z.string().nullable().optional(),
+});
+export type TPrepItemListResponse = z.infer<typeof PrepItemListResponse>;
