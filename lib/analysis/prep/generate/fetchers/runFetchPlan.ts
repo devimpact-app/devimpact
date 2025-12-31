@@ -35,7 +35,6 @@ export async function runFetchPlan(args: {
   ctx: FetchCtx;
 }): Promise<FetchResults> {
   const plan = MEETING_FETCH_PLANS[args.meetingType];
-  console.log('plan', plan);
   const { ctx } = args;
 
   const tasks: Promise<readonly [FetchKey, FetchSpecMap[FetchKey]]>[] = [];
@@ -157,7 +156,6 @@ export async function runFetchPlan(args: {
     }
   }
 
-  console.log('tasks', tasks);
   const resolved = await Promise.all(tasks);
   const out: FetchResults = {};
   for (const pair of resolved) {

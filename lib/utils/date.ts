@@ -256,3 +256,15 @@ export function getTimezone(): string {
       : 'UTC';
   return timezone;
 }
+
+export function nextHalfHourBoundary(now: Date) {
+  const d = new Date(now);
+  d.setSeconds(0, 0);
+
+  const minutes = d.getMinutes();
+  const remainder = minutes % 30;
+
+  const addMinutes = remainder === 0 ? 30 : 30 - remainder;
+  d.setMinutes(minutes + addMinutes);
+  return d;
+}

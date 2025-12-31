@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { ActivityEvent } from '@/types/api/timeline';
 import {
   PrepItem,
+  PrepMeetingType,
   PrepMetricSnapshot,
   PrepTalkingPoint,
   TPrepSectionKind,
@@ -19,18 +20,33 @@ import {
 } from '@/types/api/prep';
 import { formatDateOnly } from '@/lib/utils/date';
 
-const SECTION_ORDER: { kind: TPrepSectionKind; label: string }[] = [
-  { kind: 'highlights', label: 'Highlights' },
-  { kind: 'friction', label: 'Friction & blockers' },
-  { kind: 'asks', label: 'Asks' },
-  { kind: 'collaboration', label: 'Collaboration' },
-  { kind: 'growth', label: 'Growth' },
-  { kind: 'focus_areas', label: 'Focus Areas' },
-  { kind: 'goals', label: 'Goals & next steps' },
-  { kind: 'yesterday', label: 'Yesterday' },
-  { kind: 'today', label: 'Today' },
-  { kind: 'blockers', label: 'Blockers' },
-];
+const SECTIONS_BY_TYPE: Record<PrepMeetingType, TPrepSectionKind[]> = {
+  oneOnOne: [
+    'highlights',
+    'friction',
+    'asks',
+    'collaboration',
+    'growth',
+    'focus_areas',
+    'goals',
+  ],
+  standup: ['yesterday', 'today', 'blockers'],
+  planning: [],
+  retro: [],
+};
+
+const SECTION_LABEL: Record<TPrepSectionKind, string> = {
+  highlights: 'Highlights',
+  friction: 'Friction & blockers',
+  asks: 'Asks',
+  collaboration: 'Collaboration',
+  growth: 'Growth',
+  focus_areas: 'Focus Areas',
+  goals: 'Goals & next steps',
+  yesterday: 'Yesterday',
+  today: 'Today',
+  blockers: 'Blockers',
+};
 
 export function PrepBody({
   prep,
@@ -54,13 +70,16 @@ export function PrepBody({
     usedCalendarEvents,
   } = prep;
 
-  const sectionsWithItems = SECTION_ORDER.map((section) => {
+  const allSections = SECTIONS_BY_TYPE[prep.meetingType];
+
+  const sectionsWithItems = allSections.map((section) => {
     const items = talkingPoints
-      .filter((tp) => tp.kind === section.kind)
+      .filter((tp) => tp.kind === section)
       .sort((a, b) => a.order - b.order);
 
     return {
-      ...section,
+      kind: section,
+      label: SECTION_LABEL[section],
       items,
     };
   });
@@ -199,7 +218,10 @@ function TalkingPointRow({
     tp.relatedInsightIds.includes(ins.id)
   );
   const relatedMetricIds = tp.relatedMetricIds;
-  const relatedPrIds = tp.relatedPrIds.map((prId) => `pr_merged:${prId}`);
+  const relatedPrIds = [
+    ...tp.relatedPrIds.map((prId) => `pr_merged:${prId}`),
+    ...tp.relatedPrIds.map((prId) => `pr_opened:${prId}`),
+  ];
   const relatedPrs = usedPrs.filter((pr) => relatedPrIds.includes(pr.id));
   const relatedReviewIds = tp.relatedReviewIds.map(
     (rId) => `review_submitted:${rId}`

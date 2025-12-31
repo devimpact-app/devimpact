@@ -1,12 +1,14 @@
 import { PrepItem } from '@/lib/db/schema';
 import { PrepMeetingType } from '@/types/api/prep';
-import { subDays } from 'date-fns';
+import { startOfDay, subDays } from 'date-fns';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 export type WindowContext = {
   meetingStartAt?: Date;
   meetingType: PrepMeetingType;
   previousMeetingEndAt?: Date;
   previousMeetingStartAt?: Date;
+  timeZone: string;
 };
 
 const DEFAULT_PRIMARY_DAYS: Record<WindowContext['meetingType'], number> = {
@@ -34,6 +36,28 @@ type DerivedWindow = {
     | 'since_last_occurrence_start'
     | 'default_days';
 };
+
+function previousWorkdayStart(endAt: Date, timeZone: string) {
+  const zonedEnd = toZonedTime(endAt, timeZone);
+  const zonedStartOfToday = startOfDay(zonedEnd);
+
+  const dow = zonedStartOfToday.getDay();
+
+  const daysBack =
+    dow === 1
+      ? 3 // Monday -> Friday
+      : dow === 0
+        ? 2 // Sunday -> Friday
+        : dow === 6
+          ? 1 // Saturday -> Friday
+          : 1; // Tue–Fri -> previous day
+
+  const zonedPrevWorkdayStart = startOfDay(
+    subDays(zonedStartOfToday, daysBack)
+  );
+
+  return fromZonedTime(zonedPrevWorkdayStart, timeZone);
+}
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -85,9 +109,14 @@ export function derivePrepWindows(ctx: WindowContext): {
   }
 
   if (!primaryStartAt) {
-    const defaultDays = DEFAULT_PRIMARY_DAYS[ctx.meetingType] ?? 7;
-    const days = clamp(defaultDays, 1, MAX_PRIMARY_DAYS);
-    primaryStartAt = subDays(endAt, days);
+    if (ctx.meetingType === 'standup') {
+      primaryStartAt = previousWorkdayStart(endAt, ctx.timeZone);
+    } else {
+      const defaultDays = DEFAULT_PRIMARY_DAYS[ctx.meetingType] ?? 7;
+      const days = clamp(defaultDays, 1, MAX_PRIMARY_DAYS);
+      primaryStartAt = subDays(endAt, days);
+    }
+
     primarySource = 'default_days';
   }
 

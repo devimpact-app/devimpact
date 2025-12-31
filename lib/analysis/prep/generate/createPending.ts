@@ -4,6 +4,35 @@ import { PrepGenerateRequest, PrepMeetingType } from '@/types/api/prep';
 import { and, desc, eq, isNull, lt } from 'drizzle-orm';
 import { derivePrepWindows } from './windows';
 import { prepItems } from '@/lib/db/schema';
+import { nextHalfHourBoundary } from '@/lib/utils/date';
+import { format, toZonedTime } from 'date-fns-tz';
+
+const DEFAULT_DURATION_MINUTES = 30;
+
+function generateMeetingTitle(
+  meetingType: PrepMeetingType,
+  startAt: Date,
+  timeZone: string
+) {
+  const zonedStart = toZonedTime(startAt, timeZone);
+
+  const dateLabel = format(zonedStart, 'EEE, MMM d', {
+    timeZone,
+  });
+
+  const meetingLabel =
+    meetingType === 'standup'
+      ? 'Standup'
+      : meetingType === 'oneOnOne'
+        ? '1:1'
+        : meetingType === 'planning'
+          ? 'Sprint planning'
+          : meetingType === 'retro'
+            ? 'Sprint retro'
+            : 'Meeting';
+
+  return `${meetingLabel} — ${dateLabel}`;
+}
 
 export function inferMeetingTypeFromCalendarCategory(params: {
   category?: string | null;
@@ -95,6 +124,7 @@ export async function createPendingPrepItem(params: {
       meetingType,
       previousMeetingStartAt: prev?.startAt,
       previousMeetingEndAt: prev?.endAt,
+      timeZone: input.timezone,
     });
 
     const [created] = await db
@@ -132,18 +162,22 @@ export async function createPendingPrepItem(params: {
   }
 
   // Manual case
-  const startAt = new Date(input.startAtISO);
-  const endAt = computeEndAt({
+  const startAt = nextHalfHourBoundary(new Date());
+  const endAt = new Date(
+    startAt.getTime() + DEFAULT_DURATION_MINUTES * 60 * 1000
+  );
+  const title = generateMeetingTitle(
+    input.meetingType,
     startAt,
-    endAtISO: input.endAtISO ?? null,
-    durationMinutes: input.durationMinutes ?? null,
-  });
+    input.timezone
+  );
 
   const windows = derivePrepWindows({
     meetingStartAt: startAt,
     meetingType: input.meetingType,
     previousMeetingStartAt: undefined,
     previousMeetingEndAt: undefined,
+    timeZone: input.timezone,
   });
 
   const [created] = await db
@@ -161,13 +195,11 @@ export async function createPendingPrepItem(params: {
       secondaryWindowStartAt: windows.secondary.startAt,
       secondaryWindowEndAt: windows.secondary.endAt,
       secondaryWindowSource: windows.secondary.source,
-      durationMinutes:
-        input.durationMinutes ??
-        (endAt
-          ? Math.round((endAt.getTime() - startAt.getTime()) / 60000)
-          : null),
+      durationMinutes: Math.round(
+        (endAt.getTime() - startAt.getTime()) / 60000
+      ),
       isAllDay: false,
-      title: input.title ?? null,
+      title,
       meetingType: input.meetingType,
       status: 'pending',
       content: {},

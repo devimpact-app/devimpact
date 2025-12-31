@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation';
 import { PrepHero } from './components/Hero';
 import { PrepQuickActions } from './components/QuickActions';
 import { useEffect, useState } from 'react';
-import { formatDateTime } from '@/lib/utils/date';
+import { formatDateTime, getTimezone } from '@/lib/utils/date';
 import { UpcomingPrepCardContainer } from '../dashboard/Prep';
-import { TPrepItemListResponse } from '@/types/api/prep';
+import { PrepMeetingType, TPrepItemListResponse } from '@/types/api/prep';
 
 type Props = {
   user: {
@@ -16,6 +16,37 @@ type Props = {
     githubUsername: string | null;
   };
 };
+
+async function createPrepItem(args: {
+  meetingType: PrepMeetingType;
+  timezone: string;
+  manualKey: string;
+}): Promise<{ prepItemId: string }> {
+  const res = await fetch('/api/prep/items', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      source: 'manual',
+      meetingType: args.meetingType,
+      manualKey: args.manualKey,
+      timezone: args.timezone,
+    }),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '');
+    throw new Error(msg || 'Failed to create prep item');
+  }
+
+  const json = await res.json();
+  const prepItemId = json?.data?.prepItemId ?? json?.prepItemId;
+  if (!prepItemId || typeof prepItemId !== 'string') {
+    throw new Error('Invalid response from /api/prep/items');
+  }
+
+  return { prepItemId };
+}
 
 export default function PrepClient({ user }: Props) {
   const router = useRouter();
@@ -42,14 +73,44 @@ export default function PrepClient({ user }: Props) {
 
     load();
   }, []);
+
+  const [isWorking, setIsWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function handleCreatePrep(meetingType: PrepMeetingType) {
+    setError(null);
+
+    try {
+      setIsWorking(true);
+      const timezone = getTimezone();
+      const { prepItemId } = await createPrepItem({
+        timezone,
+        meetingType,
+        manualKey: crypto.randomUUID(),
+      });
+      router.push(`/prep/${encodeURIComponent(prepItemId)}`);
+    } catch (err: any) {
+      setError(err?.message ?? 'Something went wrong');
+    } finally {
+      setIsWorking(false);
+    }
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <PrepHero userName={user.name} />
       <UpcomingPrepCardContainer variant="prep" />
 
       <PrepQuickActions
-        onOneOnOnePrepClick={() => router.push('prep/one-on-one')}
+        onOneOnOnePrepClick={() => handleCreatePrep('oneOnOne')}
+        onStandupPrepClick={() => handleCreatePrep('standup')}
+        disableActions={isWorking}
       />
+
+      <div className="min-w-0">
+        {error && (
+          <p className="mt-1 text-[11px] text-rose-300/90 truncate">{error}</p>
+        )}
+      </div>
 
       <section className="mt-8 space-y-3">
         <div className="flex items-baseline justify-between">

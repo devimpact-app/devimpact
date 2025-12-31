@@ -38,6 +38,7 @@ export const ONE_ON_ONE_SCHEMA = {
           'relatedMetricIds',
           'relatedPrIds',
           'relatedReviewIds',
+          'relatedCalendarEventIds',
         ],
         additionalProperties: false,
       },

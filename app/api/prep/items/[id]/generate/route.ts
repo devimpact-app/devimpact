@@ -15,7 +15,6 @@ import { NextRequest } from 'next/server';
 
 export const POST = withSentryUser(
   async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
-    console.log('called api');
     const session = await auth();
     if (!session?.user?.id) return jsonUnauthorized('Unauthorized');
 

@@ -90,23 +90,6 @@ export const ManualGeneratePrepRequestSchema =
     source: z.literal('manual'),
     manualKey: z.uuid(),
     meetingType: PrepMeetingTypeSchema, // required for manual
-    title: z.string().trim().min(1).max(140).optional(),
-    startAtISO: z.iso.datetime(),
-    endAtISO: z.iso.datetime().optional(),
-    durationMinutes: z
-      .number()
-      .int()
-      .positive()
-      .max(8 * 60)
-      .optional(),
-  }).superRefine((val, ctx) => {
-    if (!val.endAtISO && !val.durationMinutes) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['durationMinutes'],
-        message: 'Provide either endAtISO or durationMinutes for manual prep.',
-      });
-    }
   });
 
 export const PrepGenerateRequestSchema = z.discriminatedUnion('source', [

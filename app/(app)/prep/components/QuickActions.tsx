@@ -2,11 +2,7 @@
 
 import { ReactNode } from 'react';
 import {
-  ClipboardList,
   MessageSquare,
-  ArrowUpCircle,
-  Briefcase,
-  Sparkles,
   Hourglass,
   ChevronRight,
   Calendar1,
@@ -19,6 +15,7 @@ type QuickActionsProps = {
   onStandupPrepClick?: () => void;
   onRetroPrepClick?: () => void;
   onPlanningPrepClick?: () => void;
+  disableActions: boolean;
 };
 
 type ActionKey = 'one_on_one' | 'standup' | 'retro' | 'planning';
@@ -76,6 +73,7 @@ export function PrepQuickActions({
   onStandupPrepClick,
   onRetroPrepClick,
   onPlanningPrepClick,
+  disableActions,
 }: QuickActionsProps) {
   const handleClick = (key: ActionKey, status: ActionConfig['status']) => {
     if (status === 'coming_soon') return; // no-op for now
@@ -116,7 +114,7 @@ export function PrepQuickActions({
 
       <div className="relative grid gap-6 pt-2 md:grid-cols-3 xl:grid-cols-4">
         {ACTIONS.map((action) => {
-          const isDisabled = action.status === 'coming_soon';
+          const isDisabled = action.status === 'coming_soon' || disableActions;
 
           return (
             <button
@@ -170,13 +168,13 @@ export function PrepQuickActions({
                 )}
               </div>
 
-              <p className="mt-4 text-[11px] leading-snug text-[#A1A8C7]">
+              <p className="my-4 text-[11px] leading-snug text-[#A1A8C7]">
                 {action.description}
               </p>
 
               <span
                 className={`
-                  mt-4 inline-flex items-center gap-1.5 rounded-full 
+                  mt-auto inline-flex items-center gap-1.5 rounded-full 
                   border px-2.5 py-1.5 text-[11px] font-medium
                   ${
                     isDisabled

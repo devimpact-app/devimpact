@@ -2,6 +2,30 @@ import { PullRequest, Review } from '@/lib/db/schema';
 import { ActivityEvent } from '@/types/api/timeline';
 
 export function getActivityEventForPr(pr: PullRequest): ActivityEvent {
+  if (!pr.mergedAt) {
+    return {
+      id: `pr_opened:${pr.id}`,
+      kind: 'pr_opened',
+      source: 'github',
+      occurredAt: pr.createdAt.toISOString(),
+      actor: {
+        login: pr.prAuthorLogin,
+      },
+      title: `Opened “${pr.title}”`,
+      subtitle: `${pr.repoFullName} • #${pr.prNumber}`,
+      meta: {
+        prTitle: pr.title,
+        prNumber: pr.prNumber,
+        repoFullName: pr.repoFullName,
+        linesChanged: pr.linesChanged ?? undefined,
+        filesChanged: pr.filesChanged ?? undefined,
+        stateLabel: pr.state,
+      },
+      links: {
+        htmlUrl: pr.htmlUrl ?? undefined,
+      },
+    };
+  }
   return {
     id: `pr_merged:${pr.id}`,
     kind: 'pr_merged',
