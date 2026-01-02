@@ -103,6 +103,11 @@ export async function deriveActivityEventsFromCalendarEventIds(
       continue;
     }
 
+    if (e.category === 'personal' || e.category === 'focus') {
+      skipped += 1;
+      continue;
+    }
+
     if (e.deletedAt) {
       continue;
     }

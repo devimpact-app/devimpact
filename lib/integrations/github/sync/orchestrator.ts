@@ -12,6 +12,8 @@ import {
 import { getAuthoredPrs } from '@/lib/analysis/timeline/getAuthoredPrs';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getOrGeneratePrSummary } from '../../openai/services/summarizePR';
+import { deriveActivityEventsFromPullRequestIds } from '@/lib/analysis/activity/derive/from-github-prs';
+import { deriveActivityEventsFromReviewIds } from '@/lib/analysis/activity/derive/from-github-reviews';
 
 export async function runSync({
   tenantId,
@@ -46,6 +48,7 @@ export async function runSync({
       username,
     });
 
+    // Normalize to nice tables for GH
     const { rawGithubPrIds, touchedPrIds } = await batchNormalizeUserPRs(
       tenantId,
       username
@@ -56,7 +59,17 @@ export async function runSync({
       rawGithubPrIds
     );
 
-    // Derive activity events (ledger)
+    // Derive activity events (ledger) for accomplishment logging
+    await deriveActivityEventsFromPullRequestIds({
+      tenantId,
+      prIds: touchedPrIds,
+      authoredOnly: true,
+    });
+    await deriveActivityEventsFromReviewIds({
+      tenantId,
+      reviewIds: touchedReviewIds,
+      joinPrTitle: true,
+    });
 
     // Summarize PRs for week that will be shown first
     const weekOffset = getDefaultWeekOffset();
