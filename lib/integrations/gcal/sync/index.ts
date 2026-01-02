@@ -6,6 +6,7 @@ import { daysAgo, hoursSince } from '@/lib/utils/date';
 import { listEventsWindow } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
 import { addDays, subHours } from 'date-fns';
+import { deriveActivityEventsFromCalendarEventIds } from '@/lib/analysis/activity/derive/from-calendar-events';
 
 const LOOKBACK_DAYS_INITIAL = 90;
 const FUTURE_LOOKAHEAD_DAYS = 14;
@@ -184,12 +185,18 @@ export async function runSync(userId: string): Promise<SyncResponse> {
 
       calendarsSyncedCount += 1;
 
-      await upsertCalendarEvents({
+      const { touchedEventIds } = await upsertCalendarEvents({
         tenantId: userId,
         integrationTokenId: tokenId,
         calendarId: cal.calendarId,
         events: resp.items,
         lastSyncedAt: new Date(),
+      });
+
+      await deriveActivityEventsFromCalendarEventIds({
+        tenantId: userId,
+        calendarEventIds: touchedEventIds ?? [],
+        pastOnly: true,
       });
 
       eventsUpsertedCount += resp.items.length;

@@ -1,11 +1,11 @@
 import { getWeekBoundsFromOffsetServer } from '@/lib/utils/server-date';
 import type { InsightContext } from './types';
-import { getAuthoredPrs } from '../activity/getAuthoredPrs';
-import { getReviewsOnAuthoredPrs } from '../activity/getReviewsOnAuthoredPrs';
+import { getAuthoredPrs } from '../timeline/getAuthoredPrs';
+import { getReviewsOnAuthoredPrs } from '../timeline/getReviewsOnAuthoredPrs';
 import { db } from '@/lib/db/client';
 import { prSummaries } from '@/lib/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
-import { getAuthoredReviews } from '../activity/getAuthoredReviews';
+import { getAuthoredReviews } from '../timeline/getAuthoredReviews';
 
 export type BuildInsightContextArgs = {
   userId: string;

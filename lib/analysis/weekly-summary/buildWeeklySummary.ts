@@ -4,9 +4,9 @@ import {
   WeeklySummary,
   WeeklySummarySchema,
 } from '@/types/api/weekly-summary';
-import { getAuthoredPrs } from '../activity/getAuthoredPrs';
-import { getAuthoredReviews } from '../activity/getAuthoredReviews';
-import { getAuthoredCommits } from '../activity/getAuthoredCommits';
+import { getAuthoredPrs } from '../timeline/getAuthoredPrs';
+import { getAuthoredReviews } from '../timeline/getAuthoredReviews';
+import { getAuthoredCommits } from '../timeline/getAuthoredCommits';
 import { computeActiveDaysAndMostActiveDay } from './activeDays';
 import { pickHighlightedAuthoredPrs } from './highlightedPrs';
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';

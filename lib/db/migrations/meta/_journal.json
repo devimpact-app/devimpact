@@ -64,6 +64,13 @@
       "when": 1766198531808,
       "tag": "0008_create_prep_items_table",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767386281854,
+      "tag": "0009_create_activity_events_table",
+      "breakpoints": true
     }
   ]
 }

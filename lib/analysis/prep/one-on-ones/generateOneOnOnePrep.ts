@@ -17,7 +17,7 @@ import { ActivityEvent } from '@/types/api/timeline';
 import {
   getActivityEventForPr,
   getActivityEventForReview,
-} from '../../activity/helpers';
+} from '../../timeline/helpers';
 import { generateLLMTalkingPoints } from '@/lib/integrations/openai/services/summarizeOneOnOne';
 import { formatMetricValue } from '../../metrics/client';
 import { buildWorkRhythm } from '../../work-rhythm/buildWorkRhythm';

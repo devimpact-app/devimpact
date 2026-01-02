@@ -7,7 +7,7 @@ import {
   formatRangeServer,
   getWeekBoundsFromOffsetServer,
 } from '@/lib/utils/server-date';
-import { getActivityEventsForRange } from '../activity/getActivityEventsForRange';
+import { getActivityEventsForRange } from '../timeline/getActivityEventsForRange';
 import {
   applyMeetingOverlay,
   bucketEventsByDayAndBand,
@@ -16,7 +16,7 @@ import {
 // import { findBestFocusWindows } from './deep-work';
 import { buildWorkRhythmDescription } from './description';
 import { isCalendarConnected } from '@/lib/integrations/gcal/client';
-import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
+import { getCalendarEventsForRange } from '../timeline/getCalendarEventsForRange';
 import { CalendarEvent } from '@/lib/db/schema/gcal';
 import { buildTimeSlices } from './timeSlices';
 import { computeBestFocusWindows } from './bestFocusWindows';

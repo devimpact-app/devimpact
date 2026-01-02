@@ -1,6 +1,6 @@
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
-import { getAuthoredPrs } from '../../../activity/getAuthoredPrs';
-import { getAuthoredReviews } from '../../../activity/getAuthoredReviews';
+import { getAuthoredPrs } from '../../../timeline/getAuthoredPrs';
+import { getAuthoredReviews } from '../../../timeline/getAuthoredReviews';
 import { pickHighlightedAuthoredPrs } from '../../../weekly-summary/highlightedPrs';
 import { pickHighlightedReview } from '../../../weekly-summary/highlightedReviews';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';

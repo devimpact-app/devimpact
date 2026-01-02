@@ -1,6 +1,6 @@
 import { WeeklyCalendarSummary } from '@/types/api/weekly-summary';
 import { isCalendarConnected } from '@/lib/integrations/gcal/client';
-import { getCalendarEventsForRange } from '../activity/getCalendarEventsForRange';
+import { getCalendarEventsForRange } from '../timeline/getCalendarEventsForRange';
 import { minutesBetween } from '@/lib/utils/date';
 import { findDeepWorkBlocks } from '../work-rhythm/deep-work';
 import { buildTimeSlices } from '../work-rhythm/timeSlices';

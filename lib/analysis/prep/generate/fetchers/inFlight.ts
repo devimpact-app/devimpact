@@ -1,4 +1,4 @@
-import { getAuthoredPrs } from '@/lib/analysis/activity/getAuthoredPrs';
+import { getAuthoredPrs } from '@/lib/analysis/timeline/getAuthoredPrs';
 import { getShippedItemFromPr } from '@/lib/analysis/weekly-summary/highlightedPrs';
 import { PullRequest } from '@/lib/db/schema';
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';

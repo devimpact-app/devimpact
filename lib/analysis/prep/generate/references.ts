@@ -11,7 +11,7 @@ import { formatMetricValue } from '../../metrics/client';
 import {
   getActivityEventForPr,
   getActivityEventForReview,
-} from '../../activity/helpers';
+} from '../../timeline/helpers';
 
 export function extractUsedReferences(
   talkingPoints: PrepTalkingPoint[],

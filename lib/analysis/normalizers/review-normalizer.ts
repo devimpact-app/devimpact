@@ -59,8 +59,10 @@ async function getInferredTeams({
 export async function batchNormalizeUserReviews(
   userId: string,
   username: string,
-  normalizedPrIds: string[]
-): Promise<number> {
+  rawGithubPrIds: string[]
+): Promise<{
+  touchedReviewIds: string[];
+}> {
   const inferredTeamsSet = await getInferredTeams({
     userId,
     username,
@@ -72,7 +74,7 @@ export async function batchNormalizeUserReviews(
     .where(
       and(
         eq(githubReviews.tenantId, userId),
-        inArray(githubReviews.prId, normalizedPrIds)
+        inArray(githubReviews.prId, rawGithubPrIds)
       )
     );
   const reviewsNeedingNormalization = await db
@@ -91,7 +93,7 @@ export async function batchNormalizeUserReviews(
     .where(
       and(
         eq(githubReviews.tenantId, userId),
-        inArray(githubReviews.prId, normalizedPrIds),
+        inArray(githubReviews.prId, rawGithubPrIds),
         not(
           eq(
             githubReviews.reviewerGithubLogin,
@@ -101,7 +103,10 @@ export async function batchNormalizeUserReviews(
       )
     );
 
-  if (reviewsNeedingNormalization.length === 0) return 0;
+  if (reviewsNeedingNormalization.length === 0)
+    return {
+      touchedReviewIds: [],
+    };
 
   console.log(
     `Normalizing ${reviewsNeedingNormalization.length} reviews for user ${userId}`
@@ -140,55 +145,107 @@ export async function batchNormalizeUserReviews(
 
   const reviewStartTime = Date.now();
   let processed = 0;
+
+  const metricsToSave = reviewsNeedingNormalization
+    .map((row) => {
+      const review = row.raw;
+      const pr = prById.get(review.prId);
+
+      if (!pr) {
+        console.warn('Skipping review - PR not found', {
+          reviewId: review.id,
+          prId: review.prId,
+        });
+        return null;
+      }
+
+      const metrics = calculateMetrics({
+        pr,
+        timeline: timelineByPrId[review.prId] || [],
+        review,
+        allReviews: reviewsByPrId[review.prId] || [],
+        reviewComments: commentsByReviewId[review.id] || [],
+        userGithubLogin: username,
+        inferredTeams: inferredTeamsSet,
+      });
+
+      return {
+        existingNorm: row.norm,
+        review: row.raw,
+        metrics,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  let committed = false;
+  const touchedReviewIds: string[] = [];
+
   try {
     await db.transaction(async (tx) => {
-      for (const row of reviewsNeedingNormalization) {
-        const review = row.raw;
-        const existingNorm = row.norm;
-
-        const pr = prById.get(review.prId);
-        if (!pr) break;
-
-        const metrics = calculateMetrics({
-          pr,
-          timeline: timelineByPrId[review.prId] || [],
-          review,
-          allReviews: reviewsByPrId[review.prId] || [],
-          reviewComments: commentsByReviewId[review.id] || [],
-          userGithubLogin: username,
-          inferredTeams: inferredTeamsSet,
-        });
-
+      for (const { existingNorm, review, metrics } of metricsToSave) {
         if (!existingNorm) {
-          await tx.insert(reviews).values(metrics);
-          console.log('Inserted normalized review', { reviewId: review.id });
+          const result = await tx
+            .insert(reviews)
+            .values(metrics)
+            .returning({ id: reviews.id });
+
+          console.log('Inserted normalized review', {
+            reviewId: review.id,
+            dbId: result[0]?.id,
+          });
+          touchedReviewIds.push(result[0].id);
         } else {
           const { githubReviewId, tenantId, ...updateFields } = metrics;
-          await tx
+          const result = await tx
             .update(reviews)
             .set(updateFields)
-            .where(eq(reviews.id, existingNorm.id));
+            .where(eq(reviews.id, existingNorm.id))
+            .returning({ id: reviews.id });
+
           console.log('Updated normalized review', {
             reviewId: existingNorm.id,
+            affected: result.length,
           });
+          touchedReviewIds.push(result[0].id);
         }
         processed += 1;
       }
-      console.log(
-        `Review normalization transaction complete: ${processed} processed`
-      );
+      committed = true;
     });
+
+    if (processed > 0 && metricsToSave.length > 0) {
+      const sampleGithubReviewId = metricsToSave[0].metrics.githubReviewId;
+      const verification = await db
+        .select({ id: reviews.id })
+        .from(reviews)
+        .where(eq(reviews.githubReviewId, sampleGithubReviewId))
+        .limit(1);
+
+      if (verification.length === 0) {
+        throw new Error(
+          `CRITICAL: Transaction appeared to commit but review ${sampleGithubReviewId} not found in DB. ` +
+            `Processed ${processed} reviews but commit may have failed silently.`
+        );
+      }
+    }
+
+    console.log(`✓ Normalized ${processed} reviews (verified)`);
   } catch (err) {
     console.error('Review normalization FAILED', {
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
       duration: Date.now() - reviewStartTime,
+      processed,
+      committed,
+      totalReviews: metricsToSave.length,
+      originalCount: reviewsNeedingNormalization.length,
     });
     throw err;
   }
 
-  console.log(`✓ Normalized ${reviewsNeedingNormalization.length} reviews`);
-  return reviewsNeedingNormalization.length;
+  return {
+    touchedReviewIds,
+  };
 }
 
 interface CalculateMetricsInput {

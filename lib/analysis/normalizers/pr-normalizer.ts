@@ -28,7 +28,10 @@ import {
 export async function batchNormalizeUserPRs(
   userId: string,
   username: string
-): Promise<string[]> {
+): Promise<{
+  rawGithubPrIds: string[];
+  touchedPrIds: string[];
+}> {
   const prsNeedingNormalization = await db
     .select({
       raw: githubPrs,
@@ -56,7 +59,11 @@ export async function batchNormalizeUserPRs(
     timestamp: new Date().toISOString(),
   });
 
-  if (prsNeedingNormalization.length === 0) return [];
+  if (prsNeedingNormalization.length === 0)
+    return {
+      rawGithubPrIds: [],
+      touchedPrIds: [],
+    };
 
   console.log(
     `Normalizing ${prsNeedingNormalization.length} PRs for user ${userId}`
@@ -108,53 +115,108 @@ export async function batchNormalizeUserPRs(
   const timelineByPrId = groupBy(allTimeline, 'prId');
 
   console.log('Calculating metrics...');
+
+  const metricsToSave = prsNeedingNormalization.map((row) => {
+    const pr = row.raw;
+    const metrics = calculateMetrics({
+      pr,
+      timeline: timelineByPrId[pr.id] || [],
+      userCommits: commitsByPrId[pr.id] || [],
+      reviews: reviewsByPrId[pr.id] || [],
+      reviewComments: commentsByPrId[pr.id] || [],
+      userGithubLogin: username,
+      prFiles: filesByPrId[pr.id] || [],
+    });
+
+    return {
+      existingNorm: row.norm,
+      pr: row.raw,
+      metrics,
+    };
+  });
+
   const normStartTime = Date.now();
   let processed = 0;
+  let committed = false;
+  const touchedPrIds: string[] = [];
   try {
     await db.transaction(async (tx) => {
-      for (const row of prsNeedingNormalization) {
-        const pr = row.raw;
-        const existingNorm = row.norm;
-
-        const metrics = calculateMetrics({
-          pr,
-          timeline: timelineByPrId[pr.id] || [],
-          userCommits: commitsByPrId[pr.id] || [],
-          reviews: reviewsByPrId[pr.id] || [],
-          reviewComments: commentsByPrId[pr.id] || [],
-          userGithubLogin: username,
-          prFiles: filesByPrId[pr.id] || [],
-        });
-
+      for (const { existingNorm, pr, metrics } of metricsToSave) {
         if (!existingNorm) {
-          await tx.insert(pullRequests).values(metrics);
+          const result = await tx
+            .insert(pullRequests)
+            .values(metrics)
+            .returning({ id: pullRequests.id })
+            .onConflictDoNothing();
+          if (result.length === 0) {
+            console.warn('Insert affected 0 rows', {
+              githubPrId: metrics.githubPrId,
+            });
+          }
           console.log('Inserted normalized PR', {
             prId: pr.id,
             githubPrId: metrics.githubPrId,
+            dbId: result[0]?.id,
           });
+          touchedPrIds.push(result[0].id);
         } else {
           const { githubPrId, tenantId, ...updateFields } = metrics;
-          await tx
+          const result = await tx
             .update(pullRequests)
             .set(updateFields)
-            .where(eq(pullRequests.id, existingNorm.id));
+            .where(eq(pullRequests.id, existingNorm.id))
+            .returning({ id: pullRequests.id });
 
-          console.log('Updated normalized PR', { prId: existingNorm.id });
+          if (result.length === 0) {
+            console.warn('Update affected 0 rows', { prId: existingNorm.id });
+          }
+          console.log('Updated normalized PR', {
+            prId: existingNorm.id,
+            affected: result.length,
+          });
+          touchedPrIds.push(result[0].id);
         }
         processed += 1;
       }
+      committed = true;
     });
+
+    if (!committed) {
+      throw new Error('Transaction completed but committed flag not set');
+    }
+
+    if (processed > 0 && metricsToSave.length > 0) {
+      const sampleGithubPrId = metricsToSave[0].metrics.githubPrId;
+      const verification = await db
+        .select({ id: pullRequests.id })
+        .from(pullRequests)
+        .where(eq(pullRequests.githubPrId, sampleGithubPrId))
+        .limit(1);
+
+      if (verification.length === 0) {
+        throw new Error(
+          `CRITICAL: Transaction appeared to commit but PR ${sampleGithubPrId} not found in DB. ` +
+            `Processed ${processed} PRs but commit may have failed silently.`
+        );
+      }
+    }
   } catch (err) {
     console.error('PR normalization FAILED', {
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
       duration: Date.now() - normStartTime,
+      processed,
+      committed,
+      totalPRs: metricsToSave.length,
     });
     throw err;
   }
 
   console.log(`✓ Normalized ${processed} PRs`);
-  return prIds;
+  return {
+    rawGithubPrIds: prIds,
+    touchedPrIds,
+  };
 }
 
 interface CalculateMetricsInput {

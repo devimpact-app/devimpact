@@ -7,7 +7,12 @@ export const CalendarSyncStatusEnum = z.enum([
   'failed',
 ]);
 
-export const CalendarSyncModeEnum = z.enum(['initial', 'manual', 'scheduled']);
+export const CalendarSyncModeEnum = z.enum([
+  'initial',
+  'manual',
+  'scheduled',
+  'dashboard_refresh',
+]);
 
 export const CalendarSetupStateEnum = z.enum([
   'not_connected',

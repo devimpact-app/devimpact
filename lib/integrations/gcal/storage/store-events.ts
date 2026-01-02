@@ -90,11 +90,12 @@ export async function upsertCalendarEvents({
   // chunk to avoid gigantic inserts
   const CHUNK = 500;
   let total = 0;
+  const touchedEventIds: string[] = [];
 
   for (let i = 0; i < rows.length; i += CHUNK) {
     const chunk = rows.slice(i, i + CHUNK);
 
-    await db
+    const returned = await db
       .insert(calendarEvents)
       .values(chunk)
       .onConflictDoUpdate({
@@ -134,10 +135,12 @@ export async function upsertCalendarEvents({
           deletedAt: null, // revive if previously soft-deleted
           updatedAt: new Date(),
         },
-      });
+      })
+      .returning({ id: calendarEvents.id });
 
+    touchedEventIds.push(...returned.map((r) => r.id));
     total += chunk.length;
   }
 
-  return { upserted: total };
+  return { upserted: total, touchedEventIds };
 }

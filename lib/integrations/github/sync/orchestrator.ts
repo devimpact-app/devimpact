@@ -9,7 +9,7 @@ import {
   getDefaultWeekOffset,
   getWeekBoundsFromOffset,
 } from '@/lib/utils/date';
-import { getAuthoredPrs } from '@/lib/analysis/activity/getAuthoredPrs';
+import { getAuthoredPrs } from '@/lib/analysis/timeline/getAuthoredPrs';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getOrGeneratePrSummary } from '../../openai/services/summarizePR';
 
@@ -46,8 +46,17 @@ export async function runSync({
       username,
     });
 
-    const normalizedPrIds = await batchNormalizeUserPRs(tenantId, username);
-    await batchNormalizeUserReviews(tenantId, username, normalizedPrIds);
+    const { rawGithubPrIds, touchedPrIds } = await batchNormalizeUserPRs(
+      tenantId,
+      username
+    );
+    const { touchedReviewIds } = await batchNormalizeUserReviews(
+      tenantId,
+      username,
+      rawGithubPrIds
+    );
+
+    // Derive activity events (ledger)
 
     // Summarize PRs for week that will be shown first
     const weekOffset = getDefaultWeekOffset();
