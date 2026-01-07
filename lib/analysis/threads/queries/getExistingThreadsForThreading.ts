@@ -1,7 +1,7 @@
 import { db } from '@/lib/db/client';
 import { threads } from '@/lib/db/schema/activity';
 import { and, desc, eq } from 'drizzle-orm';
-import { ExistingThreadContext } from '../llm/types';
+import { ExistingThreadContext } from '../llm/assign/types';
 
 export async function getExistingThreadsForThreading({
   tenantId,

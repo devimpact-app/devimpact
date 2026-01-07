@@ -130,6 +130,15 @@ export const threadCategoryEnum = pgEnum('thread_category', [
   'hiring',
 ]);
 
+export type ThreadCategory =
+  | 'features'
+  | 'bugs_incidents'
+  | 'tech_debt'
+  | 'collaboration'
+  | 'alignment'
+  | 'skill_growth'
+  | 'hiring';
+
 export const threadStatusEnum = pgEnum('thread_status', ['active', 'archived']);
 
 export const threads = pgTable(

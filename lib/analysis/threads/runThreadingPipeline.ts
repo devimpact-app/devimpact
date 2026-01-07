@@ -3,10 +3,12 @@ import { getUnthreadedActivityEvents } from './queries/getUnthreadedActivityEven
 import { evaluateThreadCandidate } from './policy/threadCandidatePolicy';
 import type { ActivityEvent } from '@/lib/db/schema/activity';
 import { getPrSummariesByPrIds } from './queries/getPrSummariesByPrIds';
-import { AssignThreadsInput } from './llm/types';
+import { AssignThreadsInput, AssignThreadsOutput } from './llm/assign/types';
 import { getExistingThreadsForThreading } from './queries/getExistingThreadsForThreading';
-import { shapeEventForLLM } from './llm/shapeEvents';
-import { assignThreads } from './llm/assignThreads';
+import { shapeEventForLLM } from './llm/assign/shapeEvents';
+import { assignThreads } from './llm/assign/assignThreads';
+import { validateAssignThreadsOutput } from './llm/assign/validate';
+import { persistThreadAssignments } from './storage/persistThreadAssignments';
 
 const DEFAULT_LOOKBACK_DAYS = 14;
 const DEFAULT_LIMIT = 200;
@@ -73,11 +75,42 @@ export async function runThreadingPipeline({
     existingThreads,
   };
 
-  const assignResponse = await assignThreads(assignInput);
+  const rawAssignResponse = await assignThreads(assignInput);
+  let validateAssignResponse = validateAssignThreadsOutput(rawAssignResponse, {
+    candidateEventIds: eligible.map((e) => e.id),
+    existingThreadIds: existingThreads.map((t) => t.id),
+  });
+  let assignResponse: AssignThreadsOutput;
+  if (!validateAssignResponse.ok) {
+    // Do one retry if prompt messed up
+    const rawAssignResponseRetry = await assignThreads(assignInput);
+    let validateAssignResponseRetry = validateAssignThreadsOutput(
+      rawAssignResponseRetry,
+      {
+        candidateEventIds: eligible.map((e) => e.id),
+        existingThreadIds: existingThreads.map((t) => t.id),
+      }
+    );
+    if (!validateAssignResponseRetry.ok) {
+      throw new Error(
+        `Error during validation of thread assignment llm response ${validateAssignResponseRetry.error}`
+      );
+    }
+    assignResponse = validateAssignResponseRetry.value;
+  } else {
+    assignResponse = validateAssignResponse.value;
+  }
 
-  // 5. TODO: Persist threads
-  // 6. TODO: Persist thread_events joins
-  // 7. TODO: Idempotency / re-run safety
+  const {} = await persistThreadAssignments({
+    tenantId,
+    candidateEvents: eligible.map((e) => ({
+      id: e.id,
+      occurredAt: e.occurredAt,
+    })),
+    llmOutput: assignResponse,
+  });
+
+  // TODO: do summaries of impacted threads new and existing
 
   return {
     scannedCount: events.length,

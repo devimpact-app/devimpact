@@ -1,11 +1,4 @@
-export type ThreadCategory =
-  | 'features'
-  | 'bugs_incidents'
-  | 'tech_debt'
-  | 'collaboration'
-  | 'alignment'
-  | 'skill_growth'
-  | 'hiring';
+import { ThreadCategory } from '@/lib/db/schema/activity';
 
 export type ThreadCandidateEvent = {
   id: string;

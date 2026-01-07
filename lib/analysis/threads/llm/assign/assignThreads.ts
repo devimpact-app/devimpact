@@ -1,7 +1,7 @@
 import { runJsonLLM } from '@/lib/integrations/openai/services/runPrompt';
 import { AiConfig } from '@/lib/integrations/openai/config';
-import { buildThreadAssignmentPrompt } from './assignThreadsPrompt';
-import { THREAD_ASSIGNMENT_SCHEMA } from './schemas';
+import { buildThreadAssignmentPrompt } from './prompt';
+import { THREAD_ASSIGNMENT_SCHEMA } from './schema';
 import { AssignThreadsInput, AssignThreadsOutput } from './types';
 
 export async function assignThreads(
