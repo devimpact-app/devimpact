@@ -2,6 +2,11 @@ import { subDays } from 'date-fns';
 import { getUnthreadedActivityEvents } from './queries/getUnthreadedActivityEvents';
 import { evaluateThreadCandidate } from './policy/threadCandidatePolicy';
 import type { ActivityEvent } from '@/lib/db/schema/activity';
+import { getPrSummariesByPrIds } from './queries/getPrSummariesByPrIds';
+import { AssignThreadsInput } from './llm/types';
+import { getExistingThreadsForThreading } from './queries/getExistingThreadsForThreading';
+import { shapeEventForLLM } from './llm/shapeEvents';
+import { assignThreads } from './llm/assignThreads';
 
 const DEFAULT_LOOKBACK_DAYS = 14;
 const DEFAULT_LIMIT = 200;
@@ -52,7 +57,24 @@ export async function runThreadingPipeline({
     });
   }
 
-  // 4. TODO: Group eligible events into thread candidates (LLM)
+  const eligible = eligibleEvents.map((e) => e.event);
+  const prEventIds = eligible
+    .filter((e) => e.sourceEntityTable === 'pull_requests')
+    .map((e) => e.sourceEntityId);
+  const prSummariesByPrId = await getPrSummariesByPrIds(tenantId, prEventIds);
+
+  const finalEvents = eligible
+    .map((e) => shapeEventForLLM(e, prSummariesByPrId))
+    .filter((e) => !!e);
+  const existingThreads = await getExistingThreadsForThreading({ tenantId });
+  const assignInput: AssignThreadsInput = {
+    mode: existingThreads.length ? 'incremental' : 'cold_start',
+    events: finalEvents,
+    existingThreads,
+  };
+
+  const assignResponse = await assignThreads(assignInput);
+
   // 5. TODO: Persist threads
   // 6. TODO: Persist thread_events joins
   // 7. TODO: Idempotency / re-run safety
