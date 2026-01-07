@@ -71,6 +71,8 @@ export async function runSync({
       joinPrTitle: true,
     });
 
+    // TODO: call threading
+
     // Summarize PRs for week that will be shown first
     const weekOffset = getDefaultWeekOffset();
     const { start, end } = getWeekBoundsFromOffset(weekOffset);

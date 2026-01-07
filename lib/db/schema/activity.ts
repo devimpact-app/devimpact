@@ -4,6 +4,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
   unique,
@@ -116,3 +117,108 @@ export const activityEvents = pgTable(
     repoIdx: index('activity_events_repo_idx').on(t.tenantId, t.repoFullName),
   })
 );
+
+export type ActivityEvent = typeof activityEvents.$inferSelect;
+
+export const threadCategoryEnum = pgEnum('thread_category', [
+  'features',
+  'bugs_incidents',
+  'tech_debt',
+  'collaboration',
+  'alignment',
+  'skill_growth',
+  'hiring',
+]);
+
+export const threadStatusEnum = pgEnum('thread_status', ['active', 'archived']);
+
+export const threads = pgTable(
+  'threads',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    categoryKey: threadCategoryEnum('category_key').notNull(),
+    title: text('title').notNull(),
+    summary: text('summary').notNull().default(''),
+    status: threadStatusEnum('status').notNull().default('active'),
+    confidence: real('confidence'), // 0..1
+    firstActivityAt: timestamp('first_activity_at', { withTimezone: true }),
+    lastActivityAt: timestamp('last_activity_at', { withTimezone: true }),
+    userEditedAt: timestamp('user_edited_at', { withTimezone: true }),
+    model: text('model'), // e.g. "gpt-4.1-mini"
+    promptVersion: text('prompt_version'), // e.g. "threads_v1"
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .$onUpdateFn(() => new Date())
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    tenantIdx: index('threads_tenant_idx').on(t.tenantId),
+    tenantStatusLastIdx: index('threads_tenant_status_last_idx').on(
+      t.tenantId,
+      t.status,
+      t.lastActivityAt
+    ),
+    tenantCategoryStatusLastIdx: index('threads_tenant_cat_status_last_idx').on(
+      t.tenantId,
+      t.categoryKey,
+      t.status,
+      t.lastActivityAt
+    ),
+    tenantLastIdx: index('threads_tenant_last_idx').on(
+      t.tenantId,
+      t.lastActivityAt
+    ),
+  })
+);
+
+export type Thread = typeof threads.$inferSelect;
+export type NewThread = typeof threads.$inferInsert;
+
+export const threadEventAssignedByEnum = pgEnum('thread_event_assigned_by', [
+  'llm',
+  'user',
+  'heuristic',
+]);
+
+export const threadEvents = pgTable(
+  'thread_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    threadId: uuid('thread_id')
+      .notNull()
+      .references(() => threads.id, { onDelete: 'cascade' }),
+    activityEventId: uuid('activity_event_id')
+      .notNull()
+      .references(() => activityEvents.id, { onDelete: 'cascade' }),
+    assignedBy: threadEventAssignedByEnum('assigned_by').notNull(),
+    assignmentConfidence: real('assignment_confidence'),
+    assignmentReason: text('assignment_reason'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    uniqEvent: unique('thread_events_uniq_event').on(
+      t.tenantId,
+      t.activityEventId
+    ),
+    threadIdx: index('thread_events_thread_idx').on(t.tenantId, t.threadId),
+    eventIdx: index('thread_events_event_idx').on(
+      t.tenantId,
+      t.activityEventId
+    ),
+  })
+);
+
+export type ThreadEvent = typeof threadEvents.$inferSelect;
+export type NewThreadEvent = typeof threadEvents.$inferInsert;
