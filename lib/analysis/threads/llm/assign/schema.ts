@@ -11,40 +11,20 @@ export const THREAD_ASSIGNMENT_SCHEMA = {
             type: 'string',
             enum: ['assign_existing', 'create_new', 'skip'],
           },
-          // Required if action === 'assign_existing'
-          threadId: { type: 'string' },
-          // Required if action === 'create_new'
-          newThreadKey: { type: 'string' },
-          confidence: {
-            type: 'number',
-            minimum: 0,
-            maximum: 1,
-          },
-          reasons: {
-            type: 'array',
-            items: { type: 'string' },
-          },
+          threadId: { type: ['string', 'null'] },
+          newThreadKey: { type: ['string', 'null'] },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+          reasons: { type: 'array', items: { type: 'string' } },
         },
-        required: ['eventId', 'action', 'confidence', 'reasons'],
-        additionalProperties: false,
-        allOf: [
-          {
-            if: {
-              properties: { action: { const: 'assign_existing' } },
-            },
-            then: {
-              required: ['threadId'],
-            },
-          },
-          {
-            if: {
-              properties: { action: { const: 'create_new' } },
-            },
-            then: {
-              required: ['newThreadKey'],
-            },
-          },
+        required: [
+          'eventId',
+          'action',
+          'confidence',
+          'reasons',
+          'threadId',
+          'newThreadKey',
         ],
+        additionalProperties: false,
       },
     },
 
@@ -67,11 +47,7 @@ export const THREAD_ASSIGNMENT_SCHEMA = {
             ],
           },
           title: { type: 'string' },
-          confidence: {
-            type: 'number',
-            minimum: 0,
-            maximum: 1,
-          },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
         },
         required: ['newThreadKey', 'categoryKey', 'title', 'confidence'],
         additionalProperties: false,

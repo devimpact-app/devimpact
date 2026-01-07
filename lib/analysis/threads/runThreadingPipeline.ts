@@ -9,6 +9,12 @@ import { shapeEventForLLM } from './llm/assign/shapeEvents';
 import { assignThreads } from './llm/assign/assignThreads';
 import { validateAssignThreadsOutput } from './llm/assign/validate';
 import { persistThreadAssignments } from './storage/persistThreadAssignments';
+import { buildThreadSummaryInputs } from './llm/summaries/buildInput';
+import { mapWithConcurrency } from '@/lib/utils/concurrency';
+import { generateThreadSummary } from './llm/summaries/generate';
+import { validateThreadSummaryOutput } from './llm/summaries/validate';
+import { persistThreadSummary } from './storage/persistThreadSummary';
+import { AiConfig } from '@/lib/integrations/openai/config';
 
 const DEFAULT_LOOKBACK_DAYS = 14;
 const DEFAULT_LIMIT = 200;
@@ -101,16 +107,49 @@ export async function runThreadingPipeline({
     assignResponse = validateAssignResponse.value;
   }
 
-  const {} = await persistThreadAssignments({
-    tenantId,
-    candidateEvents: eligible.map((e) => ({
-      id: e.id,
-      occurredAt: e.occurredAt,
-    })),
-    llmOutput: assignResponse,
+  const { createdThreads, insertedThreadEvents } =
+    await persistThreadAssignments({
+      tenantId,
+      candidateEvents: eligible.map((e) => ({
+        id: e.id,
+        occurredAt: e.occurredAt,
+      })),
+      llmOutput: assignResponse,
+    });
+
+  const summaryInputs = buildThreadSummaryInputs({
+    finalEvents,
+    createdThreads,
+    insertedThreadEvents,
+    existingThreads,
   });
 
-  // TODO: do summaries of impacted threads new and existing
+  const results = await mapWithConcurrency(summaryInputs, 3, async (input) => {
+    try {
+      const out = await generateThreadSummary(input);
+      const v = validateThreadSummaryOutput(out, {
+        allowedEventIds: finalEvents.map((e) => e.id),
+      });
+      if (!v.ok) {
+        throw new Error(
+          `Error during validation of thread summary llm response ${v.error}`
+        );
+      }
+      // TODO: also save the update/summary from last time
+      await persistThreadSummary({
+        tenantId,
+        threadId: input.threadId,
+        output: v.value,
+        llm: {
+          model: AiConfig.models.summarize,
+          promptVersion: '1',
+        },
+      });
+      return v.value;
+    } catch (e: any) {
+      throw new Error(`Error in thread summaries ${e.message}`);
+    }
+  });
 
   return {
     scannedCount: events.length,

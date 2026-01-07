@@ -15,8 +15,8 @@ export function buildThreadAssignmentPrompt(
           {
             "eventId": "string",
             "action": "assign_existing" | "create_new" | "skip",
-            "threadId": "string (required only if action=assign_existing)",
-            "newThreadKey": "string (required only if action=create_new)",
+            "threadId": "string (required only if action=assign_existing, otherwise null)",
+            "newThreadKey": "string (required only if action=create_new, otherwise null)",
             "confidence": number (0..1),
             "reasons": ["array of short reason strings"]
           }
@@ -37,13 +37,14 @@ export function buildThreadAssignmentPrompt(
       - Skip events that are too routine, too small, or ambiguous for a narrative thread.
 
       NON-NEGOTIABLE OUTPUT RULES:
-      1) Return exactly one assignment for every input eventId (no missing events).
-      2) If action="assign_existing", include "threadId" and DO NOT include "newThreadKey".
-      3) If action="create_new", include "newThreadKey" and DO NOT include "threadId".
-      4) If action="skip", include neither threadId nor newThreadKey.
-      5) "newThreadKey" must be unique within this response and stable-looking (e.g. "new_1", "new_2").
-      6) "reasons" must be short, diagnostic tokens (e.g. "same_repo_domain", "shared_keywords", "routine_meeting", "ambiguous_demo").
-      7) Do not create more than 4 new threads in a single response. Prefer 0–3.
+      1) If mode is "cold_start", then action must be "create_new" or "skip" only. Do not invent thread ids, only use thread ids from existing threads.
+      2) Return exactly one assignment for every input eventId (no missing events).
+      3) If action="assign_existing", include "threadId" and DO NOT include "newThreadKey".
+      4) If action="create_new", include "newThreadKey" and DO NOT include "threadId".
+      5) If action="skip", include neither threadId nor newThreadKey.
+      6) "newThreadKey" must be unique within this response and stable-looking (e.g. "new_1", "new_2").
+      7) "reasons" must be short, diagnostic tokens (e.g. "same_repo_domain", "shared_keywords", "routine_meeting", "ambiguous_demo").
+      8) Do not create more than 4 new threads in a single response. Prefer 0–3.
 
       THREAD QUALITY BAR:
       - A thread is a multi-event theme (project/initiative/area), not a single PR.
@@ -97,6 +98,7 @@ export function buildThreadAssignmentPrompt(
     role: 'user',
     content: JSON.stringify(
       {
+        mode: input.mode,
         existingThreads: (input.existingThreads ?? []).map((t) => ({
           id: t.id,
           categoryKey: t.categoryKey,

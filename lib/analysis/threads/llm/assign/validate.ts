@@ -6,28 +6,36 @@ import {
   NewThreadDescriptor,
 } from './types';
 
-const BaseAssignmentSchema = z.object({
-  eventId: z.string().min(1),
-  action: z.enum(['assign_existing', 'create_new', 'skip']),
-  confidence: z.number().min(0).max(1),
-  reasons: z.array(z.string().min(1)).default([]),
-});
+const BaseAssignmentSchema = z
+  .object({
+    eventId: z.string().min(1),
+    action: z.enum(['assign_existing', 'create_new', 'skip']),
+    threadId: z.string().min(1).nullable(),
+    newThreadKey: z.string().min(1).nullable(),
+    confidence: z.number().min(0).max(1),
+    reasons: z.array(z.string().min(1)).default([]),
+  })
+  .strict();
 
 const AssignExistingSchema = BaseAssignmentSchema.extend({
   action: z.literal('assign_existing'),
-  threadId: z.string().min(1),
+  threadId: z.string().min(1), // required non-null
+  newThreadKey: z.null(), // must be null
 }).strict();
 
 const CreateNewSchema = BaseAssignmentSchema.extend({
   action: z.literal('create_new'),
-  newThreadKey: z.string().min(1),
+  threadId: z.null(), // must be null
+  newThreadKey: z.string().min(1), // required non-null
 }).strict();
 
 const SkipSchema = BaseAssignmentSchema.extend({
   action: z.literal('skip'),
+  threadId: z.null(),
+  newThreadKey: z.null(),
 }).strict();
 
-const ThreadAssignmentSchema = z.union([
+const ThreadAssignmentSchema = z.discriminatedUnion('action', [
   AssignExistingSchema,
   CreateNewSchema,
   SkipSchema,
@@ -42,7 +50,7 @@ const NewThreadDescriptorSchema = z
   })
   .strict();
 
-const AssignThreadsOutputSchema = z
+export const AssignThreadsOutputSchema = z
   .object({
     assignments: z.array(ThreadAssignmentSchema),
     newThreads: z.array(NewThreadDescriptorSchema),
@@ -66,6 +74,7 @@ export function validateAssignThreadsOutput(
 ): ValidateAssignThreadsResult {
   const parsed = AssignThreadsOutputSchema.safeParse(raw);
   if (!parsed.success) {
+    console.log(parsed.error);
     return {
       ok: false,
       error: 'invalid_schema',
@@ -167,7 +176,7 @@ export function validateAssignThreadsOutput(
   // ensure create_new keys are actually used by at least one assignment.
   const usedNewKeys = new Set(
     out.assignments
-      .filter((a): a is CreateNewThread => a.action === 'create_new')
+      .filter((a) => a.action === 'create_new')
       .map((a) => a.newThreadKey)
   );
 

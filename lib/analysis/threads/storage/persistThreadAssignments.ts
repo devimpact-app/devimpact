@@ -7,6 +7,7 @@ import {
 } from '@/lib/db/schema/activity';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { AssignThreadsOutput, ThreadAssignment } from '../llm/assign/types';
+import { alias } from 'drizzle-orm/pg-core';
 
 type PersistThreadAssignmentsArgs = {
   tenantId: string;
@@ -20,10 +21,14 @@ type PersistThreadAssignmentsArgs = {
 
 export type PersistThreadAssignmentsResult = {
   createdThreads: Array<{
-    newThreadKey: string;
-    threadId: string;
+    id: string;
+    categoryKey: ThreadCategory;
+    title: string;
   }>;
-  insertedThreadEvents: number;
+  insertedThreadEvents: Array<{
+    threadId: string;
+    activityEventId: string;
+  }>;
   skippedAlreadyThreaded: number;
 };
 
@@ -92,7 +97,7 @@ export async function persistThreadAssignments({
     if (unthreadedAssignments.length === 0) {
       return {
         createdThreads: [],
-        insertedThreadEvents: 0,
+        insertedThreadEvents: [],
         skippedAlreadyThreaded: existing.length,
       };
     }
@@ -127,8 +132,7 @@ export async function persistThreadAssignments({
       }
     }
 
-    const createdThreads: Array<{ newThreadKey: string; threadId: string }> =
-      [];
+    const createdThreads: PersistThreadAssignmentsResult['createdThreads'] = [];
     const newThreadIdByKey = new Map<string, string>();
     if (newThreadsToCreate.length > 0) {
       const inserted = await tx
@@ -147,14 +151,19 @@ export async function persistThreadAssignments({
             };
           })
         )
-        .returning({ id: threads.id });
+        .returning({
+          id: threads.id,
+          categoryKey: threads.categoryKey,
+          title: threads.title,
+        });
 
       for (let i = 0; i < inserted.length; i++) {
         const key = newThreadsToCreate[i]!.newThreadKey;
-        const threadId = inserted[i]!.id;
+        const row = inserted[i];
+        const threadId = row!.id;
 
         newThreadIdByKey.set(key, threadId);
-        createdThreads.push({ newThreadKey: key, threadId });
+        createdThreads.push(row);
       }
     }
 
@@ -197,26 +206,30 @@ export async function persistThreadAssignments({
     if (toInsert.length === 0) {
       return {
         createdThreads,
-        insertedThreadEvents: 0,
+        insertedThreadEvents: [],
         skippedAlreadyThreaded: existing.length,
       };
     }
 
     // Insert join rows
-    const insertedThreadEventsRows = await tx
+    const insertedThreadEvents = await tx
       .insert(threadEvents)
       .values(toInsert)
       .onConflictDoNothing({
         target: [threadEvents.tenantId, threadEvents.activityEventId],
       })
-      .returning({ id: threadEvents.id, threadId: threadEvents.threadId });
+      .returning({
+        threadId: threadEvents.threadId,
+        activityEventId: threadEvents.activityEventId,
+      });
 
     // Update thread aggregates for affected threads
     // Recompute from activity_events via join for correctness
     const affectedThreadIds = Array.from(
-      new Set(insertedThreadEventsRows.map((r) => r.threadId))
+      new Set(insertedThreadEvents.map((r) => r.threadId))
     );
 
+    const te = alias(threadEvents, 'te');
     if (affectedThreadIds.length > 0) {
       await tx.execute(sql`
         UPDATE ${threads} t
@@ -233,7 +246,7 @@ export async function persistThreadAssignments({
             ON ae.id = te.activity_event_id
            AND ae.tenant_id = te.tenant_id
           WHERE te.tenant_id = ${tenantId}
-            AND ${inArray(threadEvents.threadId, affectedThreadIds)}
+            AND ${inArray(te.threadId, affectedThreadIds)}
           GROUP BY te.thread_id
         ) agg
         WHERE t.id = agg.thread_id
@@ -241,12 +254,11 @@ export async function persistThreadAssignments({
       `);
     }
 
-    const insertedCount = insertedThreadEventsRows.length;
     const skippedAlreadyThreaded = existing.length;
 
     return {
       createdThreads,
-      insertedThreadEvents: insertedCount,
+      insertedThreadEvents,
       skippedAlreadyThreaded,
     };
   });

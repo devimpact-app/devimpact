@@ -7,6 +7,7 @@ import { listEventsWindow } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
 import { addDays, subHours } from 'date-fns';
 import { deriveActivityEventsFromCalendarEventIds } from '@/lib/analysis/activity/derive/from-calendar-events';
+import { runThreadingPipeline } from '@/lib/analysis/threads/runThreadingPipeline';
 
 const LOOKBACK_DAYS_INITIAL = 90;
 const FUTURE_LOOKAHEAD_DAYS = 14;
@@ -202,7 +203,11 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       eventsUpsertedCount += resp.items.length;
     }
 
-    // TODO: call threading
+    // TODO: should this use BG worker?
+    await runThreadingPipeline({
+      tenantId: userId,
+      lookbackDays: 28,
+    });
 
     await db
       .update(calendarSyncRuns)
@@ -229,6 +234,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       },
     };
   } catch (err: any) {
+    console.log('err', err.message);
     await db
       .update(calendarSyncRuns)
       .set({

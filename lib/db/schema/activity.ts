@@ -156,6 +156,14 @@ export const threads = pgTable(
     firstActivityAt: timestamp('first_activity_at', { withTimezone: true }),
     lastActivityAt: timestamp('last_activity_at', { withTimezone: true }),
     userEditedAt: timestamp('user_edited_at', { withTimezone: true }),
+    lastUpdate: jsonb('last_update')
+      .$type<{
+        headline?: string;
+        bullets?: string[];
+        referencedEventIds: string[];
+        generatedAt: string;
+      } | null>()
+      .default(null),
     model: text('model'), // e.g. "gpt-4.1-mini"
     promptVersion: text('prompt_version'), // e.g. "threads_v1"
 
