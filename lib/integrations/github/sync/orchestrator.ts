@@ -14,6 +14,7 @@ import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getOrGeneratePrSummary } from '../../openai/services/summarizePR';
 import { deriveActivityEventsFromPullRequestIds } from '@/lib/analysis/activity/derive/from-github-prs';
 import { deriveActivityEventsFromReviewIds } from '@/lib/analysis/activity/derive/from-github-reviews';
+import { runThreadingPipeline } from '@/lib/analysis/threads/runThreadingPipeline';
 
 export async function runSync({
   tenantId,
@@ -70,8 +71,10 @@ export async function runSync({
       reviewIds: touchedReviewIds,
       joinPrTitle: true,
     });
-
-    // TODO: call threading
+    await runThreadingPipeline({
+      tenantId,
+      lookbackDays: 14,
+    });
 
     // Summarize PRs for week that will be shown first
     const weekOffset = getDefaultWeekOffset();

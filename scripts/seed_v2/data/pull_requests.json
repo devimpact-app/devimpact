@@ -1,0 +1,277 @@
+{
+  "plan": [
+    "51 total PRs",
+    "12 PRs for project A",
+    "10 PRs for project B",
+    "8 PRs for project C",
+    "8 PRs for on call week",
+    "8 PRs for scattered tech debt",
+    "5 PRs for misc fixes/drive bys"
+  ],
+  "pullRequests": [
+    {
+      "dayIndex": 1,
+      "time": "10:15",
+      "repo": "acme/api",
+      "number": 401,
+      "title": "Add activity_events base table + enums (v1)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Introduced the activity_events ledger schema and initial constraints for v1 threading.",
+        "highlights": [
+          "Added activity event schema + enums",
+          "Created indexes for tenant/time queries",
+          "Set up uniqueness constraints for derived events"
+        ],
+        "typeTags": ["feature", "backend", "data-model"],
+        "domainTags": ["activity", "ledger", "threads"]
+      }
+    },
+    {
+      "dayIndex": 3,
+      "time": "15:40",
+      "repo": "acme/web",
+      "number": 402,
+      "title": "Thread categories + table scaffolding for v1",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added thread table scaffolding and category keys to support basic thread creation.",
+        "highlights": [
+          "Introduced thread schema + status",
+          "Added minimal indexes for tenant/category queries",
+          "Aligned types between DB + app layer"
+        ],
+        "typeTags": ["feature", "ui", "infra"],
+        "domainTags": ["threads", "schema", "types"]
+      }
+    },
+    {
+      "dayIndex": 8,
+      "time": "11:05",
+      "repo": "acme/api",
+      "number": 403,
+      "title": "Derive calendar meetings into activity ledger (attended/ooo)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Derived meeting and OOO events from gcal into the unified activity ledger with metadata.",
+        "highlights": [
+          "Mapped meeting_attended + ooo event types",
+          "Stored participation and classification metadata",
+          "Added filtering for low-signal meeting types"
+        ],
+        "typeTags": ["feature", "backend", "integration"],
+        "domainTags": ["gcal", "activity", "meetings"]
+      }
+    },
+    {
+      "dayIndex": 10,
+      "time": "14:10",
+      "repo": "acme/web",
+      "number": 404,
+      "title": "Activity timeline query + feed grouping (v1)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented initial timeline queries against activity_events and grouped results for UI consumption.",
+        "highlights": [
+          "Added timeline query helpers",
+          "Grouped by day and kind",
+          "Improved default sort and pagination"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["timeline", "activity", "queries"]
+      }
+    },
+    {
+      "dayIndex": 15,
+      "time": "09:35",
+      "repo": "acme/api",
+      "number": 405,
+      "title": "Normalize PRs into activity events (created/merged signals)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Derived PR activity events with stable metadata (size/process) to support thread candidate evaluation.",
+        "highlights": [
+          "Mapped PR merged events into ledger",
+          "Added size/process metadata (files/lines/reviewRounds)",
+          "Ensured idempotent upserts via unique constraints"
+        ],
+        "typeTags": ["feature", "backend", "normalization"],
+        "domainTags": ["github", "prs", "ledger"]
+      }
+    },
+    {
+      "dayIndex": 16,
+      "time": "16:25",
+      "repo": "acme/api",
+      "number": 406,
+      "title": "Normalize reviews into activity events (decision + role signals)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Derived review_submitted events and captured decision/role metadata needed for candidate scoring.",
+        "highlights": [
+          "Mapped approvals/CR/comment-only into metadata",
+          "Captured wasDirectlyRequested + first responder signals",
+          "Standardized event titles/subtitles for UI"
+        ],
+        "typeTags": ["feature", "backend", "normalization"],
+        "domainTags": ["github", "reviews", "threads"]
+      }
+    },
+    {
+      "dayIndex": 17,
+      "time": "13:20",
+      "repo": "acme/web",
+      "number": 407,
+      "title": "Thread candidate policy (PR/review/meeting gating)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added deterministic eligibility scoring to decide which activity events get sent to LLM threading.",
+        "highlights": [
+          "Eligible PR merges by default",
+          "Review gating based on decision + comment depth",
+          "Meeting gating for incident/interview/arch/design"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["policy", "threads", "eligibility"]
+      }
+    },
+    {
+      "dayIndex": 22,
+      "time": "10:50",
+      "repo": "acme/api",
+      "number": 408,
+      "title": "Thread assignment input shaping (join PR summaries + signals)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Shaped high-signal LLM input objects for threading by joining PR summaries and key metadata signals.",
+        "highlights": [
+          "Joined PR summaries for richer bucketing",
+          "Normalized signals across PR/review/meeting",
+          "Added cold-start vs incremental threading modes"
+        ],
+        "typeTags": ["feature", "backend", "llm"],
+        "domainTags": ["threads", "summaries", "bucketing"]
+      }
+    },
+    {
+      "dayIndex": 23,
+      "time": "15:05",
+      "repo": "acme/api",
+      "number": 409,
+      "title": "Persist thread assignments + update thread aggregates",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented transactional persistence for thread creation and thread_events joins with aggregate updates.",
+        "highlights": [
+          "Created threads from LLM newThread descriptors",
+          "Inserted thread_events with confidence + reasons",
+          "Recomputed first/last activity timestamps for affected threads"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["threads", "persistence", "aggregates"]
+      }
+    },
+    {
+      "dayIndex": 24,
+      "time": "11:30",
+      "repo": "acme/api",
+      "number": 410,
+      "title": "Thread summary prompt + schema (create/update)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added thread summary schema and prompt scaffolding to generate compact, engineer-voice thread summaries.",
+        "highlights": [
+          "Schema compatible with response_format constraints",
+          "Create vs update modes in prompt",
+          "ReferencedEventIds support for explainability"
+        ],
+        "typeTags": ["feature", "backend", "llm"],
+        "domainTags": ["threads", "summaries", "prompting"]
+      }
+    },
+    {
+      "dayIndex": 25,
+      "time": "17:10",
+      "repo": "acme/api",
+      "number": 411,
+      "title": "Index and query optimizations for activity/thread queries",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Tuned key indexes and query patterns for activity lookbacks and thread views.",
+        "highlights": [
+          "Improved tenant+occurredAt query plans",
+          "Added recurring event index path",
+          "Reduced N+1 lookups in threading pipeline"
+        ],
+        "typeTags": ["performance", "backend"],
+        "domainTags": ["indexes", "queries", "threads"]
+      }
+    },
+    {
+      "dayIndex": 26,
+      "time": "13:55",
+      "repo": "acme/web",
+      "number": 412,
+      "title": "Cleanup: tighten thread UI hierarchy + copy polish",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": false,
+      "summary": {
+        "short": "Follow-up cleanup to improve thread/timeline UI hierarchy and reduce visual noise.",
+        "highlights": [
+          "Improved card hierarchy and spacing",
+          "Adjusted CTA emphasis and microcopy",
+          "Reduced overuse of accent color"
+        ],
+        "typeTags": ["cleanup", "ui"],
+        "domainTags": ["threads", "timeline", "design"]
+      }
+    }
+  ]
+}

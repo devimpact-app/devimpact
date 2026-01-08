@@ -13,7 +13,7 @@
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "seed:demo": "tsx scripts/seed/demoSeed.ts --reset"
+    "seed:demo": "tsx scripts/seed_v2/runSeed.ts"
   },
   "dependencies": {
     "@octokit/auth-app": "^8.1.2",

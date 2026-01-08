@@ -203,10 +203,9 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       eventsUpsertedCount += resp.items.length;
     }
 
-    // TODO: should this use BG worker?
     await runThreadingPipeline({
       tenantId: userId,
-      lookbackDays: 28,
+      lookbackDays: 14,
     });
 
     await db

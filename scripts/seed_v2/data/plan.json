@@ -1,0 +1,19 @@
+{
+  "scenario": {
+    "id": "avg_senior_engineer_90d_v1",
+    "title": "Average Senior Engineer – 90 days",
+    "durationDays": 90,
+    "seedVersion": 1
+  },
+  "projects": [
+    { "key": "prep_threads", "title": "Prep + Threads Foundation" },
+    { "key": "export_workflow", "title": "Export Workflow Improvements" },
+    { "key": "reliability_push", "title": "Reliability / Observability Push" },
+    { "key": "oncall", "title": "On-call Week" }
+  ],
+  "inputs": {
+    "pullRequests": "./pull_requests.json",
+    "reviews": "./reviews.json",
+    "meetings": "./meetings.json"
+  }
+}

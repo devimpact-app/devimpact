@@ -226,6 +226,7 @@ export function truncateToDay(d: Date) {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
+const SECOND_MS = 1000;
 
 export function getDaysDiff(start: Date, end: Date) {
   const ms = end.getTime() - start.getTime();
@@ -236,6 +237,12 @@ export function getDaysDiff(start: Date, end: Date) {
 export function getHoursDiff(start: Date, end: Date) {
   const ms = end.getTime() - start.getTime();
   const hours = Math.round(ms / HOUR_MS);
+  return hours;
+}
+
+export function getSecondsDiff(start: Date, end: Date) {
+  const ms = end.getTime() - start.getTime();
+  const hours = Math.round(ms / SECOND_MS);
   return hours;
 }
 
