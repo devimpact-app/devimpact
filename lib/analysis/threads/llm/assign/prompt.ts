@@ -46,6 +46,18 @@ export function buildThreadAssignmentPrompt(
       7) "reasons" must be short, diagnostic tokens (e.g. "same_repo_domain", "shared_keywords", "routine_meeting", "ambiguous_demo").
       8) Do not create more than 3 new threads in a single response. Prefer 0–2.
 
+      COLD_START CLUSTERING RULES (NON-NEGOTIABLE):
+      - In mode="cold_start", you may ONLY create_new for threads that will have >= 2 assigned events.
+      - Never create a new thread for a single event in cold_start.
+      - If an event does not clearly belong to a multi-event cluster, action="skip".
+
+      EXAMPLES:
+      Bad: Creating new threads for each PR:
+      - "Add index", "Fix query", "Tweak UI" => 3 new threads (NO)
+
+      Good: One initiative thread:
+      - "Activity/threading foundations" => PRs about schema, normalization, prompts, persistence => 1 thread (YES)
+            
       THREAD QUALITY BAR:
       - A thread is a multi-event theme (project/initiative/area), not a single PR.
       - Thread titles must be concrete, not fluffy.

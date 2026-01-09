@@ -7,9 +7,9 @@
   },
   "projects": [
     { "key": "prep_threads", "title": "Prep + Threads Foundation" },
-    { "key": "export_workflow", "title": "Export Workflow Improvements" },
-    { "key": "reliability_push", "title": "Reliability / Observability Push" },
-    { "key": "oncall", "title": "On-call Week" }
+    { "key": "timeline", "title": "Timeline & accomplishment surfaces" },
+    { "key": "on_call_week", "title": "On-call Week" },
+    { "key": "export", "title": "export & career artifacts" }
   ],
   "inputs": {
     "pullRequests": "./pull_requests.json",

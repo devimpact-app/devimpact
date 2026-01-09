@@ -344,8 +344,7 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       joinPrTitle: true,
     });
 
-  // TODO: run in 3 30 day batches
-  const { eligibleCount, skippedCount } = await runThreadingPipeline({
+  const { eligible, ineligible, threaded } = await runThreadingPipeline({
     tenantId,
     lookbackDays: 90,
   });
@@ -363,8 +362,9 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       reviewsSkipped: aereviewSkipped,
     },
     threading: {
-      eligibleCount,
-      skippedCount,
+      eligible,
+      ineligible,
+      threaded,
     },
     calendarEventsSeeded: calendarEventRows.length,
     startMondayISO: timeCtx.startMonday.toISOString(),

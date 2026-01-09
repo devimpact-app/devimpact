@@ -17,6 +17,7 @@ type PersistThreadAssignmentsArgs = {
   }>;
   llmOutput: AssignThreadsOutput;
   assignedBy?: 'llm' | 'user' | 'heuristic';
+  tx: typeof db;
 };
 
 export type PersistThreadAssignmentsResult = {

@@ -65,6 +65,14 @@ export const activityEventSourceEnum = pgEnum('activity_event_source', [
   'gcal',
 ]);
 
+export const threadingStateEnum = pgEnum('threading_state', [
+  'unprocessed',
+  'in_progress',
+  'threaded',
+  'deferred',
+  'final_skipped',
+]);
+
 export const activityEvents = pgTable(
   'activity_events',
   {
@@ -87,6 +95,27 @@ export const activityEvents = pgTable(
     metadata: jsonb('metadata')
       .$type<ActivityEventMetadata | null>()
       .default(null),
+    // Threading details
+    threadingState: threadingStateEnum('threading_state')
+      .notNull()
+      .default('unprocessed'),
+    threadingAttempts: integer('threading_attempts').notNull().default(0),
+    threadingLastAttemptAt: timestamp('threading_last_attempt_at', {
+      withTimezone: true,
+    }),
+    threadingDeferredAt: timestamp('threading_deferred_at', {
+      withTimezone: true,
+    }),
+    threadingLastDecision: text('threading_last_decision'),
+    threadingLastDecisionReason: text('threading_last_decision_reason'),
+    threadingClaimedAt: timestamp('threading_claimed_at', {
+      withTimezone: true,
+    }),
+    threadingClaimedBy: text('threading_claimed_by'),
+    threadingClaimExpiresAt: timestamp('threading_claim_expires_at', {
+      withTimezone: true,
+    }),
+    // Versioning
     derivedVersion: integer('derived_version').notNull().default(1),
     derivedAt: timestamp('derived_at', { withTimezone: true })
       .notNull()
@@ -113,6 +142,12 @@ export const activityEvents = pgTable(
       t.tenantId,
       t.eventType,
       t.occurredAt
+    ),
+    threadingIdx: index('activity_events_threading_queue_idx').on(
+      t.tenantId,
+      t.threadingState,
+      t.occurredAt,
+      t.id
     ),
     repoIdx: index('activity_events_repo_idx').on(t.tenantId, t.repoFullName),
   })

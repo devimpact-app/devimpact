@@ -78,6 +78,13 @@
       "when": 1767815000812,
       "tag": "0010_create_thread_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1767987332868,
+      "tag": "0011_add_threading_state_columns",
+      "breakpoints": true
     }
   ]
 }

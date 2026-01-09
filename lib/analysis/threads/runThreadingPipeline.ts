@@ -1,5 +1,5 @@
 import { subDays } from 'date-fns';
-import { getUnthreadedActivityEvents } from './queries/getUnthreadedActivityEvents';
+import { claimThreadingActivityEvents } from './queries/claimThreadingActivityEvents';
 import { evaluateThreadCandidate } from './policy/threadCandidatePolicy';
 import type { ActivityEvent } from '@/lib/db/schema/activity';
 import { getPrSummariesByPrIds } from './queries/getPrSummariesByPrIds';
@@ -16,58 +16,29 @@ import { validateThreadSummaryOutput } from './llm/summaries/validate';
 import { persistThreadSummary } from './storage/persistThreadSummary';
 import { AiConfig } from '@/lib/integrations/openai/config';
 import { getPrIdsByReviewIds } from './queries/getPrIdsByReviewIds';
+import { markActivityEventsFinalSkipped } from './queries/markActivityEventsFinalSkipped';
+import { releaseThreadingClaims } from './queries/releaseThreadingClaims';
+import { randomUUID } from 'crypto';
+import { db } from '@/lib/db/client';
+import { applyThreadingAssignments } from './queries/applyThreadingDecisions';
 
 const DEFAULT_LOOKBACK_DAYS = 14;
-const DEFAULT_LIMIT = 200;
+const DEFAULT_LIMIT = 50;
 
-export type ThreadingPipelineResult = {
-  scannedCount: number;
-  eligibleCount: number;
-  skippedCount: number;
-  eligibleEvents: {
-    event: ActivityEvent;
-    score: number;
-    reasons: string[];
-  }[];
-};
-
-export async function runThreadingPipeline({
+async function processThreadingChunk({
   tenantId,
-  lookbackDays = DEFAULT_LOOKBACK_DAYS,
-  limit = DEFAULT_LIMIT,
+  chunk: eligible,
+  claimedBy,
+  now,
 }: {
   tenantId: string;
-  lookbackDays?: number;
-  limit?: number;
-}): Promise<ThreadingPipelineResult> {
-  const now = new Date();
-  const since = subDays(now, lookbackDays);
-  const events = await getUnthreadedActivityEvents({
-    tenantId,
-    since,
-    limit,
-  });
-
-  const eligibleEvents: ThreadingPipelineResult['eligibleEvents'] = [];
-  let skippedCount = 0;
-
-  for (const event of events) {
-    const decision = evaluateThreadCandidate(event);
-
-    if (!decision.eligible) {
-      skippedCount += 1;
-      continue;
-    }
-
-    eligibleEvents.push({
-      event,
-      score: decision.score,
-      reasons: decision.reasons,
-    });
-  }
-  console.log('eligible, skipped', eligibleEvents.length, skippedCount);
-
-  const eligible = eligibleEvents.map((e) => e.event);
+  chunk: ActivityEvent[];
+  claimedBy?: string;
+  now: Date;
+}): Promise<{
+  threadedCount: number;
+  deferredCount: number;
+}> {
   const prEventIds = eligible
     .filter((e) => e.sourceEntityTable === 'pull_requests')
     .map((e) => e.sourceEntityId);
@@ -84,13 +55,11 @@ export async function runThreadingPipeline({
     .map((e) => shapeEventForLLM(e, prSummariesByPrId, prIdsByReviewId))
     .filter((e) => !!e);
   const existingThreads = await getExistingThreadsForThreading({ tenantId });
-  console.log('existingThreads', existingThreads);
   const assignInput: AssignThreadsInput = {
     mode: existingThreads.length ? 'incremental' : 'cold_start',
     events: finalEvents,
     existingThreads,
   };
-  console.log('assign input', assignInput);
 
   const rawAssignResponse = await assignThreads(assignInput);
   console.log('raw resp', rawAssignResponse);
@@ -119,14 +88,33 @@ export async function runThreadingPipeline({
     assignResponse = validateAssignResponse.value;
   }
 
-  const { createdThreads, insertedThreadEvents } =
-    await persistThreadAssignments({
-      tenantId,
-      candidateEvents: eligible.map((e) => ({
-        id: e.id,
-        occurredAt: e.occurredAt,
-      })),
-      llmOutput: assignResponse,
+  const { createdThreads, insertedThreadEvents, threadedCount, deferredCount } =
+    await db.transaction(async (tx) => {
+      const res = await persistThreadAssignments({
+        tenantId,
+        candidateEvents: eligible.map((e) => ({
+          id: e.id,
+          occurredAt: e.occurredAt,
+        })),
+        llmOutput: assignResponse,
+        tx,
+      });
+
+      const { threadedCount, deferredCount } = await applyThreadingAssignments({
+        tenantId,
+        llmOutput: assignResponse,
+        now,
+        claimedBy,
+        deferAfterAttempts: 2,
+        tx,
+      });
+
+      return {
+        createdThreads: res.createdThreads,
+        insertedThreadEvents: res.insertedThreadEvents,
+        threadedCount,
+        deferredCount,
+      };
     });
 
   const summaryInputs = buildThreadSummaryInputs({
@@ -136,37 +124,183 @@ export async function runThreadingPipeline({
     existingThreads,
   });
 
-  const results = await mapWithConcurrency(summaryInputs, 3, async (input) => {
-    try {
-      const out = await generateThreadSummary(input);
-      const v = validateThreadSummaryOutput(out, {
-        allowedEventIds: finalEvents.map((e) => e.id),
-      });
-      if (!v.ok) {
-        throw new Error(
-          `Error during validation of thread summary llm response ${v.error}`
-        );
-      }
-      // TODO: also save the update/summary from last time
-      await persistThreadSummary({
-        tenantId,
-        threadId: input.threadId,
-        output: v.value,
-        llm: {
-          model: AiConfig.models.summarize,
-          promptVersion: '1',
-        },
-      });
-      return v.value;
-    } catch (e: any) {
-      throw new Error(`Error in thread summaries ${e.message}`);
+  await mapWithConcurrency(summaryInputs, 3, async (input) => {
+    const out = await generateThreadSummary(input);
+    const v = validateThreadSummaryOutput(out, {
+      allowedEventIds: finalEvents.map((e) => e.id),
+    });
+    if (!v.ok) {
+      throw new Error(
+        `Error during validation of thread summary llm response ${v.error}`
+      );
     }
+    await persistThreadSummary({
+      tenantId,
+      threadId: input.threadId,
+      output: v.value,
+      llm: {
+        model: AiConfig.models.summarize,
+        promptVersion: '1',
+      },
+    });
   });
 
   return {
-    scannedCount: events.length,
-    eligibleCount: eligibleEvents.length,
-    skippedCount,
-    eligibleEvents,
+    threadedCount,
+    deferredCount,
   };
+}
+
+export async function runThreadingPipelineOnce({
+  tenantId,
+  since,
+  end,
+  now,
+  limit = DEFAULT_LIMIT,
+}: {
+  tenantId: string;
+  since: Date;
+  end: Date;
+  now: Date;
+  limit?: number;
+}): Promise<{
+  claimedCount: number;
+  eligibleCount: number;
+  ineligibleCount: number;
+  threadedCount: number;
+  deferredCount: number;
+}> {
+  // TODO: persist threaded vs skipped
+  // TODO: Run threading pipeline drain (loops)
+  const workerId = `threading_${randomUUID()}`;
+  const events = await claimThreadingActivityEvents({
+    tenantId,
+    since,
+    end,
+    limit,
+    claimedBy: workerId,
+  });
+  if (events.length === 0) {
+    return {
+      claimedCount: 0,
+      eligibleCount: 0,
+      ineligibleCount: 0,
+      threadedCount: 0,
+      deferredCount: 0,
+    };
+  }
+  const claimedIds = events.map((e) => e.id);
+
+  console.log('events claimed', events.length);
+
+  const eligible: ActivityEvent[] = [];
+  const ineligible: { eventId: string; reasons: string[] }[] = [];
+  try {
+    for (const event of events) {
+      const decision = evaluateThreadCandidate(event);
+      if (!decision.eligible) {
+        ineligible.push({ eventId: event.id, reasons: decision.reasons });
+      } else {
+        eligible.push(event);
+      }
+    }
+    console.log('eligible/skipped', eligible.length, ineligible.length);
+
+    if (ineligible.length) {
+      await markActivityEventsFinalSkipped({
+        tenantId,
+        decisions: ineligible,
+        now,
+      });
+    }
+
+    let threadedCount = 0;
+    let deferredCount = 0;
+
+    if (eligible.length) {
+      const out = await processThreadingChunk({
+        tenantId,
+        chunk: eligible,
+        now,
+      });
+      threadedCount = out.threadedCount;
+      deferredCount = out.deferredCount;
+    }
+
+    await releaseThreadingClaims({
+      tenantId,
+      eventIds: events.map((e) => e.id),
+      now,
+      claimedBy: workerId,
+    });
+
+    return {
+      claimedCount: events.length,
+      eligibleCount: eligible.length,
+      ineligibleCount: ineligible.length,
+      threadedCount,
+      deferredCount,
+    };
+  } catch (err: any) {
+    await releaseThreadingClaims({
+      tenantId,
+      eventIds: claimedIds,
+      claimedBy: workerId,
+      now: new Date(),
+      errorMessage: err?.message ?? String(err),
+    });
+
+    throw err;
+  }
+}
+
+const DEFAULT_BATCH_SIZE = 75; // keep LLM input manageable
+const DEFAULT_MAX_STEPS = 50; // hard stop against infinite loops
+
+export async function runThreadingPipeline({
+  tenantId,
+  lookbackDays = DEFAULT_LOOKBACK_DAYS,
+  batchSize = DEFAULT_BATCH_SIZE,
+  maxSteps = DEFAULT_MAX_STEPS,
+}: {
+  tenantId: string;
+  lookbackDays?: number;
+  batchSize?: number;
+  maxSteps?: number;
+  claimedBy?: string;
+}) {
+  const now = new Date();
+  const since = subDays(now, lookbackDays);
+
+  let totals = {
+    steps: 0,
+    claimed: 0,
+    eligible: 0,
+    ineligible: 0,
+    threaded: 0,
+    deferred: 0,
+  };
+
+  for (let step = 0; step < maxSteps; step++) {
+    totals.steps++;
+
+    const res = await runThreadingPipelineOnce({
+      tenantId,
+      since,
+      end: now,
+      now,
+      limit: batchSize,
+    });
+    console.log('pipeline resp', res);
+
+    totals.claimed += res.claimedCount;
+    totals.eligible += res.eligibleCount;
+    totals.ineligible += res.ineligibleCount;
+    totals.threaded += res.threadedCount ?? 0;
+    totals.deferred += res.deferredCount ?? 0;
+
+    if (res.claimedCount === 0) break;
+  }
+
+  return totals;
 }
