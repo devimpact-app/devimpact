@@ -24,15 +24,19 @@ import {
 import { eq } from 'drizzle-orm';
 
 export async function resetTenantData(tenantId: string) {
-  await db.delete(threadEvents).where(eq(reviews.tenantId, tenantId));
-  await db.delete(threads).where(eq(reviews.tenantId, tenantId));
-  await db.delete(activityEvents).where(eq(reviews.tenantId, tenantId));
+  await db.delete(threadEvents).where(eq(threadEvents.tenantId, tenantId));
+  await db.delete(threads).where(eq(threads.tenantId, tenantId));
+  await db.delete(activityEvents).where(eq(activityEvents.tenantId, tenantId));
 
-  await db.delete(calendarEvents).where(eq(reviews.tenantId, tenantId));
-  await db.delete(calendarSyncRuns).where(eq(reviews.tenantId, tenantId));
-  await db.delete(calendarSelections).where(eq(reviews.tenantId, tenantId));
+  await db.delete(calendarEvents).where(eq(calendarEvents.tenantId, tenantId));
+  await db
+    .delete(calendarSyncRuns)
+    .where(eq(calendarSyncRuns.tenantId, tenantId));
+  await db
+    .delete(calendarSelections)
+    .where(eq(calendarSelections.tenantId, tenantId));
 
-  await db.delete(prSummaries).where(eq(reviews.tenantId, tenantId));
+  await db.delete(prSummaries).where(eq(prSummaries.tenantId, tenantId));
   await db.delete(reviews).where(eq(reviews.tenantId, tenantId));
   await db.delete(pullRequests).where(eq(pullRequests.tenantId, tenantId));
   await db

@@ -1,0 +1,87 @@
+{
+  "recurringSeries": [
+    {
+      "seriesKey": "standup_team_alpha",
+      "kind": "meeting",
+      "title": "Team Standup",
+      "category": "team",
+      "subtype": "standup",
+      "daysOfWeek": [0, 1, 2, 3],
+      "startTime": "09:30",
+      "durationMinutes": 15,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "planning_team_alpha",
+      "kind": "meeting",
+      "title": "Team Planning",
+      "category": "team",
+      "subtype": "planning",
+      "daysOfWeek": [0],
+      "startTime": "10:00",
+      "durationMinutes": 60,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 0,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "retro_team_alpha",
+      "kind": "meeting",
+      "title": "Team Retro",
+      "category": "team",
+      "subtype": "retro",
+      "daysOfWeek": [4],
+      "startTime": "14:00",
+      "durationMinutes": 60,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 1,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "mgr_1on1",
+      "kind": "meeting",
+      "title": "1:1 (Manager)",
+      "category": "oneOnOne",
+      "daysOfWeek": [2],
+      "startTime": "11:00",
+      "durationMinutes": 30,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 0,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "peer_1on1",
+      "kind": "meeting",
+      "title": "1:1 (Peer)",
+      "category": "oneOnOne",
+      "daysOfWeek": [2],
+      "startTime": "11:00",
+      "durationMinutes": 30,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 1,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    }
+  ],
+  "oneOffEvents": [
+    {
+      "dayIndex": 18,
+      "kind": "meeting",
+      "title": "Incident: API latency",
+      "category": "incident",
+      "startTime": "14:00",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    }
+  ]
+}

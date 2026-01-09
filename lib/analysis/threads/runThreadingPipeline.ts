@@ -15,6 +15,7 @@ import { generateThreadSummary } from './llm/summaries/generate';
 import { validateThreadSummaryOutput } from './llm/summaries/validate';
 import { persistThreadSummary } from './storage/persistThreadSummary';
 import { AiConfig } from '@/lib/integrations/openai/config';
+import { getPrIdsByReviewIds } from './queries/getPrIdsByReviewIds';
 
 const DEFAULT_LOOKBACK_DAYS = 14;
 const DEFAULT_LIMIT = 200;
@@ -64,17 +65,26 @@ export async function runThreadingPipeline({
       reasons: decision.reasons,
     });
   }
+  console.log('eligible, skipped', eligibleEvents.length, skippedCount);
 
   const eligible = eligibleEvents.map((e) => e.event);
   const prEventIds = eligible
     .filter((e) => e.sourceEntityTable === 'pull_requests')
     .map((e) => e.sourceEntityId);
-  const prSummariesByPrId = await getPrSummariesByPrIds(tenantId, prEventIds);
+  const prIdsByReviewId = await getPrIdsByReviewIds(
+    tenantId,
+    eligible
+      .filter((e) => e.sourceEntityTable === 'reviews')
+      .map((e) => e.sourceEntityId)
+  );
+  const allPrIds = [...prEventIds, ...Object.values(prIdsByReviewId)];
+  const prSummariesByPrId = await getPrSummariesByPrIds(tenantId, allPrIds);
 
   const finalEvents = eligible
-    .map((e) => shapeEventForLLM(e, prSummariesByPrId))
+    .map((e) => shapeEventForLLM(e, prSummariesByPrId, prIdsByReviewId))
     .filter((e) => !!e);
   const existingThreads = await getExistingThreadsForThreading({ tenantId });
+  console.log('existingThreads', existingThreads);
   const assignInput: AssignThreadsInput = {
     mode: existingThreads.length ? 'incremental' : 'cold_start',
     events: finalEvents,
@@ -82,6 +92,7 @@ export async function runThreadingPipeline({
   };
 
   const rawAssignResponse = await assignThreads(assignInput);
+  console.log('raw resp', rawAssignResponse);
   let validateAssignResponse = validateAssignThreadsOutput(rawAssignResponse, {
     candidateEventIds: eligible.map((e) => e.id),
     existingThreadIds: existingThreads.map((t) => t.id),

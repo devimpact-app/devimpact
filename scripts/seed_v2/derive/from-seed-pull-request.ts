@@ -1,17 +1,20 @@
 import { randomUUID } from 'crypto';
-import type { InferInsertModel } from 'drizzle-orm';
 import type {
-  pullRequests,
-  prSummaries,
+  NewPullRequest,
+  NewPrSummary,
 } from '@/lib/db/schema/github-normalized';
 import { SeedPullRequest } from '../schema/seedPullRequest';
-import { dateForDayIndex, SeedTimeContext } from '../helpers';
+import {
+  dateForDayIndex,
+  deterministicGithubPrId,
+  deterministicPullRequestId,
+  randFloat,
+  randInt,
+  SeedTimeContext,
+} from '../helpers';
 import { addMinutes } from 'date-fns';
 import { getSecondsDiff } from '@/lib/utils/date';
 import { NewGithubPR } from '@/lib/db/schema';
-
-type NewPullRequest = InferInsertModel<typeof pullRequests>;
-type NewPrSummary = InferInsertModel<typeof prSummaries>;
 
 export type SeedPRConvertContext = {
   tenantId: string;
@@ -26,11 +29,15 @@ export function seedPullRequestToDbRows(
   const now = ctx.timeCtx.now;
   const rng = Math.random;
 
-  const prId = randomUUID();
-  const githubPrId = randomUUID();
-
   const repoFullName = seed.repo;
   const prNumber = seed.number;
+
+  const prId = deterministicGithubPrId(ctx.tenantId, repoFullName, prNumber);
+  const githubPrId = deterministicPullRequestId(
+    ctx.tenantId,
+    repoFullName,
+    prNumber
+  );
 
   const createdAt = dateForDayIndex(ctx.timeCtx, seed.dayIndex, seed.time);
 
@@ -239,17 +246,7 @@ export function seedPullRequestToDbRows(
   return { githubPr, pr, summary };
 }
 
-function randInt(rng: () => number, min: number, max: number): number {
-  const lo = Math.ceil(min);
-  const hi = Math.floor(max);
-  return Math.floor(rng() * (hi - lo + 1)) + lo;
-}
-
-function randFloat(rng: () => number, min: number, max: number): number {
-  return rng() * (max - min) + min;
-}
-
-function derivePRShape(
+export function derivePRShape(
   size: 'small' | 'medium' | 'large',
   rng: () => number
 ): { linesChanged: number; filesChanged: number; commitsCount: number } {
@@ -320,13 +317,11 @@ function deriveReviewProcess(
   };
 }
 
-function pickMergeDelayMinutes(
+export function pickMergeDelayMinutes(
   size: 'small' | 'medium' | 'large',
   intensity: 'light' | 'normal' | 'heavy',
   rng: () => number
 ): number {
-  // This is “time from createdAt to mergedAt” in seed world.
-  // It’s not perfect realism, but good enough to make the UI feel alive.
   const base =
     size === 'small'
       ? randInt(rng, 120, 8 * 60)
@@ -355,6 +350,6 @@ function pickCloseDelayMinutes(
       : randInt(rng, 1 * 24 * 60, 4 * 24 * 60);
 }
 
-function buildFakePrUrl(repoFullName: string, prNumber: number): string {
+export function buildFakePrUrl(repoFullName: string, prNumber: number): string {
   return `https://github.com/${repoFullName}/pull/${prNumber}`;
 }

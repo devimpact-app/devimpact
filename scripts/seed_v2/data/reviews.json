@@ -1,3 +1,565 @@
 {
-  "reviews": []
+  "reviews": [
+    {
+      "dayIndex": 2,
+      "time": "10:20",
+      "target": {
+        "repo": "acme/api",
+        "number": 388,
+        "author": "teammateA",
+        "prContext": {
+          "title": "Add activity_events base table + enums (v1)",
+          "summary": {
+            "short": "Introduces the activity_events ledger schema, enums, and core constraints for v1 derivation.",
+            "highlights": [
+              "Added activity_events table + enums",
+              "Defined uniqueness constraints for derived events",
+              "Added tenant/time indexes for feed queries"
+            ],
+            "typeTags": ["feature", "backend", "data-model"],
+            "domainTags": ["activity", "ledger", "threads"]
+          },
+          "size": "large",
+          "touchedTests": true
+        }
+      },
+      "state": "COMMENTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": false
+      },
+      "commentsCount": 3,
+      "bodyHint": "Looks solid—suggest tightening enum naming + add migration note"
+    },
+    {
+      "dayIndex": 3,
+      "time": "15:05",
+      "target": {
+        "repo": "acme/api",
+        "number": 392,
+        "author": "teammateB",
+        "prContext": {
+          "title": "Derive activity events from calendar_events (meeting_attended, ooo)",
+          "summary": {
+            "short": "Adds initial derivation from calendar_events into the activity ledger with meeting and OOO event types.",
+            "highlights": [
+              "Created mapping for meeting_attended and ooo",
+              "Added recurrence and attendance metadata",
+              "Ensured idempotent upsert semantics"
+            ],
+            "typeTags": ["feature", "backend"],
+            "domainTags": ["calendar", "activity", "derivation"]
+          },
+          "size": "medium",
+          "touchedTests": true
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": false,
+        "isBlockingReview": false
+      },
+      "commentsCount": 2,
+      "bodyHint": "LGTM—nice metadata shape; minor naming suggestion"
+    },
+    {
+      "dayIndex": 4,
+      "time": "11:40",
+      "target": {
+        "repo": "acme/web",
+        "number": 301,
+        "author": "teammateA",
+        "prContext": {
+          "title": "Timeline feed query perf: add compound index + cursor paging",
+          "summary": {
+            "short": "Improves activity feed query performance with compound indexes and cursor-based paging.",
+            "highlights": [
+              "Added compound tenant/time index",
+              "Implemented stable cursor paging",
+              "Reduced N+1 lookups for event display"
+            ],
+            "typeTags": ["tech-debt", "backend", "performance"],
+            "domainTags": ["timeline", "queries", "indexes"]
+          },
+          "size": "large",
+          "touchedTests": true
+        }
+      },
+      "state": "CHANGES_REQUESTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": true
+      },
+      "commentsCount": 7,
+      "bodyHint": "Blocking: cursor ordering can drift—need deterministic tie-break + explain plan check"
+    },
+    {
+      "dayIndex": 6,
+      "time": "16:10",
+      "target": {
+        "repo": "acme/web",
+        "number": 305,
+        "author": "teammateC",
+        "prContext": {
+          "title": "UI: Activity ledger table view (admin/debug)",
+          "summary": {
+            "short": "Adds a basic admin/debug table view for browsing activity_events with filters and pagination.",
+            "highlights": [
+              "Added filters by type/source",
+              "Pagination for large tenants",
+              "Shows metadata JSON pretty-printed"
+            ],
+            "typeTags": ["feature", "ui"],
+            "domainTags": ["activity", "admin", "debug"]
+          },
+          "size": "medium",
+          "touchedTests": false
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "team_request",
+      "role": {
+        "wasDirectlyRequested": false,
+        "wasFirstReview": false,
+        "isBlockingReview": false
+      },
+      "commentsCount": 1,
+      "bodyHint": "LGTM—nice for debugging, maybe hide raw IDs in UI later"
+    },
+    {
+      "dayIndex": 8,
+      "time": "10:05",
+      "target": {
+        "repo": "acme/api",
+        "number": 310,
+        "author": "teammateB",
+        "prContext": {
+          "title": "Normalize GitHub PR metrics: lines/files/tests + review rounds",
+          "summary": {
+            "short": "Implements normalization for PR shape and review process metrics used by threading candidate policy.",
+            "highlights": [
+              "Computed linesChanged/filesChanged/commitsCount",
+              "Derived reviewRounds and uniqueReviewers",
+              "Added touchedTests and test file counts"
+            ],
+            "typeTags": ["feature", "backend"],
+            "domainTags": ["github", "normalization", "metrics"]
+          },
+          "size": "large",
+          "touchedTests": true
+        }
+      },
+      "state": "COMMENTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": false
+      },
+      "commentsCount": 4,
+      "bodyHint": "Looks good—double-check edge cases for draft PRs + re-opened PRs"
+    },
+    {
+      "dayIndex": 9,
+      "time": "14:30",
+      "target": {
+        "repo": "acme/api",
+        "number": 313,
+        "author": "teammateA",
+        "prContext": {
+          "title": "Thread candidate policy: deterministic eligibility rules (v1)",
+          "summary": {
+            "short": "Adds the v1 deterministic candidate policy for PR merges, reviews, and meetings.",
+            "highlights": [
+              "PR merge always eligible with size heuristics",
+              "Review gating based on decision + comments",
+              "Meeting gating by category/subtype + duration"
+            ],
+            "typeTags": ["feature", "backend"],
+            "domainTags": ["threads", "policy", "eligibility"]
+          },
+          "size": "medium",
+          "touchedTests": true
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": false,
+        "isBlockingReview": false
+      },
+      "commentsCount": 3,
+      "bodyHint": "Approved—policy feels reasonable; consider demo ambiguity note in comments"
+    },
+    {
+      "dayIndex": 10,
+      "time": "11:15",
+      "target": {
+        "repo": "acme/web",
+        "number": 320,
+        "author": "teammateD",
+        "prContext": {
+          "title": "Design system: tighten typography + spacing scale",
+          "summary": {
+            "short": "Refines typography and spacing tokens for consistency across dashboards.",
+            "highlights": [
+              "Updated font scale for headers/body",
+              "Aligned spacing tokens across components",
+              "Minor cleanup in Tailwind config"
+            ],
+            "typeTags": ["tech-debt", "ui"],
+            "domainTags": ["design-system", "ui"]
+          },
+          "size": "small",
+          "touchedTests": false
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "team_request",
+      "role": {
+        "wasDirectlyRequested": false,
+        "wasFirstReview": true,
+        "isBlockingReview": false
+      },
+      "commentsCount": 2,
+      "bodyHint": "Nice cleanup—agree with spacing changes, no blockers"
+    },
+    {
+      "dayIndex": 12,
+      "time": "16:40",
+      "target": {
+        "repo": "acme/api",
+        "number": 325,
+        "author": "teammateC",
+        "prContext": {
+          "title": "Thread assignment prompt + JSON schema (response_format)",
+          "summary": {
+            "short": "Introduces the first pass of the LLM thread assignment prompt and strict JSON schema for response_format.",
+            "highlights": [
+              "Added assignment output schema + enums",
+              "Prompt guidelines for assign/create/skip",
+              "Cold start vs incremental instructions"
+            ],
+            "typeTags": ["feature", "backend", "llm"],
+            "domainTags": ["threads", "prompting", "schemas"]
+          },
+          "size": "medium",
+          "touchedTests": true
+        }
+      },
+      "state": "CHANGES_REQUESTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": false,
+        "isBlockingReview": true
+      },
+      "commentsCount": 6,
+      "bodyHint": "Blocking: schema constraints too strict—OpenAI forbids allOf/if; need nullable required fields"
+    },
+    {
+      "dayIndex": 13,
+      "time": "10:35",
+      "target": {
+        "repo": "acme/api",
+        "number": 329,
+        "author": "teammateB",
+        "prContext": {
+          "title": "Fix: thread aggregates update query for affected threadIds",
+          "summary": {
+            "short": "Fixes the SQL update for thread first/lastActivityAt aggregates when inserting thread_events.",
+            "highlights": [
+              "Corrected IN clause handling in Drizzle SQL",
+              "Scoped tenant filtering consistently",
+              "Added regression coverage for multi-thread update"
+            ],
+            "typeTags": ["bugfix", "backend", "data-model"],
+            "domainTags": ["threads", "sql", "aggregates"]
+          },
+          "size": "small",
+          "touchedTests": true
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": false
+      },
+      "commentsCount": 2,
+      "bodyHint": "LGTM—good catch on IN clause + tenant scoping"
+    },
+    {
+      "dayIndex": 15,
+      "time": "13:20",
+      "target": {
+        "repo": "acme/web",
+        "number": 333,
+        "author": "teammateA",
+        "prContext": {
+          "title": "Thread view: list threads + basic filters by category/status",
+          "summary": {
+            "short": "Adds the initial threads list UI with category and status filters for debugging and early UX.",
+            "highlights": [
+              "Threads list with lastActivityAt sorting",
+              "Filter by category + status",
+              "Empty state + loading skeletons"
+            ],
+            "typeTags": ["feature", "ui"],
+            "domainTags": ["threads", "ui", "timeline"]
+          },
+          "size": "medium",
+          "touchedTests": false
+        }
+      },
+      "state": "COMMENTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": false
+      },
+      "commentsCount": 3,
+      "bodyHint": "Looks good—suggest stable ordering when lastActivityAt is null"
+    },
+    {
+      "dayIndex": 16,
+      "time": "16:05",
+      "target": {
+        "repo": "acme/api",
+        "number": 438,
+        "author": "teammateD",
+        "prContext": {
+          "title": "Add seed_v2 script: load PRs + summaries from JSON",
+          "summary": {
+            "short": "Introduces the seed_v2 scaffolding to load JSON seed data and insert PRs + summaries for demos.",
+            "highlights": [
+              "Added Zod validation for seed files",
+              "Inserted github_prs + pull_requests + pr_summaries",
+              "Reset flag to clean tenant data"
+            ],
+            "typeTags": ["feature", "devex"],
+            "domainTags": ["seed", "demo-data", "scripts"]
+          },
+          "size": "medium",
+          "touchedTests": false
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "team_request",
+      "role": {
+        "wasDirectlyRequested": false,
+        "wasFirstReview": false,
+        "isBlockingReview": false
+      },
+      "commentsCount": 2,
+      "bodyHint": "Nice—makes demos easier; consider deterministic IDs later"
+    },
+    {
+      "dayIndex": 18,
+      "time": "11:55",
+      "target": {
+        "repo": "acme/api",
+        "number": 342,
+        "author": "teammateC",
+        "prContext": {
+          "title": "GCAL: categorize meetings (oneOnOne/team/org/incident/interview)",
+          "summary": {
+            "short": "Adds meeting categorization logic and stores category/subtype/confidence on calendar_events.",
+            "highlights": [
+              "Category + subtype inference heuristics",
+              "Confidence score + source labeling",
+              "Pipes through meeting metadata to derived activity events"
+            ],
+            "typeTags": ["feature", "backend"],
+            "domainTags": ["calendar", "classification", "meetings"]
+          },
+          "size": "large",
+          "touchedTests": true
+        }
+      },
+      "state": "CHANGES_REQUESTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": true
+      },
+      "commentsCount": 9,
+      "bodyHint": "Blocking: misclassifies retros as high-signal; add routine subtype skip + unit cases"
+    },
+    {
+      "dayIndex": 19,
+      "time": "15:25",
+      "target": {
+        "repo": "acme/web",
+        "number": 347,
+        "author": "teammateB",
+        "prContext": {
+          "title": "Add 'Accomplishments' view fed by threads + events",
+          "summary": {
+            "short": "Creates an early accomplishments view that surfaces thread summaries and recent key events.",
+            "highlights": [
+              "Shows thread summaries grouped by category",
+              "Links back to activity events",
+              "Basic timeframe selector for last 7/14 days"
+            ],
+            "typeTags": ["feature", "ui"],
+            "domainTags": ["accomplishments", "threads", "feed"]
+          },
+          "size": "medium",
+          "touchedTests": false
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "team_request",
+      "role": {
+        "wasDirectlyRequested": false,
+        "wasFirstReview": false,
+        "isBlockingReview": false
+      },
+      "commentsCount": 3,
+      "bodyHint": "LGTM—nice first pass, the grouping works"
+    },
+    {
+      "dayIndex": 22,
+      "time": "10:10",
+      "target": {
+        "repo": "acme/api",
+        "number": 351,
+        "author": "teammateA",
+        "prContext": {
+          "title": "Thread summary prompt: 2-stage pipeline (assign then summarize)",
+          "summary": {
+            "short": "Adds thread summary prompt/schema and sets up the 2-stage threading pipeline for better stability.",
+            "highlights": [
+              "Thread summary JSON schema (no markdown)",
+              "Guidelines for concise engineer-style summaries",
+              "Support create_new vs update_existing modes"
+            ],
+            "typeTags": ["feature", "backend", "llm"],
+            "domainTags": ["threads", "summaries", "prompting"]
+          },
+          "size": "medium",
+          "touchedTests": true
+        }
+      },
+      "state": "COMMENTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": false,
+        "isBlockingReview": false
+      },
+      "commentsCount": 4,
+      "bodyHint": "Good direction—suggest keep titles stable and cap bullets; avoid hype"
+    },
+    {
+      "dayIndex": 23,
+      "time": "16:40",
+      "target": {
+        "repo": "acme/web",
+        "number": 312,
+        "author": "teammateA",
+        "prContext": {
+          "title": "Add query plan logging for activity feed",
+          "summary": {
+            "short": "Adds query plan logging and lightweight perf guardrails for activity feed endpoints.",
+            "highlights": [
+              "Captured query plan for slow endpoints",
+              "Added index notes + TODO guardrails",
+              "Refactored query builder for clarity"
+            ],
+            "typeTags": ["tech-debt", "backend", "performance"],
+            "domainTags": ["activity", "timeline", "queries"]
+          },
+          "size": "medium",
+          "touchedTests": false
+        }
+      },
+      "state": "CHANGES_REQUESTED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": true
+      },
+      "commentsCount": 8,
+      "bodyHint": "Blocking: missing index + query plan risk under load"
+    },
+    {
+      "dayIndex": 25,
+      "time": "11:30",
+      "target": {
+        "repo": "acme/api",
+        "number": 360,
+        "author": "teammateB",
+        "prContext": {
+          "title": "Fix response_format schemas: require all keys, nullable conditional fields",
+          "summary": {
+            "short": "Fixes response_format JSON schemas to satisfy OpenAI constraints by requiring all keys and using nullable fields.",
+            "highlights": [
+              "Removed allOf/if/then conditionals",
+              "Made threadId/newThreadKey required but nullable",
+              "Aligned Zod union with nullable schema output"
+            ],
+            "typeTags": ["bugfix", "backend", "llm"],
+            "domainTags": ["schemas", "response_format", "threads"]
+          },
+          "size": "small",
+          "touchedTests": true
+        }
+      },
+      "state": "APPROVED",
+      "anchorType": "direct_request",
+      "role": {
+        "wasDirectlyRequested": true,
+        "wasFirstReview": true,
+        "isBlockingReview": false
+      },
+      "commentsCount": 2,
+      "bodyHint": "LGTM—this should stop the schema errors"
+    },
+    {
+      "dayIndex": 26,
+      "time": "15:55",
+      "target": {
+        "repo": "acme/web",
+        "number": 368,
+        "author": "teammateD",
+        "prContext": {
+          "title": "Billing page scaffold + plan gating placeholders",
+          "summary": {
+            "short": "Adds billing page scaffolding and placeholders for future plan gating (no enforcement yet).",
+            "highlights": [
+              "Billing settings page scaffold",
+              "UI copy + plan card layout",
+              "No functional gating—placeholders only"
+            ],
+            "typeTags": ["feature", "ui"],
+            "domainTags": ["billing", "settings"]
+          },
+          "size": "small",
+          "touchedTests": false
+        }
+      },
+      "state": "COMMENTED",
+      "anchorType": "team_request",
+      "role": {
+        "wasDirectlyRequested": false,
+        "wasFirstReview": false,
+        "isBlockingReview": false
+      },
+      "commentsCount": 2,
+      "bodyHint": "Fine for now—keep it clearly non-functional to avoid confusion"
+    }
+  ]
 }

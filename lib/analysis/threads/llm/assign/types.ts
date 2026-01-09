@@ -8,8 +8,13 @@ export type ThreadCandidateEvent = {
   subtitle?: string;
   repo?: string;
   prNumber?: number;
-  // PR summary if pr type
-  summary?: {
+  prSummary?: {
+    short: string;
+    highlights?: string[];
+    typeTags?: string[];
+    domainTags?: string[];
+  };
+  reviewTargetPrSummary?: {
     short: string;
     highlights?: string[];
     typeTags?: string[];

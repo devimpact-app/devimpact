@@ -172,3 +172,4 @@ export const calendarEvents = pgTable(
 );
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type NewCalendarEvent = typeof calendarEvents.$inferInsert;

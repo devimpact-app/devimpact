@@ -60,6 +60,7 @@ export const prSummaries = pgTable(
 );
 
 export type PrSummary = typeof prSummaries.$inferSelect;
+export type NewPrSummary = typeof prSummaries.$inferInsert;
 
 export const pullRequests = pgTable(
   'pull_requests',
@@ -183,6 +184,7 @@ export const pullRequests = pgTable(
 );
 
 export type PullRequest = typeof pullRequests.$inferSelect;
+export type NewPullRequest = typeof pullRequests.$inferInsert;
 
 export const reviews = pgTable(
   'reviews',
@@ -280,6 +282,7 @@ export const reviews = pgTable(
 );
 
 export type Review = typeof reviews.$inferSelect;
+export type NewReview = typeof reviews.$inferInsert;
 
 // Enums
 export const teamConfidenceEnum = pgEnum('team_confidence', [

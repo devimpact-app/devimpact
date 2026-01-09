@@ -37,7 +37,8 @@ function normalizeLabel(v?: string | null): string | null {
 
 export function shapeEventForLLM(
   e: ActivityEvent,
-  prSummariesByPrId: Record<string, SummaryPick>
+  prSummariesByPrId: Record<string, SummaryPick>,
+  prIdsByReviewId: Record<string, string>
 ): ThreadCandidateEvent | null {
   if (!e.occurredAt) return null;
 
@@ -58,7 +59,7 @@ export function shapeEventForLLM(
       subtitle: e.subtitle ?? undefined,
       repo: e.repoFullName ?? undefined,
       prNumber: e.prNumber ?? undefined,
-      summary: {
+      prSummary: {
         short: s.shortSummary,
         highlights: s.highlights,
         typeTags: s.typeTags,
@@ -79,6 +80,9 @@ export function shapeEventForLLM(
     const m = e.metadata?.kind === 'review' ? e.metadata : null;
     if (!m) return null;
 
+    const prId = prIdsByReviewId[e.sourceEntityId];
+    const s = prSummariesByPrId[prId];
+
     return {
       id: e.id,
       kind: 'review',
@@ -87,6 +91,12 @@ export function shapeEventForLLM(
       subtitle: e.subtitle ?? undefined,
       repo: e.repoFullName ?? undefined,
       prNumber: e.prNumber ?? undefined,
+      reviewTargetPrSummary: {
+        short: s.shortSummary,
+        highlights: s.highlights,
+        typeTags: s.typeTags,
+        domainTags: s.domainTags,
+      },
       signals: {
         role: 'reviewer',
         outcome: m.decision, // approved | changes_requested | commented
