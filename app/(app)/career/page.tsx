@@ -1,17 +1,30 @@
-import { auth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-import InsightsClient from './InsightsClient';
+'use client';
 
-export default async function InsightsPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect('/login');
+import ThreadsSection from './threads';
 
-  const user = {
-    id: session.user.id,
-    name: session.user.name ?? '',
-    image: session.user.image ?? null,
-    githubUsername: session.user.githubUsername ?? null,
-  };
+export default function CareerPage() {
+  return (
+    <>
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 space-y-8">
+        <header className="mb-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
+                Career
+              </h1>
+              <p className="mt-1 text-sm text-text-secondary">
+                Your ongoing work, organized into meaningful threads.
+              </p>
+            </div>
 
-  return <InsightsClient user={user} />;
+            {/* <div className="flex shrink-0 justify-end">
+              <RangePicker value={range} onChange={setRange} />
+            </div> */}
+          </div>
+        </header>
+
+        <ThreadsSection limit={3} />
+      </main>
+    </>
+  );
 }

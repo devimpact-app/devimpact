@@ -7,7 +7,7 @@ import { useInsights } from '@/components/insights/useInsights';
 import { KeyMetricsPanel } from './KeyMetricsView';
 import { useState } from 'react';
 import { Insight } from '@/types/api/insights';
-import { InsightPanel } from '../../../components/insights/InsightPanel';
+import { InsightPanel } from '../../../../components/insights/InsightPanel';
 import { TTimeseriesResult } from '@/types/api/metrics';
 import { OneOnOneMetricSnapshot } from '@/types/api/one-on-one';
 import { MetricPanel } from '@/components/metrics/MetricPanel';

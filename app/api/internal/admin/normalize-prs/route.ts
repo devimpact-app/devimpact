@@ -33,8 +33,8 @@ export const GET = withSentryUser(async (req: NextRequest) => {
 
     const startedAt = Date.now();
 
-    const normalizedPrIds = await batchNormalizeUserPRs(tenantId, username);
-    await batchNormalizeUserReviews(tenantId, username, normalizedPrIds);
+    const { touchedPrIds } = await batchNormalizeUserPRs(tenantId, username);
+    await batchNormalizeUserReviews(tenantId, username, touchedPrIds);
 
     return jsonOK({
       ok: true,
