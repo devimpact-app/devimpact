@@ -131,7 +131,7 @@ export function validateAssignThreadsOutput(
     seenEventIds.add(a.eventId);
 
     if (a.action === 'assign_existing') {
-      if (!threadSet.has(a.threadId)) {
+      if (!threadSet.has(a.threadId) && !newThreadByKey.has(a.threadId)) {
         return {
           ok: false,
           error: 'unknown_threadId',

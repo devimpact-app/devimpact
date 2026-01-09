@@ -182,7 +182,8 @@ export async function persistThreadAssignments({
 
       let threadId: string | null = null;
       if (a.action === 'assign_existing') {
-        threadId = a.threadId;
+        // Either get the new thread or from existing
+        threadId = newThreadIdByKey.get(a.threadId) ?? a.threadId;
       } else if (a.action === 'create_new') {
         threadId = newThreadIdByKey.get(a.newThreadKey) ?? null;
       }

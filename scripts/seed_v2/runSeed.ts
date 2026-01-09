@@ -344,6 +344,7 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       joinPrTitle: true,
     });
 
+  // TODO: run in 3 30 day batches
   const { eligibleCount, skippedCount } = await runThreadingPipeline({
     tenantId,
     lookbackDays: 90,

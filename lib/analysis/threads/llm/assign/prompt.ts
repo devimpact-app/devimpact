@@ -44,22 +44,22 @@ export function buildThreadAssignmentPrompt(
       5) If action="skip", include neither threadId nor newThreadKey.
       6) "newThreadKey" must be unique within this response and stable-looking (e.g. "new_1", "new_2").
       7) "reasons" must be short, diagnostic tokens (e.g. "same_repo_domain", "shared_keywords", "routine_meeting", "ambiguous_demo").
-      8) Do not create more than 4 new threads in a single response. Prefer 0–3.
+      8) Do not create more than 3 new threads in a single response. Prefer 0–2.
 
       THREAD QUALITY BAR:
       - A thread is a multi-event theme (project/initiative/area), not a single PR.
       - Thread titles must be concrete, not fluffy.
       - Never name threads like "PR #123" or "Misc work".
-      - Title length: 3–7 words. No emojis. No hype.
+      - Title length: 3–7 words. No emojis. No hype. No generic nouns like ‘Enhancements’ unless paired with concrete area
 
       CATEGORY GUIDANCE:
       - features: shipping product features, project delivery, customer-facing work
       - bugs_incidents: prod issues, incident response, urgent fixes, reliability hot spots
       - tech_debt: refactors, cleanup, migrations, infra maintenance, test improvements
       - collaboration: heavy reviews, unblocking, cross-repo first responder patterns
-      - alignment: interviews, incident coordination meetings, architecture/design reviews, important demos (when owned), cross-team alignment
+      - alignment: architecture/design reviews, important demos (owned), cross-team alignment
       - skill_growth: new codebase area, new language/domain, visible shift in surface area
-      - hiring: interview panels, candidate loops, hiring coordination
+      - hiring: interviews
 
       ASSIGNMENT HEURISTICS (prefer deterministic, conservative choices):
       - Strong match signals:
@@ -73,11 +73,21 @@ export function buildThreadAssignmentPrompt(
         - Skip routine recurring team meetings (standup/planning/retro/grooming/status) unless clearly incident/interview or ownership is explicit.
         - Demos are ambiguous: only thread them when organizerSelf=true OR the title clearly indicates the user is presenting/owning.
       - Reviews:
-        - Prefer mapping reviews to an existing feature/tech_debt/bugs thread when the PR domain matches.
-        - Otherwise, map to collaboration when it represents notable unblocking/first response patterns.
+        - Default: assign review events into an existing thread whose PR summary/tags best match.
+        - If no good match exists, assign to collaboration only if it looks notable (blocking, first review, high comments, or repeated reviews in same repo/domain).
+        - Avoid creating a new thread for a single review. New review-driven threads should require multiple reviews with clear shared theme.
       - When unsure between two existing threads:
         - Prefer the thread with the closest semantic overlap to PR summary/highlights/tags.
         - If still tied, pick the most recently active relevant thread.
+
+      ANTI OVER-SPLITTING RULES (very important)
+	    •	Prefer fewer, broader threads over many narrow threads.
+	    •	Do not create a new thread unless there is evidence of a multi-event theme (≥2 events) OR the event is obviously a major milestone.
+	    •	If a candidate new thread is mostly reviews, prefer assigning those reviews into an existing thread based on PR tags/domain. Only use collaboration if it’s a pattern (e.g., repeated unblocking / first-responder / cross-repo reviews).
+
+      FEATURES vs TECH_DEBT
+	    •	If the work introduces or meaningfully changes user-facing behavior / workflows / UI, categorize as features even if it includes refactors/cleanup.
+	    •	Use tech_debt when the primary value is maintenance/refactor/migration/testing/infra hygiene without new product behavior.
 
       SKIP GUIDELINES:
       - Skip if the event is likely not narrative-worthy alone and does not fit any existing thread:
@@ -89,7 +99,7 @@ export function buildThreadAssignmentPrompt(
 
       CONSISTENCY:
       - Prefer assigning multiple related events to the same thread rather than creating near-duplicate threads.
-      - Never move or rewrite existing thread meanings; only assign events.
+      - Do not create a new thread that overlaps an existing thread’s scope unless the overlap is clearly wrong.
 
       Return JSON only.`,
   };
@@ -98,6 +108,10 @@ export function buildThreadAssignmentPrompt(
     role: 'user',
     content: JSON.stringify(
       {
+        batchWindow: {
+          earliestOccurredAt: input.events[0]?.occurredAt,
+          latestOccurredAt: input.events[input.events.length - 1]?.occurredAt,
+        },
         mode: input.mode,
         existingThreads: (input.existingThreads ?? []).map((t) => ({
           id: t.id,

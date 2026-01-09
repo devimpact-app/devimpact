@@ -90,6 +90,7 @@ export async function runThreadingPipeline({
     events: finalEvents,
     existingThreads,
   };
+  console.log('assign input', assignInput);
 
   const rawAssignResponse = await assignThreads(assignInput);
   console.log('raw resp', rawAssignResponse);
