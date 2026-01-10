@@ -11,54 +11,9 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
+import { ActivityEventMetadata } from '@/types/api/threads';
 
 export type ActivityEventKind = 'pr' | 'review' | 'meeting' | 'ooo';
-
-type ActivityEventMetadata =
-  | {
-      kind: 'pr';
-      size: {
-        linesChanged: number;
-        filesChanged: number;
-        commitsCount?: number;
-      };
-      shape: { touchedTests: boolean };
-      process?: { reviewRounds?: number; uniqueReviewers?: number };
-    }
-  | {
-      kind: 'review';
-      decision: 'approved' | 'changes_requested' | 'commented';
-      depth: { commentsCount: number };
-      role: {
-        wasDirectlyRequested: boolean;
-        wasFirstReview?: boolean;
-        isBlocking?: boolean;
-      };
-    }
-  | {
-      kind: 'meeting';
-      participation: {
-        selfResponseStatus:
-          | 'accepted'
-          | 'declined'
-          | 'tentative'
-          | 'needsAction';
-        isOrganizerSelf: boolean;
-      };
-      structure: {
-        isRecurring: boolean;
-        recurringEventId?: string;
-        durationMinutes: number;
-        isAllDay: boolean;
-      };
-      classification?: {
-        category?: string;
-        categorySubtype?: string;
-        categoryConfidence?: number;
-        categorySource?: 'heuristic' | 'llm' | 'user';
-      };
-    }
-  | { kind: 'ooo'; isAllDay: boolean; durationMinutes?: number };
 
 export const activityEventSourceEnum = pgEnum('activity_event_source', [
   'github',

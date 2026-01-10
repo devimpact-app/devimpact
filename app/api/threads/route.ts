@@ -201,8 +201,6 @@ export const GET = withSentryUser(async (req: NextRequest) => {
         ooo: r.oooCount ?? 0,
       },
       lastEvent: le,
-      // TODO: populate these via thread_events/activity_events rollups
-      recentRepos: [],
     };
   });
 

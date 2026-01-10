@@ -1,5 +1,8 @@
+'use client';
+
 import { ThreadListItem } from '@/types/api/threads';
 import { ThreadCard } from './Thread';
+import { useRouter } from 'next/navigation';
 
 export function ThreadsSection({
   threads,
@@ -12,6 +15,11 @@ export function ThreadsSection({
   error: string | null;
   onViewAll?: () => void;
 }) {
+  const router = useRouter();
+
+  const onClickThread = (id: string) => {
+    router.push(`/career/threads/${id}`);
+  };
   return (
     <section className="flex flex-col space-y-3">
       <header className="flex flex-row justify-between items-center gap-1">
@@ -43,7 +51,7 @@ export function ThreadsSection({
       )}
 
       {threads.map((thread) => (
-        <ThreadCard thread={thread} />
+        <ThreadCard thread={thread} onClick={onClickThread} />
       ))}
     </section>
   );
