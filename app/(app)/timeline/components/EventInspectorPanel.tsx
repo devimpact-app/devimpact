@@ -45,12 +45,29 @@ function extractEntityId(event: ActivityEvent): string | null {
 
 type SummaryState = 'idle' | 'loading' | 'ready' | 'error';
 
+function InspectorOutline({ children }: { children: React.ReactNode }) {
+  return (
+    <aside
+      className="
+    fixed right-0 top-0 bottom-0 w-full max-w-[300px]
+    bg-surface-alt border-l border-border 
+    shadow-2xl z-50 animate-slideIn
+    flex flex-col px-4 py-3
+  "
+    >
+      {children}
+    </aside>
+  );
+}
+
 export function EventInspectorPanel({
   event,
   onClose,
+  isLoading = false,
 }: {
-  event: ActivityEvent;
+  event?: ActivityEvent;
   onClose: () => void;
+  isLoading?: boolean;
 }) {
   const [summary, setSummary] = useState<any | null>(null);
   const [summaryState, setSummaryState] = useState<SummaryState>('idle');
@@ -59,7 +76,7 @@ export function EventInspectorPanel({
     setSummary(null);
     setSummaryState('idle');
 
-    if (!(event.kind === 'pr_opened' || event.kind === 'pr_merged')) {
+    if (!event || !(event.kind === 'pr_opened' || event.kind === 'pr_merged')) {
       return;
     }
 
@@ -90,7 +107,24 @@ export function EventInspectorPanel({
     return () => {
       cancelled = true;
     };
-  }, [event.id]);
+  }, [event?.id]);
+
+  if (isLoading) {
+    return (
+      <InspectorOutline>
+        <div className="animate-pulse rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <div className="h-4 w-32 rounded bg-white/10" />
+          <div className="mt-3 space-y-2">
+            <div className="h-3 w-full rounded bg-white/10" />
+            <div className="h-3 w-5/6 rounded bg-white/10" />
+            <div className="h-3 w-4/6 rounded bg-white/10" />
+          </div>
+        </div>
+      </InspectorOutline>
+    );
+  }
+
+  if (!event) return null;
 
   const latencyText = event.meta?.reviewLatencySeconds
     ? formatSeconds(event.meta?.reviewLatencySeconds)
@@ -109,14 +143,7 @@ export function EventInspectorPanel({
     summaryState === 'idle' && !summary && event.kind === 'pr_commit';
 
   return (
-    <aside
-      className="
-      fixed right-0 top-0 bottom-0 w-full max-w-[300px]
-      bg-surface-alt border-l border-border 
-      shadow-2xl z-50 animate-slideIn
-      flex flex-col px-4 py-3
-    "
-    >
+    <InspectorOutline>
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <div className="inline-flex items-center gap-2">
@@ -325,6 +352,6 @@ export function EventInspectorPanel({
           </section>
         )}
       </div>
-    </aside>
+    </InspectorOutline>
   );
 }

@@ -1,4 +1,6 @@
 import z from 'zod';
+import { ActivityEventSchema } from './timeline';
+import { UpcomingCalendarEventSchema } from './prep';
 
 export const ThreadCategorySchema = z.enum([
   'features',
@@ -14,6 +16,7 @@ export type ThreadCategory = z.infer<typeof ThreadCategorySchema>;
 export const ThreadStatusSchema = z.enum(['active', 'archived']);
 
 export const ActivityKindSchema = z.enum(['pr', 'review', 'meeting', 'ooo']);
+export type ActivityKind = z.infer<typeof ActivityKindSchema>;
 
 export const ThreadLastUpdateSchema = z
   .object({
@@ -194,4 +197,30 @@ export const GetThreadDetailResponseSchema = z
 
 export type GetThreadDetailResponse = z.infer<
   typeof GetThreadDetailResponseSchema
+>;
+
+export const LegacyActivityEventSchema = ActivityEventSchema;
+export const CalendarInspectorEventSchema = UpcomingCalendarEventSchema;
+
+export const ActivityEventInspectorResponseSchema = z.discriminatedUnion(
+  'kind',
+  [
+    z
+      .object({
+        kind: z.literal('legacy_activity_event'),
+        event: LegacyActivityEventSchema,
+      })
+      .strict(),
+
+    z
+      .object({
+        kind: z.literal('calendar_event'),
+        event: CalendarInspectorEventSchema,
+      })
+      .strict(),
+  ]
+);
+
+export type ActivityEventInspectorResponse = z.infer<
+  typeof ActivityEventInspectorResponseSchema
 >;

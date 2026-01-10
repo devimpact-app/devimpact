@@ -154,21 +154,65 @@ function defaultMeetingTypeForEvent(
 
 type CreatePrepState = 'idle' | 'loading' | 'error';
 
+function InspectorOutline({ children }: { children: React.ReactNode }) {
+  return (
+    <aside
+      className="
+        fixed right-0 top-0 bottom-0 w-full max-w-[320px]
+        bg-surface-alt border-l border-border
+        shadow-2xl z-50 animate-slideIn
+        flex flex-col px-4 py-3
+      "
+      aria-label="Calendar event inspector"
+    >
+      {children}
+    </aside>
+  );
+}
+
 export function CalendarEventInspectorPanel({
   event,
   onClose,
+  isLoading,
 }: {
-  event: UpcomingCalendarEvent;
+  event?: UpcomingCalendarEvent;
   onClose: () => void;
+  isLoading?: boolean;
 }) {
   const router = useRouter();
   const [createState, setCreateState] = useState<CreatePrepState>('idle');
 
   const eventInPast = useMemo(() => {
-    const endAt = new Date(event.endAtISO);
+    const endAt = event ? new Date(event.endAtISO) : new Date();
     const now = new Date();
     return endAt < now;
-  }, [event.endAtISO]);
+  }, [event?.endAtISO]);
+
+  const confidenceLabel = useMemo(() => {
+    const c = event?.categoryConfidence;
+    if (!c) return null;
+    if (c >= 0.85) return 'High';
+    if (c >= 0.6) return 'Medium';
+    return 'Low';
+  }, [event?.categoryConfidence]);
+
+  if (isLoading) {
+    return (
+      <InspectorOutline>
+        <div className="animate-pulse rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <div className="h-4 w-32 rounded bg-white/10" />
+          <div className="mt-3 space-y-2">
+            <div className="h-3 w-full rounded bg-white/10" />
+            <div className="h-3 w-5/6 rounded bg-white/10" />
+            <div className="h-3 w-4/6 rounded bg-white/10" />
+          </div>
+        </div>
+      </InspectorOutline>
+    );
+  }
+
+  if (!event) return null;
+
   const buttonText = eventInPast ? 'Reflect meeting' : 'Prepare meeting';
   const title = (event.title ?? '').trim() || 'Untitled meeting';
   const timeLabel = formatTimeRange(
@@ -185,21 +229,13 @@ export function CalendarEventInspectorPanel({
   const meetingType = defaultMeetingTypeForEvent(event);
   const hasPrep = !!event.prepItemId;
 
-  const confidenceLabel = useMemo(() => {
-    const c = event.categoryConfidence;
-    if (c == null) return null;
-    if (c >= 0.85) return 'High';
-    if (c >= 0.6) return 'Medium';
-    return 'Low';
-  }, [event.categoryConfidence]);
-
   async function handlePrepAction() {
-    if (event.prepItemId) {
+    if (event?.prepItemId) {
       router.push(`/prep/items/${event.prepItemId}`);
       return;
     }
 
-    if (!prepSupported || !meetingType) return;
+    if (!event || !prepSupported || !meetingType) return;
 
     try {
       setCreateState('loading');
@@ -230,15 +266,7 @@ export function CalendarEventInspectorPanel({
   }
 
   return (
-    <aside
-      className="
-        fixed right-0 top-0 bottom-0 w-full max-w-[320px]
-        bg-surface-alt border-l border-border
-        shadow-2xl z-50 animate-slideIn
-        flex flex-col px-4 py-3
-      "
-      aria-label="Calendar event inspector"
-    >
+    <InspectorOutline>
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
@@ -326,7 +354,7 @@ export function CalendarEventInspectorPanel({
                     ? 'This meeting has an attached prep draft.'
                     : prepSupported
                       ? 'Create one when you’re ready.'
-                      : 'Supported for 1:1, standup, planning, retro.'}
+                      : 'Supported for 1:1 and standups'}
                 </div>
               </div>
 
@@ -425,6 +453,6 @@ export function CalendarEventInspectorPanel({
           </div>
         </section>
       </div>
-    </aside>
+    </InspectorOutline>
   );
 }
