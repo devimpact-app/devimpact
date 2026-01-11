@@ -10,7 +10,6 @@ import { ThreadDetailPage } from './ThreadDetails';
 async function fetchThreadDetails(
   threadId: string
 ): Promise<GetThreadDetailResponse> {
-  console.log('threadId', threadId);
   const res = await fetch(`/api/threads/${threadId}`, {
     credentials: 'include',
   });

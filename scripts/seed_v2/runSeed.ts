@@ -325,6 +325,7 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       .returning({ id: calendarEvents.id });
   });
 
+  console.log('deriving activity events from source tables');
   const { upserted: aecal, skipped: aecalSkipped } =
     await deriveActivityEventsFromCalendarEventIds({
       tenantId,
@@ -344,6 +345,7 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       joinPrTitle: true,
     });
 
+  console.log('Running thread pipeline');
   const { eligible, ineligible, threaded } = await runThreadingPipeline({
     tenantId,
     lookbackDays: 90,

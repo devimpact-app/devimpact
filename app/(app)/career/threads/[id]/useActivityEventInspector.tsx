@@ -19,7 +19,6 @@ async function fetchActivityEventInspector(
   }
 
   const { data } = await res.json();
-  console.log('data', data);
   return ActivityEventInspectorResponseSchema.parse(data);
 }
 

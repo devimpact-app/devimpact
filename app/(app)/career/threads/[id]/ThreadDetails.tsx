@@ -16,18 +16,6 @@ function fmtDate(iso?: string | null) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function fmtDateTime(iso?: string | null) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
 function pct(conf?: number | null) {
   if (conf == null) return null;
   const v = Math.round(conf * 100);
@@ -110,6 +98,7 @@ export function ThreadDetailPage({
   if (!data) return null;
 
   const t = data.thread;
+  const bullets = data.bullets ?? [];
   const first = fmtDate(t.firstActivityAt);
   const last = fmtDate(t.lastActivityAt);
   const range =
@@ -203,11 +192,21 @@ export function ThreadDetailPage({
                 Summary
               </div>
               <div className="mt-2 text-[13px] leading-relaxed text-white/70">
-                {t.summary?.trim() ? (
-                  <p>{t.summary}</p>
+                {t.summaryHeadline?.trim() ? (
+                  <p>{t.summaryHeadline}</p>
                 ) : (
                   <p className="text-white/45">No summary yet.</p>
                 )}
+                <ul className="mt-2 space-y-2 pl-5 list-disc">
+                  {bullets.map((b) => (
+                    <li
+                      key={b.id}
+                      className="text-[13px] leading-relaxed text-white/70"
+                    >
+                      {b.text}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {t.lastUpdate ? (

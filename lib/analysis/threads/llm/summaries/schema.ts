@@ -80,6 +80,13 @@ export const THREAD_SUMMARY_SCHEMA = {
       additionalProperties: false,
     },
   },
-  required: ['title', 'summary', 'confidence', 'reasons', 'updates'],
+  required: [
+    'title',
+    'headline',
+    'bullets',
+    'confidence',
+    'reasons',
+    'updates',
+  ],
   additionalProperties: false,
 } as const;

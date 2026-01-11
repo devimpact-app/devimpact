@@ -3,6 +3,8 @@ import { ThreadSummaryOutput } from './types';
 
 const BulletSchema = z
   .object({
+    bulletId: z.string().nullable().optional(),
+    sortIndex: z.number().int(),
     text: z.string().min(1).max(240),
     referencedEventIds: z.array(z.uuid()).max(50).default([]),
   })
@@ -43,15 +45,6 @@ export function validateThreadSummaryOutput(
 
   for (let i = 0; i < out.bullets.length; i++) {
     const ids = out.bullets[i].referencedEventIds ?? [];
-
-    for (const id of ids) {
-      if (!allowed.has(id)) {
-        return {
-          ok: false,
-          error: `unknown_referenced_event_id:bullets[${i}]:${id}`,
-        };
-      }
-    }
 
     const uniq = new Set(ids);
     if (uniq.size !== ids.length) {

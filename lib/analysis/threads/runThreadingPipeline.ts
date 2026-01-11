@@ -254,7 +254,7 @@ export async function runThreadingPipelineOnce({
   }
 }
 
-const DEFAULT_BATCH_SIZE = 75; // keep LLM input manageable
+const DEFAULT_BATCH_SIZE = 50; // keep LLM input manageable
 const DEFAULT_MAX_STEPS = 50; // hard stop against infinite loops
 
 export async function runThreadingPipeline({

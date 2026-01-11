@@ -44,7 +44,9 @@ export const ThreadListItemSchema = z
     id: z.uuid(),
     categoryKey: ThreadCategorySchema,
     title: z.string().min(1).max(120),
-    summary: z.string().max(2000), // allow empty string
+    titleUserEditedAt: z.iso.datetime().nullable(),
+    summaryHeadline: z.string().max(2000),
+    headlineUserEditedAt: z.iso.datetime().nullable(),
     status: ThreadStatusSchema,
     confidence: z.number().min(0).max(1).nullable(),
     firstActivityAt: z.iso.datetime().nullable(),
@@ -187,9 +189,28 @@ export const ThreadEventListItemSchema = z
 
 export type ThreadEventListItem = z.infer<typeof ThreadEventListItemSchema>;
 
+export const ThreadBulletSourceSchema = z.enum(['llm', 'user']);
+export type ThreadBulletSource = z.infer<typeof ThreadBulletSourceSchema>;
+
+export const ThreadSummaryBulletSchema = z
+  .object({
+    id: z.uuid(),
+    sortIndex: z.number().int().min(0),
+    text: z.string().min(1).max(280),
+    referencedEventIds: z.array(z.uuid()).max(50).default([]),
+    source: ThreadBulletSourceSchema,
+    editable: z.boolean(),
+    generatedAt: z.iso.datetime().nullable(),
+    userEditedAt: z.iso.datetime().nullable(),
+  })
+  .strict();
+
+export type ThreadSummaryBullet = z.infer<typeof ThreadSummaryBulletSchema>;
+
 export const GetThreadDetailResponseSchema = z
   .object({
     thread: ThreadListItemSchema,
+    bullets: z.array(ThreadSummaryBulletSchema),
     events: z.array(ThreadEventListItemSchema),
     nextCursor: z.string().nullable().optional(),
   })

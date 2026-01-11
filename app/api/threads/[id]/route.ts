@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { auth } from '@/lib/auth';
 import { withSentryUser } from '@/lib/withSentryUser';
@@ -13,12 +13,14 @@ import {
   activityEvents,
   threadEvents,
   threads,
+  threadSummaryBullets,
 } from '@/lib/db/schema/activity';
 import {
   GetThreadDetailResponse,
   GetThreadDetailResponseSchema,
   ThreadEventListItem,
 } from '@/types/api/threads';
+import { isBulletEditable } from '@/lib/analysis/threads/helpers';
 
 function encodeCursor(occurredAtIso: string, eventId: string) {
   return `${occurredAtIso}__${eventId}`;
@@ -59,7 +61,9 @@ export const GET = withSentryUser(
         id: threads.id,
         categoryKey: threads.categoryKey,
         title: threads.title,
-        summary: threads.summary,
+        titleUserEditedAt: threads.titleUserEditedAt,
+        summaryHeadline: threads.summaryHeadline,
+        headlineUserEditedAt: threads.headlineUserEditedAt,
         status: threads.status,
         confidence: threads.confidence,
         firstActivityAt: threads.firstActivityAt,
@@ -219,13 +223,59 @@ export const GET = withSentryUser(
           )
         : null;
 
+    // Get bullets
+    const where = and(
+      eq(threadSummaryBullets.tenantId, tenantId),
+      eq(threadSummaryBullets.threadId, threadId),
+      isNull(threadSummaryBullets.deletedAt)
+    );
+
+    const rows = await db
+      .select({
+        id: threadSummaryBullets.id,
+        sortIndex: threadSummaryBullets.sortIndex,
+        text: threadSummaryBullets.text,
+        referencedEventIds: threadSummaryBullets.referencedEventIds,
+        source: threadSummaryBullets.source,
+        userEditedAt: threadSummaryBullets.userEditedAt,
+        generatedAt: threadSummaryBullets.generatedAt,
+        createdAt: threadSummaryBullets.createdAt,
+      })
+      .from(threadSummaryBullets)
+      .where(where)
+      .orderBy(
+        asc(threadSummaryBullets.sortIndex),
+        asc(threadSummaryBullets.createdAt)
+      );
+
+    const bulletRows = rows.map((r) => ({
+      id: r.id,
+      sortIndex: r.sortIndex,
+      text: r.text,
+      referencedEventIds: r.referencedEventIds ?? [],
+      source: r.source,
+      editable: isBulletEditable({
+        source: r.source,
+        userEditedAt: r.userEditedAt ?? null,
+        deletedAt: null,
+      }),
+      generatedAt: r.generatedAt ? r.generatedAt.toISOString() : null,
+      userEditedAt: r.userEditedAt ? r.userEditedAt.toISOString() : null,
+    }));
+
     const lastEvent = events.length > 0 ? events[0] : null;
     const out: GetThreadDetailResponse = {
       thread: {
         id: t.id,
         categoryKey: t.categoryKey,
         title: t.title,
-        summary: t.summary ?? '',
+        titleUserEditedAt: t.titleUserEditedAt
+          ? t.titleUserEditedAt?.toISOString()
+          : null,
+        summaryHeadline: t.summaryHeadline ?? '',
+        headlineUserEditedAt: t.headlineUserEditedAt
+          ? t.headlineUserEditedAt?.toISOString()
+          : null,
         status: t.status,
         confidence: t.confidence ?? null,
         firstActivityAt: t.firstActivityAt?.toISOString?.() ?? null,
@@ -257,6 +307,7 @@ export const GET = withSentryUser(
           ooo: Number(c.ooo ?? 0),
         },
       },
+      bullets: bulletRows,
       events,
       nextCursor,
     };

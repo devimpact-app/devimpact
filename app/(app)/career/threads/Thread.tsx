@@ -1,4 +1,5 @@
 import { ThreadListItem } from '@/types/api/threads';
+import { categoryLabel, categoryPillClasses } from './shared';
 
 function formatDateShort(iso: string | null) {
   if (!iso) return '—';
@@ -12,34 +13,6 @@ function MetricChip({ label, value }: { label: string; value: number }) {
     <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
       <span className="tabular-nums text-white/80">{value}</span>
       <span>{label}</span>
-    </div>
-  );
-}
-
-import { useState } from 'react';
-import { categoryLabel, categoryPillClasses } from './shared';
-
-function ThreadSummary({ summary }: { summary?: string }) {
-  const [expanded, setExpanded] = useState(false);
-
-  if (!summary?.trim()) {
-    return <p className="mt-2 text-[13px] text-white/45">No summary yet.</p>;
-  }
-
-  const isLong = summary.length > 140; // heuristic, tweak as needed
-
-  return (
-    <div className="mt-2 text-[13px] leading-relaxed text-white/70">
-      <p className={expanded ? '' : 'line-clamp-1'}>{summary}</p>
-
-      {isLong && (
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-1 text-[12px] text-white/50 hover:text-white/80 transition-colors"
-        >
-          {expanded ? 'See less' : 'See more'}
-        </button>
-      )}
     </div>
   );
 }
@@ -98,7 +71,9 @@ export function ThreadCard({
         </div>
       </div>
 
-      <ThreadSummary summary={thread.summary} />
+      <div className="mt-2 text-[13px] leading-relaxed text-white/70">
+        <p>{thread.summaryHeadline ?? 'No summary yet'}</p>
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <MetricChip label="PRs" value={thread.eventCountsByKind.pr} />
