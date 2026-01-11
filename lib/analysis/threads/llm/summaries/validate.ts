@@ -1,9 +1,17 @@
 import { z } from 'zod';
 import { ThreadSummaryOutput } from './types';
 
+const BulletSchema = z
+  .object({
+    text: z.string().min(1).max(240),
+    referencedEventIds: z.array(z.uuid()).max(50).default([]),
+  })
+  .strict();
+
 export const ThreadSummaryOutputSchema = z.object({
   title: z.string().min(1).max(120),
-  summary: z.string().min(1).max(4000),
+  headline: z.string().min(1).max(220),
+  bullets: z.array(BulletSchema).min(1).max(8),
   confidence: z.number().min(0).max(1),
   reasons: z.array(z.string().min(1)).max(12),
   updates: z
@@ -11,15 +19,14 @@ export const ThreadSummaryOutputSchema = z.object({
       headline: z.string().min(1).max(160).nullable(),
       bullets: z.array(z.string().min(1).max(220)).max(12).nullable(),
       referencedEventIds: z.array(z.string().min(1)).max(200),
+      generatedAt: z.iso.datetime().optional(),
     })
     .nullable(),
 });
 
 export function validateThreadSummaryOutput(
   raw: unknown,
-  opts: {
-    allowedEventIds: string[];
-  }
+  opts: { allowedEventIds: string[] }
 ): { ok: true; value: ThreadSummaryOutput } | { ok: false; error: string } {
   const parsed = ThreadSummaryOutputSchema.safeParse(raw);
   if (!parsed.success) {
@@ -32,19 +39,44 @@ export function validateThreadSummaryOutput(
   }
 
   const out = parsed.data;
+  const allowed = new Set(opts.allowedEventIds);
 
-  if (out.updates) {
-    const allowed = new Set(opts.allowedEventIds);
+  for (let i = 0; i < out.bullets.length; i++) {
+    const ids = out.bullets[i].referencedEventIds ?? [];
 
-    for (const id of out.updates.referencedEventIds) {
+    for (const id of ids) {
       if (!allowed.has(id)) {
-        return { ok: false, error: `unknown_referenced_event_id:${id}` };
+        return {
+          ok: false,
+          error: `unknown_referenced_event_id:bullets[${i}]:${id}`,
+        };
       }
     }
 
-    const uniq = new Set(out.updates.referencedEventIds);
-    if (uniq.size !== out.updates.referencedEventIds.length) {
-      return { ok: false, error: 'duplicate_referenced_event_ids' };
+    const uniq = new Set(ids);
+    if (uniq.size !== ids.length) {
+      return {
+        ok: false,
+        error: `duplicate_referenced_event_ids:bullets[${i}]`,
+      };
+    }
+  }
+
+  if (out.updates?.referencedEventIds?.length) {
+    const ids = out.updates.referencedEventIds;
+
+    for (const id of ids) {
+      if (!allowed.has(id)) {
+        return {
+          ok: false,
+          error: `unknown_referenced_event_id:updates:${id}`,
+        };
+      }
+    }
+
+    const uniq = new Set(ids);
+    if (uniq.size !== ids.length) {
+      return { ok: false, error: 'duplicate_referenced_event_ids:updates' };
     }
   }
 
@@ -52,5 +84,5 @@ export function validateThreadSummaryOutput(
     return { ok: false, error: 'high_confidence_requires_reasons' };
   }
 
-  return { ok: true, value: out };
+  return { ok: true, value: out as ThreadSummaryOutput };
 }

@@ -129,7 +129,8 @@ export function buildThreadAssignmentPrompt(
           id: t.id,
           categoryKey: t.categoryKey,
           title: t.title,
-          summary: t.summary,
+          summaryHeadline: t.summaryHeadline,
+          summaryBullets: t.bullets,
           lastActivityAt: t.lastActivityAt ?? null,
         })),
 

@@ -140,7 +140,18 @@ export const threads = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     categoryKey: threadCategoryEnum('category_key').notNull(),
     title: text('title').notNull(),
+    titleUserEditedAt: timestamp('title_user_edited_at', {
+      withTimezone: true,
+    }),
     summary: text('summary').notNull().default(''),
+    summaryHeadline: text('summary_headline').notNull().default(''),
+    headlineUserEditedAt: timestamp('headline_user_edited_at', {
+      withTimezone: true,
+    }),
+    summaryUpdatedAt: timestamp('summary_updated_at', { withTimezone: true }),
+    summaryGeneratedAt: timestamp('summary_generated_at', {
+      withTimezone: true,
+    }),
     status: threadStatusEnum('status').notNull().default('active'),
     confidence: real('confidence'), // 0..1
     firstActivityAt: timestamp('first_activity_at', { withTimezone: true }),
@@ -187,6 +198,52 @@ export const threads = pgTable(
 
 export type Thread = typeof threads.$inferSelect;
 export type NewThread = typeof threads.$inferInsert;
+
+export const threadBulletSourceEnum = pgEnum('thread_bullet_source', [
+  'llm',
+  'user',
+]);
+
+export const threadSummaryBullets = pgTable(
+  'thread_summary_bullets',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    threadId: uuid('thread_id')
+      .notNull()
+      .references(() => threads.id, { onDelete: 'cascade' }),
+    sortIndex: integer('sort_index').notNull(), // 0..N
+    text: text('text').notNull(),
+    source: threadBulletSourceEnum('source').notNull().default('llm'),
+    userEditedAt: timestamp('user_edited_at', { withTimezone: true }),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    referencedEventIds: jsonb('referenced_event_ids')
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    generatedAt: timestamp('generated_at', { withTimezone: true }),
+    model: text('model'),
+    promptVersion: text('prompt_version'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .$onUpdateFn(() => new Date())
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    tenantThreadIdx: index('thread_summary_bullets_tenant_thread_idx').on(
+      t.tenantId,
+      t.threadId,
+      t.sortIndex
+    ),
+  })
+);
+
+export type ThreadSummaryBullet = typeof threadSummaryBullets.$inferSelect;
 
 export const threadEventAssignedByEnum = pgEnum('thread_event_assigned_by', [
   'llm',

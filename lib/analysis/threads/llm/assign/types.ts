@@ -32,13 +32,22 @@ export type ThreadCandidateEvent = {
   };
 };
 
+export type ThreadSummaryBulletInput = {
+  id: string;
+  sortIndex: number;
+  text: string;
+  referencedEventIds: string[];
+  editable: boolean;
+};
+
 export type ExistingThreadContext = {
   id: string;
   categoryKey: ThreadCategory;
   title: string;
-  summary: string;
-  firstActivityAt?: string;
-  lastActivityAt?: string;
+  summaryHeadline?: string;
+  bullets?: ThreadSummaryBulletInput[];
+  firstActivityAt: string | null;
+  lastActivityAt: string | null;
 };
 
 export type AssignThreadsInput = {

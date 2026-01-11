@@ -20,15 +20,24 @@ export type ThreadSummaryLLMInput =
       };
     });
 
+export type ThreadSummaryBullet = {
+  bulletId: string | null;
+  text: string;
+  referencedEventIds: string[];
+  sortIndex: number;
+};
+
+export type ThreadSummaryUpdates = {
+  headline: string | null;
+  bullets: string[] | null;
+  referencedEventIds: string[] | null;
+};
+
 export type ThreadSummaryOutput = {
   title: string;
-  summary: string;
+  headline: string;
+  bullets: ThreadSummaryBullet[];
   confidence: number;
   reasons: string[];
-  // What changed since last time
-  updates: {
-    headline: string | null;
-    bullets: string[] | null;
-    referencedEventIds: string[] | null;
-  } | null;
+  updates: ThreadSummaryUpdates | null;
 };

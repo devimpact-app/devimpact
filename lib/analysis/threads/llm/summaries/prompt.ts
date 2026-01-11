@@ -14,13 +14,22 @@ export function buildThreadSummaryPrompt(
 
       {
         "title": "string",
-        "summary": "string",
+        "headline": "string",
+        "bullets": [
+          {
+            "bulletId": "string | null",
+            "sortIndex": 0,
+            "text": "string",
+            "referencedEventIds": ["uuid", "..."]
+          }
+        ],
         "confidence": number, // 0..1
-        "reasons": ["string", ...],
-        "updates"?: {
-          "headline"?: "string",
-          "bullets"?: ["string", ...],
-          "referencedEventIds": ["string", ...]
+        "reasons": ["string", "..."],
+        "updates": null | {
+          "headline": "string | null",
+          "bullets": ["string", "..."] | null,
+          "referencedEventIds": ["uuid", "..."] | null,
+          "generatedAt"?: "ISO datetime string"
         }
       }
 
@@ -29,13 +38,16 @@ export function buildThreadSummaryPrompt(
       - Do NOT invent project names, timelines, outcomes, owners, or business context.
       - Do NOT mention private repo names if the input only provides vague repo values; if repo is present, you may mention it.
       - Keep it calm and engineer-native. No hype. No motivational language.
+      - referencedEventIds MUST be drawn from the input events' IDs. No other IDs.
 
       STYLE TARGET:
-      - Title: 4–9 words. Concrete, specific, stable.
-      - Summary: 2–4 short sentences. Dense with meaning; minimal adjectives.
-      - Avoid "did X, did Y, did Z" lists. Bundle work into coherent arcs (feature, cleanup, incident response, alignment).
-      - Prefer outcomes and scope: shipped/merged, unblocked, refactored, aligned on design, closed loop in incident, etc.
-      - Use technical-but-readable phrasing. Assume audience is the engineer (private log), not management.
+      - Title: 4–9 words. Concrete, specific, stable across updates.
+      - Headline: 1 sentence, <= 25 words. A compact "what this thread is about" statement.
+      - Bullets: 3–6 bullets max.
+        - Each bullet <= 20 words.
+        - Each bullet should represent a distinct facet: scope shipped, refactor, reliability, alignment, etc.
+        - Avoid long comma lists. Prefer compact statements.
+      - Reasons: 3–6 short, concrete reasons. No fluff.
 
       EVENT INTERPRETATION GUIDELINES:
       - PR events: Prefer the PR summary (short + highlights/tags). Use size/process signals sparingly ("large change", "multi-round review") only if it clarifies impact.
@@ -43,25 +55,57 @@ export function buildThreadSummaryPrompt(
       - Meeting events: Only include if they are high-signal (incident, interview, architecture/design review, demo w/ ownership cues, org alignment). Routine meetings should not dominate.
       - If newEvents contain mixed unrelated items, keep the thread scoped to the strongest common theme; de-emphasize outliers (but do not omit them from referencedEventIds if used).
 
+      BULLET GOVERNANCE (IMPORTANT):
+      - In update_existing mode, input.thread.bullets contains existing bullets with:
+        { id, sortIndex, text, referencedEventIds, editable }.
+      - You MUST return the full, final bullets array (not a diff).
+
+      Editable rules:
+      - If editable=false for a bullet:
+        - You MUST preserve it exactly:
+          - bulletId must equal that bullet's id
+          - text must be identical
+          - referencedEventIds must be identical
+          - sortIndex must remain the same
+        - Do NOT delete it, rewrite it, or move it.
+      - If editable=true for a bullet:
+        - You MAY edit text and referencedEventIds, and you MAY reorder it by changing sortIndex.
+        - Prefer small, conservative edits; do not rewrite everything unless newEvents truly require it.
+
+      Creation rules:
+      - You MAY create new bullets by setting bulletId = null.
+      - New bullets must have sortIndex values that do not conflict with preserved (editable=false) bullets.
+
+      Deletion rules:
+      - Do NOT delete bullets. If you think something should be removed, leave it as-is and lower confidence.
+
+      REFERENCING RULES (IMPORTANT):
+      - Each bullet MUST include referencedEventIds that justify that bullet.
+      - referencedEventIds should include ONLY the minimum set of events needed for that bullet.
+      - referencedEventIds must be deduplicated within each bullet.
+      - You may re-use the same event ID across multiple bullets only if truly necessary.
+      - If a bullet is high-level and supported by multiple events, include multiple IDs.
+      - For any bullet with bulletId matching an existing bullet:
+        - If editable=false, referencedEventIds must remain exactly the same.
+        - If editable=true, referencedEventIds may change but must still be drawn from input events.
+
       MODE RULES:
       1) create_new:
       - Use thread.proposedTitle as a starting point, but improve it if you can make it clearer/more specific.
-      - Summary should explain what this thread is about based on the newEvents.
+      - Produce title + headline + bullets reflecting ONLY the provided events.
+      - Set updates = null.
 
       2) update_existing:
       - Preserve the existing thread's intent and wording where possible.
-      - Update the summary to incorporate newEvents WITHOUT rewriting history.
-      - If the newEvents materially expand scope, extend the summary cautiously (do not change the meaning of prior summary).
-      - Provide "updates" describing what changed since last time.
-        - "updates.headline": optional, 1 line max.
-        - "updates.bullets": optional, max 3 bullets, each <= 14 words.
-        - "updates.referencedEventIds": MUST include only event IDs from newEvents (and only those actually referenced in headline/bullets/summary changes).
-      - If there is no meaningful change, you may omit updates entirely OR include updates with only referencedEventIds (empty headline/bullets).
-
-      REFERENCING RULES (IMPORTANT):
-      - Only include IDs that exist in input events.
-      - referencedEventIds must be deduplicated.
-      - If you include updates, referencedEventIds MUST refer to the specific events that justify the updates content.
+      - Apply BULLET GOVERNANCE rules strictly.
+      - Incorporate newEvents without rewriting history.
+      - Only change editable=true bullets when necessary to reflect newEvents.
+      - You may add new bullets (bulletId=null) when newEvents add meaningful scope.
+      - updates MUST reflect what changed SINCE the last sync (based on newEvents only):
+        - updates.headline: optional, <= 16 words
+        - updates.bullets: optional, max 3 bullets, each <= 14 words
+        - updates.referencedEventIds: include ONLY event IDs from newEvents that justify the updates text
+        - If there is no meaningful change, set updates = null.
 
       CONFIDENCE SCORING (0..1):
       - 0.85–1.0: clear single theme + strong supporting details (PR summaries/tags) with low ambiguity.
@@ -85,12 +129,14 @@ export function buildThreadSummaryPrompt(
       {
         instruction:
           input.mode === 'create_new'
-            ? `Create a new thread title + summary from these events. Keep it coherent and high-level; bundle related work.`
-            : `Update the existing thread's title/summary with the new events. Preserve prior meaning; add "updates" describing what's new.`,
+            ? `Create a new thread title, headline, and bullets from these events. Keep it coherent, high-level, and evidence-backed (bullet references required).`
+            : `Update the existing thread’s title/headline/bullets with the new events. Preserve prior meaning; include "updates" describing what's new (newEvents only).`,
         input,
         reminders: {
           outputFormat:
             'Return ONLY JSON matching the schema. No markdown. No extra keys.',
+          evidence:
+            'Every bullet must include referencedEventIds drawn from input events.',
           scope:
             'Use only provided data. If uncertain, be conservative and lower confidence.',
         },
