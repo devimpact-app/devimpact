@@ -45,7 +45,6 @@ export type WeeklySummaryThreadInput = {
     sortIndex: number;
     text: string;
     editable: boolean;
-    referencedEventIds: string[];
   }>;
   weekStats: {
     eventCount: number;
@@ -68,6 +67,7 @@ export type WeeklySummaryLLMInput = {
   };
   threads: WeeklySummaryThreadInput[];
   notableUnthreadedEvents: WeeklySummaryEventPreview[];
+  allowedWeekEventIds: string[];
 };
 
 export type WeeklySummaryOutput = {

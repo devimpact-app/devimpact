@@ -28,9 +28,24 @@ export function buildWeeklySummaryPrompt(
       - Use only information present in the input. Do NOT invent projects, outcomes, owners, or timelines.
       - Do NOT mention private repo names unless they appear in input as repoFullName.
       - Bullets must be evidence-backed. If a bullet asserts something, it must include references.
-      - referencedThreadIds/referencedEventIds MUST be drawn from the input IDs only.
+      - referencedEventIds MUST ONLY reference in-week events (allowedWeekEventIds).
+      - referencedThreadIds MUST ONLY reference thread ids passed in the input
       - Deduplicate IDs within a bullet.
       - Keep it engineer-native: calm, non-performative, no hype, no motivational language.
+
+      EVENT ID ALLOWLIST (NON-NEGOTIABLE):
+      - referencedEventIds MUST be a subset of allowedWeekEventIds.
+      - Do NOT include any event IDs that are not in allowedWeekEventIds.
+
+      CONTEXT VS EVIDENCE:
+      - thread.bullets are context about the thread’s ongoing work.
+      - Evidence for THIS weekly summary MUST come from:
+        - threads[].weekEvents
+        - notableUnthreadedEvents
+      
+      THREAD EVIDENCE RULE:
+      - If referencedThreadIds is non-null, include at least one referencedEventId
+        from that thread’s weekEvents (unless the bullet is purely a count/stat).
 
       STYLE TARGET:
       - Headline: 1 sentence, <= 22 words. Summarize the week’s arc.

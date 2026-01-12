@@ -2,6 +2,11 @@ export function toDate(d: Date | string): Date {
   return d instanceof Date ? d : new Date(d);
 }
 
+export function toIso(d: Date | null | undefined): string | null {
+  if (!d) return null;
+  return d.toISOString();
+}
+
 export function formatDateTime(iso: string | Date | null) {
   if (!iso) return null;
   const d = typeof iso === 'string' ? new Date(iso) : iso;

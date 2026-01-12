@@ -4,8 +4,8 @@ import type { WeeklySummaryOutput } from './types';
 const WeeklySummaryBulletSchema = z
   .object({
     text: z.string().min(1).max(240),
-    referencedThreadIds: z.array(z.uuid()).min(1).max(20).optional(),
-    referencedEventIds: z.array(z.uuid()).min(1).max(50).optional(),
+    referencedThreadIds: z.array(z.uuid()).min(0).max(20).optional(),
+    referencedEventIds: z.array(z.uuid()).min(0).max(50).optional(),
   })
   .strict();
 
@@ -53,13 +53,13 @@ export function validateWeeklySummaryOutput(
     const threadIds = b.referencedThreadIds ?? [];
     const eventIds = b.referencedEventIds ?? [];
 
-    if (threadIds.length === 0 && eventIds.length === 0) {
-      return {
-        ok: false,
-        error: 'bullet_missing_references',
-        details: { bulletIndex: i },
-      };
-    }
+    // if (threadIds.length === 0 && eventIds.length === 0) {
+    //   return {
+    //     ok: false,
+    //     error: 'bullet_missing_references',
+    //     details: { bulletIndex: i },
+    //   };
+    // }
 
     if (hasDupes(threadIds)) {
       return {

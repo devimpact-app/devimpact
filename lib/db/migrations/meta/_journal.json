@@ -90,7 +90,14 @@
       "idx": 12,
       "version": "7",
       "when": 1768155084217,
-      "tag": "0012_bizarre_roughhouse",
+      "tag": "0012_add_thread_summary_bullets",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1768254511175,
+      "tag": "0013_add_weekly_summary_table",
       "breakpoints": true
     }
   ]

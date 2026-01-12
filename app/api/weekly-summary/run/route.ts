@@ -11,44 +11,9 @@ import {
 import {
   RunWeeklySummaryRequestSchema,
   RunWeeklySummaryResponseSchema,
-  WeeklySummaryRow,
 } from '@/types/api/weekly-summary';
-import { WeeklySummary } from '@/lib/db/schema/weekly-summary';
 import { runWeeklySummary } from '@/lib/analysis/weekly-summary/runWeeklySummary';
-
-function toIso(d: Date | null | undefined): string | null | undefined {
-  if (!d) return d === null ? null : undefined;
-  return d.toISOString();
-}
-
-function serializeWeeklySummaryRow(row: WeeklySummary): WeeklySummaryRow {
-  return {
-    id: row.id,
-    tenantId: row.tenantId,
-    weekStartLocalDate: row.weekStartLocalDate,
-    timezone: row.timezone,
-    rangeStartUtc: row.rangeStartUtc.toISOString(),
-    rangeEndUtc: row.rangeEndUtc.toISOString(),
-    status: row.status,
-    generationStartedAt: toIso(row.generationStartedAt) ?? null,
-    lastError: row.lastError ?? null,
-    lastErrorAt: toIso(row.lastErrorAt) ?? null,
-    claimedAt: toIso(row.claimedAt) ?? null,
-    claimedBy: row.claimedBy ?? null,
-    claimExpiresAt: toIso(row.claimExpiresAt) ?? null,
-    attempts: row.attempts ?? 0,
-    nextAttemptAt: toIso(row.nextAttemptAt) ?? null,
-    emailedAt: toIso(row.emailedAt) ?? null,
-    output: row.output ?? null,
-    referencedThreadIds: row.referencedThreadIds ?? [],
-    referencedEventIds: row.referencedEventIds ?? [],
-    model: row.model ?? null,
-    promptVersion: row.promptVersion ?? null,
-    generatedAt: toIso(row.generatedAt) ?? null,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
-}
+import { serializeWeeklySummaryRow } from '@/lib/analysis/weekly-summary/serialize';
 
 export const POST = withSentryUser(async (req: NextRequest) => {
   const session = await auth();

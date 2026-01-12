@@ -1,8 +1,8 @@
 'use client';
 
 import { ThreadListItem } from '@/types/api/threads';
-import { ThreadCard } from './Thread';
 import { useRouter } from 'next/navigation';
+import { ThreadCard } from './ThreadCard';
 
 export function ThreadsSection({
   threads,

@@ -63,7 +63,6 @@ export async function buildWeeklySummaryInput({
           sortIndex: bullet.sortIndex,
           text: bullet.text,
           editable: bullet.editable,
-          referencedEventIds: bullet.referencedEventIds,
         })),
         weekEvents: threadEventMap[thread.id] ?? [],
         weekStats: {
@@ -95,6 +94,7 @@ export async function buildWeeklySummaryInput({
     },
     threads: threadInputs,
     notableUnthreadedEvents: threadEventMap[UNTHREADED_KEY] ?? [],
+    allowedWeekEventIds: allEventIds,
   };
   return {
     llmInput: input,

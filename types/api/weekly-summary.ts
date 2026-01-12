@@ -29,10 +29,10 @@ export const WeeklySummaryOutputSchema = z
   })
   .strict();
 
-export const WeeklySummaryRowSchema = z
+export const WeeklySummaryItemSchema = z
   .object({
-    id: z.string().uuid(),
-    tenantId: z.string().uuid(),
+    id: z.uuid(),
+    tenantId: z.uuid(),
     weekStartLocalDate: LocalDateIsoSchema,
     timezone: z.string(),
     rangeStartUtc: z.iso.datetime(),
@@ -57,7 +57,7 @@ export const WeeklySummaryRowSchema = z
     updatedAt: z.iso.datetime(),
   })
   .strict();
-export type WeeklySummaryRow = z.infer<typeof WeeklySummaryRowSchema>;
+export type WeeklySummaryItem = z.infer<typeof WeeklySummaryItemSchema>;
 
 export const RunWeeklySummaryRequestSchema = z
   .object({
@@ -107,11 +107,22 @@ export const RunWeeklySummaryResponseSchema = z
     action: RunWeeklySummaryActionSchema,
     reason: RunWeeklySummaryReasonSchema,
     processed: z.boolean(),
-    weeklySummary: WeeklySummaryRowSchema,
+    weeklySummary: WeeklySummaryItemSchema,
     retryAfterMs: z.number().int().min(0).optional(),
   })
   .strict();
 
 export type RunWeeklySummaryResponse = z.infer<
   typeof RunWeeklySummaryResponseSchema
+>;
+
+export const GetWeeklySummariesResponseSchema = z
+  .object({
+    items: z.array(WeeklySummaryItemSchema),
+    nextCursor: z.string().nullable().optional(),
+  })
+  .strict();
+
+export type GetWeeklySummariesResponse = z.infer<
+  typeof GetWeeklySummariesResponseSchema
 >;

@@ -1,6 +1,7 @@
 'use client';
 
-import ThreadsSection from './threads';
+import ThreadsSection from './components/ThreadsSection';
+import WeeklySummariesSection from './components/WeeklySummariesSection';
 
 export default function CareerPage() {
   return (
@@ -20,6 +21,8 @@ export default function CareerPage() {
         </header>
 
         <ThreadsSection limit={3} />
+
+        <WeeklySummariesSection limit={3} />
       </main>
     </>
   );

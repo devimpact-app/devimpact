@@ -96,6 +96,7 @@ export async function runWeeklySummary(
       await buildWeeklySummaryInput({
         ...commonParams,
       });
+    console.log('llmInput', llmInput);
 
     const hasAnySignal =
       (llmInput.threads?.length ?? 0) > 0 ||
@@ -119,6 +120,7 @@ export async function runWeeklySummary(
     }
 
     const rawGenerateResponse = await generateWeeklySummary(llmInput);
+    console.log('raw resp', rawGenerateResponse);
     const v = validateWeeklySummaryOutput(rawGenerateResponse, {
       allowedEventIds: allEventIds,
       allowedThreadIds: allThreadIds,
