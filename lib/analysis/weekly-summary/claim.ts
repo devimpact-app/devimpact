@@ -36,11 +36,14 @@ export type ClaimWeeklySummaryResult =
       retryAfterMs?: number;
     };
 
-export function computeBackoffMs(attempts: number) {
-  const base = 30_000; // 30s
-  const max = 30 * 60_000; // 30m
-  const ms = Math.min(max, base * Math.pow(2, Math.max(0, attempts - 1)));
-  return ms;
+export function computeBackoff(attempts: number) {
+  // attempts is current attempts AFTER increment in DB, but we often only know "before".
+  // If you pass claimRow.attempts, treat it as "prior attempts".
+  const baseMs = 60_000; // 1 min
+  const maxMs = 60 * 60_000; // 60 min
+  const pow = Math.min(attempts, 6); // cap growth
+  const jitter = Math.floor(Math.random() * 15_000);
+  return Math.min(baseMs * 2 ** pow + jitter, maxMs);
 }
 
 async function resetToPending({

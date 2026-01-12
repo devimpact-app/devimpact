@@ -2,6 +2,7 @@ import { runJsonLLM } from '@/lib/integrations/openai/services/runPrompt';
 import { AiConfig } from '@/lib/integrations/openai/config';
 import { WEEKLY_SUMMARY_SCHEMA } from './schema';
 import { WeeklySummaryLLMInput, WeeklySummaryOutput } from './types';
+import { buildWeeklySummaryPrompt } from './prompt';
 
 export async function generateWeeklySummary(
   ctx: WeeklySummaryLLMInput
@@ -9,7 +10,7 @@ export async function generateWeeklySummary(
   return runJsonLLM<WeeklySummaryLLMInput, WeeklySummaryOutput>({
     name: 'weeklySummary',
     schema: WEEKLY_SUMMARY_SCHEMA,
-    buildMessages: buildThreadSummaryPrompt,
+    buildMessages: buildWeeklySummaryPrompt,
     model: AiConfig.models.summarize,
     temperature: 0.4,
     ctx,

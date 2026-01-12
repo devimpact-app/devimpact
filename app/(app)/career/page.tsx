@@ -16,10 +16,6 @@ export default function CareerPage() {
                 Your ongoing work, organized into meaningful threads.
               </p>
             </div>
-
-            {/* <div className="flex shrink-0 justify-end">
-              <RangePicker value={range} onChange={setRange} />
-            </div> */}
           </div>
         </header>
 

@@ -108,7 +108,7 @@ export async function getWeeklySummaryEvents({
   weekEndUtc: Date;
   limit?: number;
 }): Promise<{
-  totalEvents: number;
+  allEventIds: string[];
   countsByKind: { pr: number; review: number; meeting: number; ooo: number };
   threadEventMap: Record<string, WeeklySummaryEventPreview[]>;
 }> {
@@ -187,7 +187,7 @@ export async function getWeeklySummaryEvents({
   });
   return {
     threadEventMap,
-    totalEvents: rows.length,
+    allEventIds: rows.map((r) => r.id),
     countsByKind,
   };
 }

@@ -21,7 +21,11 @@ export async function buildWeeklySummaryInput({
   weekEnd: Date;
   timezone: string;
   limits?: WeeklySummaryLimits;
-}): Promise<WeeklySummaryLLMInput> {
+}): Promise<{
+  llmInput: WeeklySummaryLLMInput;
+  allThreadIds: string[];
+  allEventIds: string[];
+}> {
   const resolvedLimits = {
     ...WEEKLY_SUMMARY_LIMITS,
     ...limits,
@@ -39,7 +43,7 @@ export async function buildWeeklySummaryInput({
     threadIds: activeThreadIds,
     perThreadLimit: resolvedLimits.maxBullets,
   });
-  const { threadEventMap, totalEvents, countsByKind } =
+  const { threadEventMap, allEventIds, countsByKind } =
     await getWeeklySummaryEvents({
       tenantId,
       weekStartUtc: weekStart,
@@ -86,11 +90,15 @@ export async function buildWeeklySummaryInput({
     },
     atAGlance: {
       activeThreads: activeThreads.length,
-      totalEvents,
+      totalEvents: allEventIds.length,
       countsByKind,
     },
     threads: threadInputs,
     notableUnthreadedEvents: threadEventMap[UNTHREADED_KEY] ?? [],
   };
-  return input;
+  return {
+    llmInput: input,
+    allThreadIds: activeThreadIds,
+    allEventIds,
+  };
 }
