@@ -1,22 +1,25 @@
 'use client';
 
 import useSWR from 'swr';
-import { WeeklySummaryCard } from './WeeklySummaryCard';
-import { WeeklySummary, WeeklySummarySchema } from '@/types/api/weekly-summary';
+import { WeeklyActivityCard } from './WeeklyActivityCard';
+import {
+  WeeklyActivity,
+  WeeklyActivitySchema,
+} from '@/types/api/weekly-activity';
 import { getTimezone } from '@/lib/utils/date';
 
-async function fetchWeeklySummary(
+async function fetchWeeklyActivity(
   start: string,
   end: string,
   timezone: string
-): Promise<WeeklySummary> {
+): Promise<WeeklyActivity> {
   const params = new URLSearchParams({
     start,
     end,
     timezone,
   });
 
-  const res = await fetch(`/api/weekly-summary?${params.toString()}`, {
+  const res = await fetch(`/api/weekly-activity?${params.toString()}`, {
     credentials: 'include',
   });
 
@@ -25,10 +28,10 @@ async function fetchWeeklySummary(
   }
 
   const { data } = await res.json();
-  return WeeklySummarySchema.parse(data);
+  return WeeklyActivitySchema.parse(data);
 }
 
-export default function WeeklySummaryCardContainer({
+export default function WeeklyActivityCardContainer({
   startISO,
   endISO,
   handleOneOnOne,
@@ -39,14 +42,14 @@ export default function WeeklySummaryCardContainer({
 }) {
   const timezone = getTimezone();
 
-  const { data, error, isLoading } = useSWR<WeeklySummary>(
-    ['/api/weekly-summary', startISO, endISO, timezone],
+  const { data, error, isLoading } = useSWR<WeeklyActivity>(
+    ['/api/weekly-activity', startISO, endISO, timezone],
     ([, start, end, tz]) =>
-      fetchWeeklySummary(start as string, end as string, tz as string)
+      fetchWeeklyActivity(start as string, end as string, tz as string)
   );
 
   return (
-    <WeeklySummaryCard
+    <WeeklyActivityCard
       summary={data}
       isLoading={isLoading}
       error={error?.message ?? null}

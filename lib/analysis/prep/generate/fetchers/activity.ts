@@ -1,11 +1,11 @@
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
 import { getAuthoredPrs } from '../../../timeline/getAuthoredPrs';
 import { getAuthoredReviews } from '../../../timeline/getAuthoredReviews';
-import { pickHighlightedAuthoredPrs } from '../../../weekly-summary/highlightedPrs';
-import { pickHighlightedReview } from '../../../weekly-summary/highlightedReviews';
+import { pickHighlightedAuthoredPrs } from '../../../weekly-activity/highlightedPrs';
+import { pickHighlightedReview } from '../../../weekly-activity/highlightedReviews';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
-import { buildTagFrequencyMap } from '../../../weekly-summary/focusAreas';
-import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
+import { buildTagFrequencyMap } from '../../../weekly-activity/focusAreas';
+import { HighlightedReview, ShippedItem } from '@/types/api/weekly-activity';
 import { OneOnOneTagForLLM } from '../../one-on-ones/types';
 import { PullRequest, Review } from '@/lib/db/schema';
 import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';

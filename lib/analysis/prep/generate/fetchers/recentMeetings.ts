@@ -1,4 +1,4 @@
-import { CalendarEventCategory } from '@/types/api/weekly-summary';
+import { CalendarEventCategory } from '@/types/api/weekly-activity';
 import { CalendarEventForLLM, MeetingRecapForLLM } from '../types';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 import { calendarEvents } from '@/lib/db/schema/gcal';

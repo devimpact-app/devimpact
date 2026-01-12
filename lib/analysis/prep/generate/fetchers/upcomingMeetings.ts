@@ -1,7 +1,7 @@
 import { TeamMeetingSubtype } from '@/lib/integrations/gcal/sync/categorizer';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 import { CalendarEventForLLM, MeetingRecapForLLM } from '../types';
-import { CalendarEventCategory } from '@/types/api/weekly-summary';
+import { CalendarEventCategory } from '@/types/api/weekly-activity';
 import {
   and,
   asc,

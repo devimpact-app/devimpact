@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import WeeklySummaryCard from './WeeklySummary';
+import WeeklyActivityCard from './WeeklyActivity';
 import WorkRhythmCard from './WorkRythm';
 import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
 import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
@@ -89,7 +89,7 @@ export default function DashboardClient({
 
           <UpcomingPrepCardContainer />
 
-          <WeeklySummaryCard
+          <WeeklyActivityCard
             startISO={startISO}
             endISO={endISO}
             handleOneOnOne={handleOneOnOne}

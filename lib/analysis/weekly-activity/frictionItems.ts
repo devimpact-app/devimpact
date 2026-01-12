@@ -1,5 +1,5 @@
 import { PullRequest } from '@/lib/db/schema';
-import { FrictionItem } from '@/types/api/weekly-summary';
+import { FrictionItem } from '@/types/api/weekly-activity';
 
 const SLOW_FIRST_REVIEW_THRESHOLD_HOURS = 18;
 const HIGH_DISCUSSION_COMMENTS = 8;

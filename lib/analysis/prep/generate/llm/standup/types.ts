@@ -1,6 +1,6 @@
 import { WorkRhythm } from '@/types/api/work-rhythm';
 import { MeetingContext } from '../../context';
-import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
+import { HighlightedReview, ShippedItem } from '@/types/api/weekly-activity';
 import { MeetingRecapForLLM } from '../../types';
 import { OOORecapForLLM } from '../../fetchers/ooo';
 

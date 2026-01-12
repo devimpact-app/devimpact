@@ -1,5 +1,5 @@
 import { PullRequest, Review } from '@/lib/db/schema';
-import { HighlightedReview } from '@/types/api/weekly-summary';
+import { HighlightedReview } from '@/types/api/weekly-activity';
 
 export function scoreReview(r: Review): number {
   let score = 0;

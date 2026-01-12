@@ -5,7 +5,7 @@ import {
   CalendarEventCategory,
   HighlightedReview,
   ShippedItem,
-} from '@/types/api/weekly-summary';
+} from '@/types/api/weekly-activity';
 
 export type MetricWindowKind = 'short' | 'medium';
 

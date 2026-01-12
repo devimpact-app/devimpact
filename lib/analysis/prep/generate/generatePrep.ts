@@ -8,8 +8,8 @@ import { OneOnOneLLMContext } from './llm/oneOnOne/types';
 import { PrepLLMOutput } from './types';
 import { extractUsedReferences } from './references';
 import { StandupLLMContext } from './llm/standup/types';
-import { getShippedItemFromPr } from '../../weekly-summary/highlightedPrs';
-import { getHighlightedReviewFromReview } from '../../weekly-summary/highlightedReviews';
+import { getShippedItemFromPr } from '../../weekly-activity/highlightedPrs';
+import { getHighlightedReviewFromReview } from '../../weekly-activity/highlightedReviews';
 import { generateStandup } from './llm/standup/generate';
 
 export async function generatePrepFromRequest({

@@ -1,13 +1,13 @@
 import {
   CalendarEventCategory,
-  WeeklySummary,
-} from '@/types/api/weekly-summary';
+  WeeklyActivity,
+} from '@/types/api/weekly-activity';
 import { SoftStat } from './SoftStat';
 import { formatMinutes } from '@/lib/utils/date';
 import { ChevronRight } from 'lucide-react';
 
-type WeeklySummaryCardProps = {
-  summary?: WeeklySummary;
+type WeeklyActivityCardProps = {
+  summary?: WeeklyActivity;
   isLoading?: boolean;
   error?: string | null;
   handleOneOnOne: () => void;
@@ -37,12 +37,12 @@ function prettyCategory(key: CalendarEventCategory): string {
   return CALENDAR_EVENT_CATEGORY_LABELS[key] ?? key.replace(/_/g, ' ');
 }
 
-export function WeeklySummaryCard({
+export function WeeklyActivityCard({
   summary,
   isLoading,
   error,
   handleOneOnOne,
-}: WeeklySummaryCardProps) {
+}: WeeklyActivityCardProps) {
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-slate-800/80 bg-[#0B0F18] px-6 py-5 shadow-[0_0_0_1px_rgba(15,23,42,0.6)]">
@@ -65,7 +65,7 @@ export function WeeklySummaryCard({
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-sm font-semibold text-slate-50">
-              Weekly Summary
+              This Week at a Glance
             </h2>
             <p className="mt-1 text-xs text-slate-400">
               We couldn&apos;t load this week&apos;s summary.{' '}
@@ -96,7 +96,9 @@ export function WeeklySummaryCard({
     <section className="rounded-2xl border border-slate-800/80 bg-[#0B0F18] px-6 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.85)]">
       <header className="flex items-center justify-between">
         <div>
-          <h2 className=" font-semibold text-slate-50">Weekly Summary</h2>
+          <h2 className=" font-semibold text-slate-50">
+            This Week at a Glance
+          </h2>
           <p className="text-xs text-slate-400">{range.label}</p>
         </div>
         <button

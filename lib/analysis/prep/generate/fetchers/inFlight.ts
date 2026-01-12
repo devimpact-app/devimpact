@@ -1,9 +1,9 @@
 import { getAuthoredPrs } from '@/lib/analysis/timeline/getAuthoredPrs';
-import { getShippedItemFromPr } from '@/lib/analysis/weekly-summary/highlightedPrs';
+import { getShippedItemFromPr } from '@/lib/analysis/weekly-activity/highlightedPrs';
 import { PullRequest } from '@/lib/db/schema';
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
-import { ShippedItem } from '@/types/api/weekly-summary';
+import { ShippedItem } from '@/types/api/weekly-activity';
 import { subDays } from 'date-fns';
 
 const STALE_LOOKBACK_DAYS = 7;

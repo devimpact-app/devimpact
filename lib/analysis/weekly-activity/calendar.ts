@@ -1,4 +1,4 @@
-import { WeeklyCalendarSummary } from '@/types/api/weekly-summary';
+import { WeeklyCalendarSummary } from '@/types/api/weekly-activity';
 import { isCalendarConnected } from '@/lib/integrations/gcal/client';
 import { getCalendarEventsForRange } from '../timeline/getCalendarEventsForRange';
 import { minutesBetween } from '@/lib/utils/date';

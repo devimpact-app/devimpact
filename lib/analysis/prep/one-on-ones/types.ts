@@ -1,6 +1,6 @@
 import { InsightKind } from '@/types/api/insights';
 import { OneOnOneTalkingPoint } from '@/types/api/one-on-one';
-import { HighlightedReview, ShippedItem } from '@/types/api/weekly-summary';
+import { HighlightedReview, ShippedItem } from '@/types/api/weekly-activity';
 import { WorkRhythm } from '@/types/api/work-rhythm';
 
 export type MetricWindowKind = 'short' | 'medium';

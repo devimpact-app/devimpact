@@ -1,4 +1,4 @@
-import { buildWeeklySummary } from '@/lib/analysis/weekly-summary';
+import { buildWeeklyActivity } from '@/lib/analysis/weekly-activity';
 import { jsonBadRequest, jsonOK, jsonUnauthorized } from '../_lib/http';
 import { auth } from '@/lib/auth';
 import { NextRequest } from 'next/server';
@@ -28,11 +28,11 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const MAX_DAYS = 14;
   if (diffDays > MAX_DAYS) {
     return jsonBadRequest(
-      `Weekly summary supports at most ${MAX_DAYS} days. Try a narrower range.`
+      `Weekly activity supports at most ${MAX_DAYS} days. Try a narrower range.`
     );
   }
 
-  const summary = await buildWeeklySummary({
+  const summary = await buildWeeklyActivity({
     userId,
     rangeStart: start,
     rangeEnd: end,

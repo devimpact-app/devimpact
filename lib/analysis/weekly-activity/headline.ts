@@ -1,13 +1,11 @@
-// lib/analysis/weekly-summary/buildWeeklyHeadline.ts
-
-import type { WeeklySummary } from '@/types/api/weekly-summary';
+import type { WeeklyActivity } from '@/types/api/weekly-activity';
 
 type HeadlineInput = {
-  softStats: WeeklySummary['softStats'];
-  shipped: WeeklySummary['shipped'];
-  whatYouWorkedOn: WeeklySummary['whatYouWorkedOn'];
-  reviewsCollab: WeeklySummary['reviewsCollab'];
-  frictionFollowups: WeeklySummary['frictionFollowups'];
+  softStats: WeeklyActivity['softStats'];
+  shipped: WeeklyActivity['shipped'];
+  whatYouWorkedOn: WeeklyActivity['whatYouWorkedOn'];
+  reviewsCollab: WeeklyActivity['reviewsCollab'];
+  frictionFollowups: WeeklyActivity['frictionFollowups'];
 };
 
 export function buildWeeklyHeadline({

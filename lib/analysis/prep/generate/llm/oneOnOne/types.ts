@@ -1,4 +1,4 @@
-import { ShippedItem } from '@/types/api/weekly-summary';
+import { ShippedItem } from '@/types/api/weekly-activity';
 import { MeetingContext } from '../../context';
 import {
   ActivityForLLM,

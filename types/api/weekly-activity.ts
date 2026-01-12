@@ -141,7 +141,7 @@ export const WeeklyCalendarSummarySchema = z.object({
 });
 export type WeeklyCalendarSummary = z.infer<typeof WeeklyCalendarSummarySchema>;
 
-export const WeeklySummarySchema = z
+export const WeeklyActivitySchema = z
   .object({
     version: z.literal(1).default(1),
 
@@ -170,4 +170,4 @@ export const WeeklySummarySchema = z
   // Allow additional top-level keys in future without breaking older clients
   .catchall(z.any());
 
-export type WeeklySummary = z.infer<typeof WeeklySummarySchema>;
+export type WeeklyActivity = z.infer<typeof WeeklyActivitySchema>;

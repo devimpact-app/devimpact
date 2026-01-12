@@ -1,6 +1,6 @@
 import { PullRequest } from '@/lib/db/schema';
 import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
-import { HighlightReason, ShippedItem } from '@/types/api/weekly-summary';
+import { HighlightReason, ShippedItem } from '@/types/api/weekly-activity';
 
 function computeImpactScore(pr: PullRequest): number {
   const sizeComponent = Math.log(1 + (pr.linesChanged ?? 0));

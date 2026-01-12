@@ -1,9 +1,9 @@
 import { formatRangeServer } from '@/lib/utils/server-date';
 import {
   ShippedItem,
-  WeeklySummary,
-  WeeklySummarySchema,
-} from '@/types/api/weekly-summary';
+  WeeklyActivity,
+  WeeklyActivitySchema,
+} from '@/types/api/weekly-activity';
 import { getAuthoredPrs } from '../timeline/getAuthoredPrs';
 import { getAuthoredReviews } from '../timeline/getAuthoredReviews';
 import { getAuthoredCommits } from '../timeline/getAuthoredCommits';
@@ -24,7 +24,7 @@ import { buildWeeklyHeadline } from './headline';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getWeeklyMeetingTotals } from './calendar';
 
-export type BuildWeeklySummaryArgs = {
+export type BuildWeeklyActivityArgs = {
   userId: string;
   rangeStart: Date;
   rangeEnd: Date;
@@ -35,12 +35,12 @@ export type BuildWeeklySummaryArgs = {
  * Main orchestrator for generating the Weekly Summary.
  * This returns a fully shaped WeeklySummary object that matches the Zod schema.
  */
-export async function buildWeeklySummary({
+export async function buildWeeklyActivity({
   userId,
   rangeStart: start,
   rangeEnd: end,
   timezone,
-}: BuildWeeklySummaryArgs): Promise<WeeklySummary> {
+}: BuildWeeklyActivityArgs): Promise<WeeklyActivity> {
   // Soft stats
   const activityParams = {
     tenantId: userId,
@@ -75,7 +75,7 @@ export async function buildWeeklySummary({
     timezone
   );
   const mergedPrs = authoredPrs.filter((pr) => !!pr.mergedAt);
-  const softStats: WeeklySummary['softStats'] = {
+  const softStats: WeeklyActivity['softStats'] = {
     prsAuthored: mergedPrs.length,
     prsReviewed: uniquePrsReviewed.length,
     activeDays,
@@ -107,13 +107,13 @@ export async function buildWeeklySummary({
   const freq = buildTagFrequencyMap(allFocusTags);
   const focusAreas = pickTopFocusAreas(freq);
   const textSummary = buildWhatYouWorkedOnSummary(focusAreas);
-  const whatYouWorkedOn: WeeklySummary['whatYouWorkedOn'] = {
+  const whatYouWorkedOn: WeeklyActivity['whatYouWorkedOn'] = {
     textSummary,
     focusAreas,
   };
 
   // Reviews and collaboration
-  let reviewsCollab: WeeklySummary['reviewsCollab'] = {
+  let reviewsCollab: WeeklyActivity['reviewsCollab'] = {
     totalReviewed: uniquePrsReviewed.length,
     firstResponderCount: authoredReviews.filter((r) => r.review.wasFirstReview)
       .length,
@@ -137,7 +137,7 @@ export async function buildWeeklySummary({
     frictionFollowups,
   });
 
-  const summary: WeeklySummary = {
+  const summary: WeeklyActivity = {
     version: 1,
     range: {
       startISO: start.toISOString(),
@@ -156,5 +156,5 @@ export async function buildWeeklySummary({
     },
   };
 
-  return WeeklySummarySchema.parse(summary);
+  return WeeklyActivitySchema.parse(summary);
 }
