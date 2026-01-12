@@ -91,6 +91,11 @@ export function endOfDayServer(date: Date, timezone: string) {
   return fromZonedTime(zonedEndOfWeek, timezone);
 }
 
+export function localDateToUtc(dateIso: string, timezone: string) {
+  const localMidnight = `${dateIso}T00:00:00`;
+  return fromZonedTime(localMidnight, timezone);
+}
+
 export function getWeekBoundsFromOffsetServer(
   weekOffset: number,
   windowWeeks: number = 1,
