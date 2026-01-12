@@ -6,7 +6,10 @@ export type CandidateDecision = {
   reasons: string[];
 };
 
-export function evaluateThreadCandidate(e: ActivityEvent): CandidateDecision {
+export function evaluateThreadCandidate(
+  e: ActivityEvent,
+  includeOOO: boolean = false
+): CandidateDecision {
   const reasons: string[] = [];
 
   // PR merges always included as eligible
@@ -107,8 +110,15 @@ export function evaluateThreadCandidate(e: ActivityEvent): CandidateDecision {
     };
   }
 
-  // OOO not included in threads for now
+  // OOO not included in threads for now unless param present
   if (e.eventType === 'ooo') {
+    if (includeOOO) {
+      return {
+        eligible: true,
+        score: 1,
+        reasons: ['include_ooo'],
+      };
+    }
     return {
       eligible: false,
       score: 0,

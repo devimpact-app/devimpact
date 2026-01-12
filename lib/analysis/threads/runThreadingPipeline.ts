@@ -62,7 +62,6 @@ async function processThreadingChunk({
   };
 
   const rawAssignResponse = await assignThreads(assignInput);
-  console.log('raw resp', rawAssignResponse);
   let validateAssignResponse = validateAssignThreadsOutput(rawAssignResponse, {
     candidateEventIds: eligible.map((e) => e.id),
     existingThreadIds: existingThreads.map((t) => t.id),
@@ -170,8 +169,6 @@ export async function runThreadingPipelineOnce({
   threadedCount: number;
   deferredCount: number;
 }> {
-  // TODO: persist threaded vs skipped
-  // TODO: Run threading pipeline drain (loops)
   const workerId = `threading_${randomUUID()}`;
   const events = await claimThreadingActivityEvents({
     tenantId,

@@ -4,6 +4,9 @@ import {
   getMostRecentlyCompletedWeekWindowIso,
   getWeekWindowIso,
 } from './windows';
+import { WeeklySummaryLLMInput } from './llm/types';
+import { buildWeeklySummaryInput } from './queries/buildWeeklySummaryInput';
+import { generateWeeklySummary } from './llm/generate';
 
 type RunWeeklySummaryInput = {
   tenantId: string;
@@ -45,12 +48,15 @@ export async function runWeeklySummary(
         now,
       });
 
-  const claim = await claimWeeklySummaryRow({
+  const commonParams = {
     tenantId: input.tenantId,
     weekStartLocalDate,
     timezone: tz,
     weekStart,
     weekEnd,
+  };
+  const claim = await claimWeeklySummaryRow({
+    ...commonParams,
     now,
     force: input.force,
   });
@@ -65,20 +71,12 @@ export async function runWeeklySummary(
     };
   }
 
-  // TODO
-  // fetch threads/events in [weekStart, weekEnd)
+  const llmInput = await buildWeeklySummaryInput({
+    ...commonParams,
+  });
 
-  // Inputs for weekly summary
-  // Threads active in week
-  // - Include title, headline, bullets, events in week, if thread is new/continued
-  // Unthreaded but potentially important events
-  // - especially meetings fall into this
-  // Weekly activity stats (lightweight)
-  // - PRs opened/merged
-  // - reviews completed
-  // - meetings attended
-  // Work rhythm
-  // - Show only something simple like "most productive time of week"
+  const rawGenerateResponse = await generateWeeklySummary(llmInput);
+  // TODO: validate response
 
-  // llm -> validate -> persist
+  // TODO: persist summary
 }
