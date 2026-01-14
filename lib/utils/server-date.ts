@@ -1,4 +1,4 @@
-import { endOfDay, endOfWeek, getDay, startOfWeek } from 'date-fns';
+import { endOfDay, endOfWeek, startOfWeek } from 'date-fns';
 import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 export function getHourInTimezoneServer(

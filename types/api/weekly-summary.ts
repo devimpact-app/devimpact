@@ -119,6 +119,7 @@ export type RunWeeklySummaryResponse = z.infer<
 export const GetWeeklySummariesResponseSchema = z
   .object({
     items: z.array(WeeklySummaryItemSchema),
+    totalSummaries: z.number().int().min(0).optional(),
     nextCursor: z.string().nullable().optional(),
   })
   .strict();

@@ -8,10 +8,12 @@ import {
 } from '@/types/api/weekly-summary';
 
 async function fetchWeeklySummaries(
-  limit?: number
+  limit?: number,
+  oldestFirst?: boolean
 ): Promise<GetWeeklySummariesResponse> {
   const params = new URLSearchParams({
     ...(limit ? { limit: limit.toString() } : {}),
+    ...(oldestFirst ? { oldestFirst: 'true' } : {}),
   });
 
   const res = await fetch(`/api/weekly-summary?${params.toString()}`, {
@@ -28,22 +30,35 @@ async function fetchWeeklySummaries(
 
 export default function WeeklySummariesSectionContainer({
   limit,
+  oldestFirst,
   onViewAll,
+  handleLoadMore,
+  hideHeader,
 }: {
   limit?: number;
+  oldestFirst?: boolean;
   onViewAll?: () => void;
+  handleLoadMore?: () => void;
+  hideHeader?: boolean;
 }) {
   const { data, error, isLoading } = useSWR<GetWeeklySummariesResponse>(
-    ['/api/weekly-summary', limit],
-    ([, limit]) => fetchWeeklySummaries(limit as any)
+    ['/api/weekly-summary', limit, oldestFirst],
+    ([, limit, oldestFirst]) =>
+      fetchWeeklySummaries(limit as any, oldestFirst as any),
+    {
+      keepPreviousData: true,
+    }
   );
 
   return (
     <WeeklySummariesSection
       items={data?.items ?? []}
+      totalSummaries={data?.totalSummaries ?? 0}
       isLoading={isLoading}
       error={error?.message ?? null}
+      hideHeader={hideHeader}
       onViewAll={onViewAll}
+      handleLoadMore={handleLoadMore}
     />
   );
 }

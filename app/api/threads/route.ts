@@ -25,7 +25,7 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const limitParam = searchParams.get('limit');
   const statusParam = searchParams.get('status'); // active|archived
   const categoryParam = searchParams.get('category'); // features|tech_debt|...
-  const oldestFirstParam = searchParams.get('oldestFirst'); // features|tech_debt|...
+  const oldestFirstParam = searchParams.get('oldestFirst');
   const oldestFirst = !!oldestFirstParam && oldestFirstParam === 'true';
 
   const limit = limitParam ? Number(limitParam) : 20;

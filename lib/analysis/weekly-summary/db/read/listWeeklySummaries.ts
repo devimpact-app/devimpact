@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, or } from 'drizzle-orm';
+import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import type { WeeklySummaryCursor } from './cursor';
 import { weeklySummaries } from '@/lib/db/schema/weekly-summary';
@@ -7,6 +7,7 @@ export async function listWeeklySummariesPage(params: {
   tenantId: string;
   limit: number;
   cursor?: WeeklySummaryCursor | null;
+  oldestFirst?: boolean;
 }) {
   const { tenantId, limit, cursor } = params;
 
@@ -30,7 +31,12 @@ export async function listWeeklySummariesPage(params: {
     .select()
     .from(weeklySummaries)
     .where(where)
-    .orderBy(desc(weeklySummaries.rangeStartUtc), desc(weeklySummaries.id))
+    .orderBy(
+      params.oldestFirst
+        ? asc(weeklySummaries.rangeStartUtc)
+        : desc(weeklySummaries.rangeStartUtc),
+      desc(weeklySummaries.id)
+    )
     .limit(limit + 1);
 
   const hasMore = rows.length > limit;
@@ -44,5 +50,13 @@ export async function listWeeklySummariesPage(params: {
         }
       : null;
 
-  return { rows: page, nextCursor };
+  const totalRow = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(weeklySummaries)
+    .where(where)
+    .limit(1);
+
+  const total = Number(totalRow[0]?.total ?? 0);
+
+  return { rows: page, nextCursor, total };
 }

@@ -22,6 +22,8 @@ export const GET = withSentryUser(async (req: NextRequest) => {
 
   const limitParam = sp.get('limit');
   const cursor = sp.get('cursor');
+  const oldestFirstParam = sp.get('oldestFirst');
+  const oldestFirst = !!oldestFirstParam && oldestFirstParam === 'true';
 
   const limitRaw = limitParam ? Number(limitParam) : 20;
   const limit = Number.isFinite(limitRaw)
@@ -31,9 +33,10 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const decoded = cursor ? decodeWeeklySummaryCursor(cursor) : null;
   if (cursor && !decoded) return jsonBadRequest('Invalid cursor');
 
-  const { rows, nextCursor } = await listWeeklySummariesPage({
+  const { rows, nextCursor, total } = await listWeeklySummariesPage({
     tenantId,
     limit,
+    oldestFirst,
     cursor: decoded
       ? {
           sortAtIso: decoded.sortAt.toISOString(),
@@ -46,6 +49,7 @@ export const GET = withSentryUser(async (req: NextRequest) => {
 
   const parsed = GetWeeklySummariesResponseSchema.safeParse({
     items,
+    totalSummaries: Number(total),
     nextCursor: nextCursor
       ? encodeWeeklySummaryCursor(nextCursor.sortAtIso, nextCursor.id)
       : null,
