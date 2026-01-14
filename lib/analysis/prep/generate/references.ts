@@ -9,9 +9,9 @@ import {
 import { ActivityEvent } from '@/types/api/timeline';
 import { formatMetricValue } from '../../metrics/client';
 import {
-  getActivityEventForPr,
-  getActivityEventForReview,
-} from '../../timeline/helpers';
+  serializeActivityEventFromPr,
+  serializeActivityEventFromReview,
+} from '../../timeline/api/serializers';
 
 export function extractUsedReferences(
   talkingPoints: PrepTalkingPoint[],
@@ -80,11 +80,11 @@ export function extractUsedReferences(
 
   const usedPrs = context.prs
     .filter((pr) => usedPrIds.has(pr.id))
-    .map((pr) => getActivityEventForPr(pr));
+    .map((pr) => serializeActivityEventFromPr(pr));
 
   const usedReviews = context.reviews
     .filter((r) => usedReviewIds.has(r.review.id))
-    .map((r) => getActivityEventForReview(r.review, r.pr?.title));
+    .map((r) => serializeActivityEventFromReview(r.review, r.pr?.title));
 
   const usedCalendarEvents = context.calendarEvents.filter((e) =>
     usedCalendarEventIds.has(e.id)

@@ -21,20 +21,7 @@ import {
   ThreadEventListItem,
 } from '@/types/api/threads';
 import { isBulletEditable } from '@/lib/analysis/threads/helpers';
-
-function encodeCursor(occurredAtIso: string, eventId: string) {
-  return `${occurredAtIso}__${eventId}`;
-}
-
-function decodeCursor(cursor: string) {
-  const [occurredAtIso, eventId] = cursor.split('__');
-  if (!occurredAtIso || !eventId) return null;
-
-  const occurredAt = new Date(occurredAtIso);
-  if (Number.isNaN(occurredAt.getTime())) return null;
-
-  return { occurredAt, eventId };
-}
+import { serializeThreadListItem } from '@/lib/analysis/threads/api/serializers';
 
 export const GET = withSentryUser(
   async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
@@ -132,7 +119,7 @@ export const GET = withSentryUser(
     );
 
     if (cursor) {
-      const decoded = decodeCursor(cursor);
+      const decoded = decodeActivityEventCursor(cursor);
       if (!decoded) return jsonBadRequest('Invalid cursor');
       eventsWhere = and(
         eventsWhere,
@@ -217,7 +204,7 @@ export const GET = withSentryUser(
 
     const nextCursor =
       hasMore && pageRows[pageRows.length - 1]
-        ? encodeCursor(
+        ? encodeActivityEventCursor(
             pageRows[pageRows.length - 1].occurredAt.toISOString(),
             pageRows[pageRows.length - 1].eventId
           )
@@ -265,48 +252,17 @@ export const GET = withSentryUser(
 
     const lastEvent = events.length > 0 ? events[0] : null;
     const out: GetThreadDetailResponse = {
-      thread: {
-        id: t.id,
-        categoryKey: t.categoryKey,
-        title: t.title,
-        titleUserEditedAt: t.titleUserEditedAt
-          ? t.titleUserEditedAt?.toISOString()
-          : null,
-        summaryHeadline: t.summaryHeadline ?? '',
-        headlineUserEditedAt: t.headlineUserEditedAt
-          ? t.headlineUserEditedAt?.toISOString()
-          : null,
-        status: t.status,
-        confidence: t.confidence ?? null,
-        firstActivityAt: t.firstActivityAt?.toISOString?.() ?? null,
-        lastActivityAt: t.lastActivityAt?.toISOString?.() ?? null,
-        userEditedAt: t.userEditedAt?.toISOString?.() ?? null,
-        lastUpdate: t.lastUpdate
-          ? {
-              ...t.lastUpdate,
-              generatedAt: new Date(t.lastUpdate.generatedAt).toISOString(),
-            }
-          : null,
-        lastEvent: lastEvent
-          ? {
-              eventId: lastEvent.eventId,
-              kind: lastEvent.kind,
-              occurredAt: lastEvent.occurredAt,
-              title: lastEvent.title,
-              subtitle: lastEvent.subtitle,
-              url: lastEvent.url,
-              repoFullName: lastEvent.repoFullName,
-              prNumber: lastEvent.prNumber,
-            }
-          : null,
-        eventCountTotal: Number(c.eventCountTotal ?? 0),
-        eventCountsByKind: {
-          pr: Number(c.pr ?? 0),
-          review: Number(c.review ?? 0),
-          meeting: Number(c.meeting ?? 0),
-          ooo: Number(c.ooo ?? 0),
+      thread: serializeThreadListItem({
+        row: {
+          ...t,
+          eventCountTotal: Number(c.eventCountTotal ?? 0),
+          prCount: Number(c.pr ?? 0),
+          reviewCount: Number(c.review ?? 0),
+          meetingCount: Number(c.meeting ?? 0),
+          oooCount: Number(c.ooo ?? 0),
         },
-      },
+        lastEvent,
+      }),
       bullets: bulletRows,
       events,
       nextCursor,

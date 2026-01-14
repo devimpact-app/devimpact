@@ -9,12 +9,12 @@ import {
   getDefaultWeekOffset,
   getWeekBoundsFromOffset,
 } from '@/lib/utils/date';
-import { getAuthoredPrs } from '@/lib/analysis/timeline/getAuthoredPrs';
+import { getAuthoredPrs } from '@/lib/analysis/timeline/db/getAuthoredPrs';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getOrGeneratePrSummary } from '../../openai/services/summarizePR';
 import { deriveActivityEventsFromPullRequestIds } from '@/lib/analysis/activity/derive/from-github-prs';
 import { deriveActivityEventsFromReviewIds } from '@/lib/analysis/activity/derive/from-github-reviews';
-import { runThreadingPipeline } from '@/lib/analysis/threads/runThreadingPipeline';
+import { runThreadingPipeline } from '@/lib/analysis/threads/service/runThreadingPipeline';
 
 export async function runSync({
   tenantId,

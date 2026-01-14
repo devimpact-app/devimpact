@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivityEventsForRange } from '@/lib/analysis/timeline/getActivityEventsForRange';
+import { getActivityEventsForRange } from '@/lib/analysis/timeline/service/getActivityEventsForRange';
 import { auth } from '@/lib/auth'; // if using NextAuth
 import { jsonOK, jsonUnauthorized } from '../_lib/http';
 import {

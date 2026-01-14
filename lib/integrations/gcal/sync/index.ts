@@ -7,7 +7,7 @@ import { listEventsWindow } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
 import { addDays, subHours } from 'date-fns';
 import { deriveActivityEventsFromCalendarEventIds } from '@/lib/analysis/activity/derive/from-calendar-events';
-import { runThreadingPipeline } from '@/lib/analysis/threads/runThreadingPipeline';
+import { runThreadingPipeline } from '@/lib/analysis/threads/service/runThreadingPipeline';
 
 const LOOKBACK_DAYS_INITIAL = 90;
 const FUTURE_LOOKAHEAD_DAYS = 14;

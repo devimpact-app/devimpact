@@ -1,6 +1,6 @@
-import { getAuthoredPrs } from '@/lib/analysis/timeline/getAuthoredPrs';
-import { getReviewRequestedPrs } from '@/lib/analysis/timeline/getReviewRequestedPrs';
-import { getShippedItemFromPr } from '@/lib/analysis/weekly-activity/highlightedPrs';
+import { getAuthoredPrs } from '@/lib/analysis/timeline/db/getAuthoredPrs';
+import { getReviewRequestedPrs } from '@/lib/analysis/timeline/db/getReviewRequestedPrs';
+import { serializeShippedItem } from '@/lib/analysis/weekly-activity/api/serializers';
 import { PullRequest } from '@/lib/db/schema';
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
@@ -62,11 +62,13 @@ export async function fetchInFlightContext(params: {
   }
 
   const fullPrs = [...notMergedPrs];
+
+  // TODO: use a better type for these - they're not shipped items
   const inFlightPrs = notMergedPrs.map((pr) =>
-    getShippedItemFromPr(pr, 'other', summariesByPrId)
+    serializeShippedItem(pr, 'other', summariesByPrId)
   );
   const waitingForReviewPrs = reviewRequestedPrs.map((pr) =>
-    getShippedItemFromPr(pr, 'other')
+    serializeShippedItem(pr, 'other')
   );
 
   return {

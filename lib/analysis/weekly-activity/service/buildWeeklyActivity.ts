@@ -1,0 +1,157 @@
+import { formatRangeServer } from '@/lib/utils/server-date';
+import {
+  ShippedItem,
+  WeeklyActivity,
+  WeeklyActivitySchema,
+} from '@/types/api/weekly-activity';
+import { getAuthoredPrs } from '../../timeline/db/getAuthoredPrs';
+import { getAuthoredReviews } from '../../timeline/db/getAuthoredReviews';
+import { getAuthoredCommits } from '../../timeline/db/getAuthoredCommits';
+import { computeActiveDaysAndMostActiveDay } from './activeDays';
+import { pickHighlightedAuthoredPrs } from './highlightedPrs';
+import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
+import {
+  buildTagFrequencyMap,
+  buildWhatYouWorkedOnSummary,
+  pickTopFocusAreas,
+} from './focusAreas';
+import { pickHighlightedReview } from './highlightedReviews';
+import { deriveFrictionFollowups } from './frictionItems';
+import { buildWeeklyHeadline } from './headline';
+import { mapWithConcurrency } from '@/lib/utils/concurrency';
+import { getWeeklyMeetingTotals } from './calendar';
+
+export type BuildWeeklyActivityArgs = {
+  userId: string;
+  rangeStart: Date;
+  rangeEnd: Date;
+  timezone: string;
+};
+
+/**
+ * Main orchestrator for generating the Weekly Summary.
+ * This returns a fully shaped WeeklySummary object that matches the Zod schema.
+ */
+export async function buildWeeklyActivity({
+  userId,
+  rangeStart: start,
+  rangeEnd: end,
+  timezone,
+}: BuildWeeklyActivityArgs): Promise<WeeklyActivity> {
+  // Soft stats
+  const activityParams = {
+    tenantId: userId,
+    start,
+    end,
+  };
+  const authoredPrs = await getAuthoredPrs(activityParams);
+  const authoredReviews = await getAuthoredReviews(activityParams, {
+    joinWithPrs: true,
+  });
+  const uniquePrsReviewed = Array.from(
+    new Set(authoredReviews.map((r) => r.review.prId))
+  );
+  const authoredCommits = await getAuthoredCommits(activityParams);
+
+  const calendarData = await getWeeklyMeetingTotals({
+    ...activityParams,
+    timezone,
+  });
+
+  const allDates = (
+    [
+      ...authoredPrs.map((pr) => pr.createdAt),
+      ...authoredPrs.map((pr) => pr.mergedAt).filter(Boolean),
+      ...authoredReviews.map((r) => r.review.submittedAt).filter(Boolean),
+      ...authoredCommits.map((c) => c.commit.committedAt),
+    ] as Date[]
+  ).filter((d) => d >= start && d <= end);
+
+  const { activeDays, mostActiveDay } = computeActiveDaysAndMostActiveDay(
+    allDates,
+    timezone
+  );
+  const mergedPrs = authoredPrs.filter((pr) => !!pr.mergedAt);
+  const softStats: WeeklyActivity['softStats'] = {
+    prsAuthored: mergedPrs.length,
+    prsReviewed: uniquePrsReviewed.length,
+    activeDays,
+    mostActiveDay,
+    meetingMinutes: calendarData?.meetingMinutes,
+    meetingCount: calendarData?.meetingCount,
+  };
+
+  // Highlighted shipped PRs
+  const summariesByPrId = new Map<string, any>();
+  const summaryResults = await mapWithConcurrency(mergedPrs, 5, async (pr) => {
+    const { row } = await getOrGeneratePrSummary({
+      tenantId: userId,
+      prId: pr.id,
+    });
+    return { prId: pr.id, row };
+  });
+  for (const { prId, row } of summaryResults) {
+    summariesByPrId.set(prId, row);
+  }
+
+  const shipped = pickHighlightedAuthoredPrs(mergedPrs, summariesByPrId);
+
+  // What you worked on - focus
+  const allFocusTags = mergedPrs.flatMap((pr) => {
+    const s = summariesByPrId.get(pr.id);
+    return s?.typeTags ?? [];
+  });
+  const freq = buildTagFrequencyMap(allFocusTags);
+  const focusAreas = pickTopFocusAreas(freq);
+  const textSummary = buildWhatYouWorkedOnSummary(focusAreas);
+  const whatYouWorkedOn: WeeklyActivity['whatYouWorkedOn'] = {
+    textSummary,
+    focusAreas,
+  };
+
+  // Reviews and collaboration
+  let reviewsCollab: WeeklyActivity['reviewsCollab'] = {
+    totalReviewed: uniquePrsReviewed.length,
+    firstResponderCount: authoredReviews.filter((r) => r.review.wasFirstReview)
+      .length,
+  };
+  const highlightedReviewed = pickHighlightedReview(authoredReviews as any);
+  if (highlightedReviewed) {
+    reviewsCollab.highlightedReview = highlightedReviewed;
+  }
+
+  // friction & follow-ups
+  const frictionFollowups = deriveFrictionFollowups({
+    authoredPrs: authoredPrs,
+  });
+
+  // Headline
+  const headline = buildWeeklyHeadline({
+    softStats,
+    shipped,
+    whatYouWorkedOn,
+    reviewsCollab,
+    frictionFollowups,
+  });
+
+  const summary: WeeklyActivity = {
+    version: 1,
+    range: {
+      startISO: start.toISOString(),
+      endISO: end.toISOString(),
+      label: formatRangeServer(start, end, timezone),
+    },
+    softStats,
+    shipped,
+    whatYouWorkedOn,
+    reviewsCollab,
+    frictionFollowups,
+    headline,
+    calendar: calendarData,
+    meta: {
+      generatedAt: new Date().toISOString(),
+    },
+  };
+
+  return WeeklyActivitySchema.parse(summary);
+}

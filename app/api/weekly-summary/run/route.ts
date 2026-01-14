@@ -12,8 +12,8 @@ import {
   RunWeeklySummaryRequestSchema,
   RunWeeklySummaryResponseSchema,
 } from '@/types/api/weekly-summary';
-import { runWeeklySummary } from '@/lib/analysis/weekly-summary/runWeeklySummary';
-import { serializeWeeklySummaryRow } from '@/lib/analysis/weekly-summary/serialize';
+import { runWeeklySummary } from '@/lib/analysis/weekly-summary/service/runWeeklySummary';
+import { serializeWeeklySummaryRow } from '@/lib/analysis/weekly-summary/api/serializers';
 
 export const POST = withSentryUser(async (req: NextRequest) => {
   const session = await auth();

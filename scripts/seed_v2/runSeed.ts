@@ -32,7 +32,7 @@ import { calendarEvents } from '@/lib/db/schema/gcal';
 import { deriveActivityEventsFromCalendarEventIds } from '@/lib/analysis/activity/derive/from-calendar-events';
 import { deriveActivityEventsFromPullRequestIds } from '@/lib/analysis/activity/derive/from-github-prs';
 import { deriveActivityEventsFromReviewIds } from '@/lib/analysis/activity/derive/from-github-reviews';
-import { runThreadingPipeline } from '@/lib/analysis/threads/runThreadingPipeline';
+import { runThreadingPipeline } from '@/lib/analysis/threads/service/runThreadingPipeline';
 
 export async function loadSeedPullRequests(
   filepath: string

@@ -8,8 +8,10 @@ import { OneOnOneLLMContext } from './llm/oneOnOne/types';
 import { PrepLLMOutput } from './types';
 import { extractUsedReferences } from './references';
 import { StandupLLMContext } from './llm/standup/types';
-import { getShippedItemFromPr } from '../../weekly-activity/highlightedPrs';
-import { getHighlightedReviewFromReview } from '../../weekly-activity/highlightedReviews';
+import {
+  serializeShippedItem,
+  serializeHighlightedReview,
+} from '../../weekly-activity/api/serializers';
 import { generateStandup } from './llm/standup/generate';
 
 export async function generatePrepFromRequest({
@@ -63,21 +65,20 @@ export async function generatePrepFromRequest({
         workRhythm: workRhythmSecondary.llm.summary,
         work: {
           recentShipped: activityPrimary.full.fullPrs.map((pr) =>
-            getShippedItemFromPr(
+            serializeShippedItem(
               pr,
               'other',
               activityPrimary.full.prSummariesById
             )
           ),
           recentReviews: activityPrimary.full.fullReviews.map((r) =>
-            getHighlightedReviewFromReview({
+            serializeHighlightedReview({
               review: r.review,
               pr: r.pr!,
             })
           ),
           inFlightPrs: inFlight.llm.inFlightPrs,
-          // TODO
-          reviewQueue: [],
+          reviewQueue: inFlight.llm.waitingForReviewPrs,
         },
         calendar: {
           recentMeetings: meetingsPrimary.llm,

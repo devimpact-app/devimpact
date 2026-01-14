@@ -1,4 +1,4 @@
-import { buildWorkRhythm } from '@/lib/analysis/work-rhythm/buildWorkRhythm';
+import { buildWorkRhythm } from '@/lib/analysis/work-rhythm/service/buildWorkRhythm';
 import { WorkRhythm } from '@/types/api/work-rhythm';
 
 export type FetchPrepWorkRhythmResponse = {

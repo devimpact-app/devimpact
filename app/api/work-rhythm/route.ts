@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { jsonOK, jsonUnauthorized } from '../_lib/http';
-import { buildWorkRhythm } from '@/lib/analysis/work-rhythm/buildWorkRhythm';
+import { buildWorkRhythm } from '@/lib/analysis/work-rhythm/service/buildWorkRhythm';
 import { withSentryUser } from '@/lib/withSentryUser';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
