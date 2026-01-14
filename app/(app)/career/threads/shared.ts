@@ -1,3 +1,4 @@
+import { formatDateOnly } from '@/lib/utils/date';
 import { ThreadCategory } from '@/types/api/threads';
 
 export function categoryLabel(key: ThreadCategory) {
@@ -47,4 +48,15 @@ export function categoryPillClasses(key: ThreadCategory) {
     default:
       return 'border-white/15 bg-white/5 text-white/75';
   }
+}
+
+export function threadRangeLabel(
+  firstActivityAt: string | null,
+  lastActivityAt: string | null
+) {
+  const first = formatDateOnly(firstActivityAt);
+  const last = formatDateOnly(lastActivityAt);
+  const range =
+    first && last ? `${first} → ${last}` : first ? `Since ${first}` : null;
+  return range;
 }

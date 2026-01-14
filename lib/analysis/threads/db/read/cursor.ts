@@ -1,7 +1,7 @@
-function encodeThreadCursor(sortAtIso: string, id: string) {
+export function encodeThreadCursor(sortAtIso: string, id: string) {
   return `${sortAtIso}__${id}`;
 }
-function decodeThreadCursor(cursor: string) {
+export function decodeThreadCursor(cursor: string) {
   const [sortAtIso, id] = cursor.split('__');
   if (!sortAtIso || !id) return null;
 
@@ -11,11 +11,14 @@ function decodeThreadCursor(cursor: string) {
   return { sortAt, id };
 }
 
-function encodeActivityEventCursor(occurredAtIso: string, eventId: string) {
+export function encodeActivityEventCursor(
+  occurredAtIso: string,
+  eventId: string
+) {
   return `${occurredAtIso}__${eventId}`;
 }
 
-function decodeActivityEventCursor(cursor: string) {
+export function decodeActivityEventCursor(cursor: string) {
   const [occurredAtIso, eventId] = cursor.split('__');
   if (!occurredAtIso || !eventId) return null;
 

@@ -5,8 +5,9 @@ import {
   threadEvents,
   threads,
 } from '@/lib/db/schema/activity';
-import { and, desc, eq, gte, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
 import { getLastEventsByThreadId } from '@/lib/analysis/threads/db/read/getLastEventsByThreadId';
+import { decodeThreadCursor, encodeThreadCursor } from './cursor';
 
 export type ThreadListDbRow = {
   id: string;
@@ -40,6 +41,7 @@ export type ListThreadsParams = {
   since?: Date;
   limit: number;
   cursor?: string | null;
+  threadIds?: string[];
 };
 
 export type ListThreadsResult = {
@@ -52,7 +54,7 @@ export type ListThreadsResult = {
 export async function listThreadsDb(
   params: ListThreadsParams
 ): Promise<ListThreadsResult> {
-  const { tenantId, status, categoryKey, since, limit } = params;
+  const { tenantId, status, categoryKey, since, limit, threadIds } = params;
 
   const limitClamped = Number.isFinite(limit)
     ? Math.min(Math.max(limit, 1), 50)
@@ -67,6 +69,9 @@ export async function listThreadsDb(
   }
   if (categoryKey) {
     baseWhere = and(baseWhere, eq(threads.categoryKey, categoryKey as any));
+  }
+  if (threadIds && threadIds.length > 0) {
+    baseWhere = and(baseWhere, inArray(threads.id, threadIds));
   }
 
   const sortAtExpr = sql<Date>`coalesce(${threads.lastActivityAt}, ${threads.createdAt})`;

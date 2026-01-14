@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Calendar, Activity } from 'lucide-react';
-import { ThreadEventListItem } from '@/types/api/threads';
-import { ThreadEventRow } from './ThreadEventRow';
+import { ActivityEventListItem } from '@/types/api/threads';
+import { ActivityEventRow } from './ActivityEventRow';
 
 function safeDate(d: string | Date | null | undefined): Date | null {
   if (!d) return null;
@@ -22,20 +22,13 @@ function fmtDayLabel(dt: Date) {
   return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function fmtTime(dt: Date) {
-  return dt.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
 type DayGroup = {
   key: string;
   date: Date;
-  items: ThreadEventListItem[];
+  items: ActivityEventListItem[];
 };
 
-function groupEventsByDay(events: ThreadEventListItem[]): DayGroup[] {
+function groupEventsByDay(events: ActivityEventListItem[]): DayGroup[] {
   const map = new Map<string, DayGroup>();
 
   for (const e of events) {
@@ -68,13 +61,13 @@ function groupEventsByDay(events: ThreadEventListItem[]): DayGroup[] {
   return groups;
 }
 
-export function ThreadEventsSection({
+export function ActivityEventsSection({
   events,
   title = 'Events',
   subtitle = 'Work linked to this thread.',
   onSelect,
 }: {
-  events: ThreadEventListItem[];
+  events: ActivityEventListItem[];
   title?: string;
   subtitle?: string;
   onSelect: (id: string) => void;
@@ -120,7 +113,7 @@ export function ThreadEventsSection({
                 <div className="space-y-2">
                   {g.items.map((e) => {
                     return (
-                      <ThreadEventRow
+                      <ActivityEventRow
                         key={e.eventId}
                         event={e}
                         onSelect={onSelect}

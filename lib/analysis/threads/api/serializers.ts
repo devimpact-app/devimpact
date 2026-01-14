@@ -1,8 +1,13 @@
-import { ThreadEventListItem, ThreadListItem } from '@/types/api/threads';
+import {
+  ActivityEventListItem,
+  ThreadEventListItem,
+  ThreadListItem,
+} from '@/types/api/threads';
 import { ThreadListDbRow } from '../db/read/listThreads';
 import { ThreadSummaryBullet } from '@/lib/db/schema/activity';
 import { isBulletEditable } from '../helpers';
 import { ThreadEventDbRow } from '../db/read/listThreadEvents';
+import { ActivityEventDbRow } from '../db/read/listEventsById';
 
 export type LastEventByThreadId = Record<
   string,
@@ -100,6 +105,37 @@ export function serializeThreadEventListItem(
       reason: r.assignmentReason ?? null,
       createdAt: r.assignedAt?.toISOString?.() ?? undefined,
     },
+    inspectorRef: {
+      source: r.source,
+      sourceEntityTable: r.sourceEntityTable as any,
+      sourceEntityId: r.sourceEntityId,
+    },
+    metadata: (r.metadata as any) ?? null,
+  };
+}
+
+export function serializeActivityEventListItem(
+  r: ActivityEventDbRow
+): ActivityEventListItem {
+  const kind =
+    (r.metadata as any)?.kind === 'pr' ||
+    (r.metadata as any)?.kind === 'review' ||
+    (r.metadata as any)?.kind === 'meeting' ||
+    (r.metadata as any)?.kind === 'ooo'
+      ? ((r.metadata as any).kind as 'pr' | 'review' | 'meeting' | 'ooo')
+      : // TODO: consider a better fallback mapping (eventType/sourceEntityTable)
+        ('pr' as const);
+
+  return {
+    eventId: r.eventId,
+    kind,
+    occurredAt: r.occurredAt.toISOString(),
+    endAt: r.endAt?.toISOString?.() ?? null,
+    title: r.title,
+    subtitle: r.subtitle ?? null,
+    url: r.url ?? null,
+    repoFullName: r.repoFullName ?? null,
+    prNumber: r.prNumber ?? null,
     inspectorRef: {
       source: r.source,
       sourceEntityTable: r.sourceEntityTable as any,

@@ -1,9 +1,11 @@
+import { db } from '@/lib/db/client';
 import {
   activityEvents,
   threadEvents,
   type ActivityEvent,
 } from '@/lib/db/schema/activity';
 import { and, desc, eq, lt, or } from 'drizzle-orm';
+import { decodeActivityEventCursor, encodeActivityEventCursor } from './cursor';
 
 export type ThreadEventDbRow = {
   eventId: string;

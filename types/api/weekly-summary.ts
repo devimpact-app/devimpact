@@ -1,4 +1,5 @@
 import z from 'zod';
+import { ActivityEventListItemSchema, ThreadListItemSchema } from './threads';
 
 export const WeeklySummaryStatusSchema = z.enum([
   'pending', // queued / created but not started
@@ -129,7 +130,8 @@ export type GetWeeklySummariesResponse = z.infer<
 export const GetWeeklySummaryDetailResponseSchema = z
   .object({
     summary: WeeklySummaryItemSchema,
-    // nextCursor: z.string().nullable().optional(),
+    threads: z.array(ThreadListItemSchema),
+    events: z.array(ActivityEventListItemSchema),
   })
   .strict();
 

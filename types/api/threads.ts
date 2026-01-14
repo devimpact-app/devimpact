@@ -154,7 +154,7 @@ export const ActivityEventMetadataSchema = z.discriminatedUnion('kind', [
 
 export type ActivityEventMetadata = z.infer<typeof ActivityEventMetadataSchema>;
 
-export const ThreadEventListItemSchema = z
+export const ActivityEventListItemSchema = z
   .object({
     eventId: z.uuid(),
     kind: ActivityKindSchema,
@@ -165,15 +165,6 @@ export const ThreadEventListItemSchema = z
     url: z.string().url().nullable().optional(),
     repoFullName: z.string().min(1).max(200).nullable().optional(),
     prNumber: z.number().int().positive().nullable().optional(),
-    assignment: z
-      .object({
-        assignedBy: z.enum(['llm', 'user', 'heuristic']),
-        confidence: z.number().min(0).max(1).nullable().optional(),
-        reason: z.string().max(200).nullable().optional(),
-        createdAt: z.iso.datetime().optional(),
-      })
-      .strict()
-      .optional(),
     inspectorRef: z
       .object({
         source: z.enum(['github', 'gcal']),
@@ -188,6 +179,18 @@ export const ThreadEventListItemSchema = z
     metadata: ActivityEventMetadataSchema.nullable().optional(),
   })
   .strict();
+export type ActivityEventListItem = z.infer<typeof ActivityEventListItemSchema>;
+
+export const ThreadEventListItemSchema = ActivityEventListItemSchema.extend({
+  assignment: z
+    .object({
+      assignedBy: z.enum(['llm', 'user', 'heuristic']),
+      confidence: z.number().min(0).max(1).nullable().optional(),
+      reason: z.string().max(200).nullable().optional(),
+      createdAt: z.iso.datetime().optional(),
+    })
+    .strict(),
+}).strict();
 
 export type ThreadEventListItem = z.infer<typeof ThreadEventListItemSchema>;
 

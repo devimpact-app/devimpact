@@ -3,17 +3,15 @@
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Activity, Pencil } from 'lucide-react';
 import type { GetThreadDetailResponse } from '@/types/api/threads';
-import { categoryLabel, categoryPillClasses } from '../shared';
-import { ThreadEventsSection } from './ThreadEventsSection';
+import {
+  categoryLabel,
+  categoryPillClasses,
+  threadRangeLabel,
+} from '../shared';
+import { ActivityEventsSection } from './ActivityEventsSection';
 import { useState } from 'react';
 import { ActivityEventInspectorPanel } from './ActivityEventInspectorPanel';
-
-function fmtDate(iso?: string | null) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
+import { formatDateOnly } from '@/lib/utils/date';
 
 function pct(conf?: number | null) {
   if (conf == null) return null;
@@ -95,10 +93,7 @@ export function ThreadDetailPage({
   const t = data.thread;
   const lastGeneratedAt = t.lastUpdate?.generatedAt ?? null;
   const bullets = data.bullets ?? [];
-  const first = fmtDate(t.firstActivityAt);
-  const last = fmtDate(t.lastActivityAt);
-  const range =
-    first && last ? `${first} → ${last}` : first ? `Since ${first}` : null;
+  const range = threadRangeLabel(t.firstActivityAt, t.lastActivityAt);
 
   const confidence = pct(t.confidence);
 
@@ -190,7 +185,7 @@ export function ThreadDetailPage({
                 </div>
                 <div className="text-xs font-medium text-white/40">
                   {lastGeneratedAt
-                    ? `· Last generated ${fmtDate(lastGeneratedAt)}`
+                    ? `· Last generated ${formatDateOnly(lastGeneratedAt)}`
                     : ''}
                 </div>
               </div>
@@ -216,7 +211,7 @@ export function ThreadDetailPage({
         </div>
 
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-          <ThreadEventsSection
+          <ActivityEventsSection
             events={data.events}
             onSelect={(id) => setSelectedEventId(id)}
           />

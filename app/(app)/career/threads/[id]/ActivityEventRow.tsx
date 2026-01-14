@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivityKind, ThreadEventListItem } from '@/types/api/threads';
+import { ActivityEventListItem, ActivityKind } from '@/types/api/threads';
 import {
   GitPullRequest,
   MessageSquare,
@@ -34,13 +34,13 @@ function repoShort(repoFullName?: string | null) {
   return parts.length === 2 ? parts[1] : repoFullName;
 }
 
-export function ThreadEventRow({
+export function ActivityEventRow({
   event,
   onSelect,
   selected = false,
   dense = false,
 }: {
-  event: ThreadEventListItem;
+  event: ActivityEventListItem;
   onSelect: (activityEventId: string) => void;
   selected?: boolean;
   dense?: boolean;
