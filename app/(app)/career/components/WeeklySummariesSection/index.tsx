@@ -28,8 +28,10 @@ async function fetchWeeklySummaries(
 
 export default function WeeklySummariesSectionContainer({
   limit,
+  onViewAll,
 }: {
   limit?: number;
+  onViewAll?: () => void;
 }) {
   const { data, error, isLoading } = useSWR<GetWeeklySummariesResponse>(
     ['/api/weekly-summary', limit],
@@ -41,7 +43,7 @@ export default function WeeklySummariesSectionContainer({
       items={data?.items ?? []}
       isLoading={isLoading}
       error={error?.message ?? null}
-      onViewAll={() => {}}
+      onViewAll={onViewAll}
     />
   );
 }

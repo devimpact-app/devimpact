@@ -22,6 +22,21 @@ export function categoryLabel(key: ThreadCategory) {
   }
 }
 
+export const THREAD_CATEGORY_KEYS: ThreadCategory[] = [
+  'features',
+  'tech_debt',
+  'collaboration',
+  'bugs_incidents',
+  'alignment',
+  'skill_growth',
+  'hiring',
+] as const;
+
+export const THREAD_CATEGORY_OPTIONS = THREAD_CATEGORY_KEYS.map((key) => ({
+  value: key,
+  label: categoryLabel(key),
+}));
+
 export function categoryPillClasses(key: ThreadCategory) {
   switch (key) {
     case 'features':

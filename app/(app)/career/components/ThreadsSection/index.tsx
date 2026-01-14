@@ -9,11 +9,15 @@ import { ThreadsSection } from './ThreadsSection';
 
 async function fetchThreads(
   lookbackDays: number,
-  limit?: number
+  limit?: number,
+  categoryKey?: string,
+  oldestFirst?: boolean
 ): Promise<GetThreadsResponse> {
   const params = new URLSearchParams({
     lookbackDays: lookbackDays.toString(),
     ...(limit ? { limit: limit.toString() } : {}),
+    ...(categoryKey ? { category: categoryKey } : {}),
+    ...(oldestFirst ? { oldestFirst: 'true' } : {}),
   });
 
   const res = await fetch(`/api/threads?${params.toString()}`, {
@@ -31,13 +35,32 @@ async function fetchThreads(
 export default function ThreadsSectionContainer({
   lookbackDays = 90,
   limit,
+  categoryKey,
+  oldestFirst = false,
+  hideHeader = false,
+  onViewAll,
+  handleLoadMore,
 }: {
   lookbackDays?: number;
   limit?: number;
+  categoryKey?: string;
+  oldestFirst?: boolean;
+  hideHeader?: boolean;
+  onViewAll?: () => void;
+  handleLoadMore?: () => void;
 }) {
   const { data, error, isLoading } = useSWR<GetThreadsResponse>(
-    ['/api/threads', lookbackDays, limit],
-    ([, lookbackDays, limit]) => fetchThreads(lookbackDays as any, limit as any)
+    ['/api/threads', lookbackDays, limit, categoryKey, oldestFirst],
+    ([, lookbackDays, limit, categoryKey, oldestFirst]) =>
+      fetchThreads(
+        lookbackDays as any,
+        limit as any,
+        categoryKey as any,
+        oldestFirst as any
+      ),
+    {
+      keepPreviousData: true,
+    }
   );
 
   return (
@@ -46,7 +69,9 @@ export default function ThreadsSectionContainer({
       totalThreads={data?.totalThreads ?? 0}
       isLoading={isLoading}
       error={error?.message ?? null}
-      onViewAll={() => {}}
+      hideHeader={hideHeader}
+      onViewAll={onViewAll}
+      handleLoadMore={handleLoadMore}
     />
   );
 }

@@ -5,7 +5,7 @@ import {
   threadEvents,
   threads,
 } from '@/lib/db/schema/activity';
-import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
 import { getLastEventsByThreadId } from '@/lib/analysis/threads/db/read/getLastEventsByThreadId';
 import { decodeThreadCursor, encodeThreadCursor } from './cursor';
 
@@ -42,6 +42,7 @@ export type ListThreadsParams = {
   limit: number;
   cursor?: string | null;
   threadIds?: string[];
+  oldestFirst?: boolean;
 };
 
 export type ListThreadsResult = {
@@ -135,7 +136,10 @@ export async function listThreadsDb(
     )
     .where(pageWhere)
     .groupBy(threads.id)
-    .orderBy(desc(sortAtExpr), desc(threads.id))
+    .orderBy(
+      params.oldestFirst ? asc(sortAtExpr) : desc(sortAtExpr),
+      desc(threads.id)
+    )
     .limit(limitClamped + 1);
 
   const hasMore = pageRowsRaw.length > limitClamped;

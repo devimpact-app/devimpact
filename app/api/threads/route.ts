@@ -10,6 +10,7 @@ import {
 import { subDays } from 'date-fns';
 import { serializeThreadListItem } from '@/lib/analysis/threads/api/serializers';
 import { listThreadsDb } from '@/lib/analysis/threads/db/read/listThreads';
+import { decodeThreadCursor } from '@/lib/analysis/threads/db/read/cursor';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
@@ -24,6 +25,8 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const limitParam = searchParams.get('limit');
   const statusParam = searchParams.get('status'); // active|archived
   const categoryParam = searchParams.get('category'); // features|tech_debt|...
+  const oldestFirstParam = searchParams.get('oldestFirst'); // features|tech_debt|...
+  const oldestFirst = !!oldestFirstParam && oldestFirstParam === 'true';
 
   const limit = limitParam ? Number(limitParam) : 20;
 
@@ -50,6 +53,7 @@ export const GET = withSentryUser(async (req: NextRequest) => {
       since,
       cursor,
       categoryKey: categoryParam ?? undefined,
+      oldestFirst,
     }
   );
 

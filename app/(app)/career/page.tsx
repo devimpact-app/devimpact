@@ -1,9 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import ThreadsSection from './components/ThreadsSection';
 import WeeklySummariesSection from './components/WeeklySummariesSection';
 
 export default function CareerPage() {
+  const router = useRouter();
   return (
     <>
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 space-y-8">
@@ -20,9 +22,15 @@ export default function CareerPage() {
           </div>
         </header>
 
-        <ThreadsSection limit={3} />
+        <ThreadsSection
+          limit={3}
+          onViewAll={() => router.push('/career/threads')}
+        />
 
-        <WeeklySummariesSection limit={3} />
+        <WeeklySummariesSection
+          limit={3}
+          onViewAll={() => router.push('/career/weekly-summaries')}
+        />
       </main>
     </>
   );
