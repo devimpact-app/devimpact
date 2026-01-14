@@ -1,5 +1,8 @@
-import { ThreadListItem } from '@/types/api/threads';
+import { ThreadEventListItem, ThreadListItem } from '@/types/api/threads';
 import { ThreadListDbRow } from '../db/read/listThreads';
+import { ThreadSummaryBullet } from '@/lib/db/schema/activity';
+import { isBulletEditable } from '../helpers';
+import { ThreadEventDbRow } from '../db/read/listThreadEvents';
 
 export type LastEventByThreadId = Record<
   string,
@@ -49,5 +52,59 @@ export function serializeThreadListItem(params: {
       ooo: Number(row.oooCount ?? 0),
     },
     lastEvent,
+  };
+}
+
+export function serializeThreadBullet(r: ThreadSummaryBullet) {
+  return {
+    id: r.id,
+    sortIndex: r.sortIndex,
+    text: r.text,
+    referencedEventIds: r.referencedEventIds ?? [],
+    source: r.source,
+    editable: isBulletEditable({
+      source: r.source,
+      userEditedAt: r.userEditedAt ?? null,
+      deletedAt: null,
+    }),
+    generatedAt: r.generatedAt ? r.generatedAt.toISOString() : null,
+    userEditedAt: r.userEditedAt ? r.userEditedAt.toISOString() : null,
+  };
+}
+
+export function serializeThreadEventListItem(
+  r: ThreadEventDbRow
+): ThreadEventListItem {
+  const kind =
+    (r.metadata as any)?.kind === 'pr' ||
+    (r.metadata as any)?.kind === 'review' ||
+    (r.metadata as any)?.kind === 'meeting' ||
+    (r.metadata as any)?.kind === 'ooo'
+      ? ((r.metadata as any).kind as 'pr' | 'review' | 'meeting' | 'ooo')
+      : // TODO: consider a better fallback mapping (eventType/sourceEntityTable)
+        ('pr' as const);
+
+  return {
+    eventId: r.eventId,
+    kind,
+    occurredAt: r.occurredAt.toISOString(),
+    endAt: r.endAt?.toISOString?.() ?? null,
+    title: r.title,
+    subtitle: r.subtitle ?? null,
+    url: r.url ?? null,
+    repoFullName: r.repoFullName ?? null,
+    prNumber: r.prNumber ?? null,
+    assignment: {
+      assignedBy: r.assignedBy,
+      confidence: r.assignmentConfidence ?? null,
+      reason: r.assignmentReason ?? null,
+      createdAt: r.assignedAt?.toISOString?.() ?? undefined,
+    },
+    inspectorRef: {
+      source: r.source,
+      sourceEntityTable: r.sourceEntityTable as any,
+      sourceEntityId: r.sourceEntityId,
+    },
+    metadata: (r.metadata as any) ?? null,
   };
 }

@@ -172,7 +172,8 @@ export const ThreadEventListItemSchema = z
         reason: z.string().max(200).nullable().optional(),
         createdAt: z.iso.datetime().optional(),
       })
-      .strict(),
+      .strict()
+      .optional(),
     inspectorRef: z
       .object({
         source: z.enum(['github', 'gcal']),
