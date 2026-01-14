@@ -57,7 +57,7 @@ export function WeeklySummariesSection({
     }
   }
   return (
-    <section className="flex flex-col space-y-3">
+    <section className="flex flex-col space-y-3 pb-10">
       <header className="flex flex-row justify-between items-center gap-1">
         <h2 className="text-sm font-semibold tracking-tight text-white/90">
           Recent Weekly Summaries

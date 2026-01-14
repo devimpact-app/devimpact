@@ -85,6 +85,14 @@ export const pullRequests = pgTable(
     body: text('body').default('').notNull(),
     authorIsTenant: boolean('author_is_tenant').default(false).notNull(),
 
+    // Review requests to tenant
+    tenantReviewRequested: boolean('tenant_review_requested')
+      .notNull()
+      .default(false),
+    tenantReviewRequestedAt: timestamp('tenant_review_requested_at', {
+      withTimezone: true,
+    }),
+
     // Key timestamps
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
     mergedAt: timestamp('merged_at', { withTimezone: true }),
@@ -150,18 +158,6 @@ export const pullRequests = pgTable(
       .default(false)
       .notNull(),
     hadForcePushes: boolean('had_force_pushes').default(false).notNull(),
-
-    // TODO: Add later
-    // - ciFailuresCount
-    // - wasReverted
-    // - causedIncident
-    // - hadBlockingReview
-    // - participantsCount
-    // - issueCommentsCount
-    // - totalConversations
-    // - churnRate (files / lines ratio)
-    // - fileExtensions (jsonb)
-
     normalizedAt: timestamp('normalized_at', {
       withTimezone: true,
     })
@@ -180,6 +176,12 @@ export const pullRequests = pgTable(
     stateIdx: index('pull_requests_state_idx').on(table.state),
     createdAtIdx: index('pull_requests_created_at_idx').on(table.createdAt),
     mergedAtIdx: index('pull_requests_merged_at_idx').on(table.mergedAt),
+    tenantReviewRequestIdx: index('pull_requests_tenant_rev_req_idx').on(
+      table.tenantId,
+      table.state,
+      table.tenantReviewRequested,
+      table.tenantReviewRequestedAt
+    ),
   })
 );
 
@@ -270,6 +272,12 @@ export const reviews = pgTable(
       t.tenantId,
       t.reviewerLogin,
       t.reviewAnchorType,
+      t.submittedAt
+    ),
+    reviewerIsTenantIdx: index('reviews_reviewer_is_tenant_idx').on(
+      t.tenantId,
+      t.prId,
+      t.reviewerIsTenant,
       t.submittedAt
     ),
     prIdx: index('reviews_pr_idx').on(t.tenantId, t.prId, t.submittedAt),

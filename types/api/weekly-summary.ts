@@ -32,7 +32,6 @@ export const WeeklySummaryOutputSchema = z
 export const WeeklySummaryItemSchema = z
   .object({
     id: z.uuid(),
-    tenantId: z.uuid(),
     weekStartLocalDate: LocalDateIsoSchema,
     timezone: z.string(),
     rangeStartUtc: z.iso.datetime(),
@@ -125,4 +124,15 @@ export const GetWeeklySummariesResponseSchema = z
 
 export type GetWeeklySummariesResponse = z.infer<
   typeof GetWeeklySummariesResponseSchema
+>;
+
+export const GetWeeklySummaryDetailResponseSchema = z
+  .object({
+    summary: WeeklySummaryItemSchema,
+    // nextCursor: z.string().nullable().optional(),
+  })
+  .strict();
+
+export type GetWeeklySummaryDetailResponse = z.infer<
+  typeof GetWeeklySummaryDetailResponseSchema
 >;

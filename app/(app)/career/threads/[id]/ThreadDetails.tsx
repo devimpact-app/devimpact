@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, Activity, Pencil } from 'lucide-react';
 import type { GetThreadDetailResponse } from '@/types/api/threads';
 import { categoryLabel, categoryPillClasses } from '../shared';
-import { LastUpdateDisclosure } from './LastUpdateDisclosure';
 import { ThreadEventsSection } from './ThreadEventsSection';
 import { useState } from 'react';
 import { ActivityEventInspectorPanel } from './ActivityEventInspectorPanel';
@@ -40,22 +39,18 @@ export function ThreadDetailPage({
       <div className="min-h-screen bg-slate-950 text-white">
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
           <div className="animate-pulse space-y-4">
-            {/* Back + category */}
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-xl bg-white/10" />
               <div className="h-6 w-24 rounded-full bg-white/10" />
             </div>
 
-            {/* Title */}
             <div className="h-7 w-2/3 rounded-md bg-white/10" />
 
-            {/* Meta row */}
             <div className="flex gap-4">
               <div className="h-4 w-32 rounded bg-white/10" />
               <div className="h-4 w-40 rounded bg-white/10" />
             </div>
 
-            {/* Summary box */}
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <div className="h-4 w-24 rounded bg-white/10" />
               <div className="mt-3 space-y-2">
@@ -98,6 +93,7 @@ export function ThreadDetailPage({
   if (!data) return null;
 
   const t = data.thread;
+  const lastGeneratedAt = t.lastUpdate?.generatedAt ?? null;
   const bullets = data.bullets ?? [];
   const first = fmtDate(t.firstActivityAt);
   const last = fmtDate(t.lastActivityAt);
@@ -188,8 +184,15 @@ export function ThreadDetailPage({
             </div>
 
             <div className="mt-5 rounded-2xl border border-white/10 bg-slate-900/30 p-4 backdrop-blur">
-              <div className="text-[12px] font-medium text-white/80">
-                Summary
+              <div className="flex flex-row">
+                <div className="text-xs font-medium text-white/80 mr-1">
+                  Summary
+                </div>
+                <div className="text-xs font-medium text-white/40">
+                  {lastGeneratedAt
+                    ? `· Last generated ${fmtDate(lastGeneratedAt)}`
+                    : ''}
+                </div>
               </div>
               <div className="mt-2 text-[13px] leading-relaxed text-white/70">
                 {t.summaryHeadline?.trim() ? (
@@ -208,13 +211,6 @@ export function ThreadDetailPage({
                   ))}
                 </ul>
               </div>
-
-              {t.lastUpdate ? (
-                <LastUpdateDisclosure
-                  lastUpdate={t.lastUpdate}
-                  defaultOpen={false}
-                />
-              ) : null}
             </div>
           </div>
         </div>

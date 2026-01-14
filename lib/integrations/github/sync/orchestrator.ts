@@ -43,11 +43,11 @@ export async function runSync({
 
   // Normalization and enrichment
   if (payload.isLastBatch) {
-    await inferTeamMemberships({
-      tenantId,
-      since,
-      username,
-    });
+    // await inferTeamMemberships({
+    //   tenantId,
+    //   since,
+    //   username,
+    // });
 
     // Normalize to nice tables for GH
     const { rawGithubPrIds, touchedPrIds } = await batchNormalizeUserPRs(

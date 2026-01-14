@@ -390,6 +390,12 @@ function calculateMetrics(input: CalculateMetricsInput) {
     firstApprovalAtAfterCycle
   );
 
+  const { tenantReviewRequested, tenantReviewRequestedAt } =
+    computeTenantReviewRequestFromTimeline({
+      timeline,
+      userGithubLogin,
+    });
+
   return {
     githubPrId: pr.id,
     tenantId: pr.tenantId,
@@ -401,6 +407,8 @@ function calculateMetrics(input: CalculateMetricsInput) {
     body: pr.body ?? '',
     prAuthorLogin: pr.authorGithubLogin,
     authorIsTenant: pr.authorGithubLogin === userGithubLogin,
+    tenantReviewRequested,
+    tenantReviewRequestedAt,
 
     createdAt: pr.createdAt,
     mergedAt,
@@ -497,5 +505,44 @@ export function computeReadyAnchor(opts: {
     readyAt: firstReadyEvent,
     firstReadyEventAt: firstReadyEvent,
     cycles,
+  };
+}
+
+function computeTenantReviewRequestFromTimeline(opts: {
+  timeline: GithubTimelineEvent[];
+  userGithubLogin: string;
+}): { tenantReviewRequested: boolean; tenantReviewRequestedAt: Date | null } {
+  const login = opts.userGithubLogin.trim().toLowerCase();
+  const events = [...opts.timeline].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+  );
+
+  let isRequested = false;
+  let requestedAt: Date | null = null;
+  for (const e of events) {
+    const type = e.eventType;
+    const targetType = (e.requestedTargetType ?? '').toLowerCase();
+    const requestedLogin = (e.requestedReviewerLogin ?? '').toLowerCase();
+
+    const isTenantUserRequest =
+      targetType === 'user' && requestedLogin && requestedLogin === login;
+    if (!isTenantUserRequest) continue;
+
+    if (type === 'review_requested') {
+      isRequested = true;
+      requestedAt = e.createdAt;
+      continue;
+    }
+
+    if (type === 'review_requested_removed') {
+      isRequested = false;
+      requestedAt = null;
+      continue;
+    }
+  }
+
+  return {
+    tenantReviewRequested: isRequested,
+    tenantReviewRequestedAt: requestedAt,
   };
 }

@@ -72,6 +72,7 @@ export type ThreadListItem = z.infer<typeof ThreadListItemSchema>;
 export const GetThreadsResponseSchema = z
   .object({
     threads: z.array(ThreadListItemSchema),
+    totalThreads: z.number().int().min(0).optional(),
     nextCursor: z.string().nullable().optional(),
   })
   .strict();

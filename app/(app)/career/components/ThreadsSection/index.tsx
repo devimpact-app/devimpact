@@ -43,6 +43,7 @@ export default function ThreadsSectionContainer({
   return (
     <ThreadsSection
       threads={data?.threads ?? []}
+      totalThreads={data?.totalThreads ?? 0}
       isLoading={isLoading}
       error={error?.message ?? null}
       onViewAll={() => {}}

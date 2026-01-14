@@ -1,4 +1,5 @@
 import { getAuthoredPrs } from '@/lib/analysis/timeline/getAuthoredPrs';
+import { getReviewRequestedPrs } from '@/lib/analysis/timeline/getReviewRequestedPrs';
 import { getShippedItemFromPr } from '@/lib/analysis/weekly-activity/highlightedPrs';
 import { PullRequest } from '@/lib/db/schema';
 import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
@@ -7,6 +8,7 @@ import { ShippedItem } from '@/types/api/weekly-activity';
 import { subDays } from 'date-fns';
 
 const STALE_LOOKBACK_DAYS = 7;
+const REVIEW_REQUEST_LOOKBACK_DAYS = 14;
 
 export type FetchPrepInFlightResponse = {
   llm: {
@@ -35,10 +37,13 @@ export async function fetchInFlightContext(params: {
   const authoredPrs = await getAuthoredPrs(activityParams);
   const notMergedPrs = authoredPrs.filter((pr) => !pr.mergedAt);
 
-  // Later: reviews waiting on me
-  // Set lookback date max
-  /// Put into LLM format
-  // Need to update CLI to pull these in
+  const lowerBound = new Date(
+    Date.now() - REVIEW_REQUEST_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
+  );
+  const reviewRequestedPrs = await getReviewRequestedPrs({
+    tenantId,
+    lowerBound,
+  });
 
   const summariesByPrId = new Map<string, any>();
   const summaryResults = await mapWithConcurrency(
@@ -60,11 +65,14 @@ export async function fetchInFlightContext(params: {
   const inFlightPrs = notMergedPrs.map((pr) =>
     getShippedItemFromPr(pr, 'other', summariesByPrId)
   );
+  const waitingForReviewPrs = reviewRequestedPrs.map((pr) =>
+    getShippedItemFromPr(pr, 'other')
+  );
 
   return {
     llm: {
       inFlightPrs,
-      waitingForReviewPrs: [],
+      waitingForReviewPrs,
     },
     full: {
       fullPrs,

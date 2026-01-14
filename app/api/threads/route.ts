@@ -111,6 +111,11 @@ export const GET = withSentryUser(async (req: NextRequest) => {
     .orderBy(desc(sortAtExpr), desc(threads.id))
     .limit(limit + 1);
 
+  const [{ total }] = await db
+    .select({ total: sql<number>`count(*)` })
+    .from(threads)
+    .where(where);
+
   const hasMore = rows.length > limit;
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
@@ -218,6 +223,7 @@ export const GET = withSentryUser(async (req: NextRequest) => {
 
   const parsed = GetThreadsResponseSchema.safeParse({
     threads: threadsOut,
+    totalThreads: Number(total),
     nextCursor,
   });
 

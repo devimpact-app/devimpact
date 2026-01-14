@@ -24,16 +24,18 @@ function computeFrictionScore(pr: PullRequest): number {
 export function getShippedItemFromPr(
   pr: PullRequest,
   highlightReason: HighlightReason,
-  prSummariesById: Map<string, any>
+  prSummariesById?: Map<string, any>
 ): ShippedItem {
-  const summary = prSummariesById.get(pr.id);
+  const summary = prSummariesById ? prSummariesById.get(pr.id) : null;
   return {
     prId: pr.id,
     repo: pr.repoFullName,
     number: pr.prNumber,
     title: pr.title,
-    shortSummary: summary.shortSummary,
-    tags: (summary.typeTags ?? []).map((rawTag: any) => PR_TYPE_LABELS[rawTag]),
+    shortSummary: summary?.shortSummary || '',
+    tags: (summary?.typeTags ?? []).map(
+      (rawTag: any) => PR_TYPE_LABELS[rawTag]
+    ),
     occurredAt: pr.mergedAt ? pr.mergedAt.toISOString() : undefined,
     htmlUrl: pr.htmlUrl ?? undefined,
     leadTimeHours: pr.leadTimeSeconds,

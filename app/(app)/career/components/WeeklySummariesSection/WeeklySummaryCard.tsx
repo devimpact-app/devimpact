@@ -1,14 +1,6 @@
-import { formatDateOnly, formatRange } from '@/lib/utils/date';
+import { formatDateOnly } from '@/lib/utils/date';
 import { WeeklySummaryItem } from '@/types/api/weekly-summary';
-
-function formatWeekRange(weekStartLocalDate: string) {
-  const startDate = new Date(`${weekStartLocalDate}T00:00:00`);
-  if (Number.isNaN(startDate.getTime())) return weekStartLocalDate;
-
-  const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + 6);
-  return formatRange(startDate, endDate);
-}
+import { formatWeekRangeForWeeklySummary } from './helpers';
 
 function StatusPill({ status }: { status: WeeklySummaryItem['status'] }) {
   const base =
@@ -62,7 +54,7 @@ export function WeeklySummaryCard({
   const referencedThreads = summary.referencedThreadIds?.length ?? 0;
   const referencedEvents = summary.referencedEventIds?.length ?? 0;
 
-  const weekLabel = formatWeekRange(summary.weekStartLocalDate);
+  const weekLabel = formatWeekRangeForWeeklySummary(summary.weekStartLocalDate);
 
   const rightMeta =
     summary.status === 'ready'
@@ -100,21 +92,12 @@ export function WeeklySummaryCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2">
-          {/* Weekly summaries don’t have categories; lead with “Week of …” */}
-          <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] leading-none text-white/70">
-            Week
-          </span>
-
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold tracking-tight text-white">
-              {weekLabel}
-            </div>
-
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/50">
-              <StatusPill status={summary.status} />
-              <span className="text-white/25">·</span>
-              <span className="tabular-nums">TZ {summary.timezone}</span>
-            </div>
+          <div className="truncate text-[15px] font-semibold tracking-tight text-white">
+            {weekLabel}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/50">
+            <StatusPill status={summary.status} />
+            <span className="text-white/25">·</span>
           </div>
         </div>
 

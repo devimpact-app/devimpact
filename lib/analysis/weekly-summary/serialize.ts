@@ -7,7 +7,6 @@ export function serializeWeeklySummaryRow(
 ): WeeklySummaryItem {
   return {
     id: row.id,
-    tenantId: row.tenantId,
     weekStartLocalDate: row.weekStartLocalDate,
     timezone: row.timezone,
     rangeStartUtc: row.rangeStartUtc.toISOString(),
