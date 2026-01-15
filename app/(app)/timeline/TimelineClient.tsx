@@ -30,7 +30,6 @@ export default function TimelineClient({ user }: Props) {
   const { start, end, subLabel, label, canGoForward, goPrevWeek, goNextWeek } =
     useWeekNavigation();
 
-  const timezone = getTimezone();
   const { startISO, endISO } = useMemo(() => {
     return {
       startISO: start.toISOString(),
@@ -41,7 +40,9 @@ export default function TimelineClient({ user }: Props) {
   useEffect(() => {
     setTimelineLoading(true);
     async function loadStory() {
-      const res = await fetch(`/api/activity?start=${startISO}&end=${endISO}`);
+      const res = await fetch(
+        `/api/activity?start=${startISO}&end=${endISO}&includeMeetings=true`
+      );
       const { data } = await res.json();
       setTimeline(data.events);
       setTimelineLoading(false);
@@ -88,7 +89,6 @@ export default function TimelineClient({ user }: Props) {
           <OneWeekSkeleton />
         ) : (
           <TimelineHeatmap
-            timezone={timezone}
             events={timeline}
             onEventClick={(event) => {
               setSelectedEvent(event);
@@ -100,7 +100,6 @@ export default function TimelineClient({ user }: Props) {
           mode="full"
           startISO={startISO}
           endISO={endISO}
-          onViewAllClick={() => {}}
           onEventClick={(event) => {
             setSelectedEvent(event);
           }}

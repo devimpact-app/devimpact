@@ -5,6 +5,7 @@ import {
   GitMerge,
   MessageSquare,
   AlertTriangle,
+  CalendarCheck,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -151,6 +152,12 @@ function getPresentation(event: ActivityEvent): Presentation {
       title = `You pushed ${countLabel}${repo ? ` to ${repo}` : ''}`;
 
       subtitle = formatTime(occurredAt);
+      break;
+    }
+    case 'meeting': {
+      icon = <CalendarCheck className="h-3.5 w-3.5" />;
+      iconBgClass = 'bg-slate-900/40';
+      iconColorClass = 'text-slate-300';
       break;
     }
   }

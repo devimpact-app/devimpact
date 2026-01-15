@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getActivityEventsForRange } from '@/lib/analysis/timeline/service/getActivityEventsForRange';
 import { auth } from '@/lib/auth'; // if using NextAuth
-import { jsonOK, jsonUnauthorized } from '../_lib/http';
+import { jsonOK, jsonServerError, jsonUnauthorized } from '../_lib/http';
 import {
   ActivityEvent,
   ActivityEventsResponseSchema,
@@ -20,8 +20,10 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const startParam = searchParams.get('start');
   const endParam = searchParams.get('end');
   const limitParam = searchParams.get('limit');
+  const includeMeetingsParam = searchParams.get('includeMeetings');
   const showRecentParam = searchParams.get('showRecent');
   const showRecent = showRecentParam === 'true';
+  const includeMeetings = includeMeetingsParam === 'true';
 
   if ((!startParam || !endParam) && !showRecent) {
     return NextResponse.json(
@@ -48,18 +50,23 @@ export const GET = withSentryUser(async (req: NextRequest) => {
       start,
       end,
       limit,
+      includeMeetings,
     });
   } else {
     events = await getRecentActivityEvents({
       tenantId: session.user.id,
       limit: limitParam ? Number(limitParam) : undefined,
-      includeMeetings: true,
+      includeMeetings,
     });
   }
 
-  const parsed = ActivityEventsResponseSchema.parse({
+  const parsed = ActivityEventsResponseSchema.safeParse({
     events,
   });
+  if (!parsed.success) {
+    console.log(parsed.error);
+    return jsonServerError('Failed to parse response');
+  }
 
-  return jsonOK({ events: parsed.events });
+  return jsonOK({ events: parsed.data.events });
 });

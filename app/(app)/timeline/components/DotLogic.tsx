@@ -50,10 +50,18 @@ export function kindLabel(kind: ActivityEventKind): string {
   }
 }
 
-export function toDotsForWeek(
-  events: ActivityEvent[],
-  timezone: string
-): TimelineDot[] {
+const DOT_KINDS: ActivityEventKind[] = [
+  'pr_commit',
+  'pr_opened',
+  'pr_merged',
+  'review_submitted',
+];
+
+function isDotEvent(ev: ActivityEvent) {
+  return DOT_KINDS.includes(ev.kind as any);
+}
+
+export function toDotsForWeek(events: ActivityEvent[]): TimelineDot[] {
   const dots: TimelineDot[] = [];
 
   // Track dots per day to decide lane assignment locally
@@ -68,6 +76,7 @@ export function toDotsForWeek(
   };
 
   for (const ev of events) {
+    if (!isDotEvent(ev)) continue;
     const raw = new Date(ev.occurredAt);
     if (Number.isNaN(raw.getTime())) continue;
 

@@ -6,7 +6,6 @@ import { ActivityEvent } from '@/types/api/timeline';
 import { useMemo } from 'react';
 
 type TimelineHeatmapProps = {
-  timezone: string;
   events: ActivityEvent[];
   onEventClick?: (event: ActivityEvent) => void;
 };
@@ -30,14 +29,10 @@ function buildDotsByDay(dots: TimelineDot[]): Record<number, TimelineDot[]> {
 }
 
 export function TimelineHeatmap({
-  timezone,
   events,
   onEventClick,
 }: TimelineHeatmapProps) {
-  const singleWeekDots = useMemo(
-    () => toDotsForWeek(events, timezone),
-    [events, timezone]
-  );
+  const singleWeekDots = useMemo(() => toDotsForWeek(events), [events]);
 
   const singleWeekDotsByDay = useMemo(
     () => buildDotsByDay(singleWeekDots),
@@ -48,7 +43,7 @@ export function TimelineHeatmap({
     <OneWeekView
       weekdayLabels={WEEKDAY_LABELS}
       dotsByDay={singleWeekDotsByDay}
-      label={'test'}
+      label={'Timeline'}
       onEventClick={onEventClick}
     />
   );

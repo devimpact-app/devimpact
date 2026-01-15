@@ -9,6 +9,7 @@ import {
 } from '../api/serializers';
 import { getCalendarEventsForRange } from '../db/getCalendarEventsForRange';
 import { CalendarEvent } from '@/lib/db/schema/gcal';
+import { formatDateTime } from '@/lib/utils/date';
 
 export async function getActivityEventsForRange(
   params: ActivityQueryParams & {
@@ -17,12 +18,18 @@ export async function getActivityEventsForRange(
 ): Promise<ActivityEvent[]> {
   const { start, end, limit = 200 } = params;
 
-  const prRows = await getAuthoredPrs(params);
-  const reviewRows = await getAuthoredReviews(params, { joinWithPrs: true });
-  const commitRows = await getAuthoredCommits(params);
+  const activityParams = {
+    ...params,
+    limit: 200,
+  };
+  const prRows = await getAuthoredPrs(activityParams);
+  const reviewRows = await getAuthoredReviews(activityParams, {
+    joinWithPrs: true,
+  });
+  const commitRows = await getAuthoredCommits(activityParams);
   let calendarEvents: CalendarEvent[] = [];
   if (params.includeMeetings) {
-    calendarEvents = await getCalendarEventsForRange(params);
+    calendarEvents = await getCalendarEventsForRange(activityParams);
   }
 
   const events: ActivityEvent[] = [];
@@ -65,6 +72,7 @@ export async function getActivityEventsForRange(
   for (const row of reviewRows) {
     const r = row.review;
     if (!r.submittedAt) continue;
+    if (r.submittedAt < start || r.submittedAt > end) continue;
     events.push(serializeActivityEventFromReview(r, row.pr?.title));
   }
 
@@ -72,6 +80,7 @@ export async function getActivityEventsForRange(
     const { commit, pr } = row;
     const committedAt = commit.committedAt ?? commit.fetchedAt;
     if (!committedAt) continue;
+    if (committedAt < start || committedAt > end) continue;
 
     let title;
     if (pr?.title) {
@@ -114,8 +123,8 @@ export async function getActivityEventsForRange(
       actor: {
         login: '', // No specific actor for meetings
       },
-      title: 'Meeting started',
-      subtitle: row.title ?? undefined,
+      title: row.title ?? 'Meeting started',
+      subtitle: `Meeting · ${formatDateTime(row.startAt)}`,
     });
   }
 

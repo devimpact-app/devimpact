@@ -9,6 +9,7 @@ import { UpcomingPrepCardContainer } from './Prep';
 import WeeklySummaryDashboardCardContainer from './WeeklySummary';
 import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
 import { useRouter } from 'next/navigation';
+import RecentThreadsDashboardCardContainer from './Threads';
 
 type Props = {
   fullName: string;
@@ -54,14 +55,11 @@ export default function DashboardClient({
 
           <WeeklySummaryDashboardCardContainer />
 
+          <RecentThreadsDashboardCardContainer />
+
           <WorkRhythmCard />
 
-          <ActivityLogContainer
-            mode="preview"
-            onViewAllClick={() => {
-              router.push('/timeline');
-            }}
-          />
+          <ActivityLogContainer mode="preview" />
         </div>
       </main>
       {selectedInsight && (

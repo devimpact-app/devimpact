@@ -30,13 +30,11 @@ export function ActivityLogContainer({
   mode = 'preview',
   startISO,
   endISO,
-  onViewAllClick,
   onEventClick,
 }: {
   mode?: ActivityLogMode;
   startISO?: string;
   endISO?: string;
-  onViewAllClick?: () => void;
   onEventClick?: (event: ActivityEvent) => void;
 }) {
   const { data, isLoading } = useSWR<ActivityEvent[]>(
@@ -49,7 +47,6 @@ export function ActivityLogContainer({
       events={data ?? []}
       loading={isLoading}
       mode={mode}
-      onViewAllClick={onViewAllClick}
       onEventClick={onEventClick}
     />
   );
