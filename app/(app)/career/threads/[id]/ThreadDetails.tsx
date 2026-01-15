@@ -185,7 +185,7 @@ export function ThreadDetailPage({
                 </div>
                 <div className="text-xs font-medium text-white/40">
                   {lastGeneratedAt
-                    ? `· Last generated ${formatDateOnly(lastGeneratedAt)}`
+                    ? `· Last updated ${formatDateOnly(lastGeneratedAt)}`
                     : ''}
                 </div>
               </div>

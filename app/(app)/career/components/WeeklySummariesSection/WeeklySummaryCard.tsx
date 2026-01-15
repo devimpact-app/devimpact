@@ -64,18 +64,10 @@ export function WeeklySummaryCard({
           ? `Generated ${formatDateOnly(summary.generatedAt)}`
           : 'Ready'
       : summary.status === 'failed'
-        ? summary.lastErrorAt
-          ? `Failed ${formatDateOnly(summary.lastErrorAt)}`
-          : 'Failed'
+        ? 'Failed'
         : summary.status === 'generating'
-          ? summary.generationStartedAt
-            ? `Started ${formatDateOnly(summary.generationStartedAt)}`
-            : 'In progress'
-          : summary.status === 'pending'
-            ? summary.nextAttemptAt
-              ? `Next ${formatDateOnly(summary.nextAttemptAt)}`
-              : `Attempts ${summary.attempts}`
-            : '—';
+          ? 'In progress'
+          : 'Queued';
 
   return (
     <button
@@ -144,13 +136,6 @@ export function WeeklySummaryCard({
           <div className="truncate text-[11px] text-white/50">
             <span className="text-white/45">Delivery:</span>{' '}
             <span className="text-white/65">Not sent</span>
-          </div>
-        ) : summary.status === 'pending' && summary.nextAttemptAt ? (
-          <div className="truncate text-[11px] text-white/50">
-            <span className="text-white/45">Next attempt:</span>{' '}
-            <span className="tabular-nums text-white/65">
-              {formatDateOnly(summary.nextAttemptAt)}
-            </span>
           </div>
         ) : null}
       </div>

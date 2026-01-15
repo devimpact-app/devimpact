@@ -99,6 +99,13 @@
       "when": 1768254511175,
       "tag": "0013_add_weekly_summary_table",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1768435839488,
+      "tag": "0014_add_tenant_requested_fields",
+      "breakpoints": true
     }
   ]
 }

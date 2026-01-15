@@ -10,6 +10,8 @@ import {
   encodeWeeklySummaryCursor,
 } from '@/lib/analysis/weekly-summary/db/read/cursor';
 import { listWeeklySummariesPage } from '@/lib/analysis/weekly-summary/db/read/listWeeklySummaries';
+import { buildWeeklyActivity } from '@/lib/analysis/weekly-activity/service/buildWeeklyActivity';
+import { WeeklyActivity } from '@/types/api/weekly-activity';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
@@ -29,6 +31,7 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const limit = Number.isFinite(limitRaw)
     ? Math.min(Math.max(limitRaw, 1), 50)
     : 20;
+  const expandActivity = limit === 1;
 
   const decoded = cursor ? decodeWeeklySummaryCursor(cursor) : null;
   if (cursor && !decoded) return jsonBadRequest('Invalid cursor');
@@ -45,7 +48,23 @@ export const GET = withSentryUser(async (req: NextRequest) => {
       : undefined,
   });
 
-  const items = rows.map(serializeWeeklySummaryRow);
+  let activity: WeeklyActivity | undefined = undefined;
+  if (expandActivity && rows.length === 1) {
+    activity = await buildWeeklyActivity({
+      userId: tenantId,
+      rangeStart: new Date(rows[0].rangeStartUtc),
+      rangeEnd: new Date(rows[0].rangeEndUtc),
+      timezone: rows[0].timezone,
+    });
+  }
+
+  const items = rows.map((r) => {
+    const serialized = serializeWeeklySummaryRow(r);
+    if (activity) {
+      serialized.activity = activity;
+    }
+    return serialized;
+  });
 
   const parsed = GetWeeklySummariesResponseSchema.safeParse({
     items,

@@ -143,29 +143,9 @@ export type WeeklyCalendarSummary = z.infer<typeof WeeklyCalendarSummarySchema>;
 
 export const WeeklyActivitySchema = z
   .object({
-    version: z.literal(1).default(1),
-
-    range: WeekRangeSchema,
-
-    headline: z.string(),
-
     softStats: StatsSchema,
-
-    shipped: z.array(ShippedItemSchema).default([]),
-
-    reviewsCollab: ReviewsCollabSchema.optional(),
-
-    whatYouWorkedOn: WhatYouWorkedOnSchema.optional(),
-
     frictionFollowups: FrictionFollowupsSchema.optional(),
-
     calendar: WeeklyCalendarSummarySchema.optional(),
-
-    meta: z
-      .object({
-        generatedAt: z.string().datetime(),
-      })
-      .optional(),
   })
   // Allow additional top-level keys in future without breaking older clients
   .catchall(z.any());

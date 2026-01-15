@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           </h2>
           <p>
             DevImpact is an early private beta. We collect only the data
-            required to generate your engineering insights and never sell, rent,
+            required to create your engineering insights and never sell, rent,
             or share your data with third parties.
           </p>
         </section>

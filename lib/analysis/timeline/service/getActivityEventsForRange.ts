@@ -7,15 +7,23 @@ import {
   serializeActivityEventFromPr,
   serializeActivityEventFromReview,
 } from '../api/serializers';
+import { getCalendarEventsForRange } from '../db/getCalendarEventsForRange';
+import { CalendarEvent } from '@/lib/db/schema/gcal';
 
 export async function getActivityEventsForRange(
-  params: ActivityQueryParams
+  params: ActivityQueryParams & {
+    includeMeetings?: boolean;
+  }
 ): Promise<ActivityEvent[]> {
   const { start, end, limit = 200 } = params;
 
   const prRows = await getAuthoredPrs(params);
   const reviewRows = await getAuthoredReviews(params, { joinWithPrs: true });
   const commitRows = await getAuthoredCommits(params);
+  let calendarEvents: CalendarEvent[] = [];
+  if (params.includeMeetings) {
+    calendarEvents = await getCalendarEventsForRange(params);
+  }
 
   const events: ActivityEvent[] = [];
 
@@ -97,7 +105,20 @@ export async function getActivityEventsForRange(
     });
   }
 
-  // 3) Sort by occurredAt DESC and trim to limit
+  for (const row of calendarEvents) {
+    events.push({
+      id: `meeting:${row.id}`,
+      kind: 'meeting',
+      source: 'gcal',
+      occurredAt: row.startAt.toISOString(),
+      actor: {
+        login: '', // No specific actor for meetings
+      },
+      title: 'Meeting started',
+      subtitle: row.title ?? undefined,
+    });
+  }
+
   events.sort(
     (a, b) =>
       new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()

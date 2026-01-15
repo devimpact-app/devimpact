@@ -17,6 +17,7 @@ import {
   serializeThreadListItem,
 } from '@/lib/analysis/threads/api/serializers';
 import { listEventsById } from '@/lib/analysis/threads/db/read/listEventsById';
+import { buildWeeklyActivity } from '@/lib/analysis/weekly-activity/service/buildWeeklyActivity';
 
 export const GET = withSentryUser(
   async (_req: NextRequest, context: { params: Promise<{ id: string }> }) => {
@@ -53,8 +54,18 @@ export const GET = withSentryUser(
       events = eventRows.map((r) => serializeActivityEventListItem(r));
     }
 
+    const activity = await buildWeeklyActivity({
+      userId: tenantId,
+      rangeStart: new Date(summary.rangeStartUtc),
+      rangeEnd: new Date(summary.rangeEndUtc),
+      timezone: summary.timezone,
+    });
+
     const out = {
-      summary: serializeWeeklySummaryRow(summary),
+      summary: {
+        ...serializeWeeklySummaryRow(summary),
+        activity,
+      },
       threads,
       events,
     };

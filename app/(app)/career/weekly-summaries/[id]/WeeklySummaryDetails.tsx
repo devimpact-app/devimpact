@@ -1,7 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  FilePlus,
+  RefreshCcw,
+  Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type {
   GetWeeklySummaryDetailResponse,
@@ -121,7 +127,6 @@ export function WeeklySummaryDetailPage({
   const bullets = out?.bullets ?? [];
 
   const generatedAt = formatDateOnly(summary.generatedAt ?? null);
-  const createdAt = formatDateOnly(summary.createdAt ?? null);
 
   return (
     <>
@@ -159,12 +164,6 @@ export function WeeklySummaryDetailPage({
                             : 'Skipped'}
                   </span>
 
-                  {summary.attempts > 0 ? (
-                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/70">
-                      Attempts {summary.attempts}
-                    </span>
-                  ) : null}
-
                   {summary.status === 'failed' && summary.lastError ? (
                     <span className="inline-flex items-center rounded-full border border-rose-400/20 bg-rose-400/5 px-2.5 py-1 text-[11px] font-medium text-rose-200">
                       Error
@@ -184,19 +183,53 @@ export function WeeklySummaryDetailPage({
                   </span>
 
                   <span className="inline-flex items-center gap-1">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {generatedAt
-                      ? `Generated ${generatedAt}`
-                      : createdAt
-                        ? `Created ${createdAt}`
-                        : 'Not generated yet'}
+                    <FilePlus className="h-3.5 w-3.5" />
+                    {generatedAt ? `Created ${generatedAt}` : 'Not created yet'}
                   </span>
                 </div>
               </div>
 
-              {/* Right actions (optional, keep minimal for summary artifact) */}
               <div className="flex shrink-0 items-center gap-2">
-                {/* TODO: add "Copy" / "Export" actions later */}
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => {}}
+                    className="flex items-center justify-center h-9 w-9 rounded-full border border-white/15
+                 bg-surface-lower text-text-secondary hover:text-text-primary transition"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                  </button>
+
+                  <div
+                    className="pointer-events-none absolute right-0 top-full mt-1
+                 opacity-0 group-hover:opacity-100 transition
+                 whitespace-nowrap rounded-md bg-surface-elevated px-2 py-1 text-xs text-text-primary
+                 shadow-lg"
+                  >
+                    Regenerate
+                  </div>
+                </div>
+
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => {}}
+                    className="flex items-center justify-center h-9 w-9 rounded-full
+                 bg-red-400/20 text-red-300 hover:bg-red-400/30 transition
+                 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+
+                  <div
+                    className="pointer-events-none absolute right-0 top-full mt-1
+                 opacity-0 group-hover:opacity-100 transition
+                 whitespace-nowrap rounded-md px-2 py-1 text-xs text-text-primary
+                 shadow-lg"
+                  >
+                    Delete
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -223,7 +256,7 @@ export function WeeklySummaryDetailPage({
                   </p>
                 ) : (
                   <p className="text-white/45">
-                    Not generated yet. Generate to see a summary.
+                    Not created yet. Generate to see a summary.
                   </p>
                 )}
 

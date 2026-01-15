@@ -7,10 +7,14 @@ import { ActivityEvent, ActivityEventSchema } from '@/types/api/timeline';
 type ActivityLogMode = 'preview' | 'full';
 
 async function fetchActivityEvents(
-  start: string,
-  end: string
+  start?: string,
+  end?: string
 ): Promise<ActivityEvent[]> {
-  const params = new URLSearchParams({ start, end });
+  const params = new URLSearchParams({
+    ...(!start && !end ? { showRecent: 'true' } : {}),
+    ...(start ? { start } : {}),
+    ...(end ? { end } : {}),
+  });
 
   const res = await fetch(`/api/activity?${params.toString()}`, {
     credentials: 'include',
@@ -30,13 +34,13 @@ export function ActivityLogContainer({
   onEventClick,
 }: {
   mode?: ActivityLogMode;
-  startISO: string;
-  endISO: string;
+  startISO?: string;
+  endISO?: string;
   onViewAllClick?: () => void;
   onEventClick?: (event: ActivityEvent) => void;
 }) {
   const { data, isLoading } = useSWR<ActivityEvent[]>(
-    ['/api/activity', startISO, endISO],
+    ['/api/activity', startISO, endISO, 'showRecent'],
     ([, start, end]) => fetchActivityEvents(start as string, end as string)
   );
 

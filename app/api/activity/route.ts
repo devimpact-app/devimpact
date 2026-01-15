@@ -7,6 +7,7 @@ import {
   ActivityEventsResponseSchema,
 } from '@/types/api/timeline';
 import { withSentryUser } from '@/lib/withSentryUser';
+import { getRecentActivityEvents } from '@/lib/analysis/timeline/service/getRecentActivityEvents';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
@@ -19,31 +20,42 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const startParam = searchParams.get('start');
   const endParam = searchParams.get('end');
   const limitParam = searchParams.get('limit');
+  const showRecentParam = searchParams.get('showRecent');
+  const showRecent = showRecentParam === 'true';
 
-  if (!startParam || !endParam) {
+  if ((!startParam || !endParam) && !showRecent) {
     return NextResponse.json(
-      { error: 'Missing required query params: tenantId, start, end' },
+      { error: 'Missing required query params: start, end or showRecent' },
       { status: 400 }
     );
   }
 
-  const start = new Date(startParam);
-  const end = new Date(endParam);
-  const limit = limitParam ? Number(limitParam) : undefined;
+  let events: ActivityEvent[] = [];
+  if (startParam && endParam) {
+    const start = new Date(startParam);
+    const end = new Date(endParam);
+    const limit = limitParam ? Number(limitParam) : undefined;
 
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return NextResponse.json(
-      { error: 'Invalid start or end date' },
-      { status: 400 }
-    );
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid start or end date' },
+        { status: 400 }
+      );
+    }
+
+    events = await getActivityEventsForRange({
+      tenantId: session.user.id,
+      start,
+      end,
+      limit,
+    });
+  } else {
+    events = await getRecentActivityEvents({
+      tenantId: session.user.id,
+      limit: limitParam ? Number(limitParam) : undefined,
+      includeMeetings: true,
+    });
   }
-
-  const events: ActivityEvent[] = await getActivityEventsForRange({
-    tenantId: session.user.id,
-    start,
-    end,
-    limit,
-  });
 
   const parsed = ActivityEventsResponseSchema.parse({
     events,

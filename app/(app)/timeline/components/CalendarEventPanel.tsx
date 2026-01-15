@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import {
   CalendarClock,
   Clock,
-  Sparkles,
   Tag,
   Users,
   CheckCircle2,
   CircleSlash,
   HelpCircle,
   X,
+  FileText,
 } from 'lucide-react';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 
@@ -323,7 +323,7 @@ export function CalendarEventInspectorPanel({
               disabled:opacity-60 disabled:cursor-not-allowed
             "
           >
-            <Sparkles className="h-3.5 w-3.5 text-text-secondary" />
+            <FileText className="h-3.5 w-3.5 text-text-secondary" />
             {hasPrep
               ? 'Open prep'
               : createState === 'loading'

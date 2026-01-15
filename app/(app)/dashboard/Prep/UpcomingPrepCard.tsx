@@ -157,7 +157,7 @@ export function UpcomingPrepCard({
                 Prepare for upcoming meetings
               </h3>
               <p className="text-[11px] text-white/45 leading-snug">
-                Generate focused prep for standups and 1:1s from recent work.
+                Create focused prep for standups and 1:1s from recent work.
               </p>
             </div>
           </div>

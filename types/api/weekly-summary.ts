@@ -1,5 +1,6 @@
 import z from 'zod';
 import { ActivityEventListItemSchema, ThreadListItemSchema } from './threads';
+import { WeeklyActivitySchema } from './weekly-activity';
 
 export const WeeklySummaryStatusSchema = z.enum([
   'pending', // queued / created but not started
@@ -38,23 +39,15 @@ export const WeeklySummaryItemSchema = z
     rangeStartUtc: z.iso.datetime(),
     rangeEndUtc: z.iso.datetime(),
     status: WeeklySummaryStatusSchema,
-    generationStartedAt: z.string().datetime().nullable().optional(),
     lastError: z.string().nullable().optional(),
-    lastErrorAt: z.iso.datetime().nullable().optional(),
-    claimedAt: z.iso.datetime().nullable().optional(),
-    claimedBy: z.string().nullable().optional(),
-    claimExpiresAt: z.iso.datetime().nullable().optional(),
-    attempts: z.number().int().min(0),
-    nextAttemptAt: z.iso.datetime().nullable().optional(),
     emailedAt: z.iso.datetime().nullable().optional(),
     output: WeeklySummaryOutputSchema.nullable(),
     referencedThreadIds: z.array(z.uuid()).max(500).default([]),
     referencedEventIds: z.array(z.uuid()).max(2000).default([]),
-    model: z.string().max(120).nullable().optional(),
-    promptVersion: z.string().max(120).nullable().optional(),
     generatedAt: z.iso.datetime().nullable().optional(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
+
+    // Deterministic enrichment
+    activity: WeeklyActivitySchema.optional(),
   })
   .strict();
 export type WeeklySummaryItem = z.infer<typeof WeeklySummaryItemSchema>;

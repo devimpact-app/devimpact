@@ -99,8 +99,7 @@ export async function claimWeeklySummaryRow({
       .where(
         and(
           eq(weeklySummaries.tenantId, tenantId),
-          eq(weeklySummaries.weekStartLocalDate, weekStartLocalDate),
-          eq(weeklySummaries.timezone, timezone)
+          eq(weeklySummaries.weekStartLocalDate, weekStartLocalDate)
         )
       )
       .for('update');

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, FileText } from 'lucide-react';
 
 import { UpcomingCalendarEvent, PrepMeetingType } from '@/types/api/prep';
 import { formatUpcomingTime, getTimezone } from '@/lib/utils/date';
@@ -187,7 +187,7 @@ export function EventRow({
           ) : cta.kind === 'open' ? (
             <ArrowRight className="h-3.5 w-3.5 text-white/60" />
           ) : (
-            <Sparkles className="h-3.5 w-3.5 text-white/60" />
+            <FileText className="h-3.5 w-3.5 text-white/60" />
           )}
           {cta.label}
         </button>
