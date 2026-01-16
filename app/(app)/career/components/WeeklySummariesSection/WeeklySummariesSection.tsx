@@ -5,8 +5,8 @@ import { WeeklySummaryItem } from '@/types/api/weekly-summary';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { useState } from 'react';
 import { getTimezone } from '@/lib/utils/date';
-import { postJson } from '../../weekly-summaries/shared';
 import { GenerateWeeklySummaryButton } from '../../weekly-summaries/GenerateWeeklySummaryButton';
+import { postJson } from '@/components/api';
 
 export function WeeklySummariesSection({
   items,

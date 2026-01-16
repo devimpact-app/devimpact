@@ -2,7 +2,7 @@ import { ActivityEvent } from '@/types/api/timeline';
 import { clusterCommitEvents } from './clusterEvents';
 import { ActivityLogRow } from './ActivityLogRow';
 import { useMemo } from 'react';
-import { ActionButton } from '@/app/(app)/dashboard/components/ActionButton';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { ArrowRight } from 'lucide-react';
 
 type ActivityLogMode = 'preview' | 'full';

@@ -1,15 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import WorkRhythmCard from './WorkRythm';
+import WorkRhythmCard from './components/WorkRythm';
 import { DashboardAlerts } from './components/DashboardAlerts';
 import { InsightPanel } from '@/components/insights/InsightPanel';
 import { Insight } from '@/types/api/insights';
-import { UpcomingPrepCardContainer } from './Prep';
-import WeeklySummaryDashboardCardContainer from './WeeklySummary';
+import { UpcomingPrepCardContainer } from './components/Prep';
+import WeeklySummaryDashboardCardContainer from './components/WeeklySummary';
 import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
 import { useRouter } from 'next/navigation';
-import RecentThreadsDashboardCardContainer from './Threads';
+import RecentThreadsDashboardCardContainer from './components/Threads';
 
 type Props = {
   fullName: string;

@@ -12,12 +12,16 @@ import { useMemo, useState } from 'react';
 import type {
   GetWeeklySummaryDetailResponse,
   WeeklySummaryItem,
-} from '@/types/api/weekly-summary'; // adjust import path
+} from '@/types/api/weekly-summary';
 import { getStartAndEndDateForWeeklySummary } from '../../components/WeeklySummariesSection/helpers';
-import { formatDateOnly } from '@/lib/utils/date';
+import { formatDateOnly, getTimezone } from '@/lib/utils/date';
 import { ActivityEventsSection } from '../../threads/[id]/ActivityEventsSection';
 import { ActivityEventInspectorPanel } from '../../threads/[id]/ActivityEventInspectorPanel';
 import { BasedOnThreads } from './BasedOnThreads';
+import { WeeklyActivitySection } from './WeeklyActivitySection';
+import { ActivityEvent } from '@/types/api/timeline';
+import { EventInspectorPanel } from '@/app/(app)/timeline/components/EventInspectorPanel';
+import { useRouter } from 'next/navigation';
 
 function statusPill(status: WeeklySummaryItem['status']) {
   switch (status) {
@@ -41,13 +45,22 @@ export function WeeklySummaryDetailPage({
   backHref = '/career/weekly-summaries',
   isLoading = false,
   error = null,
+  onRegenerate,
+  generateLoading = false,
 }: {
   data?: GetWeeklySummaryDetailResponse;
   backHref?: string;
   isLoading?: boolean;
   error?: string | null;
+  onRegenerate: () => void;
+  generateLoading?: boolean;
 }) {
+  const router = useRouter();
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedActivityEvent, setSelectedActivityEvent] =
+    useState<ActivityEvent | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [generateSuccess, setGenerateSuccess] = useState<string | null>(null);
 
   const summary = data?.summary;
   const weekEndLocalDate = useMemo(() => {
@@ -193,7 +206,7 @@ export function WeeklySummaryDetailPage({
                 <div className="relative group">
                   <button
                     type="button"
-                    onClick={() => {}}
+                    onClick={onRegenerate}
                     className="flex items-center justify-center h-9 w-9 rounded-full border border-white/15
                  bg-surface-lower text-text-secondary hover:text-text-primary transition"
                   >
@@ -233,47 +246,85 @@ export function WeeklySummaryDetailPage({
               </div>
             </div>
 
-            <div className="mt-5 rounded-2xl border border-white/10 bg-slate-900/30 p-4 backdrop-blur">
-              <div className="flex flex-row items-center justify-between">
-                <div className="text-xs font-medium text-white/80">
-                  Weekly Summary
+            <div
+              className="
+                mt-5 rounded-2xl
+                border border-white/10
+                bg-slate-900/30 p-4 backdrop-blur
+                shadow-[0_12px_30px_rgba(0,0,0,0.35)]
+              "
+            >
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-4 w-1 bg-indigo-600/70 rounded-full" />
+                    <div className="text-[13px] font-semibold text-white/95">
+                      Weekly Summary
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-[13px] leading-relaxed text-white/70">
+                  {generateLoading ? (
+                    <div className="mt-2 space-y-2">
+                      <div className="h-4 w-[70%] rounded bg-white/10 animate-pulse" />
+                      <div className="h-4 w-[55%] rounded bg-white/10 animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      {headline ? (
+                        <p className="text-[14px] font-medium text-white/70">
+                          {headline}
+                        </p>
+                      ) : summary.status === 'ready' ? (
+                        <p className="text-white/45">No headline generated.</p>
+                      ) : summary.status === 'failed' ? (
+                        <p className="text-rose-200/80">
+                          Failed to generate. {summary.lastError ?? ''}
+                        </p>
+                      ) : summary.status === 'skipped' ? (
+                        <p className="text-amber-200/80">
+                          Skipped. {summary.lastError ?? ''}
+                        </p>
+                      ) : (
+                        <p className="text-white/45">
+                          Not created yet. Generate to see a summary.
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {generateLoading ? (
+                    <ul className="mt-3 space-y-2 pl-5">
+                      {[0, 1, 2].map((i) => (
+                        <li
+                          key={i}
+                          className="h-3 w-[80%] rounded bg-white/10 animate-pulse"
+                        />
+                      ))}
+                    </ul>
+                  ) : bullets.length > 0 ? (
+                    <ul className="mt-3 space-y-2 pl-5 list-disc">
+                      {bullets.map((b, idx) => (
+                        <li
+                          key={`${idx}-${b.text.slice(0, 16)}`}
+                          className="text-[13px] leading-relaxed text-white/70"
+                        >
+                          {b.text}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
               </div>
-
-              <div className="mt-2 text-[13px] leading-relaxed text-white/70">
-                {headline ? (
-                  <p className="text-white/80">{headline}</p>
-                ) : summary.status === 'ready' ? (
-                  <p className="text-white/45">No headline generated.</p>
-                ) : summary.status === 'failed' ? (
-                  <p className="text-rose-200/80">
-                    Failed to generate.{' '}
-                    {summary.lastError ? summary.lastError : ''}
-                  </p>
-                ) : summary.status === 'skipped' ? (
-                  <p className="text-amber-200/80">
-                    Skipped. {summary.lastError ? summary.lastError : ''}
-                  </p>
-                ) : (
-                  <p className="text-white/45">
-                    Not created yet. Generate to see a summary.
-                  </p>
-                )}
-
-                {bullets.length > 0 ? (
-                  <ul className="mt-3 space-y-2 pl-5 list-disc">
-                    {bullets.map((b, idx) => (
-                      <li
-                        key={`${idx}-${b.text.slice(0, 16)}`}
-                        className="text-[13px] leading-relaxed text-white/70"
-                      >
-                        {b.text}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-              <BasedOnThreads threads={data.threads} defaultOpen />
+              <WeeklyActivitySection
+                activity={data.summary.activity}
+                onEventClick={(event) => {
+                  setSelectedActivityEvent(event);
+                  setSelectedEventId(null);
+                }}
+              />
+              <BasedOnThreads threads={data.threads} />
             </div>
           </div>
         </div>
@@ -281,7 +332,10 @@ export function WeeklySummaryDetailPage({
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
           <ActivityEventsSection
             events={data.events}
-            onSelect={(id) => setSelectedEventId(id)}
+            onSelect={(id) => {
+              setSelectedActivityEvent(null);
+              setSelectedEventId(id);
+            }}
             title="Evidence from this week"
             subtitle="Activity that informed this summary"
           />
@@ -291,6 +345,12 @@ export function WeeklySummaryDetailPage({
         <ActivityEventInspectorPanel
           activityEventId={selectedEventId}
           onClose={() => setSelectedEventId(null)}
+        />
+      )}
+      {selectedActivityEvent && (
+        <EventInspectorPanel
+          event={selectedActivityEvent}
+          onClose={() => setSelectedActivityEvent(null)}
         />
       )}
     </>

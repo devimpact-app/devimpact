@@ -5,7 +5,7 @@ import { PrepHero } from './components/Hero';
 import { PrepQuickActions } from './components/QuickActions';
 import { useEffect, useState } from 'react';
 import { formatDateTime, getTimezone } from '@/lib/utils/date';
-import { UpcomingPrepCardContainer } from '../dashboard/Prep';
+import { UpcomingPrepCardContainer } from '../dashboard/components/Prep';
 import { PrepMeetingType, TPrepItemListResponse } from '@/types/api/prep';
 
 type Props = {

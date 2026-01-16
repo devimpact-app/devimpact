@@ -1,10 +1,11 @@
 'use client';
 
 import { UpcomingCalendarEvent } from '@/types/api/prep';
-import { Calendar, ChevronRight } from 'lucide-react';
+import { ArrowRight, Calendar, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { EventRow } from './EventRow';
 import { PrepDashboardQuickActions } from './QuickActions';
+import { ActionButton } from '../../../../../components/ui/ActionButton';
 
 type UpcomingPrepCardProps = {
   calendarConnected: boolean;
@@ -125,6 +126,7 @@ export function UpcomingPrepCard({
 }: UpcomingPrepCardProps) {
   const hasEvents = events.length > 0;
 
+  const prepHref = '/prep';
   const showEventList = calendarConnected && hasEvents && !isLoading && !error;
   return (
     <section
@@ -163,17 +165,9 @@ export function UpcomingPrepCard({
           </div>
 
           {!hideOpen && (
-            <Link
-              href="/prep"
-              className="
-              text-[11px] text-indigo-300
-              hover:underline inline-flex items-center gap-1
-              shrink-0
-            "
-            >
-              View prep history
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
+            <ActionButton href={prepHref} variant="primary">
+              View all prep <ArrowRight className="h-4 w-4" />
+            </ActionButton>
           )}
         </header>
 

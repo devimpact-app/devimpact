@@ -164,18 +164,6 @@ export function WorkRhythmCard({
             </span>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={onViewTimelineClick}
-          className="
-            text-[11px] text-indigo-300
-            hover:underline inline-flex items-center gap-1
-          "
-        >
-          View timeline
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
       </header>
 
       <div className="flex items-center justify-between">

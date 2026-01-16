@@ -1,5 +1,6 @@
 import type { WeeklyActivity } from '@/types/api/weekly-activity';
 import { formatMinutes } from '@/lib/utils/date';
+import Link from 'next/link';
 
 function dot() {
   return (
@@ -30,8 +31,10 @@ function StatPill({
 
 export function WeeklySummaryActivitySnippet({
   activity,
+  summaryId,
 }: {
   activity?: WeeklyActivity | null;
+  summaryId: string;
 }) {
   if (!activity) return null;
 
@@ -90,16 +93,34 @@ export function WeeklySummaryActivitySnippet({
             Potential follow-ups
           </div>
 
-          <ul className="mt-2 space-y-1.5">
-            {frictionPreview.map((item, idx) => (
-              <li
-                key={(item as any).id ?? idx}
-                className="flex gap-2 text-[12px] text-white/65"
-              >
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white/20" />
-                <span className="leading-relaxed">{(item as any).text}</span>
-              </li>
-            ))}
+          <ul className="space-y-1.5">
+            {frictionPreview.map((item, idx) => {
+              const pr = item.relatedPr;
+              const href = `/career/weekly-summaries/${summaryId}`;
+
+              return (
+                <li key={item.id ?? idx}>
+                  <Link
+                    href={href}
+                    className={[
+                      'group flex gap-2 rounded-md px-2 py-1.5',
+                      'text-[12px] text-white/65',
+                      'hover:bg-white/[0.04] hover:text-white/80',
+                      'focus:outline-none focus:ring-2 focus:ring-white/15',
+                      'transition',
+                    ].join(' ')}
+                  >
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white/30 group-hover:bg-white/50" />
+                    {pr?.meta?.repoFullName && pr?.meta?.prNumber ? (
+                      <span className="ml-1 text-white/40">
+                        ({pr.meta.repoFullName} #{pr.meta.prNumber})
+                      </span>
+                    ) : null}
+                    <span className="leading-relaxed">{item.text}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
           {frictionItems.length > frictionPreview.length ? (

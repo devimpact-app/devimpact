@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { CalendarEventCategorySchema } from './prep';
+import { CalendarEventCategorySchema, TeamMeetingSubtypeSchema } from './prep';
+import { ActivityEventSchema } from './timeline';
 
 export const WeekRangeSchema = z.object({
   startISO: z.string(),
@@ -93,8 +94,8 @@ export const WhatYouWorkedOnSchema = z
 
 const FrictionItemBaseSchema = z.object({
   id: z.string().optional(), // for stable keys in the UI
-  text: z.string(), // user-facing sentence
-  relatedPr: PRReferenceSchema.optional(),
+  text: z.string(),
+  relatedPr: ActivityEventSchema.optional(),
   severity: z.enum(['low', 'medium', 'high']).optional(),
 });
 
@@ -135,6 +136,8 @@ export const WeeklyCalendarSummarySchema = z.object({
         key: CalendarEventCategorySchema,
         count: z.number(),
         minutes: z.number().optional(),
+        subcategories: z.array(TeamMeetingSubtypeSchema).optional(),
+        subcategoryCountTotal: z.number().int().optional(),
       })
     )
     .optional(),

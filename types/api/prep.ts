@@ -25,6 +25,7 @@ export const TeamMeetingSubtypeSchema = z.enum([
   'status',
   'other',
 ]);
+export type TeamMeetingSubtype = z.infer<typeof TeamMeetingSubtypeSchema>;
 
 export const PrepMeetingTypeSchema = z.enum([
   'oneOnOne',

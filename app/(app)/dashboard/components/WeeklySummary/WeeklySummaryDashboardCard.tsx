@@ -10,11 +10,11 @@ import {
   FilePlus,
 } from 'lucide-react';
 import { formatDateOnly } from '@/lib/utils/date';
-import { formatWeekRangeForWeeklySummary } from '../../career/components/WeeklySummariesSection/helpers';
+import { formatWeekRangeForWeeklySummary } from '../../../career/components/WeeklySummariesSection/helpers';
 import { WeeklySummaryItem } from '@/types/api/weekly-summary';
 import { WeeklySummaryActivitySnippet } from './WeeklySummaryActivitySnippet';
-import { ActionButton } from '../components/ActionButton';
-import { StatusPill } from '../components/StatusPill';
+import { ActionButton } from '../../../../../components/ui/ActionButton';
+import { StatusPill } from '../../../../../components/ui/StatusPill';
 
 export function WeeklySummaryDashboardCard({
   summary,
@@ -158,14 +158,17 @@ export function WeeklySummaryDashboardCard({
         </div>
       </div>
 
-      {state === 'ready' ? (
+      {state === 'ready' && summary ? (
         <div className="text-[13px] leading-relaxed text-white/75">
           {headline ? (
             <p className="line-clamp-2">{headline}</p>
           ) : (
             <p className="text-white/50">Summary is ready.</p>
           )}
-          <WeeklySummaryActivitySnippet activity={summary?.activity} />
+          <WeeklySummaryActivitySnippet
+            activity={summary.activity}
+            summaryId={summary.id}
+          />
         </div>
       ) : null}
 

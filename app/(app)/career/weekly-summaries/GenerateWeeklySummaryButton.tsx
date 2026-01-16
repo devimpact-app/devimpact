@@ -1,10 +1,11 @@
 'use client';
 
 import { getTimezone } from '@/lib/utils/date';
-import { getWeekStartMondayIso, postJson } from './shared';
+import { getWeekStartMondayIso } from './shared';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, FilePlus } from 'lucide-react';
+import { postJson } from '@/components/api';
 
 export function GenerateWeeklySummaryButton() {
   const router = useRouter();

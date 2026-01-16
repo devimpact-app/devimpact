@@ -1,14 +1,14 @@
 import { ThreadListItem } from '@/types/api/threads';
 import { useMemo } from 'react';
-import { ActionButton } from '../components/ActionButton';
+import { ActionButton } from '../../../../../components/ui/ActionButton';
 import { AlertTriangle, ArrowRight, List, Loader2 } from 'lucide-react';
-import { StatusPill } from '../components/StatusPill';
+import { StatusPill } from '../../../../../components/ui/StatusPill';
 import Link from 'next/link';
 import { formatDateOnly } from '@/lib/utils/date';
 import {
   categoryLabel,
   categoryPillClasses,
-} from '../../career/threads/shared';
+} from '../../../career/threads/shared';
 
 export function ThreadRowCompact({ thread }: { thread: ThreadListItem }) {
   const lastActive = thread.lastActivityAt ?? thread.firstActivityAt;

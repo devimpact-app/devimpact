@@ -1,35 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Calendar,
-  Check,
-  Copy,
-  Github,
-  LogOut,
-  TerminalSquare,
-  Trash2,
-} from 'lucide-react';
+import { LogOut, Trash2 } from 'lucide-react';
 import { signOutAction } from '../dashboard/actions';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { CopyableCode } from '@/components/CopyableCode';
 import { GithubCliCard } from './GithubCard';
 import { GoogleCalendarCard } from './GcalCard';
-
-async function postJson(url: string, body?: unknown) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `Request failed (${res.status})`);
-  }
-  return res.json().catch(() => ({}));
-}
+import { postJson } from '@/components/api';
 
 export function SettingsClient({
   cliDisconnected,

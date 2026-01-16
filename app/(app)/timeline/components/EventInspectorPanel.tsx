@@ -147,7 +147,7 @@ export function EventInspectorPanel({
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <div className="inline-flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-border py-[2px] text-[11px] text-text-secondary bg-surface/80">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border py-[2px] text-[11px] text-text-secondary bg-surface/80 px-2">
               {kindIcon(event.kind)}
               <span>{kindLabel(event.kind)}</span>
             </span>

@@ -71,7 +71,7 @@ export async function buildWeeklyActivity({
 
   // friction & follow-ups
   const frictionFollowups = deriveFrictionFollowups({
-    authoredPrs: authoredPrs,
+    authoredPrs: mergedPrs,
   });
 
   const summary: WeeklyActivity = {

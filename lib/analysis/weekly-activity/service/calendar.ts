@@ -32,6 +32,10 @@ export async function getWeeklyMeetingTotals(params: {
       key: string;
       count: number;
       minutes: number;
+      subcategoryMap: Record<
+        string,
+        { key: string; count: number; minutes: number }
+      >;
     }
   > = {};
   for (const ev of events) {
@@ -52,14 +56,33 @@ export async function getWeeklyMeetingTotals(params: {
 
     // Category
     if (ev.category) {
-      const categoryMapItem = categoryMap[ev.category] || {
-        key: ev.category,
+      const catKey = ev.category;
+
+      const cat = (categoryMap[catKey] ??= {
+        key: catKey,
         count: 0,
         minutes: 0,
-      };
-      categoryMapItem.count += 1;
-      categoryMapItem.minutes += minutesBetween(clampedStart, clampedEnd) ?? 0;
-      categoryMap[ev.category] = categoryMapItem;
+        subcategoryMap: {},
+      });
+
+      const mins = minutesBetween(clampedStart, clampedEnd) ?? 0;
+
+      cat.count += 1;
+      cat.minutes += mins;
+
+      if (ev.categorySubtype) {
+        const subKeyRaw = ev.categorySubtype.trim();
+        const subKey = subKeyRaw || 'other';
+
+        const sub = (cat.subcategoryMap[subKey] ??= {
+          key: subKey,
+          count: 0,
+          minutes: 0,
+        });
+
+        sub.count += 1;
+        sub.minutes += mins;
+      }
     }
   }
 
@@ -77,9 +100,23 @@ export async function getWeeklyMeetingTotals(params: {
     timezone: params.timezone,
     limit: 3,
   });
-  const categories = Object.values(categoryMap).sort(
-    (a, b) => b.minutes - a.minutes
-  );
+  const categories = Object.values(categoryMap)
+    .map((c) => {
+      const subcategories = Object.values(c.subcategoryMap).sort(
+        (a, b) => b.minutes - a.minutes
+      );
+
+      const topSubcategories = subcategories.slice(0, 5);
+
+      return {
+        key: c.key,
+        count: c.count,
+        minutes: c.minutes,
+        subcategories: topSubcategories.map((sc) => sc.key),
+        subcategoryCountTotal: subcategories.length,
+      };
+    })
+    .sort((a, b) => b.minutes - a.minutes);
 
   return {
     meetingMinutes,
