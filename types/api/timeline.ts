@@ -23,6 +23,11 @@ export const ActivityEventMetaSchema = z
     isFirstResponder: z.boolean().optional(),
     stateLabel: z.string().optional(), // "merged", "open", etc.
     commitCount: z.number().int().optional(),
+    // Meeting data
+    endAt: z.iso.datetime().optional(),
+    eventTitle: z.string().optional(),
+    isAllDay: z.boolean().optional(),
+    meetingKind: z.enum(['meeting', 'ooo', 'all_day']).optional(),
   })
   .optional();
 

@@ -1,3 +1,5 @@
+import { format, isSameMinute, isValid } from 'date-fns';
+
 export function toDate(d: Date | string): Date {
   return d instanceof Date ? d : new Date(d);
 }
@@ -148,6 +150,21 @@ export function formatRange(start: Date, end: Date) {
   return ySame
     ? `${fmt.format(start)}–${fmt.format(end)}, ${y(end)}`
     : `${fmt.format(start)} ${y(start)}–${fmt.format(end)} ${y(end)}`;
+}
+
+export function formatTimeRange(start: Date, end: Date) {
+  if (isSameMinute(start, end)) return format(start, 'h:mm a');
+
+  const startMeridiem = format(start, 'a'); // AM/PM
+  const endMeridiem = format(end, 'a');
+
+  // Same AM/PM -> "1:00–1:30 PM"
+  if (startMeridiem === endMeridiem) {
+    return `${format(start, 'h:mm')}–${format(end, 'h:mm a')}`;
+  }
+
+  // Different -> "11:30 AM–1:00 PM"
+  return `${format(start, 'h:mm a')}–${format(end, 'h:mm a')}`;
 }
 
 export function getDefaultWeekOffset(): number {

@@ -1,10 +1,17 @@
 import { getWeekdayIndex, toDate } from '@/lib/utils/date';
+import {
+  WORKDAY_END_HOUR,
+  WORKDAY_SPAN_HOURS,
+  WORKDAY_START_HOUR,
+} from './DotLogic';
 
 export type TimelineMeeting = {
   id: string;
   startAt: string;
   endAt: string;
   title?: string | null;
+  isAllDay?: boolean;
+  kind?: 'meeting' | 'ooo' | 'all_day';
 };
 
 export type TimelineBlock = {
@@ -15,6 +22,10 @@ export type TimelineBlock = {
   laneIndex?: number;
   meeting: TimelineMeeting;
 };
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
 
 export function toMeetingBlocksForWeek(
   meetings: TimelineMeeting[]
@@ -32,11 +43,42 @@ export function toMeetingBlocksForWeek(
     const s = toDate(start);
     const e = toDate(end);
 
+    const isAllDAy = m.isAllDay;
+    if (isAllDAy) {
+      s.setHours(0, 0, 0, 0);
+      e.setHours(0, 0, 0, 0);
+      while (s.getTime() < e.getTime()) {
+        const dayIndex = getWeekdayIndex(s);
+        if (dayIndex >= 0 && dayIndex <= 6) {
+          blocks.push({
+            id: `${m.id}:${s.toISOString().slice(0, 10)}`,
+            dayIndex,
+            startRatio: 0,
+            endRatio: 1,
+            meeting: { ...m, isAllDay: true },
+          });
+        }
+        s.setDate(s.getDate() + 1);
+      }
+      continue;
+    }
+
     const startHours = s.getHours() + s.getMinutes() / 60;
     const endHours = e.getHours() + e.getMinutes() / 60;
 
-    const startRatio = Math.max(0, Math.min(1, startHours / 24));
-    const endRatio = Math.max(startRatio, Math.min(1, endHours / 24));
+    // Clamp to workday window
+    const clampedStart = clamp(
+      startHours,
+      WORKDAY_START_HOUR,
+      WORKDAY_END_HOUR
+    );
+    const clampedEnd = clamp(endHours, WORKDAY_START_HOUR, WORKDAY_END_HOUR);
+
+    // If the meeting doesn't intersect the window at all, skip it.
+    if (clampedEnd <= clampedStart) continue;
+
+    const startRatio = (clampedStart - WORKDAY_START_HOUR) / WORKDAY_SPAN_HOURS;
+    const endRatio = (clampedEnd - WORKDAY_START_HOUR) / WORKDAY_SPAN_HOURS;
 
     blocks.push({
       id: m.id,

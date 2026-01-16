@@ -1,9 +1,7 @@
-import { ActivityEvent, ActivityEventKind } from '@/types/api/timeline';
-import { dotColor, kindLabel, LegendDot, TimelineDot } from './DotLogic';
-import { useState } from 'react';
-import { formatTimeIso } from '@/lib/utils/date';
-
-const LANE_COUNT = 3;
+import { ActivityEvent } from '@/types/api/timeline';
+import { LegendDot, TimelineDot } from './DotLogic';
+import { TimelineBlock } from './BlockLogic';
+import { DayColumn } from './DayColumn';
 
 export function OneWeekSkeleton() {
   return (
@@ -13,7 +11,7 @@ export function OneWeekSkeleton() {
       <div className="grid grid-cols-7 gap-1.5">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
-            <div className="h-[200px] w-full rounded-md bg-slate-800/40 border border-slate-700/50" />
+            <div className="h-[300px] w-full rounded-md bg-slate-800/40 border border-slate-700/50" />
             <div className="h-3 w-8 rounded bg-slate-700/30" />
           </div>
         ))}
@@ -22,113 +20,17 @@ export function OneWeekSkeleton() {
   );
 }
 
-function DayColumn({
-  dayIndex,
-  label,
-  dots,
-  onEventClick,
-}: {
-  dayIndex: number;
-  label: string;
-  dots: TimelineDot[];
-  onEventClick?: (event: ActivityEvent) => void;
-}) {
-  const [hoveredDot, setHoveredDot] = useState<TimelineDot | null>(null);
-
-  return (
-    <div key={label} className="flex flex-col items-center gap-1">
-      <div className="h-[200px] w-full rounded-md border border-slate-700 bg-slate-900 relative">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute left-0 right-0 top-[25%] border-t border-border">
-            <span className="absolute left-1 -translate-y-1/2 text-[10px] text-text-tertiary/50">
-              6a
-            </span>
-          </div>
-
-          <div className="absolute left-0 right-0 top-1/2 border-t border-border">
-            <span className="absolute left-1 -translate-y-1/2 text-[10px] text-text-tertiary/50">
-              12p
-            </span>
-          </div>
-
-          <div className="absolute left-0 right-0 top-[75%] border-t border-border">
-            <span className="absolute left-1 -translate-y-1/2 text-[10px] text-text-tertiary/50">
-              6p
-            </span>
-          </div>
-        </div>
-        <div className="absolute inset-x-0 top-4 bottom-4">
-          {dots.map((dot) => {
-            const jitterUnit = (dot.laneIndex - 1) / (LANE_COUNT - 1); // -0.5, 0, +0.5
-            const jitterPercent = jitterUnit * 18; // tweak 12–20 for spread
-
-            const center = 50; // center of column
-            const leftPercent = center + jitterPercent;
-
-            return (
-              <button
-                key={dot.id}
-                type="button"
-                className={`absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_6px_1px_rgba(255,255,255,0.08)] hover:scale-150 transition-transform ${dotColor(
-                  dot.event.kind
-                )}`}
-                style={{
-                  top: `${dot.timeRatio * 100}%`,
-                  left: `${leftPercent}%`,
-                }}
-                onMouseEnter={() => setHoveredDot(dot)}
-                onMouseLeave={(e) => {
-                  // only clear if we're leaving this dot's area
-                  if (hoveredDot?.id === dot.id) {
-                    setHoveredDot(null);
-                  }
-                }}
-                onClick={() => onEventClick?.(dot.event)}
-              />
-            );
-          })}
-
-          {hoveredDot && (
-            <div
-              className="pointer-events-none absolute z-50 min-w-44 rounded-xl border border-white/10 
-                          bg-[#0f1220]/95 backdrop-blur p-2 shadow-2xl text-xs text-white/80"
-              style={{
-                top: `${hoveredDot.timeRatio * 100}%`,
-                // slightly to the right of center so it doesn't cover the dot
-                left: '55%',
-                transform: 'translateY(-50%)',
-              }}
-            >
-              <div className="mb-1 text-[11px] text-white/60">
-                {kindLabel(hoveredDot.event.kind)} ·{' '}
-                {formatTimeIso(hoveredDot.event.occurredAt)}
-              </div>
-              <div className="text-xs font-medium text-white/90 line-clamp-2">
-                {hoveredDot.event.title}
-              </div>
-              {hoveredDot.event.subtitle && (
-                <div className="mt-0.5 text-[11px] text-white/60">
-                  {hoveredDot.event.subtitle}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      <span className="text-[12px] mt-2 text-text-secondary">{label}</span>
-    </div>
-  );
-}
-
 export function OneWeekView({
   weekdayLabels,
   dotsByDay,
+  blocksByDay,
   hideContainer = false,
   label,
   onEventClick,
 }: {
   weekdayLabels: string[];
   dotsByDay: Record<number, TimelineDot[]>;
+  blocksByDay: Record<number, TimelineBlock[]>;
   hideContainer?: boolean;
   label?: string;
   onEventClick?: (event: ActivityEvent) => void;
@@ -142,6 +44,7 @@ export function OneWeekView({
             dayIndex={idx}
             label={label}
             dots={dotsByDay[idx] ?? []}
+            blocks={blocksByDay[idx] ?? []}
           />
         ))}
       </div>
@@ -179,6 +82,7 @@ export function OneWeekView({
             dayIndex={idx}
             label={label}
             dots={dotsByDay[idx] ?? []}
+            blocks={blocksByDay[idx] ?? []}
             onEventClick={onEventClick}
           />
         ))}

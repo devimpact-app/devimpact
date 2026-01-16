@@ -29,7 +29,9 @@ export async function getActivityEventsForRange(
   const commitRows = await getAuthoredCommits(activityParams);
   let calendarEvents: CalendarEvent[] = [];
   if (params.includeMeetings) {
-    calendarEvents = await getCalendarEventsForRange(activityParams);
+    calendarEvents = await getCalendarEventsForRange(activityParams, {
+      includePersonal: true,
+    });
   }
 
   const events: ActivityEvent[] = [];
@@ -125,6 +127,13 @@ export async function getActivityEventsForRange(
       },
       title: row.title ?? 'Meeting started',
       subtitle: `Meeting · ${formatDateTime(row.startAt)}`,
+      meta: {
+        endAt: row.endAt.toISOString(),
+        eventTitle: row.title ?? undefined,
+        isAllDay: row.isAllDay,
+        meetingKind:
+          row.category === 'ooo' ? 'ooo' : row.isAllDay ? 'all_day' : 'meeting',
+      },
     });
   }
 
