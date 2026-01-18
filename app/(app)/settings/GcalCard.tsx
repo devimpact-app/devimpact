@@ -67,7 +67,7 @@ export function GoogleCalendarCard({
       </div>
 
       {!calendarDisconnected && (
-        <div className="ml-12 mt-2 flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="ml-12 mt-2 flex flex-col gap-1 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center flex-wrap gap-1.5">
             <Container className="h-3 w-3 text-sky-300" />
             <span>Connected via Oauth</span>

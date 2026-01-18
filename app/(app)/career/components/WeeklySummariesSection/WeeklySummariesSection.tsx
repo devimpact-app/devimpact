@@ -67,7 +67,7 @@ export function WeeklySummariesSection({
               <button
                 type="button"
                 onClick={onViewAll}
-                className="text-[12px] text-indigo-300 hover:underline font-medium inline-flex items-center gap-1"
+                className="text-xs text-indigo-300 hover:underline font-medium inline-flex items-center gap-1"
               >
                 View all →
               </button>
@@ -77,13 +77,13 @@ export function WeeklySummariesSection({
       )}
 
       {generateError ? (
-        <div className="rounded-xl border border-rose-400/20 bg-rose-400/5 px-3 py-2 text-[12px] text-rose-200/80">
+        <div className="rounded-xl border border-rose-400/20 bg-rose-400/5 px-3 py-2 text-xs text-rose-200/80">
           {generateError}
         </div>
       ) : null}
 
       {generateSuccess ? (
-        <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-3 py-2 text-[12px] text-emerald-200/80">
+        <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-3 py-2 text-xs text-emerald-200/80">
           {generateSuccess}
         </div>
       ) : null}
@@ -119,7 +119,7 @@ export function WeeklySummariesSection({
             className={[
               'inline-flex items-center justify-center',
               'rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2',
-              'text-[12px] font-medium text-white/80 transition',
+              'text-xs font-medium text-white/80 transition',
               'hover:bg-white/[0.06] hover:text-white',
               'focus:outline-none focus:ring-2 focus:ring-white/20',
             ].join(' ')}

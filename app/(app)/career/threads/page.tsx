@@ -67,7 +67,7 @@ export default function ThreadsPage() {
                   className={[
                     'h-9 rounded-xl border border-white/10 bg-white/[0.03]',
                     'px-3 pr-9 appearance-none', // 👈 key bits
-                    'text-[12px] font-medium text-white/80',
+                    'text-xs font-medium text-white/80',
                     'hover:bg-white/[0.06]',
                     'focus:outline-none focus:ring-2 focus:ring-white/20',
                   ].join(' ')}
@@ -94,7 +94,7 @@ export default function ThreadsPage() {
                   className={[
                     'h-9 rounded-xl border border-white/10 bg-white/[0.03]',
                     'px-3 pr-9 appearance-none',
-                    'text-[12px] font-medium text-white/80',
+                    'text-xs font-medium text-white/80',
                     'hover:bg-white/[0.06]',
                     'focus:outline-none focus:ring-2 focus:ring-white/20',
                   ].join(' ')}

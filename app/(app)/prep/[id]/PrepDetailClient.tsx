@@ -298,7 +298,7 @@ export default function PrepDetailClient({
             mt-2 rounded-lg border border-white/10
             bg-white/[0.03]
             px-3 py-2
-            text-[12px] text-white/65
+            text-xs text-white/65
             flex items-center gap-2
           "
             >

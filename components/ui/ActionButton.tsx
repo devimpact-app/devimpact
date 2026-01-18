@@ -14,7 +14,7 @@ export function ActionButton({
   disabled?: boolean;
 }) {
   const base =
-    'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium transition focus:outline-none focus:ring-2 focus:ring-white/20';
+    'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition focus:outline-none focus:ring-2 focus:ring-white/20';
   const styles =
     variant === 'primary'
       ? 'border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.10]'

@@ -76,7 +76,7 @@ export function ThreadsSection({
             className={[
               'inline-flex items-center justify-center',
               'rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2',
-              'text-[12px] font-medium text-white/80 transition',
+              'text-xs font-medium text-white/80 transition',
               'hover:bg-white/[0.06] hover:text-white',
               'focus:outline-none focus:ring-2 focus:ring-white/20',
             ].join(' ')}

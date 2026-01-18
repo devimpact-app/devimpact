@@ -240,12 +240,6 @@ export const reviews = pgTable(
       .notNull(),
     reviewCommentsCount: integer('review_comments_count').default(0).notNull(), // number of code comments in this review
 
-    // TODO: add later
-    // - suggestion count
-    // - feedbackStyle (LLM)
-    // - feedback themes (LLM)
-    // - code areas (directories/extensions)
-
     // Metadata
     normalizedAt: timestamp('normalized_at', {
       withTimezone: true,

@@ -62,7 +62,7 @@ function CalendarConnectFooter() {
 "
     >
       <div className="min-w-0">
-        <p className="text-[12px] font-medium text-white/70">
+        <p className="text-xs font-medium text-white/70">
           Connect calendar for automation
         </p>
         <p className="mt-0.5 text-[11px] text-white/40">
@@ -155,10 +155,10 @@ export function UpcomingPrepCard({
             </div>
 
             <div className="flex flex-col">
-              <h3 className="text-sm font-semibold text-white/90 tracking-tight">
+              <h3 className="text-[15px] font-semibold text-white/90 tracking-tight">
                 Prepare for upcoming meetings
               </h3>
-              <p className="text-[11px] text-white/45 leading-snug">
+              <p className="text-[13px] text-white/60 leading-snug">
                 Create focused prep for standups and 1:1s from recent work.
               </p>
             </div>
@@ -189,7 +189,7 @@ export function UpcomingPrepCard({
   rounded-xl border border-dashed border-white/10
   bg-white/[0.02]
   px-4 py-3
-  text-[12px] text-white/45
+  text-xs text-white/45
 "
             >
               Upcoming meetings appear here once your calendar is connected.

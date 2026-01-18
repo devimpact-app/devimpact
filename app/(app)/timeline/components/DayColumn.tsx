@@ -247,7 +247,7 @@ export function DayColumn({
         </div>
       </div>
 
-      <span className="text-[12px] mt-2 text-text-secondary">{label}</span>
+      <span className="text-xs mt-2 text-text-secondary">{label}</span>
     </div>
   );
 }

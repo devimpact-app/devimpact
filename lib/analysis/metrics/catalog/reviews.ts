@@ -147,7 +147,6 @@ export const REVIEW_SUBSTANTIVE_COUNT_V1: MetricDefinition = {
     source: 'reviews',
     operation: 'count',
     timeColumn: 'submittedAt',
-    // TODO: also count reviews where body length significant
     where: [
       { col: 'reviewerIsTenant', op: 'eq', val: true },
       { col: 'submittedAt', op: 'between', startRef: 'start', endRef: 'end' },

@@ -76,10 +76,10 @@ export function ActivityLog({
     <section className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-950/70 px-5 py-4 shadow-sm shadow-black/30">
       <header className="mb-3 flex items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <h2 className="text-sm font-semibold tracking-tight text-slate-50">
+          <h2 className="text-[15px] font-semibold tracking-tight text-slate-50">
             Recent activity
           </h2>
-          <p className="text-[11px] text-slate-400">{subtitle}</p>
+          <p className="text-[13px] text-white/60">{subtitle}</p>
         </div>
 
         {showViewAll && (
@@ -119,7 +119,7 @@ export function ActivityLog({
             ? grouped.map((group) => (
                 <div key={group.dayLabel} className="space-y-1.5">
                   {/* Day header */}
-                  <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500/80 px-0.5">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-white/60 px-0.5">
                     {group.dayLabel}
                   </div>
 
@@ -142,7 +142,7 @@ export function ActivityLog({
       )}
 
       {mode === 'full' && !loading && displayEvents.length > 0 && (
-        <p className="mt-3 text-[10px] text-slate-500">
+        <p className="mt-3 text-xs text-slate-500">
           Showing all activity in the selected range.
         </p>
       )}

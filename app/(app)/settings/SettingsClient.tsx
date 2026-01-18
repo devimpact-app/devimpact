@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { GithubCliCard } from './GithubCard';
 import { GoogleCalendarCard } from './GcalCard';
 import { postJson } from '@/components/api';
+import { WeeklySummaryEmailSection } from './WeeklySummarySection';
 
 export function SettingsClient({
   cliDisconnected,
@@ -105,7 +106,7 @@ export function SettingsClient({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
       <header className="mb-1">
-        <h1 className="text-lg font-semibold tracking-tight text-slate-50">
+        <h1 className="text-[20px] font-semibold tracking-tight text-slate-50">
           Settings
         </h1>
         <p className="mt-1 text-sm text-slate-400">
@@ -113,12 +114,13 @@ export function SettingsClient({
         </p>
       </header>
 
-      {/* Integrations */}
       <section className="rounded-2xl border border-slate-800/80 bg-slate-950/70 px-5 py-4 shadow-sm shadow-black/30">
         <div className="mb-4 flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-sm font-medium text-slate-100">Integrations</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-[15px] font-medium text-white/85">
+              Integrations
+            </h2>
+            <p className="text-[13px] text-white/65">
               Connect DevImpact to the tools you already use for work.
             </p>
           </div>
@@ -145,14 +147,15 @@ export function SettingsClient({
         </div>
       </section>
 
-      {/* Account & data */}
+      <WeeklySummaryEmailSection />
+
       <section className="rounded-2xl border border-slate-800/80 bg-slate-950/70 px-5 py-4 shadow-sm shadow-black/30">
         <div className="mb-4 flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-sm font-medium text-slate-100">
+            <h2 className="text-[15px] font-medium text-white/85">
               Account & data
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-[13px] text-white/65">
               These controls affect DevImpact&apos;s own database only. Your
               GitHub data and permissions stay under your control.
             </p>
@@ -160,17 +163,16 @@ export function SettingsClient({
         </div>
 
         <div className="space-y-4">
-          {/* Delete all synced data */}
           <div className="flex items-start justify-between gap-4 rounded-xl border border-red-900/70 bg-red-950/40 px-4 py-3">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex min-h-8 min-w-8 items-center justify-center rounded-lg border border-red-900 bg-red-950">
                 <Trash2 className="h-4 w-4 text-red-300" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-red-100">
+                <p className="text-[15px] font-medium text-rose-200">
                   Delete all synced data
                 </p>
-                <p className="text-xs text-red-200/80">
+                <p className="text-[13px] text-red-200/80">
                   Permanently removes all metadata about PRs, reviews, activity
                   and summaries stored by DevImpact for your account. This does{' '}
                   <span className="font-semibold">not</span> affect GitHub or

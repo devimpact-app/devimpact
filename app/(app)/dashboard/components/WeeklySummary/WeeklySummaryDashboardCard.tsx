@@ -65,7 +65,7 @@ export function WeeklySummaryDashboardCard({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-[13px] font-semibold text-white/90">
+            <h2 className="text-[15px] font-semibold text-white/90">
               Latest Weekly Summary
             </h2>
 
@@ -87,7 +87,7 @@ export function WeeklySummaryDashboardCard({
           </div>
 
           {state === 'ready' && (range || generated) ? (
-            <div className="mt-1 text-[12px] text-white/55">
+            <div className="mt-1 text-xs text-white/45">
               {range ? <span>{range}</span> : null}
               {range && generated ? (
                 <span className="mx-2 text-white/25">·</span>
@@ -159,7 +159,7 @@ export function WeeklySummaryDashboardCard({
       </div>
 
       {state === 'ready' && summary ? (
-        <div className="text-[13px] leading-relaxed text-white/75">
+        <div className="text-sm leading-relaxed text-white/85">
           {headline ? (
             <p className="line-clamp-2">{headline}</p>
           ) : (
@@ -213,7 +213,7 @@ export function WeeklySummaryDashboardCard({
           <div className="text-white/70">
             <p>Failed to load weekly summary.</p>
             {error ? (
-              <p className="mt-1 text-[12px] text-white/50">{error}</p>
+              <p className="mt-1 text-xs text-white/50">{error}</p>
             ) : null}
           </div>
         </div>

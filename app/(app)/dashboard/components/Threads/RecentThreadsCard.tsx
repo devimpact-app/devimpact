@@ -32,28 +32,28 @@ export function ThreadRowCompact({ thread }: { thread: ThreadListItem }) {
             <span
               className={[
                 'inline-flex items-center rounded-full border px-2 py-0.5',
-                'text-[11px] font-medium leading-none',
+                'text-xs font-medium leading-none',
                 categoryPillClasses(thread.categoryKey),
               ].join(' ')}
             >
               {categoryLabel(thread.categoryKey)}
             </span>
 
-            <div className="truncate text-[13px] font-semibold text-white/90">
+            <div className="truncate text-sm font-semibold text-white/90">
               {thread.title}
             </div>
 
             {thread.status === 'archived' && (
-              <span className="text-[11px] text-white/45">Archived</span>
+              <span className="text-xs text-white/45">Archived</span>
             )}
           </div>
 
-          <div className="mt-1 line-clamp-1 text-[12px] leading-snug text-white/70">
+          <div className="mt-1 line-clamp-1 text-[13px] leading-snug text-white/70">
             {headline}
           </div>
         </div>
 
-        <div className="shrink-0 text-[11px] tabular-nums text-white/55">
+        <div className="shrink-0 text-xs tabular-nums text-white/55">
           Updated {formatDateOnly(lastActive)}
         </div>
       </div>
@@ -92,7 +92,7 @@ export function RecentThreadsDashboardCard({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-[13px] font-semibold text-white/90">
+            <h2 className="text-[15px] font-semibold text-white/90">
               Recent Threads
             </h2>
             {state === 'empty' ? (
@@ -107,7 +107,7 @@ export function RecentThreadsDashboardCard({
           </div>
 
           {state === 'ready' ? (
-            <div className="mt-1 text-[12px] text-white/55">
+            <div className="mt-1 text-[13px] text-white/60">
               A snapshot of your ongoing work, organized into threads.
             </div>
           ) : null}
@@ -169,7 +169,7 @@ export function RecentThreadsDashboardCard({
           <div className="text-white/70">
             <p>Failed to load threads.</p>
             {error ? (
-              <p className="mt-1 text-[12px] text-white/50">{error}</p>
+              <p className="mt-1 text-xs text-white/50">{error}</p>
             ) : null}
           </div>
         </div>

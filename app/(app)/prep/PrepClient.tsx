@@ -131,24 +131,24 @@ export default function PrepClient({ user }: Props) {
             </div>
           ) : !items || items.length === 0 ? (
             <div className="px-4 py-6 text-xs text-slate-400">
-              You haven&apos;t generated any 1:1 prep yet.
+              You haven&apos;t generated any meeting prep yet.
               <br />
               <span className="text-slate-500">
-                Start with “Prep for your next 1:1” above and they&apos;ll show
-                up here once saved.
+                Start with quick actions above and they&apos;ll show up here
+                once saved.
               </span>
             </div>
           ) : (
-            <table className="min-w-full text-xs">
+            <table className="min-w-full text-[13px]">
               <thead className="bg-slate-950/90 border-b border-slate-800/80">
                 <tr>
-                  <th className="px-4 py-2 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
                     Title
                   </th>
-                  <th className="px-4 py-2 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
                     Meeting date
                   </th>
-                  <th className="px-4 py-2 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
                     Created
                   </th>
                 </tr>

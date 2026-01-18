@@ -168,14 +168,14 @@ export function PrepQuickActions({
                 )}
               </div>
 
-              <p className="my-4 text-[11px] leading-snug text-[#A1A8C7]">
+              <p className="my-4 text-[13px] leading-snug text-[#A1A8C7]">
                 {action.description}
               </p>
 
               <span
                 className={`
                   mt-auto inline-flex items-center gap-1.5 rounded-full 
-                  border px-2.5 py-1.5 text-[11px] font-medium
+                  border px-2.5 py-1.5 text-xs font-medium
                   ${
                     isDisabled
                       ? 'border-[#30384A] bg-[#151925] text-[#737A94]'

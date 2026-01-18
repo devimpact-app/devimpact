@@ -202,8 +202,8 @@ export function ActivityLogRow({
         <span
           className={
             compact
-              ? 'truncate text-xs font-medium text-slate-200'
-              : 'truncate text-sm font-medium text-slate-200'
+              ? 'truncate text-[13px] font-medium text-white/90'
+              : 'truncate text-sm font-medium text-white/90'
           }
         >
           {title}
@@ -212,8 +212,8 @@ export function ActivityLogRow({
           <span
             className={
               compact
-                ? 'mt-0.5 text-[10px] text-slate-500'
-                : 'mt-0.5 text-[11px] text-slate-400'
+                ? 'mt-0.5 text-xs text-white/60'
+                : 'mt-0.5 text-xs text-white/60'
             }
           >
             {subtitle}

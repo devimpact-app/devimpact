@@ -154,11 +154,11 @@ export function EventRow({
       ].join(' ')}
     >
       <div className="min-w-0">
-        <p className="text-[11px] text-white/45">{label}</p>
+        <p className="text-xs text-white/45">{label}</p>
         <p className="text-sm text-white/85 font-medium truncate">{title}</p>
 
         {error && (
-          <p className="mt-1 text-[11px] text-rose-300/90 truncate">{error}</p>
+          <p className="mt-1 text-xs text-rose-300/90 truncate">{error}</p>
         )}
       </div>
 
@@ -176,7 +176,7 @@ export function EventRow({
             rounded-full bg-[#1A2236]
             border border-white/10
             px-3 py-1.5
-            text-[11px] font-medium text-white/80
+            text-xs font-medium text-white/80
             hover:bg-[#202A44] transition
             shrink-0
             disabled:opacity-60 disabled:cursor-not-allowed

@@ -86,7 +86,7 @@ export function ThreadCard({
         <div className="mx-1 h-3 w-px bg-white/10" />
 
         {thread.lastEvent ? (
-          <div className="flex items-center justify-between gap-3 text-[11px] text-white/50">
+          <div className="flex items-center justify-between gap-3 text-xs text-white/50">
             <div className="truncate">
               <span className="text-white/45">Last:</span>{' '}
               <span className="text-white/65">{thread.lastEvent.title}</span>

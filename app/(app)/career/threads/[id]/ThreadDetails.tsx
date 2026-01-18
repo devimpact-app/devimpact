@@ -141,7 +141,7 @@ export function ThreadDetailPage({
                     {t.title}
                   </h1>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-white/60">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/60">
                     {range ? (
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
@@ -168,7 +168,7 @@ export function ThreadDetailPage({
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[12px] font-medium text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/[0.06] hover:text-white"
                   // TODO: open edit flow
                   onClick={() => {}}
                 >

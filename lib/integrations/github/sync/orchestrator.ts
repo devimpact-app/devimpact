@@ -98,9 +98,6 @@ export async function runSync({
       syncWindow: payload.syncWindow,
       userLastSyncAt: syncStatus?.lastSyncAt,
     });
-
-    // TODO:
-    // Queue up rest of last 4 weeks of PR summaries in background
   }
 
   return {

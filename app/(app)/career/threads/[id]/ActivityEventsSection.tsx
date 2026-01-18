@@ -80,7 +80,7 @@ export function ActivityEventsSection({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="text-[13px] font-medium text-white/85">{title}</div>
-          <div className="mt-1 text-[12px] text-white/55">{subtitle}</div>
+          <div className="mt-1 text-xs text-white/55">{subtitle}</div>
         </div>
 
         <div className="shrink-0">
@@ -101,7 +101,7 @@ export function ActivityEventsSection({
             {groups.map((g) => (
               <div key={g.key}>
                 <div className="mb-2 flex items-center justify-between">
-                  <div className="inline-flex items-center gap-2 text-[12px] font-medium text-white/70">
+                  <div className="inline-flex items-center gap-2 text-xs font-medium text-white/70">
                     <Calendar className="h-3.5 w-3.5 text-white/45" />
                     {fmtDayLabel(g.date)}
                   </div>

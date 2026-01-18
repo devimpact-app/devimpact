@@ -22,8 +22,8 @@ export function DashboardAlerts({ cliDisconnected, staleSyncDays }: Props) {
     if (hasStaleSync)
       issues.push(
         staleSyncDays === -1
-          ? 'Last sync was a while ago'
-          : `Last sync ${staleSyncDays} days ago`
+          ? 'Last Github sync was a while ago'
+          : `Last Github sync ${staleSyncDays} days ago`
       );
     const bannerSignature = issues.join('|');
     return {
@@ -88,10 +88,10 @@ export function DashboardAlerts({ cliDisconnected, staleSyncDays }: Props) {
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-slate-50 truncate">
+            <div className="text-[13px] font-medium text-slate-50 truncate">
               {title}
             </div>
-            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
               <span className="truncate">{description}</span>
 
               {/* Issue chips when multiple */}

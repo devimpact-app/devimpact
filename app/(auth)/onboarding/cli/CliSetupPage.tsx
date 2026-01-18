@@ -289,8 +289,7 @@ export function CliSetupPage({
             <ul className="space-y-2 text-xs text-text-secondary leading-relaxed">
               <li>
                 • We never see your GitHub password or PAT. All API calls go
-                through your local <code className="text-[12px]">gh</code>{' '}
-                session.
+                through your local <code className="text-xs">gh</code> session.
               </li>
               <li>
                 • We read metadata about your PRs, reviews, files, and commits
@@ -299,8 +298,8 @@ export function CliSetupPage({
               </li>
               <li>
                 • You can rotate your CLI key or stop syncing at any time.
-                Removing <code className="text-[12px]">gh auth</code>{' '}
-                immediately cuts off access.
+                Removing <code className="text-xs">gh auth</code> immediately
+                cuts off access.
               </li>
             </ul>
           </section>

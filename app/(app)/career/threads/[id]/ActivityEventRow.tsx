@@ -100,7 +100,7 @@ export function ActivityEventRow({
                 {event.title}
               </div>
 
-              <div className="mt-0.5 truncate text-[12px] text-white/55">
+              <div className="mt-0.5 truncate text-xs text-white/55">
                 {secondaryBits.join(' · ')}
               </div>
             </div>

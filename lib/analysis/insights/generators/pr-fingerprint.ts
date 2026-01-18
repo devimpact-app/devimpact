@@ -218,8 +218,6 @@ export function generatePullRequestFingerprintInsight(
   const title = `Your typical PR is ${sizeLabel} and ${speedLabel}`;
   const emphasis = `${medianLinesLabel}, ${medianFilesLabel}, ~${leadTimeLabel} from first commit to merge`;
 
-  const timeframeLabel = 'Recent window'; // TODO: make dynamic from context/window config
-
   const primaryStats = [
     {
       label: 'Median lines changed',

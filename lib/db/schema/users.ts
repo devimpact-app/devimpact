@@ -1,4 +1,4 @@
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -7,10 +7,10 @@ import {
   unique,
   index,
   boolean,
-} from 'drizzle-orm/pg-core'
+} from 'drizzle-orm/pg-core';
 
-export type Provider = 'github'
-export type TokenType = 'oauth'
+export type Provider = 'github';
+export type TokenType = 'oauth';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -27,9 +27,14 @@ export const users = pgTable('users', {
   coverageStartDate: timestamp('coverage_start_date', { withTimezone: true }),
   // Are they an approved user
   betaAllowed: boolean('beta_allowed').default(false),
-})
+  // Preferences
+  weeklySummaryEmailEnabled: boolean('weekly_summary_email_enabled')
+    .notNull()
+    .default(true),
+  timezone: text('timezone'),
+});
 
-export type User = InferSelectModel<typeof users>
+export type User = InferSelectModel<typeof users>;
 
 export const integrationTokens = pgTable(
   'integration_tokens',
@@ -53,6 +58,6 @@ export const integrationTokens = pgTable(
       table.tokenType
     ),
   })
-)
+);
 
-export type IntegrationToken = InferSelectModel<typeof integrationTokens>
+export type IntegrationToken = InferSelectModel<typeof integrationTokens>;

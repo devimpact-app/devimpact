@@ -64,7 +64,7 @@ function WorkRhythmLegend({
   stripeSize?: number;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/45">
+    <div className="flex flex-wrap items-center gap-3 text-xs text-white/45">
       <div className="inline-flex items-center gap-2">
         <span className="h-2.5 w-2.5 rounded-full bg-[#34D1C6]/80 ring-1 ring-white/10" />
         <span>Coding activity</span>
@@ -156,10 +156,10 @@ export function WorkRhythmCard({
             <BarChart3 className="h-4 w-4 text-white/70" />
           </div>
           <div className="flex flex-col">
-            <h3 className="text-sm font-semibold text-white/90 tracking-tight">
+            <h3 className="text-[15px] font-semibold text-white/90 tracking-tight">
               Your Work Rhythm
             </h3>
-            <span className="text-[11px] text-white/45">
+            <span className="text-[13px] text-white/55">
               Typical weekly pattern based on {windowLabel}.
             </span>
           </div>
@@ -258,10 +258,10 @@ export function WorkRhythmCard({
                           style={{
                             opacity: overlayOpacity,
                             backgroundImage: `repeating-linear-gradient(
-            135deg,
-            rgba(255,255,255,0.85) 0 ${stripeSize / 2}px,
-            rgba(255,255,255,0) ${stripeSize / 2}px ${stripeSize}px
-          )`,
+                              135deg,
+                              rgba(255,255,255,0.85) 0 ${stripeSize / 2}px,
+                              rgba(255,255,255,0) ${stripeSize / 2}px ${stripeSize}px
+                            )`,
                           }}
                         />
                       )}
@@ -313,19 +313,19 @@ export function WorkRhythmCard({
       </div>
 
       <div className="mt-3 space-y-2">
-        <p className="text-xs text-[#7C86A8] leading-normal">
+        <p className="text-[13px] text-white/50 leading-normal">
           We map your coding and review activity into a typical week, layering
           in meetings to reveal how focus and collaboration interact.
         </p>
 
-        <p className="text-xs text-[#C7D2FF] leading-relaxed">
+        <p className="text-sm text-white/80 leading-relaxed">
           {summary?.description ??
             'We’re mapping out your recent coding and review activity to surface your natural focus windows.'}
         </p>
 
         {summary?.protectWindows?.length ? (
           <div className="flex flex-col gap-1.5 pt-2">
-            <p className="text-[11px] text-slate-500 leading-tight">
+            <p className="text-xs text-slate-500 leading-tight">
               Suggested times to protect during daytime work hours
             </p>
 
@@ -333,7 +333,7 @@ export function WorkRhythmCard({
               {summary.protectWindows.map((w) => (
                 <span
                   key={`${w.startUtc}-${w.endUtc}`}
-                  className="rounded-full border border-[#3B4A78] px-2.5 py-1 text-[11px] text-[#C7D2FF]"
+                  className="rounded-full border border-[#3B4A78] px-2.5 py-1 text-xs text-[#C7D2FF]"
                 >
                   {w.label}
                 </span>

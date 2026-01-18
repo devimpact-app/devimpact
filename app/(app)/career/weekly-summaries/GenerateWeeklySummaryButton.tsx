@@ -42,7 +42,7 @@ export function GenerateWeeklySummaryButton() {
           type="button"
           className={[
             'inline-flex h-9 items-center gap-2 px-3',
-            'text-[12px] font-medium text-white/85',
+            'text-xs font-medium text-white/85',
             'hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/20',
           ].join(' ')}
           onClick={() => handleGenerateClick(1)}
@@ -81,7 +81,7 @@ export function GenerateWeeklySummaryButton() {
           <div className="absolute right-0 z-50 mt-2 w-[240px] rounded-xl border border-white/10 bg-slate-950/95 p-1 shadow-lg backdrop-blur">
             <button
               type="button"
-              className="w-full rounded-lg px-3 py-2 text-left text-[12px] text-white/85 hover:bg-white/[0.06]"
+              className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/85 hover:bg-white/[0.06]"
               onClick={() => {
                 setOpen(false);
                 handleGenerateClick(0);
@@ -92,7 +92,7 @@ export function GenerateWeeklySummaryButton() {
             </button>
             <button
               type="button"
-              className="w-full rounded-lg px-3 py-2 text-left text-[12px] text-white/85 hover:bg-white/[0.06]"
+              className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/85 hover:bg-white/[0.06]"
               onClick={() => {
                 setOpen(false);
                 handleGenerateClick(1);
@@ -104,7 +104,7 @@ export function GenerateWeeklySummaryButton() {
 
             <button
               type="button"
-              className="w-full rounded-lg px-3 py-2 text-left text-[12px] text-white/85 hover:bg-white/[0.06]"
+              className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/85 hover:bg-white/[0.06]"
               onClick={() => {
                 setOpen(false);
                 handleGenerateClick(2);

@@ -27,8 +27,6 @@ async function runMetricWithDefinition(
   input: MetricInput,
   ctx: MetricContext
 ): Promise<TMetricResult> {
-  // TODO: check cache - return if valid
-
   const primary = await executeMetric(def, input, ctx);
 
   const comparisonWindow = computeComparisonWindow({
@@ -45,7 +43,6 @@ async function runMetricWithDefinition(
   });
 
   if (comparisonWindow.kind === 'none') {
-    // TODO: update cache
     return primary;
   }
 
@@ -56,6 +53,5 @@ async function runMetricWithDefinition(
   );
 
   const merged = mergePrimaryAndComparison(primary, comparison);
-  // TODO: update cache
   return merged;
 }

@@ -18,10 +18,10 @@ function StatPill({
   muted?: boolean;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/75">
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-white/75">
       <span className="text-white/50">{label}</span>
       <span
-        className={`font-medium ${muted ? 'text-white/60' : 'text-white/85'} tabular-nums`}
+        className={`font-medium ${muted ? 'text-white/80' : 'text-white/85'} tabular-nums`}
       >
         {value}
       </span>
@@ -58,7 +58,7 @@ export function WeeklySummaryActivitySnippet({
   if (!hasAny && frictionPreview.length === 0) return null;
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="mt-5 space-y-4">
       {hasAny ? (
         <div className="flex flex-wrap items-center gap-2">
           {typeof s.prsAuthored === 'number' ? (
@@ -89,7 +89,7 @@ export function WeeklySummaryActivitySnippet({
 
       {frictionPreview.length > 0 ? (
         <div className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
+          <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/55">
             Potential follow-ups
           </div>
 
@@ -104,7 +104,7 @@ export function WeeklySummaryActivitySnippet({
                     href={href}
                     className={[
                       'group flex gap-2 rounded-md px-2 py-1.5',
-                      'text-[12px] text-white/65',
+                      'text-[13px] text-white/70',
                       'hover:bg-white/[0.04] hover:text-white/80',
                       'focus:outline-none focus:ring-2 focus:ring-white/15',
                       'transition',
@@ -112,7 +112,7 @@ export function WeeklySummaryActivitySnippet({
                   >
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white/30 group-hover:bg-white/50" />
                     {pr?.meta?.repoFullName && pr?.meta?.prNumber ? (
-                      <span className="ml-1 text-white/40">
+                      <span className="ml-1 text-white/50">
                         ({pr.meta.repoFullName} #{pr.meta.prNumber})
                       </span>
                     ) : null}
@@ -124,7 +124,7 @@ export function WeeklySummaryActivitySnippet({
           </ul>
 
           {frictionItems.length > frictionPreview.length ? (
-            <div className="mt-2 text-[12px] text-white/45">
+            <div className="mt-2 text-xs text-white/45">
               +{frictionItems.length - frictionPreview.length} more
             </div>
           ) : null}

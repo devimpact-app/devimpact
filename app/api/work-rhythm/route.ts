@@ -15,8 +15,6 @@ export const GET = withSentryUser(async (req: NextRequest) => {
 
   // Timezone from client (fallback to UTC)
   const timezone = searchParams.get('timezone') ?? 'UTC';
-
-  // TODO: support more than just 4w option
   const rhythm = await buildWorkRhythm({
     userId,
     timezone,

@@ -111,7 +111,7 @@ export function WeeklyActivitySection({
       >
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <div className="text-[12px] font-medium text-white/80">
+            <div className="text-xs font-medium text-white/80">
               This week at a glance
             </div>
           </div>
@@ -155,7 +155,7 @@ export function WeeklyActivitySection({
                 Calendar
               </div>
 
-              <div className="mt-1 text-[12px] text-white/65">
+              <div className="mt-1 text-xs text-white/65">
                 {typeof calendar.meetingCount === 'number' ? (
                   <>
                     {calendar.meetingCount} meeting
@@ -198,7 +198,7 @@ export function WeeklyActivitySection({
                     return (
                       <div
                         key={c.key}
-                        className="flex items-center justify-between rounded-lg px-2 py-1 text-[12px] text-white/6"
+                        className="flex items-center justify-between rounded-lg px-2 py-1 text-xs text-white/6"
                       >
                         <div className="min-w-0 truncate">
                           <span className="text-white/70">{c.key}</span>
@@ -226,7 +226,7 @@ export function WeeklyActivitySection({
 
           {frictionItems.length ? (
             <div className={hasAnyStats || calendar ? 'mt-4' : ''}>
-              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/55">
                 <Activity className="h-3.5 w-3.5" />
                 Potential follow-ups
               </div>
@@ -242,7 +242,7 @@ export function WeeklyActivitySection({
                       <button
                         className={[
                           'group w-full flex gap-2 rounded-lg px-2 py-1.5',
-                          'text-[12px] text-white/65',
+                          'text-xs text-white/65',
                           'hover:bg-white/[0.04] hover:text-white/80',
                           'focus:outline-none focus:ring-2 focus:ring-white/15',
                           'transition',

@@ -69,11 +69,11 @@ export function PrepDashboardQuickActions({
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
             Quick actions
           </h3>
-          <p className="mt-1 text-[12.5px] leading-snug text-white/70">
+          <p className="mt-1 text-[13px] leading-snug text-white/70">
             Generates instantly from recent work.
             <span className="text-white/45">
               {' '}
-              Works without calendar — connect later for automation.
+              Works without a calendar event
             </span>
           </p>
         </div>

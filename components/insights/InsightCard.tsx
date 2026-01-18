@@ -57,7 +57,7 @@ function InsightBody({ text }: { text: string }) {
             e.stopPropagation();
             setExpanded((x) => !x);
           }}
-          className="mt-1 text-sky-400 hover:text-sky-300 text-[12px] font-medium"
+          className="mt-1 text-sky-400 hover:text-sky-300 text-xs font-medium"
         >
           {expanded ? 'Show less' : 'See more'}
         </button>
