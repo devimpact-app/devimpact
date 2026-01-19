@@ -10,7 +10,7 @@ export default function HowItWorks() {
             How the beta works
           </h2>
           <p className="mt-3 text-text-secondary text-lg">
-            Set up in minutes. Get a clear view of your time, focus, and impact.
+            Set up in minutes. Stay prepared without extra work.
           </p>
         </div>
 
@@ -24,10 +24,9 @@ export default function HowItWorks() {
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>• Sign in with Github</li>
-              <li>• Run a sync to pull recent activity</li>
+              <li>• Run a quick sync to pull recent work</li>
               <li>
-                • Optionally connect Google Calendar to map meetings against
-                focus time
+                • Optionally connect Google Calendar to improve preparation
               </li>
               <li>• Your data stays private - no team setup, no managers </li>
             </ul>
@@ -38,18 +37,16 @@ export default function HowItWorks() {
               2
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              See what's shaping your leverage
+              See what's shaping your impact
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>• Where your best focus time actually happens</li>
+              <li>• How meetings and reviews reshape your week</li>
               <li>
-                • How meetings, reviews, and coordination reshape your week
+                • A weekly record of shipped work and follow-ups — delivered to
+                your inbox
               </li>
-              <li>
-                • A weekly summary of shipped work and follow-ups you can reuse
-                in 1:1s
-              </li>
-              <li>• Early signs of drift before it shows up in reviews</li>
+              <li>• Early signs of drift before they surface in reviews</li>
             </ul>
           </li>
 

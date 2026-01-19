@@ -4,31 +4,32 @@ export default function Features() {
       <div className="mx-auto max-w-4xl flex flex-col gap-10">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
-            Understand what shapes your impact
+            Stay in control of your career narrative
           </h2>
-          <p className="mt-3 text-sm text-white/70 leading-relaxed">
-            DevImpact surfaces the patterns behind your effectiveness — long
-            before they show up in meetings, reviews, or promotion cycles.
+          <p className="mt-3 text-base text-white/70 leading-relaxed">
+            DevImpact keeps your work organized, summarized, and ready — so you
+            can show impact clearly in meetings, reviews, and promotion
+            conversations.
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {[
             {
-              title: 'Career-grade reflection',
-              body: 'Walk into 1:1s and reviews with confidence — grounded in your real work, not memory or guesswork.',
+              title: 'Always know what to say in 1:1s',
+              body: 'DevImpact prepares focused talking points for 1:1s and standups — grounded in what you actually shipped, reviewed, and discussed since the last meeting.',
             },
             {
-              title: 'Work rhythm & focus',
-              body: 'See when you naturally do your best work — and how meetings, reviews, and interruptions slowly reshape those windows over time.',
+              title: 'Your work, organized over time',
+              body: 'Contributions automatically roll up into threads — giving you a clean, searchable record of projects, decisions, and impact as they evolve.',
             },
             {
-              title: 'Where work slows down',
-              body: 'Surface where work gets stuck — context switching, review pile-ups, coordination overhead, or effort that doesn’t move outcomes forward.',
+              title: 'Your weekly brag doc, automatically',
+              body: 'Every week, DevImpact turns your real work into a concise narrative and delivers it straight to your inbox — ready for 1:1s, reviews, or saving for later.',
             },
             {
-              title: 'Output vs coordination load',
-              body: 'Track how your time shifts between building, reviewing, and coordinating — so role creep doesn’t happen quietly.',
+              title: 'Understand your work rhythm',
+              body: 'Visualize when you tend to do deep work, where meetings land, and how your weeks actually unfold — so you can protect focus and plan intentionally.',
             },
           ].map((item) => (
             <div
@@ -45,10 +46,10 @@ export default function Features() {
               "
             >
               <div className="mb-3 h-px w-10 bg-gradient-to-r from-[#6E8BFF] to-[#34D1C6]" />
-              <h3 className="text-sm font-semibold text-[#E2E6FF] mb-1">
+              <h3 className="text-base font-semibold text-[#E2E6FF] mb-1">
                 {item.title}
               </h3>
-              <p className="text-[13px] text-[#9AA4C6] leading-relaxed">
+              <p className="text-sm text-[#9AA4C6] leading-relaxed">
                 {item.body}
               </p>
             </div>

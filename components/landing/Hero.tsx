@@ -45,20 +45,18 @@ export function HeroSection() {
 
       {/* Content */}
       <div className="mx-auto max-w-4xl text-center flex flex-col items-center gap-6">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wide text-white/70">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
           <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
           For software engineers
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-white">
-          Protect your leverage,
-          <br className="hidden sm:block" />
-          even as the job keeps changing
+          Never forget your impact
         </h1>
 
-        <p className="max-w-2xl text-base sm:text-lg text-white/80 leading-relaxed">
-          DevImpact quietly prepares you for meetings and performance moments by
-          tracking your real work, so nothing important gets lost.
+        <p className="max-w-2xl text-lg sm:text-xl text-white/80 leading-relaxed">
+          DevImpact turns your real work into clear talking points for meetings
+          and performance moments.
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
@@ -66,7 +64,7 @@ export function HeroSection() {
             href="/beta-request"
             className="
               rounded-lg bg-blue-500 px-6 py-3
-              text-sm font-medium text-white
+              text-sm font-semibold text-white
               hover:bg-blue-400 transition
             "
           >
@@ -77,7 +75,7 @@ export function HeroSection() {
             href="#how-it-works"
             className="
               rounded-lg border border-white/15 px-6 py-3
-              text-sm font-medium text-white/80
+              text-sm font-semibold text-white/80
               hover:bg-white/5 transition
             "
           >
@@ -85,7 +83,7 @@ export function HeroSection() {
           </a>
         </div>
 
-        <p className="mt-2 text-[11px] text-white/40">
+        <p className="mt-2 text-sm text-white/60">
           Early private beta · Individual engineers only
         </p>
       </div>

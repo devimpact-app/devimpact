@@ -88,8 +88,11 @@ async function seedGithubActivity(
   });
 
   console.log('Normalizing PRs and reviews');
-  const prIds = await batchNormalizeUserPRs(tenantId, githubUsername);
-  await batchNormalizeUserReviews(tenantId, githubUsername, prIds);
+  const { rawGithubPrIds } = await batchNormalizeUserPRs(
+    tenantId,
+    githubUsername
+  );
+  await batchNormalizeUserReviews(tenantId, githubUsername, rawGithubPrIds);
 }
 
 async function main() {
