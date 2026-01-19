@@ -12,13 +12,10 @@ import {
   real,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
-import {
-  OneOnOneMetricSnapshot,
-  OneOnOneTalkingPoint,
-} from '@/types/api/one-on-one';
 import { Insight } from '@/types/api/insights';
 import { ActivityEvent } from '@/types/api/timeline';
 import { calendarEvents } from './gcal';
+import { PrepMetricSnapshot, PrepTalkingPoint } from '@/types/api/prep';
 
 export const oneOnOneStatusEnum = pgEnum('one_on_one_status', [
   'pending',
@@ -35,9 +32,9 @@ export const counterpartTypeEnum = pgEnum('one_on_one_counterpart_type', [
 ]);
 
 export type OneOnOnePayload = {
-  talkingPoints: OneOnOneTalkingPoint[];
+  talkingPoints: PrepTalkingPoint[];
   usedInsights: Insight[];
-  usedMetrics: OneOnOneMetricSnapshot[];
+  usedMetrics: PrepMetricSnapshot[];
   usedPrs: ActivityEvent[];
   usedReviews: ActivityEvent[];
 };

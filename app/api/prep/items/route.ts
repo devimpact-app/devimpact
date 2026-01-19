@@ -13,8 +13,8 @@ import {
   PrepItemListResponse,
   type PrepGenerateRequest,
 } from '@/types/api/prep';
-import { createPendingPrepItem } from '@/lib/analysis/prep/generate/createPending';
-import { formatPrepItemResponse } from '@/lib/analysis/prep/generate/formatResponse';
+import { createPendingPrepItem } from '@/lib/domains/prep/generate/createPending';
+import { formatPrepItemResponse } from '@/lib/domains/prep/generate/formatResponse';
 import { and, desc, eq, lt } from 'drizzle-orm';
 import { prepItems } from '@/lib/db/schema';
 import { db } from '@/lib/db/client';

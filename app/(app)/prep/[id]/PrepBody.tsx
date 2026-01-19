@@ -19,17 +19,11 @@ import {
   UpcomingCalendarEvent,
 } from '@/types/api/prep';
 import { formatDateOnly } from '@/lib/utils/date';
+import { Signal } from '@/types/api/signals';
+import { SignalPill } from './components/SignalPill';
 
 const SECTIONS_BY_TYPE: Record<PrepMeetingType, TPrepSectionKind[]> = {
-  oneOnOne: [
-    'highlights',
-    'friction',
-    'asks',
-    'collaboration',
-    'growth',
-    'focus_areas',
-    'goals',
-  ],
+  oneOnOne: ['highlights', 'discussion'],
   standup: ['yesterday', 'today', 'blockers'],
   planning: [],
   retro: [],
@@ -37,12 +31,7 @@ const SECTIONS_BY_TYPE: Record<PrepMeetingType, TPrepSectionKind[]> = {
 
 const SECTION_LABEL: Record<TPrepSectionKind, string> = {
   highlights: 'Highlights',
-  friction: 'Friction & blockers',
-  asks: 'Asks',
-  collaboration: 'Collaboration',
-  growth: 'Growth',
-  focus_areas: 'Focus Areas',
-  goals: 'Goals & next steps',
+  discussion: 'Discuss / Decisions',
   yesterday: 'Yesterday',
   today: 'Today',
   blockers: 'Blockers',
@@ -50,13 +39,13 @@ const SECTION_LABEL: Record<TPrepSectionKind, string> = {
 
 export function PrepBody({
   prep,
-  onClickInsight,
+  onClickSignal,
   onClickMetric,
   onClickActivity,
   onClickCalendarEvent,
 }: {
   prep: PrepItem;
-  onClickInsight: (insight: Insight) => void;
+  onClickSignal: (signal: Signal) => void;
   onClickMetric: (metric: PrepMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
   onClickCalendarEvent: (event: UpcomingCalendarEvent) => void;
@@ -64,6 +53,7 @@ export function PrepBody({
   const {
     talkingPoints,
     usedInsights,
+    usedSignals,
     usedMetrics,
     usedPrs,
     usedReviews,
@@ -105,11 +95,11 @@ export function PrepBody({
           key={section.kind}
           label={section.label}
           items={section.items}
-          usedInsights={usedInsights}
+          usedSignals={usedSignals}
           usedPrs={usedPrs}
           usedReviews={usedReviews}
           usedCalendarEvents={usedCalendarEvents}
-          onClickInsight={onClickInsight}
+          onClickSignal={onClickSignal}
           onClickMetric={onClickMetric}
           onClickActivity={onClickActivity}
           onClickCalendarEvent={onClickCalendarEvent}
@@ -136,11 +126,11 @@ export function PrepBody({
 type SectionProps = {
   label: string;
   items: PrepTalkingPoint[];
-  usedInsights: Insight[];
+  usedSignals: Signal[];
   usedPrs: ActivityEvent[];
   usedReviews: ActivityEvent[];
   usedCalendarEvents: UpcomingCalendarEvent[];
-  onClickInsight: (insight: Insight) => void;
+  onClickSignal: (signal: Signal) => void;
   onClickMetric: (metric: PrepMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
   onClickCalendarEvent: (event: UpcomingCalendarEvent) => void;
@@ -150,11 +140,11 @@ type SectionProps = {
 function PrepSection({
   label,
   items,
-  usedInsights,
+  usedSignals,
   usedPrs,
   usedReviews,
   usedCalendarEvents,
-  onClickInsight,
+  onClickSignal,
   onClickMetric,
   onClickActivity,
   onClickCalendarEvent,
@@ -171,12 +161,12 @@ function PrepSection({
           <TalkingPointRow
             key={tp.id}
             tp={tp}
-            usedInsights={usedInsights}
+            usedSignals={usedSignals}
             usedPrs={usedPrs}
             usedReviews={usedReviews}
             usedCalendarEvents={usedCalendarEvents}
             isFirst={idx === 0}
-            onClickInsight={onClickInsight}
+            onClickSignal={onClickSignal}
             onClickMetric={onClickMetric}
             onClickActivity={onClickActivity}
             onClickCalendarEvent={onClickCalendarEvent}
@@ -190,12 +180,12 @@ function PrepSection({
 
 type TalkingPointProps = {
   tp: PrepTalkingPoint;
-  usedInsights: Insight[];
+  usedSignals: Signal[];
   usedPrs: ActivityEvent[];
   usedReviews: ActivityEvent[];
   usedCalendarEvents: UpcomingCalendarEvent[];
   isFirst: boolean;
-  onClickInsight: (insight: Insight) => void;
+  onClickSignal: (signal: Signal) => void;
   onClickMetric: (metric: PrepMetricSnapshot) => void;
   onClickActivity: (activity: ActivityEvent) => void;
   onClickCalendarEvent: (event: UpcomingCalendarEvent) => void;
@@ -204,18 +194,21 @@ type TalkingPointProps = {
 
 function TalkingPointRow({
   tp,
-  usedInsights,
+  usedSignals,
   usedPrs,
   usedReviews,
   usedCalendarEvents,
-  onClickInsight,
+  onClickSignal,
   onClickMetric,
   onClickActivity,
   onClickCalendarEvent,
   metricsByMetricId,
 }: TalkingPointProps) {
-  const relatedInsights = usedInsights.filter((ins) =>
-    tp.relatedInsightIds.includes(ins.id)
+  // const relatedInsights = usedInsights.filter((ins) =>
+  //   tp.relatedInsightIds.includes(ins.id)
+  // );
+  const relatedSignals = usedSignals.filter((ins) =>
+    tp.relatedSignalIds.includes(ins.id)
   );
   const relatedMetricIds = tp.relatedMetricIds;
   const relatedPrIds = [
@@ -247,11 +240,11 @@ function TalkingPointRow({
           {tp.body}
         </p>
       )}
-      {(relatedInsights.length > 0 ||
-        relatedMetricIds.length > 0 ||
+      {(relatedMetricIds.length > 0 ||
         relatedPrs.length > 0 ||
         relatedReviews.length > 0 ||
-        relatedCalendarEvents.length > 0) && (
+        relatedCalendarEvents.length > 0 ||
+        relatedSignals.length > 0) && (
         <div className="mt-1.5 ml-2 flex flex-wrap gap-1.5">
           {relatedMetricIds.map((metricId) => (
             <MetricPill
@@ -260,11 +253,18 @@ function TalkingPointRow({
               onClick={onClickMetric}
             />
           ))}
-          {relatedInsights.map((insight) => (
+          {/* {relatedInsights.map((insight) => (
             <InsightPill
               key={insight.id}
               insight={insight}
               onClick={onClickInsight}
+            />
+          ))} */}
+          {relatedSignals.map((signal) => (
+            <SignalPill
+              key={signal.id}
+              signal={signal}
+              onClick={onClickSignal}
             />
           ))}
           {relatedPrs.map((pr) => (

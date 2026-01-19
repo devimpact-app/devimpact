@@ -8,16 +8,16 @@ import {
   jsonUnauthorized,
 } from '../../_lib/http';
 import { GetWeeklySummaryDetailResponseSchema } from '@/types/api/weekly-summary';
-import { serializeWeeklySummaryRow } from '@/lib/analysis/weekly-summary/api/serializers';
-import { getWeeklySummaryById } from '@/lib/analysis/weekly-summary/db/read/getWeeklySummaryById';
-import { listThreadsDb } from '@/lib/analysis/threads/db/read/listThreads';
+import { serializeWeeklySummaryRow } from '@/lib/domains/weekly-summary/api/serializers';
+import { getWeeklySummaryById } from '@/lib/domains/weekly-summary/db/read/getWeeklySummaryById';
+import { listThreadsDb } from '@/lib/domains/threads/db/read/listThreads';
 import { ActivityEventListItem, ThreadListItem } from '@/types/api/threads';
 import {
   serializeActivityEventListItem,
   serializeThreadListItem,
-} from '@/lib/analysis/threads/api/serializers';
-import { listEventsById } from '@/lib/analysis/threads/db/read/listEventsById';
-import { buildWeeklyActivity } from '@/lib/analysis/weekly-activity/service/buildWeeklyActivity';
+} from '@/lib/domains/threads/api/serializers';
+import { listEventsById } from '@/lib/domains/threads/db/read/listEventsById';
+import { buildWeeklyActivity } from '@/lib/domains/weekly-activity/service/buildWeeklyActivity';
 
 export const GET = withSentryUser(
   async (_req: NextRequest, context: { params: Promise<{ id: string }> }) => {

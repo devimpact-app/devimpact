@@ -1,6 +1,7 @@
 import z from 'zod';
 import { InsightSchema } from './insights';
 import { ActivityEventSchema } from './timeline';
+import { SignalSchema } from './signals';
 
 export const CalendarEventCategorySchema = z.enum([
   'personal',
@@ -114,12 +115,7 @@ export type PrepMetricSnapshot = z.infer<typeof PrepMetricSnapshotSchema>;
 
 export const PrepSectionKind = z.enum([
   'highlights',
-  'friction',
-  'asks',
-  'collaboration',
-  'growth',
-  'focus_areas',
-  'goals',
+  'discussion',
   'yesterday',
   'today',
   'blockers',
@@ -132,6 +128,7 @@ export const PrepTalkingPointSchema = z.object({
   title: z.string(),
   body: z.string().optional(),
   order: z.number().int(),
+  relatedSignalIds: z.array(z.string()).default([]),
   relatedInsightIds: z.array(z.string()).default([]),
   relatedMetricIds: z.array(z.string()).default([]),
   relatedPrIds: z.array(z.string()).default([]),
@@ -180,6 +177,7 @@ export const PrepItemSchema = z.object({
 
   talkingPoints: z.array(PrepTalkingPointSchema).default([]),
   usedInsights: z.array(InsightSchema).default([]),
+  usedSignals: z.array(SignalSchema).default([]),
   usedMetrics: z.array(PrepMetricSnapshotSchema).default([]),
   usedPrs: z.array(ActivityEventSchema).default([]),
   usedReviews: z.array(ActivityEventSchema).default([]),

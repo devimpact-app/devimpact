@@ -18,8 +18,8 @@ import { seedRepositories } from './helpers/seedRepositories';
 import { seedAuthoredPRs } from './helpers/seedAuthoredPRs';
 import { seedReviewedPRs } from './helpers/seedReviewedPRs';
 import { inferTeamMemberships } from '@/lib/integrations/github/sync/enrichment/inferTeamMemberships/inferTeamMemberships';
-import { batchNormalizeUserPRs } from '@/lib/analysis/normalizers/pr-normalizer';
-import { batchNormalizeUserReviews } from '@/lib/analysis/normalizers/review-normalizer';
+import { batchNormalizeUserPRs } from '@/lib/domains/normalizers/pr-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/normalizers/review-normalizer';
 
 const argv = process.argv.slice(2);
 const hasFlag = (f: string) => argv.includes(f);

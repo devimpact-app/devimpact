@@ -9,9 +9,9 @@ import { useState } from 'react';
 import { Insight } from '@/types/api/insights';
 import { InsightPanel } from '../../../../components/insights/InsightPanel';
 import { TTimeseriesResult } from '@/types/api/metrics';
-import { OneOnOneMetricSnapshot } from '@/types/api/one-on-one';
 import { MetricPanel } from '@/components/metrics/MetricPanel';
 import { useRouter } from 'next/navigation';
+import { PrepMetricSnapshot } from '@/types/api/prep';
 
 type Props = {
   user: {
@@ -27,7 +27,7 @@ export default function InsightsClient({ user }: Props) {
   const { range, setRange, label, subLabel, numWeeks, start, end } = useRange();
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
   const [selectedMetric, setSelectedMetric] =
-    useState<OneOnOneMetricSnapshot | null>(null);
+    useState<PrepMetricSnapshot | null>(null);
   const { insights, error, isLoading } = useInsights({
     limit: 50,
     windowWeeks: numWeeks,

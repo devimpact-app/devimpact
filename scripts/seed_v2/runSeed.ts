@@ -29,10 +29,10 @@ import {
   seedRecurringSeriesToDbRows,
 } from './derive/from-seed-calendar-events';
 import { calendarEvents } from '@/lib/db/schema/gcal';
-import { deriveActivityEventsFromCalendarEventIds } from '@/lib/analysis/activity/derive/from-calendar-events';
-import { deriveActivityEventsFromPullRequestIds } from '@/lib/analysis/activity/derive/from-github-prs';
-import { deriveActivityEventsFromReviewIds } from '@/lib/analysis/activity/derive/from-github-reviews';
-import { runThreadingPipeline } from '@/lib/analysis/threads/service/runThreadingPipeline';
+import { deriveActivityEventsFromCalendarEventIds } from '@/lib/domains/activity/derive/from-calendar-events';
+import { deriveActivityEventsFromPullRequestIds } from '@/lib/domains/activity/derive/from-github-prs';
+import { deriveActivityEventsFromReviewIds } from '@/lib/domains/activity/derive/from-github-reviews';
+import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreadingPipeline';
 
 export async function loadSeedPullRequests(
   filepath: string

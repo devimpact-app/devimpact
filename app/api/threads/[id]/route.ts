@@ -15,11 +15,11 @@ import {
   serializeThreadBullet,
   serializeThreadEventListItem,
   serializeThreadListItem,
-} from '@/lib/analysis/threads/api/serializers';
-import { getThreadById } from '@/lib/analysis/threads/db/read/getThreadById';
-import { getEventCountsForThread } from '@/lib/analysis/threads/db/read/getEventCountsForThread';
-import { getThreadBullets } from '@/lib/analysis/threads/db/read/getThreadBullets';
-import { listThreadEvents } from '@/lib/analysis/threads/db/read/listThreadEvents';
+} from '@/lib/domains/threads/api/serializers';
+import { getThreadById } from '@/lib/domains/threads/db/read/getThreadById';
+import { getEventCountsForThread } from '@/lib/domains/threads/db/read/getEventCountsForThread';
+import { getThreadBullets } from '@/lib/domains/threads/db/read/getThreadBullets';
+import { listThreadEvents } from '@/lib/domains/threads/db/read/listThreadEvents';
 
 export const GET = withSentryUser(
   async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {

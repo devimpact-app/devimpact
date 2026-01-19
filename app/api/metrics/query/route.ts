@@ -11,7 +11,7 @@ import {
   TMetricsBatchInput,
   TMetricsBatchResult,
 } from '@/types/api/metrics';
-import { runBatchServer } from '@/lib/analysis/metrics/runBatchServer';
+import { runBatchServer } from '@/lib/domains/metrics/runBatchServer';
 import { withSentryUser } from '@/lib/withSentryUser';
 import { NextRequest } from 'next/server';
 

@@ -1,14 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import WorkRhythmCard from './components/WorkRythm';
 import { DashboardAlerts } from './components/DashboardAlerts';
-import { InsightPanel } from '@/components/insights/InsightPanel';
-import { Insight } from '@/types/api/insights';
 import { UpcomingPrepCardContainer } from './components/Prep';
 import WeeklySummaryDashboardCardContainer from './components/WeeklySummary';
 import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer';
-import { useRouter } from 'next/navigation';
 import RecentThreadsDashboardCardContainer from './components/Threads';
 
 type Props = {
@@ -22,9 +19,6 @@ export default function DashboardClient({
   cliDisconnected,
   staleSyncDays,
 }: Props) {
-  const router = useRouter();
-  const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
-
   const firstName = useMemo(
     () => (fullName ? fullName.split(' ')[0] : 'there'),
     [fullName]
@@ -62,13 +56,6 @@ export default function DashboardClient({
           <ActivityLogContainer mode="preview" />
         </div>
       </main>
-      {selectedInsight && (
-        <InsightPanel
-          key={selectedInsight.id}
-          insight={selectedInsight}
-          onClose={() => setSelectedInsight(null)}
-        />
-      )}
     </>
   );
 }

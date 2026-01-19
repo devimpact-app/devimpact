@@ -9,7 +9,7 @@ import {
   WorkRhythmBucket,
 } from '@/types/api/work-rhythm';
 import { WorkRhythmCardSkeleton } from './WorkRythmCardSkeleton';
-import { TIME_BAND_LABELS } from '@/lib/analysis/work-rhythm/service/labels';
+import { TIME_BAND_LABELS } from '@/lib/domains/work-rhythm/service/labels';
 
 type WorkRhythmCardProps = {
   rhythm?: WorkRhythm;

@@ -1,7 +1,7 @@
-import { batchNormalizeUserPRs } from '@/lib/analysis/normalizers/pr-normalizer';
+import { batchNormalizeUserPRs } from '@/lib/domains/normalizers/pr-normalizer';
 import { persistBundles } from './persist-bundle';
 import { inferTeamMemberships } from './enrichment/inferTeamMemberships/inferTeamMemberships';
-import { batchNormalizeUserReviews } from '@/lib/analysis/normalizers/review-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/normalizers/review-normalizer';
 import { RepoSyncPayload } from '@/types/api/sync';
 import { getSyncStatus, isInitialSync, updateSyncStatus } from './sync-status';
 import { upsertGithubRepoForTenant } from './upsert-repo';
@@ -9,12 +9,12 @@ import {
   getDefaultWeekOffset,
   getWeekBoundsFromOffset,
 } from '@/lib/utils/date';
-import { getAuthoredPrs } from '@/lib/analysis/timeline/db/getAuthoredPrs';
+import { getAuthoredPrs } from '@/lib/domains/timeline/db/getAuthoredPrs';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getOrGeneratePrSummary } from '../../openai/services/summarizePR';
-import { deriveActivityEventsFromPullRequestIds } from '@/lib/analysis/activity/derive/from-github-prs';
-import { deriveActivityEventsFromReviewIds } from '@/lib/analysis/activity/derive/from-github-reviews';
-import { runThreadingPipeline } from '@/lib/analysis/threads/service/runThreadingPipeline';
+import { deriveActivityEventsFromPullRequestIds } from '@/lib/domains/activity/derive/from-github-prs';
+import { deriveActivityEventsFromReviewIds } from '@/lib/domains/activity/derive/from-github-reviews';
+import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreadingPipeline';
 
 export async function runSync({
   tenantId,

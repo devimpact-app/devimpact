@@ -4,7 +4,7 @@ import {
   jsonOK,
   jsonUnauthorized,
 } from '@/app/api/_lib/http';
-import { formatPrepItemResponse } from '@/lib/analysis/prep/generate/formatResponse';
+import { formatPrepItemResponse } from '@/lib/domains/prep/generate/formatResponse';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { prepItems } from '@/lib/db/schema';

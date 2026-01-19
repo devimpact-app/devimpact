@@ -6,7 +6,7 @@ import type {
   TTimeseriesResult,
 } from '@/types/api/metrics';
 import { TMetricsBatchInput } from '@/types/api/metrics';
-import { MetricsAPI } from '@/lib/analysis/metrics/client';
+import { MetricsAPI } from '@/lib/domains/metrics/client';
 import { MetricTimeseriesChart } from './MetricTimeseriesChart';
 import { getTimezone } from '@/lib/utils/date';
 

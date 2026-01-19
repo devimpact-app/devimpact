@@ -1,16 +1,16 @@
 'use client';
 
 import { MetricTimeseriesChart } from '@/app/(app)/career/old/MetricTimeseriesChart';
-import { formatMetricValue, MetricsAPI } from '@/lib/analysis/metrics/client';
+import { formatMetricValue, MetricsAPI } from '@/lib/domains/metrics/client';
 import { cn } from '@/lib/utils';
 import { getTimezone, formatRange } from '@/lib/utils/date';
 import { TMetricsBatchInput, TMetricsBatchResult } from '@/types/api/metrics';
-import { OneOnOneMetricSnapshot } from '@/types/api/one-on-one';
+import { PrepMetricSnapshot } from '@/types/api/prep';
 import { X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type MetricDetailPanelProps = {
-  metric: OneOnOneMetricSnapshot;
+  metric: PrepMetricSnapshot;
   onClose: () => void;
 };
 

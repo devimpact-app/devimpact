@@ -65,7 +65,7 @@ export function DashboardAlerts({ cliDisconnected, staleSyncDays }: Props) {
       ? issues.join(' · ')
       : cliDisconnected
         ? 'Your DevImpact CLI hasn’t reported any recent activity.'
-        : `Some metrics and insights may be out of date.`;
+        : `Some of your features may be out of date.`;
 
   return (
     <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8">

@@ -2,7 +2,7 @@
 
 import { RangePicker } from '@/components/dates/RangePicker';
 import { useRange } from '@/components/dates/useRangeNavigation';
-import { MetricsAPI } from '@/lib/analysis/metrics/client';
+import { MetricsAPI } from '@/lib/domains/metrics/client';
 import { TMetricsBatchInput, TMetricsBatchResult } from '@/types/api/metrics';
 import { useEffect, useState } from 'react';
 import { MetricTimeseriesChart } from '../MetricTimeseriesChart';

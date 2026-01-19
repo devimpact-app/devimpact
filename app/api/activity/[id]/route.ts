@@ -12,11 +12,11 @@ import {
 import { activityEvents } from '@/lib/db/schema/activity';
 import { pullRequests, reviews } from '@/lib/db/schema';
 import { calendarEvents } from '@/lib/db/schema/gcal';
-import { formatCalendarEventResponse } from '@/lib/analysis/prep/upcoming/formatResponse';
+import { formatCalendarEventResponse } from '@/lib/domains/prep/upcoming/formatResponse';
 import {
   serializeActivityEventFromPr,
   serializeActivityEventFromReview,
-} from '@/lib/analysis/timeline/api/serializers';
+} from '@/lib/domains/timeline/api/serializers';
 import { ActivityEvent } from '@/types/api/timeline';
 import { UpcomingCalendarEvent } from '@/types/api/prep';
 

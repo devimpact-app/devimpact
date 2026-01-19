@@ -13,7 +13,7 @@ import {
 import { toChartPoints } from './utils';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { ChartTooltip } from '@/components/ChartTooltip';
-import { formatMetricValue } from '@/lib/analysis/metrics/client';
+import { formatMetricValue } from '@/lib/domains/metrics/client';
 import { cn } from '@/lib/utils';
 
 type MetricTimeseriesChartProps = {

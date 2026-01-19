@@ -4,13 +4,13 @@ import { withSentryUser } from '@/lib/withSentryUser';
 import { jsonBadRequest, jsonOK, jsonUnauthorized } from '@/app/api/_lib/http';
 
 import { GetWeeklySummariesResponseSchema } from '@/types/api/weekly-summary';
-import { serializeWeeklySummaryRow } from '@/lib/analysis/weekly-summary/api/serializers';
+import { serializeWeeklySummaryRow } from '@/lib/domains/weekly-summary/api/serializers';
 import {
   decodeWeeklySummaryCursor,
   encodeWeeklySummaryCursor,
-} from '@/lib/analysis/weekly-summary/db/read/cursor';
-import { listWeeklySummariesPage } from '@/lib/analysis/weekly-summary/db/read/listWeeklySummaries';
-import { buildWeeklyActivity } from '@/lib/analysis/weekly-activity/service/buildWeeklyActivity';
+} from '@/lib/domains/weekly-summary/db/read/cursor';
+import { listWeeklySummariesPage } from '@/lib/domains/weekly-summary/db/read/listWeeklySummaries';
+import { buildWeeklyActivity } from '@/lib/domains/weekly-activity/service/buildWeeklyActivity';
 import { WeeklyActivity } from '@/types/api/weekly-activity';
 
 export const GET = withSentryUser(async (req: NextRequest) => {

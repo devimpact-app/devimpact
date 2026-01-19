@@ -7,8 +7,8 @@ import {
   jsonServerError,
 } from '@/app/api/_lib/http';
 import { withSentryUser } from '@/lib/withSentryUser';
-import { batchNormalizeUserPRs } from '@/lib/analysis/normalizers/pr-normalizer';
-import { batchNormalizeUserReviews } from '@/lib/analysis/normalizers/review-normalizer';
+import { batchNormalizeUserPRs } from '@/lib/domains/normalizers/pr-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/normalizers/review-normalizer';
 
 const ADMIN_TENANT_ID = 'f7586fab-ea2d-4a9d-be3c-04be29ba071e';
 

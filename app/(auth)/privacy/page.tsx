@@ -15,8 +15,9 @@ export default function PrivacyPage() {
           </h2>
           <p>
             DevImpact is an early private beta. We collect only the data
-            required to create your engineering insights and never sell, rent,
-            or share your data with third parties.
+            required to create your engineering summaries, meeting prep, and
+            accomplishments and we never sell, rent, or share your data with
+            third parties.
           </p>
         </section>
 
@@ -67,8 +68,7 @@ export default function PrivacyPage() {
 
           <p>
             This data is used solely to analyze meeting load, focus time, and
-            work patterns in order to generate productivity and work rhythm
-            insights for you.
+            work patterns in order to generate insights for you.
           </p>
 
           <p>

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { jsonOK, jsonUnauthorized } from '../_lib/http';
-import { buildInsights } from '@/lib/analysis/insights';
+import { buildInsights } from '@/lib/domains/insights';
 import { InsightsResponseSchema } from '@/types/api/insights';
 import { withSentryUser } from '@/lib/withSentryUser';
 

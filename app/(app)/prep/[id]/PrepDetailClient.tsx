@@ -2,8 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Insight } from '@/types/api/insights';
-import { InsightPanel } from '@/components/insights/InsightPanel';
 import { MetricPanel } from '@/components/metrics/MetricPanel';
 import { ActivityEvent } from '@/types/api/timeline';
 import { EventInspectorPanel } from '@/app/(app)/timeline/components/EventInspectorPanel';
@@ -17,6 +15,8 @@ import {
 import { PrepBody } from './PrepBody';
 import { CalendarEventInspectorPanel } from '../../timeline/components/CalendarEventPanel';
 import { Info } from 'lucide-react';
+import { Signal } from '@/types/api/signals';
+import { SignalPanel } from '@/components/signals/SignalPanel';
 
 type Status = 'loading' | 'ready' | 'error' | 'not_found';
 
@@ -94,7 +94,7 @@ export default function PrepDetailClient({
   const [prep, setPrep] = useState<PrepItemResponse['prep'] | null>(null);
   const [status, setStatus] = useState<Status>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
+  const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
   const [selectedMetric, setSelectedMetric] =
     useState<PrepMetricSnapshot | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(
@@ -323,8 +323,8 @@ export default function PrepDetailClient({
         <div className="pb-8 pt-10">
           <PrepBody
             prep={prep}
-            onClickInsight={(insight) => {
-              setSelectedInsight(insight);
+            onClickSignal={(signal) => {
+              setSelectedSignal(signal);
             }}
             onClickMetric={(metric) => {
               setSelectedMetric(metric);
@@ -338,11 +338,11 @@ export default function PrepDetailClient({
           />
         </div>
       </main>
-      {selectedInsight && (
-        <InsightPanel
-          key={selectedInsight.id}
-          insight={selectedInsight}
-          onClose={() => setSelectedInsight(null)}
+      {selectedSignal && (
+        <SignalPanel
+          key={selectedSignal.id}
+          signal={selectedSignal}
+          onClose={() => setSelectedSignal(null)}
         />
       )}
       {selectedMetric && (

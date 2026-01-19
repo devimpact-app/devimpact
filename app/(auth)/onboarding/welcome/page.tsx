@@ -89,8 +89,8 @@ export default function OnboardingCheckpoint() {
               Run your first sync
             </h3>
             <p className="mt-2 text-[13px] leading-relaxed text-white/60">
-              Pulls read-only metadata from recent weeks to generate your first
-              insights.
+              Pulls read-only metadata from recent weeks to power your
+              experience.
             </p>
           </div>
         </div>

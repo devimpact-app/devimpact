@@ -1,4 +1,4 @@
-import { buildWeeklyActivity } from '@/lib/analysis/weekly-activity/service/buildWeeklyActivity';
+import { buildWeeklyActivity } from '@/lib/domains/weekly-activity/service/buildWeeklyActivity';
 import { jsonBadRequest, jsonOK, jsonUnauthorized } from '../_lib/http';
 import { auth } from '@/lib/auth';
 import { NextRequest } from 'next/server';

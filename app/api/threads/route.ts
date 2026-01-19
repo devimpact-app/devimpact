@@ -8,9 +8,9 @@ import {
   ThreadStatusSchema,
 } from '@/types/api/threads';
 import { subDays } from 'date-fns';
-import { serializeThreadListItem } from '@/lib/analysis/threads/api/serializers';
-import { listThreadsDb } from '@/lib/analysis/threads/db/read/listThreads';
-import { decodeThreadCursor } from '@/lib/analysis/threads/db/read/cursor';
+import { serializeThreadListItem } from '@/lib/domains/threads/api/serializers';
+import { listThreadsDb } from '@/lib/domains/threads/db/read/listThreads';
+import { decodeThreadCursor } from '@/lib/domains/threads/db/read/cursor';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
   const session = await auth();

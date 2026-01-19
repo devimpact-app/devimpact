@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivityEventsForRange } from '@/lib/analysis/timeline/service/getActivityEventsForRange';
+import { getActivityEventsForRange } from '@/lib/domains/timeline/service/getActivityEventsForRange';
 import { auth } from '@/lib/auth'; // if using NextAuth
 import { jsonOK, jsonServerError, jsonUnauthorized } from '../_lib/http';
 import {
@@ -7,7 +7,7 @@ import {
   ActivityEventsResponseSchema,
 } from '@/types/api/timeline';
 import { withSentryUser } from '@/lib/withSentryUser';
-import { getRecentActivityEvents } from '@/lib/analysis/timeline/service/getRecentActivityEvents';
+import { getRecentActivityEvents } from '@/lib/domains/timeline/service/getRecentActivityEvents';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
