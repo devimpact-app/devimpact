@@ -16,6 +16,7 @@ export function SettingsClient({
   calendarDisconnected,
   selectedCalendarsCount,
   availableCalendarsCount,
+  weeklySummaryEmailEnabled,
 }: {
   cliDisconnected: boolean;
   selectedReposCount: number;
@@ -23,6 +24,7 @@ export function SettingsClient({
   calendarDisconnected: boolean;
   selectedCalendarsCount: number;
   availableCalendarsCount: number;
+  weeklySummaryEmailEnabled: boolean;
 }) {
   const router = useRouter();
   const [resetLoading, setResetLoading] = useState(false);
@@ -147,7 +149,9 @@ export function SettingsClient({
         </div>
       </section>
 
-      <WeeklySummaryEmailSection />
+      <WeeklySummaryEmailSection
+        weeklySummaryEmailEnabled={weeklySummaryEmailEnabled}
+      />
 
       <section className="rounded-2xl border border-slate-800/80 bg-slate-950/70 px-5 py-4 shadow-sm shadow-black/30">
         <div className="mb-4 flex items-center justify-between">

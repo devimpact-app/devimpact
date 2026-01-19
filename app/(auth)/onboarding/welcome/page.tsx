@@ -1,9 +1,37 @@
+'use client';
+
+import { getTimezone } from '@/lib/utils/date';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function OnboardingCheckpoint() {
+  async function saveTimezone() {
+    try {
+      const res = await fetch(`/api/settings/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          timezone: getTimezone(),
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error(text || 'Failed to update setting.');
+        return;
+      }
+    } catch (err) {
+      console.error('Network error while updating settings');
+    }
+  }
+
+  useEffect(() => {
+    saveTimezone();
+  }, []);
+
   return (
     <main className="relative min-h-screen bg-[#070A12] text-white">
-      {/* subtle background aura */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-180px] h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="absolute left-[-220px] top-[240px] h-[420px] w-[520px] rounded-full bg-sky-500/6 blur-3xl" />
@@ -22,7 +50,7 @@ export default function OnboardingCheckpoint() {
 
         <p className="mt-4 max-w-2xl text-base sm:text-lg text-white/75 leading-relaxed">
           DevImpact is designed for your work GitHub activity — where reviews,
-          meetings, and collaboration actually show up. It works for almost all
+          features, and collaboration actually show up. It works for almost all
           Github org setups, including companies that use SSO - no approvals
           needed.
         </p>

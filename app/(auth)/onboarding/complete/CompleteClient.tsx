@@ -44,10 +44,10 @@ export default function CompleteClient({
 
             <ul className="space-y-2">
               {[
-                'Weekly leverage summary',
-                'Work rhythm & deep work detection',
+                'Weekly summaries',
                 'In-app meeting prep',
-                'Private impact log (no sharing)',
+                'Private impact log',
+                'Work rhythm & deep work detection',
               ].map((item) => (
                 <li
                   key={item}
