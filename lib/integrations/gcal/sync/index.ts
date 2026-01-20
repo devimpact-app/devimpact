@@ -1,13 +1,16 @@
 import { db } from '@/lib/db/client';
 import { calendarSelections, calendarSyncRuns } from '@/lib/db/schema/gcal';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { getIntegrationTokenId } from './sync-status';
 import { daysAgo, hoursSince } from '@/lib/utils/date';
 import { listEventsWindow } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
 import { addDays, subHours } from 'date-fns';
-import { deriveActivityEventsFromCalendarEventIds } from '@/lib/domains/activity/derive/from-calendar-events';
+import { deriveActivityEventsFromCalendarEvents } from '@/lib/domains/activity/derive/from-calendar-events';
 import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreadingPipeline';
+import { users } from '@/lib/db/schema';
+import { SetupStateV1 } from '@/types/api/cli';
+import { enqueueJob, hourlyDedupeKey } from '@/lib/domains/jobs/enqueue';
 
 const LOOKBACK_DAYS_INITIAL = 90;
 const FUTURE_LOOKAHEAD_DAYS = 14;
@@ -186,7 +189,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
 
       calendarsSyncedCount += 1;
 
-      const { touchedEventIds } = await upsertCalendarEvents({
+      await upsertCalendarEvents({
         tenantId: userId,
         integrationTokenId: tokenId,
         calendarId: cal.calendarId,
@@ -194,19 +197,8 @@ export async function runSync(userId: string): Promise<SyncResponse> {
         lastSyncedAt: new Date(),
       });
 
-      await deriveActivityEventsFromCalendarEventIds({
-        tenantId: userId,
-        calendarEventIds: touchedEventIds ?? [],
-        pastOnly: true,
-      });
-
       eventsUpsertedCount += resp.items.length;
     }
-
-    await runThreadingPipeline({
-      tenantId: userId,
-      lookbackDays: 14,
-    });
 
     await db
       .update(calendarSyncRuns)
@@ -218,6 +210,44 @@ export async function runSync(userId: string): Promise<SyncResponse> {
         updatedAt: new Date(),
       })
       .where(eq(calendarSyncRuns.id, run.id));
+
+    const [row] = await db
+      .select({ setupState: users.setupState })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const prev = (row?.setupState as SetupStateV1) ?? { v: 1 };
+    if (!prev.ready) {
+      const nowISO = new Date().toISOString();
+      await db
+        .update(users)
+        .set({
+          setupState: sql`
+            jsonb_set(
+              jsonb_set(
+                COALESCE(${users.setupState}, '{"v":1}'::jsonb),
+                '{gcal,lastSyncAt}',
+                to_jsonb(${nowISO}::text),
+                true
+              ),
+              '{updatedAt}',
+              to_jsonb(${nowISO}::text),
+              true
+            )
+          `,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+      // Rest of processing will be picked up in bootstrap job
+    } else {
+      await enqueueJob(db, {
+        tenantId: userId,
+        kind: 'threading_recent',
+        dedupeKey: hourlyDedupeKey(),
+      });
+    }
 
     return {
       run: {

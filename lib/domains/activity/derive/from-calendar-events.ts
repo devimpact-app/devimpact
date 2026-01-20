@@ -1,13 +1,13 @@
 import { db } from '@/lib/db/client';
 import { calendarEvents } from '@/lib/db/schema/gcal';
 import { activityEvents } from '@/lib/db/schema/activity';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 
 type DeriveFromCalendarEventIdsArgs = {
   tenantId: string;
-  calendarEventIds: string[];
   now?: Date;
   pastOnly?: boolean;
+  lookbackDays?: number;
 };
 
 type DeriveResult = {
@@ -39,16 +39,15 @@ function buildSubtitle(e: {
  * - v1 defaults to "past-only"
  * - deletes ledger rows for calendar events that are soft-deleted
  */
-export async function deriveActivityEventsFromCalendarEventIds(
+export async function deriveActivityEventsFromCalendarEvents(
   args: DeriveFromCalendarEventIdsArgs
 ): Promise<DeriveResult> {
   const { tenantId } = args;
   const now = args.now ?? new Date();
   const pastOnly = args.pastOnly ?? true;
 
-  if (!args.calendarEventIds.length) {
-    return { upserted: 0, deleted: 0, skipped: 0 };
-  }
+  const lookbackDays = args.lookbackDays ?? 14;
+  const cutoff = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
 
   const rows = await db
     .select({
@@ -68,12 +67,31 @@ export async function deriveActivityEventsFromCalendarEventIds(
       categoryConfidence: calendarEvents.categoryConfidence,
       categorySource: calendarEvents.categorySource,
       deletedAt: calendarEvents.deletedAt,
+      sourceUpdatedAt: calendarEvents.updatedAtGoogle,
+      existingDerivedAt: activityEvents.derivedAt,
+      existingEventId: activityEvents.id,
     })
     .from(calendarEvents)
+    .leftJoin(
+      activityEvents,
+      and(
+        eq(activityEvents.tenantId, calendarEvents.tenantId),
+        eq(activityEvents.source, 'gcal'),
+        eq(activityEvents.sourceEntityTable, 'calendar_events'),
+        eq(activityEvents.sourceEntityId, calendarEvents.id)
+      )
+    )
     .where(
       and(
         eq(calendarEvents.tenantId, tenantId),
-        inArray(calendarEvents.id, args.calendarEventIds)
+        or(
+          gt(calendarEvents.endAt, cutoff),
+          gt(calendarEvents.startAt, cutoff)
+        ),
+        or(
+          isNull(activityEvents.id),
+          gt(calendarEvents.updatedAtGoogle, activityEvents.derivedAt)
+        )
       )
     );
 

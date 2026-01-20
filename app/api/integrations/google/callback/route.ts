@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
-import { integrationTokens } from '@/lib/db/schema';
+import { integrationTokens, users } from '@/lib/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 import { listCalendarsWithToken } from '@/lib/integrations/gcal/api';
 import { GoogleCalendarListItem } from '@/lib/integrations/gcal/types';
@@ -141,6 +141,31 @@ export async function GET(req: NextRequest) {
   if (!integrationTokenId) {
     return handleError(redirectBase, 'token_save_failed');
   }
+
+  const nowISO = new Date().toISOString();
+
+  await db
+    .update(users)
+    .set({
+      setupState: sql`
+      jsonb_set(
+        jsonb_set(
+          COALESCE(${users.setupState}, '{"v":1}'::jsonb),
+          '{gcal}',
+          jsonb_build_object(
+            'connected', true,
+            'lastSyncAt', COALESCE((${users.setupState} #>> '{gcal,lastSyncAt}'), NULL)
+          ),
+          true
+        ),
+        '{updatedAt}',
+        to_jsonb(${nowISO}::text),
+        true
+      )
+    `,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, session.user.id));
 
   let calendars: GoogleCalendarListItem[] = [];
   try {

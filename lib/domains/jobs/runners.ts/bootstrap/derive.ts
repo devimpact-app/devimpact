@@ -2,6 +2,7 @@ import { deriveActivityEventsFromPullRequests } from '@/lib/domains/activity/der
 import { JobHandlerInput, JobHandlerResult } from '../types';
 import { BootstrapCursor } from './types';
 import { deriveActivityEventsFromReviews } from '@/lib/domains/activity/derive/from-github-reviews';
+import { deriveActivityEventsFromCalendarEvents } from '@/lib/domains/activity/derive/from-calendar-events';
 
 export async function stepDeriveEvents(
   input: JobHandlerInput,
@@ -21,6 +22,11 @@ export async function stepDeriveEvents(
     joinPrTitle: true,
     now,
   });
+  await deriveActivityEventsFromCalendarEvents({
+    tenantId,
+    lookbackDays: 90,
+    pastOnly: true,
+  });
 
   const nextCursor: BootstrapCursor = {
     ...cursor,
@@ -32,7 +38,8 @@ export async function stepDeriveEvents(
     cursor: nextCursor,
     progress: {
       step: 'derive_events',
-      message: 'Built activity timeline from pull requests and reviews',
+      message:
+        'Built activity timeline from pull requests, reviews, and calendar',
     },
     nextRunAt: new Date(now.getTime() + 1_000),
   };

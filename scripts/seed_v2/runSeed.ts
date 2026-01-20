@@ -29,7 +29,7 @@ import {
   seedRecurringSeriesToDbRows,
 } from './derive/from-seed-calendar-events';
 import { calendarEvents } from '@/lib/db/schema/gcal';
-import { deriveActivityEventsFromCalendarEventIds } from '@/lib/domains/activity/derive/from-calendar-events';
+import { deriveActivityEventsFromCalendarEvents } from '@/lib/domains/activity/derive/from-calendar-events';
 import { deriveActivityEventsFromPullRequests } from '@/lib/domains/activity/derive/from-github-prs';
 import { deriveActivityEventsFromReviews } from '@/lib/domains/activity/derive/from-github-reviews';
 import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreadingPipeline';
@@ -327,9 +327,8 @@ async function seedAccount(tenantId: string, githubUsername: string) {
 
   console.log('deriving activity events from source tables');
   const { upserted: aecal, skipped: aecalSkipped } =
-    await deriveActivityEventsFromCalendarEventIds({
+    await deriveActivityEventsFromCalendarEvents({
       tenantId,
-      calendarEventIds: upsertedEvents.map((e) => e.id),
       pastOnly: true,
     });
   const { upserted: aepr, skipped: aeprSkipped } =

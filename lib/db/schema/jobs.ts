@@ -23,17 +23,10 @@ export const jobKindEnum = pgEnum('job_kind', [
   'setup_bootstrap_recent',
   'setup_backfill_90d',
 
-  // PR summarization
-  'pr_summarize_recent',
-  'pr_summarize_backfill',
-
-  // threading
+  // incremental threading and summarization
   'threading_recent',
-  'threading_backfill',
-  'threading_reconcile_deferred',
 
   // weekly summary
-  'weekly_summary_generate_week',
   'weekly_summary_latest',
 ]);
 

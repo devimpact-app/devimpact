@@ -20,3 +20,8 @@ export const EnqueueJobBodySchema = z
   .strict();
 
 export type EnqueueJobBody = z.infer<typeof EnqueueJobBodySchema>;
+
+export const JobStatusQuerySchema = z.object({
+  kind: JobKindSchema,
+  dedupeKey: z.string().min(1).max(200).optional(),
+});

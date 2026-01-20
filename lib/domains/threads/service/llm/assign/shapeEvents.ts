@@ -37,7 +37,7 @@ function normalizeLabel(v?: string | null): string | null {
 
 export function shapeEventForLLM(
   e: ActivityEvent,
-  prSummariesByPrId: Record<string, SummaryPick>,
+  prSummariesByPrId: Record<string, SummaryPick | undefined>,
   prIdsByReviewId: Record<string, string>
 ): ThreadCandidateEvent | null {
   if (!e.occurredAt) return null;
@@ -82,6 +82,7 @@ export function shapeEventForLLM(
 
     const prId = prIdsByReviewId[e.sourceEntityId];
     const s = prSummariesByPrId[prId];
+    if (!s) return null;
 
     return {
       id: e.id,

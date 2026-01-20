@@ -87,7 +87,7 @@ async function seedGithubActivity(
   await batchNormalizeUserPRs(tenantId, githubUsername);
   await batchNormalizeUserReviews(tenantId, githubUsername);
 }
-
+``;
 async function main() {
   try {
     const reset = hasFlag('--reset');

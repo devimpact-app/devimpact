@@ -15,6 +15,7 @@ function initBootstrapCursor(nowISO: string): BootstrapCursor {
     summarize: {
       items: [],
       idx: 0,
+      pass: 0,
       perRun: 5,
       concurrency: 5,
       succeeded: 0,

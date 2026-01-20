@@ -29,6 +29,7 @@ export const BootstrapCursorSchema = z.object({
         .default([]),
       idx: z.number().int().min(0),
       perRun: z.number().int().min(1).max(50),
+      pass: z.number().int().min(0),
       concurrency: z.number().int().min(1).max(10),
       succeeded: z.number().int().min(0).optional(),
       failed: z.number().int().min(0).optional(),

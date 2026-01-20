@@ -1,9 +1,8 @@
-import { getAuthoredPrs } from '@/lib/domains/timeline/db/getAuthoredPrs';
 import { JobHandlerInput, JobHandlerResult } from '../types';
 import { BootstrapCursor } from './types';
-import { getAuthoredReviews } from '@/lib/domains/timeline/db/getAuthoredReviews';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getOrGeneratePrSummary } from '@/lib/domains/pull-requests/service/getOrGeneratePrSummary';
+import { getPrsToSummarize } from '../../db/getPrsToSummarize';
 
 const DEFAULT_PER_RUN = 15;
 
@@ -19,48 +18,26 @@ export async function stepSummarizePrs(
   if (!hasPlan) {
     const lookbackDays = cursor.lookbackDays ?? 14;
     const start = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
-    const authoredPrs = await getAuthoredPrs({
+    const items = await getPrsToSummarize({
       tenantId,
       start,
       end: now,
     });
-    const mergedPrs = authoredPrs.filter((pr) => !!pr.mergedAt);
-    const authoredReviews = await getAuthoredReviews(
-      {
-        tenantId,
-        start,
-        end: now,
-      },
-      {
-        joinWithPrs: true,
-      }
-    );
-    const reviewedPrMap = new Map<string, (typeof mergedPrs)[number]>();
-    for (const r of authoredReviews) {
-      const pr = r.pr;
-      if (!pr) continue;
-      if (pr.authorIsTenant) continue;
-      if (!reviewedPrMap.has(pr.id)) {
-        reviewedPrMap.set(pr.id, pr);
-      }
+    if (items.length === 0) {
+      return {
+        outcome: 'requeue',
+        cursor: { ...cursor, step: 'threading' },
+        progress: { step: 'summarize_prs', message: 'No PRs needed summaries' },
+        nextRunAt: new Date(now.getTime() + 1_000),
+      };
     }
-    const reviewedPrs = Array.from(reviewedPrMap.values());
 
-    const cursorItems = [
-      ...mergedPrs.map((pr) => ({
-        prId: pr.id,
-        mode: 'authored' as 'authored' | 'reviewed',
-      })),
-      ...reviewedPrs.map((pr) => ({
-        prId: pr!.id,
-        mode: 'reviewed' as 'authored' | 'reviewed',
-      })),
-    ];
     const nextCursor: BootstrapCursor = {
       ...cursor,
       summarize: {
-        items: cursorItems,
+        items: items,
         idx: 0,
+        pass: 0,
         perRun: cursor.summarize?.perRun ?? DEFAULT_PER_RUN,
         concurrency: cursor.summarize?.concurrency ?? 5,
         succeeded: 0,
@@ -72,9 +49,9 @@ export async function stepSummarizePrs(
       cursor: nextCursor,
       progress: {
         step: 'summarize_prs',
-        message: `Prepared PR summary plan (${mergedPrs.length} authored, ${reviewedPrs.length} reviewed)`,
+        message: `Prepared PR summary plan (${items.length} PRs)`,
         current: 0,
-        total: cursorItems.length,
+        total: items.length,
       },
       nextRunAt: new Date(now.getTime() + 1_000),
     };
@@ -114,23 +91,36 @@ export async function stepSummarizePrs(
   const done = nextIdx >= summarizeParams.items.length;
 
   if (done && failed > 0) {
-    const retryCursor: BootstrapCursor = {
-      ...cursor,
-      step: 'summarize_prs',
-      summarize: { ...summarizeParams, idx: 0, succeeded, failed },
-    };
-
-    return {
-      outcome: 'requeue',
-      cursor: retryCursor,
-      progress: {
+    const pass = summarizeParams.pass ?? 0;
+    if (pass < 1) {
+      const retryCursor: BootstrapCursor = {
+        ...cursor,
         step: 'summarize_prs',
-        message: `Some PR summaries failed (${failed}). Retrying…`,
-        current: summarizeParams.items.length - failed,
-        total: summarizeParams.items.length,
-      },
-      nextRunAt: new Date(now.getTime() + 2_000),
-    };
+        summarize: {
+          ...summarizeParams,
+          idx: 0,
+          pass: pass + 1,
+          succeeded,
+          failed,
+        },
+      };
+
+      return {
+        outcome: 'requeue',
+        cursor: retryCursor,
+        progress: {
+          step: 'summarize_prs',
+          message: `Some PR summaries failed (${failed}). Retrying (pass ${pass + 1})…`,
+          current: summarizeParams.items.length - failed,
+          total: summarizeParams.items.length,
+        },
+        nextRunAt: new Date(now.getTime() + 2_000),
+      };
+    }
+
+    throw new Error(
+      `bootstrap summarize_prs: ${failed}/${summarizeParams.items.length} PR summaries failed after ${pass + 1} passes`
+    );
   }
 
   const nextCursor: BootstrapCursor = {

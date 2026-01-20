@@ -13,6 +13,14 @@ function isJobSingletonViolation(err: unknown): boolean {
   );
 }
 
+export function hourlyDedupeKey(now = new Date()): string {
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(now.getUTCDate()).padStart(2, '0');
+  const h = String(now.getUTCHours()).padStart(2, '0');
+  return `hour:${y}-${m}-${d}T${h}`;
+}
+
 export type EnqueueJobInput = {
   tenantId: string;
   kind: JobKind;

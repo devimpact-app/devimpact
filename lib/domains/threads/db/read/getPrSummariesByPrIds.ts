@@ -8,16 +8,17 @@ export async function getPrSummariesByPrIds(
 ): Promise<
   Record<
     string,
-    Pick<
-      PrSummary,
-      | 'prId'
-      | 'repoFullName'
-      | 'prNumber'
-      | 'shortSummary'
-      | 'highlights'
-      | 'typeTags'
-      | 'domainTags'
-    >
+    | Pick<
+        PrSummary,
+        | 'prId'
+        | 'repoFullName'
+        | 'prNumber'
+        | 'shortSummary'
+        | 'highlights'
+        | 'typeTags'
+        | 'domainTags'
+      >
+    | undefined
   >
 > {
   if (!prIds.length) return {};
