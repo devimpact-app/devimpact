@@ -1,15 +1,16 @@
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { SetupStateV1 } from '@/types/api/cli';
+import { InferSelectModel } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
   text,
   timestamp,
   unique,
-  index,
   boolean,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 
-export type Provider = 'github';
+export type Provider = 'github' | 'gcal';
 export type TokenType = 'oauth';
 
 export const users = pgTable('users', {
@@ -32,6 +33,20 @@ export const users = pgTable('users', {
     .notNull()
     .default(true),
   timezone: text('timezone'),
+  setupState: jsonb('setup_state')
+    .$type<SetupStateV1>()
+    .notNull()
+    .default({
+      v: 1,
+      github: {
+        cliTokenGenerated: false,
+        cliTokenLinked: false,
+      },
+      bootstrapRecent: { status: 'not_started' },
+      backfill90d: { status: 'not_started' },
+      ready: false,
+      updatedAt: new Date().toISOString(),
+    }),
 });
 
 export type User = InferSelectModel<typeof users>;

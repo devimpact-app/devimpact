@@ -18,15 +18,11 @@ import { seedRepositories } from './helpers/seedRepositories';
 import { seedAuthoredPRs } from './helpers/seedAuthoredPRs';
 import { seedReviewedPRs } from './helpers/seedReviewedPRs';
 import { inferTeamMemberships } from '@/lib/integrations/github/sync/enrichment/inferTeamMemberships/inferTeamMemberships';
-import { batchNormalizeUserPRs } from '@/lib/domains/normalizers/pr-normalizer';
-import { batchNormalizeUserReviews } from '@/lib/domains/normalizers/review-normalizer';
+import { batchNormalizeUserPRs } from '@/lib/domains/pull-requests/service/normalization/pr-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/pull-requests/service/normalization/review-normalizer';
 
 const argv = process.argv.slice(2);
 const hasFlag = (f: string) => argv.includes(f);
-// const getArg = (name: string) => {
-//   const i = argv.indexOf(`--${name}`);
-//   return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : undefined;
-// };
 
 async function resetTenantData(tenantId: string) {
   // delete child tables first
@@ -88,11 +84,8 @@ async function seedGithubActivity(
   });
 
   console.log('Normalizing PRs and reviews');
-  const { rawGithubPrIds } = await batchNormalizeUserPRs(
-    tenantId,
-    githubUsername
-  );
-  await batchNormalizeUserReviews(tenantId, githubUsername, rawGithubPrIds);
+  await batchNormalizeUserPRs(tenantId, githubUsername);
+  await batchNormalizeUserReviews(tenantId, githubUsername);
 }
 
 async function main() {

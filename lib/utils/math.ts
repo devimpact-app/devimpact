@@ -21,3 +21,15 @@ export function computeMedianClamped(
   if (!cleaned.length) return 0;
   return computeMedian(cleaned);
 }
+
+export function clampInt(
+  raw: string | null,
+  fallback: number,
+  min: number,
+  max: number
+): number {
+  if (!raw) return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.trunc(n)));
+}

@@ -1,7 +1,6 @@
-import { batchNormalizeUserPRs } from '@/lib/domains/normalizers/pr-normalizer';
+import { batchNormalizeUserPRs } from '@/lib/domains/pull-requests/service/normalization/pr-normalizer';
 import { persistBundles } from './persist-bundle';
-import { inferTeamMemberships } from './enrichment/inferTeamMemberships/inferTeamMemberships';
-import { batchNormalizeUserReviews } from '@/lib/domains/normalizers/review-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/pull-requests/service/normalization/review-normalizer';
 import { RepoSyncPayload } from '@/types/api/sync';
 import { getSyncStatus, isInitialSync, updateSyncStatus } from './sync-status';
 import { upsertGithubRepoForTenant } from './upsert-repo';
@@ -11,9 +10,9 @@ import {
 } from '@/lib/utils/date';
 import { getAuthoredPrs } from '@/lib/domains/timeline/db/getAuthoredPrs';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
-import { getOrGeneratePrSummary } from '../../openai/services/summarizePR';
-import { deriveActivityEventsFromPullRequestIds } from '@/lib/domains/activity/derive/from-github-prs';
-import { deriveActivityEventsFromReviewIds } from '@/lib/domains/activity/derive/from-github-reviews';
+import { getOrGeneratePrSummary } from '@/lib/domains/pull-requests/service/getOrGeneratePrSummary';
+import { deriveActivityEventsFromPullRequests } from '@/lib/domains/activity/derive/from-github-prs';
+import { deriveActivityEventsFromReviews } from '@/lib/domains/activity/derive/from-github-reviews';
 import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreadingPipeline';
 
 export async function runSync({
@@ -25,7 +24,6 @@ export async function runSync({
 }) {
   const syncStatus = await getSyncStatus(tenantId);
   const initialSync = isInitialSync(syncStatus);
-  const since = new Date(payload.syncWindow.startISO);
   const username = payload.githubLogin;
 
   // Save repo info if needed
@@ -43,32 +41,20 @@ export async function runSync({
 
   // Normalization and enrichment
   if (payload.isLastBatch) {
-    // await inferTeamMemberships({
-    //   tenantId,
-    //   since,
-    //   username,
-    // });
-
     // Normalize to nice tables for GH
-    const { rawGithubPrIds, touchedPrIds } = await batchNormalizeUserPRs(
+    const { touchedPrIds } = await batchNormalizeUserPRs(tenantId, username);
+    const { touchedReviewIds } = await batchNormalizeUserReviews(
       tenantId,
       username
     );
-    const { touchedReviewIds } = await batchNormalizeUserReviews(
-      tenantId,
-      username,
-      rawGithubPrIds
-    );
 
     // Derive activity events (ledger) for accomplishment logging
-    await deriveActivityEventsFromPullRequestIds({
+    await deriveActivityEventsFromPullRequests({
       tenantId,
-      prIds: touchedPrIds,
       authoredOnly: true,
     });
-    await deriveActivityEventsFromReviewIds({
+    await deriveActivityEventsFromReviews({
       tenantId,
-      reviewIds: touchedReviewIds,
       joinPrTitle: true,
     });
     await runThreadingPipeline({

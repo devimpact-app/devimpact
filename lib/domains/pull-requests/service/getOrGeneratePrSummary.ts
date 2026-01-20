@@ -1,18 +1,12 @@
-import { openai } from '../client';
-import { AiConfig } from '../config';
-import { PrSummaryResult } from '../types';
-import {
-  buildPrSummaryMessages,
-  PRSummarizationInput,
-} from '../prompts/prSummary';
-import { withRetry } from '../utils/retry';
-import { safeJson } from '../utils/json';
 import { prSummaries, pullRequests } from '@/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { createHash } from 'crypto';
-import { loadPrSummaryContext } from './loadContext';
-import { buildPRSummarizationInput } from './buildPRSummarizationInput';
+import { generateAuthoredPrSummary } from './llm/authored/generate';
+import { PRSummarizationInput } from './llm/authored/types';
+import { loadPrSummaryContext } from './llm/authored/context';
+import { buildPRSummarizationInput } from './llm/authored/buildInput';
+import { AiConfig } from '@/lib/integrations/openai/config';
 
 function hashPrInput(input: PRSummarizationInput, model: string): string {
   const payload = {
@@ -25,9 +19,10 @@ function hashPrInput(input: PRSummarizationInput, model: string): string {
 export async function getOrGeneratePrSummary(opts: {
   tenantId: string;
   prId: string; // normalized pr row
+  useReviewedPrompt?: boolean;
   force?: boolean; // if we want to always re-generate
 }) {
-  const { tenantId, prId, force } = opts;
+  const { tenantId, prId, force, useReviewedPrompt = false } = opts;
 
   const results = await db
     .select({
@@ -69,7 +64,7 @@ export async function getOrGeneratePrSummary(opts: {
     reviewComments: ctx.reviewComments,
   });
 
-  const result = await summarizePullRequest(input);
+  const result = await generateAuthoredPrSummary(input);
 
   const prUpdatedAt = input.pr.updatedAt ?? new Date();
   const inputHash = hashPrInput(input, AiConfig.models.summarize);
@@ -114,46 +109,4 @@ export async function getOrGeneratePrSummary(opts: {
     row: upserted[0],
     source: 'fresh' as const,
   };
-}
-
-export async function summarizePullRequest(
-  input: PRSummarizationInput
-): Promise<PrSummaryResult> {
-  const messages = buildPrSummaryMessages(input);
-
-  const run = () =>
-    openai.chat.completions.create({
-      model: AiConfig.models.summarize,
-      temperature: 0.4,
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'pr_summary',
-          schema: {
-            type: 'object',
-            properties: {
-              shortSummary: { type: 'string' },
-              longSummary: { type: 'string' },
-              highlights: { type: 'array', items: { type: 'string' } },
-              typeTags: { type: 'array', items: { type: 'string' } },
-              domainTags: { type: 'array', items: { type: 'string' } },
-              reviewFrictionTags: { type: 'array', items: { type: 'string' } },
-            },
-            required: [
-              'shortSummary',
-              'longSummary',
-              'highlights',
-              'typeTags',
-              'domainTags',
-            ],
-            additionalProperties: false,
-          },
-        },
-      },
-      messages,
-    });
-
-  const res = await withRetry(run);
-  const content = res.choices[0]?.message?.content ?? '{}';
-  return safeJson<PrSummaryResult>(content);
 }

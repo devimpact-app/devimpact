@@ -2,7 +2,7 @@ import { getAuthoredPrs } from '@/lib/domains/timeline/db/getAuthoredPrs';
 import { getReviewRequestedPrs } from '@/lib/domains/timeline/db/getReviewRequestedPrs';
 import { serializeShippedItem } from '@/lib/domains/weekly-activity/api/serializers';
 import { PullRequest } from '@/lib/db/schema';
-import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
+import { getOrGeneratePrSummary } from '@/lib/domains/pull-requests/service/getOrGeneratePrSummary';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { ShippedItem } from '@/types/api/weekly-activity';
 import { subDays } from 'date-fns';

@@ -1,11 +1,10 @@
 import { db } from '@/lib/db/client';
 import { pullRequests, reviews } from '@/lib/db/schema';
 import { activityEvents } from '@/lib/db/schema/activity';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gt, isNotNull, isNull, or, sql } from 'drizzle-orm';
 
 type DeriveFromReviewIdsArgs = {
   tenantId: string;
-  reviewIds: string[];
   now?: Date;
   reviewerOnly?: boolean;
   includeNonSubmitted?: boolean;
@@ -78,7 +77,7 @@ function titleForDecision(
  * Derives curated `activity_events` rows from canonical `reviews` rows.
  * Idempotent upsert keyed by (tenantId, source, sourceEntityTable, sourceEntityId, eventType).
  */
-export async function deriveActivityEventsFromReviewIds(
+export async function deriveActivityEventsFromReviews(
   args: DeriveFromReviewIdsArgs
 ): Promise<DeriveResult> {
   const tenantId = args.tenantId;
@@ -86,8 +85,6 @@ export async function deriveActivityEventsFromReviewIds(
   const reviewerOnly = args.reviewerOnly ?? true;
   const includeNonSubmitted = args.includeNonSubmitted ?? false;
   const joinPrTitle = args.joinPrTitle ?? false;
-
-  if (!args.reviewIds.length) return { upserted: 0, skipped: 0 };
 
   const base = db
     .select({
@@ -110,8 +107,27 @@ export async function deriveActivityEventsFromReviewIds(
       prTitle: joinPrTitle ? pullRequests.title : sql<null>`null`,
     })
     .from(reviews)
+    .leftJoin(
+      activityEvents,
+      and(
+        eq(activityEvents.tenantId, reviews.tenantId),
+        eq(activityEvents.source, 'github'),
+        eq(activityEvents.sourceEntityTable, 'reviews'),
+        eq(activityEvents.sourceEntityId, reviews.id),
+        eq(activityEvents.eventType, 'review_submitted')
+      )
+    )
     .where(
-      and(eq(reviews.tenantId, tenantId), inArray(reviews.id, args.reviewIds))
+      and(
+        eq(reviews.tenantId, tenantId),
+        reviewerOnly ? eq(reviews.reviewerIsTenant, true) : sql`TRUE`,
+        !includeNonSubmitted ? isNotNull(reviews.submittedAt) : sql`TRUE`,
+        isNotNull(reviews.state),
+        or(
+          isNull(activityEvents.id),
+          gt(reviews.sourceUpdatedAt, activityEvents.derivedAt)
+        )
+      )
     );
 
   const rows = joinPrTitle
@@ -132,18 +148,6 @@ export async function deriveActivityEventsFromReviewIds(
   const toUpsert: Array<typeof activityEvents.$inferInsert> = [];
   let skipped = 0;
   for (const r of normalized) {
-    if (reviewerOnly && !r.reviewerIsTenant) {
-      skipped += 1;
-      continue;
-    }
-
-    if (!r.submittedAt) {
-      if (!includeNonSubmitted) {
-        skipped += 1;
-        continue;
-      }
-    }
-
     const decision = decisionFromReview(r);
     if (!decision) {
       skipped += 1;

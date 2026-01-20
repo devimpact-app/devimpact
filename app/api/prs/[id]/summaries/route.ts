@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { jsonBadRequest, jsonOK, jsonUnauthorized } from '@/app/api/_lib/http';
-import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
+import { getOrGeneratePrSummary } from '@/lib/domains/pull-requests/service/getOrGeneratePrSummary';
 import { withSentryUser } from '@/lib/withSentryUser';
 
 export const POST = withSentryUser(

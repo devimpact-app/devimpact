@@ -4,7 +4,6 @@ import {
   githubReviews,
   githubReviewComments,
   githubTimelineEvents,
-  GithubPR,
   GithubTimelineEvent,
   GithubReview,
   GithubReviewComment,
@@ -58,8 +57,7 @@ async function getInferredTeams({
 
 export async function batchNormalizeUserReviews(
   userId: string,
-  username: string,
-  rawGithubPrIds: string[]
+  username: string
 ): Promise<{
   touchedReviewIds: string[];
 }> {
@@ -67,16 +65,6 @@ export async function batchNormalizeUserReviews(
     userId,
     username,
   });
-
-  const rawReviews = await db
-    .select()
-    .from(githubReviews)
-    .where(
-      and(
-        eq(githubReviews.tenantId, userId),
-        inArray(githubReviews.prId, rawGithubPrIds)
-      )
-    );
   const reviewsNeedingNormalization = await db
     .select({
       raw: githubReviews,
@@ -93,7 +81,7 @@ export async function batchNormalizeUserReviews(
     .where(
       and(
         eq(githubReviews.tenantId, userId),
-        inArray(githubReviews.prId, rawGithubPrIds),
+        isNull(reviews.id),
         not(
           eq(
             githubReviews.reviewerGithubLogin,
@@ -139,7 +127,10 @@ export async function batchNormalizeUserReviews(
   ]);
 
   const prById = new Map(prs.map((p) => [p.rawId, p.pr]));
-  const reviewsByPrId = groupBy(rawReviews, 'prId');
+  const reviewsByPrId = groupBy(
+    reviewsNeedingNormalization.map((r) => r.raw),
+    'prId'
+  );
   const timelineByPrId = groupBy(timeline, 'prId');
   const commentsByReviewId = groupBy(comments, 'reviewId');
 

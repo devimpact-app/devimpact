@@ -1,11 +1,10 @@
 import { db } from '@/lib/db/client';
 import { pullRequests } from '@/lib/db/schema';
 import { activityEvents } from '@/lib/db/schema/activity';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gt, isNotNull, isNull, or, sql } from 'drizzle-orm';
 
 type DeriveFromPullRequestIdsArgs = {
   tenantId: string;
-  prIds: string[];
   now?: Date;
   authoredOnly?: boolean;
 };
@@ -38,14 +37,12 @@ function buildSubtitle(pr: {
  * Derives curated `activity_events` rows from canonical `pull_requests` rows.
  * Idempotent upsert keyed by (tenantId, source, sourceEntityTable, sourceEntityId, eventType).
  */
-export async function deriveActivityEventsFromPullRequestIds(
+export async function deriveActivityEventsFromPullRequests(
   args: DeriveFromPullRequestIdsArgs
 ): Promise<DeriveResult> {
   const tenantId = args.tenantId;
   const now = args.now ?? new Date();
   const authoredOnly = args.authoredOnly ?? true;
-
-  if (!args.prIds.length) return { upserted: 0, skipped: 0 };
 
   const prs = await db
     .select({
@@ -60,7 +57,6 @@ export async function deriveActivityEventsFromPullRequestIds(
       mergedAt: pullRequests.mergedAt,
       closedAt: pullRequests.closedAt,
       authorIsTenant: pullRequests.authorIsTenant,
-
       linesChanged: pullRequests.linesChanged,
       filesChanged: pullRequests.filesChanged,
       commitsCount: pullRequests.commitsCount,
@@ -69,10 +65,25 @@ export async function deriveActivityEventsFromPullRequestIds(
       uniqueReviewers: pullRequests.uniqueReviewers,
     })
     .from(pullRequests)
+    .leftJoin(
+      activityEvents,
+      and(
+        eq(activityEvents.tenantId, pullRequests.tenantId),
+        eq(activityEvents.source, 'github'),
+        eq(activityEvents.sourceEntityTable, 'pull_requests'),
+        eq(activityEvents.sourceEntityId, pullRequests.id),
+        eq(activityEvents.eventType, 'pr_merged')
+      )
+    )
     .where(
       and(
         eq(pullRequests.tenantId, tenantId),
-        inArray(pullRequests.id, args.prIds)
+        isNotNull(pullRequests.mergedAt),
+        authoredOnly ? eq(pullRequests.authorIsTenant, true) : sql`TRUE`,
+        or(
+          isNull(activityEvents.id),
+          gt(pullRequests.sourceUpdatedAt, activityEvents.derivedAt)
+        )
       )
     );
 
@@ -80,46 +91,37 @@ export async function deriveActivityEventsFromPullRequestIds(
   let skipped = 0;
 
   for (const pr of prs) {
-    if (authoredOnly && !pr.authorIsTenant) {
-      skipped += 1;
-      continue;
-    }
-
-    if (pr.mergedAt) {
-      toUpsert.push({
-        tenantId,
-        source: 'github',
-        eventType: 'pr_merged',
-        occurredAt: pr.mergedAt,
-        endAt: null,
-        title: pr.title,
-        subtitle: buildSubtitle(pr),
-        url: pr.htmlUrl,
-        sourceEntityTable: 'pull_requests',
-        sourceEntityId: pr.id,
-        repoFullName: pr.repoFullName,
-        prNumber: pr.prNumber,
-        recurringEventId: null,
-        metadata: {
-          kind: 'pr',
-          size: {
-            linesChanged: pr.linesChanged ?? 0,
-            filesChanged: pr.filesChanged ?? 0,
-            commitsCount: pr.commitsCount ?? undefined,
-          },
-          shape: { touchedTests: !!pr.touchedTests },
-          process: {
-            reviewRounds: pr.reviewRounds ?? undefined,
-            uniqueReviewers: pr.uniqueReviewers ?? undefined,
-          },
+    toUpsert.push({
+      tenantId,
+      source: 'github',
+      eventType: 'pr_merged',
+      occurredAt: pr.mergedAt!,
+      endAt: null,
+      title: pr.title,
+      subtitle: buildSubtitle(pr),
+      url: pr.htmlUrl,
+      sourceEntityTable: 'pull_requests',
+      sourceEntityId: pr.id,
+      repoFullName: pr.repoFullName,
+      prNumber: pr.prNumber,
+      recurringEventId: null,
+      metadata: {
+        kind: 'pr',
+        size: {
+          linesChanged: pr.linesChanged ?? 0,
+          filesChanged: pr.filesChanged ?? 0,
+          commitsCount: pr.commitsCount ?? undefined,
         },
-        derivedVersion: 1,
-        derivedAt: now,
-      });
-      continue;
-    }
-
-    skipped += 1;
+        shape: { touchedTests: !!pr.touchedTests },
+        process: {
+          reviewRounds: pr.reviewRounds ?? undefined,
+          uniqueReviewers: pr.uniqueReviewers ?? undefined,
+        },
+      },
+      derivedVersion: 1,
+      derivedAt: now,
+    });
+    continue;
   }
 
   if (!toUpsert.length) return { upserted: 0, skipped };

@@ -1,7 +1,7 @@
 import { db } from '@/lib/db/client';
 import {
-  pullRequests, // normalized PRs
-  githubPrFiles, // files
+  pullRequests,
+  githubPrFiles,
   githubReviewComments,
   githubPrs,
   GithubPRFile,

@@ -1,4 +1,4 @@
-import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
+import { getOrGeneratePrSummary } from '@/lib/domains/pull-requests/service/getOrGeneratePrSummary';
 import { getAuthoredPrs } from '../../../timeline/db/getAuthoredPrs';
 import { getAuthoredReviews } from '../../../timeline/db/getAuthoredReviews';
 import { pickHighlightedAuthoredPrs } from '../../../weekly-activity/service/highlightedPrs';
@@ -7,7 +7,7 @@ import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { buildTagFrequencyMap } from '../../../weekly-activity/service/focusAreas';
 import { HighlightedReview, ShippedItem } from '@/types/api/weekly-activity';
 import { PullRequest, Review } from '@/lib/db/schema';
-import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
+import { PR_TYPE_LABELS } from '@/lib/domains/pull-requests/service/llm/authored/types';
 
 export type FetchPrepActivityResponse = {
   llm: {

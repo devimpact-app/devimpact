@@ -30,8 +30,8 @@ import {
 } from './derive/from-seed-calendar-events';
 import { calendarEvents } from '@/lib/db/schema/gcal';
 import { deriveActivityEventsFromCalendarEventIds } from '@/lib/domains/activity/derive/from-calendar-events';
-import { deriveActivityEventsFromPullRequestIds } from '@/lib/domains/activity/derive/from-github-prs';
-import { deriveActivityEventsFromReviewIds } from '@/lib/domains/activity/derive/from-github-reviews';
+import { deriveActivityEventsFromPullRequests } from '@/lib/domains/activity/derive/from-github-prs';
+import { deriveActivityEventsFromReviews } from '@/lib/domains/activity/derive/from-github-reviews';
 import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreadingPipeline';
 
 export async function loadSeedPullRequests(
@@ -333,15 +333,13 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       pastOnly: true,
     });
   const { upserted: aepr, skipped: aeprSkipped } =
-    await deriveActivityEventsFromPullRequestIds({
+    await deriveActivityEventsFromPullRequests({
       tenantId,
-      prIds: upsertedPrs.map((pr) => pr.id),
       authoredOnly: true,
     });
   const { upserted: aereview, skipped: aereviewSkipped } =
-    await deriveActivityEventsFromReviewIds({
+    await deriveActivityEventsFromReviews({
       tenantId,
-      reviewIds: upsertedReviews.map((r) => r.id),
       joinPrTitle: true,
     });
 

@@ -1,6 +1,6 @@
 import { InsightContext } from '../types';
 import { PullRequest } from '@/lib/db/schema';
-import { diffSecondsRounded } from '../../normalizers/helpers';
+import { diffSecondsRounded } from '../../pull-requests/service/normalization/helpers';
 import { computeMedianClamped } from '@/lib/utils/math';
 import {
   formatRangeServer,

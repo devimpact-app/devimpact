@@ -1,12 +1,10 @@
 import {
-  GithubPR,
   GithubPRFile,
-  GithubReview,
   GithubReviewComment,
   PullRequest,
   Review,
 } from '@/lib/db/schema';
-import { PRSummarizationInput } from '../prompts/prSummary';
+import { PRSummarizationInput } from './types';
 
 export function buildPRSummarizationInput(args: {
   normPr: PullRequest;

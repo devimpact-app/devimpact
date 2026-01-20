@@ -54,7 +54,6 @@ function toErrorString(err: unknown) {
 export async function runWeeklySummary(
   input: RunWeeklySummaryInput
 ): Promise<RunWeeklySummaryResult> {
-  // TODO: Add TZ to DB during setup
   const tz = input.timezone ?? 'America/Los_Angeles';
 
   const now = new Date();

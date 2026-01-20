@@ -1,7 +1,41 @@
 import { db } from '@/lib/db/client';
 import { githubRepos, users } from '@/lib/db/schema';
-import { CliStatus, OnboardingState } from '@/types/api/cli';
+import { CliStatus, OnboardingState, SetupStateV1 } from '@/types/api/cli';
 import { and, count, eq, sql } from 'drizzle-orm';
+
+function normalizeSetupStateForUser(user: {
+  setupState: any;
+  cliTokenHash: string | null;
+  cliLinkedAt: Date | null;
+  cliLastSyncAt: Date | null;
+}): SetupStateV1 {
+  const nowISO = new Date().toISOString();
+
+  const base: SetupStateV1 =
+    (user.setupState as SetupStateV1) ??
+    ({
+      v: 1,
+      github: { cliTokenGenerated: false, cliTokenLinked: false },
+      bootstrapRecent: { status: 'not_started' },
+      backfill90d: { status: 'not_started' },
+      ready: false,
+      updatedAt: nowISO,
+    } as SetupStateV1);
+
+  const github = {
+    cliTokenGenerated: !!user.cliTokenHash,
+    cliTokenLinked: !!user.cliLinkedAt,
+    lastSyncAt: user.cliLastSyncAt
+      ? user.cliLastSyncAt.toISOString()
+      : undefined,
+  };
+
+  return {
+    ...base,
+    github,
+    updatedAt: nowISO,
+  };
+}
 
 export async function getSyncStatus(
   userId: string,
@@ -72,6 +106,7 @@ export async function getSyncStatus(
 
   return {
     onboardingState,
+    setupState: normalizeSetupStateForUser(user),
     hasCliToken,
     cliLinkedAt,
     lastSyncAt,
@@ -104,16 +139,36 @@ export async function updateSyncStatus({
     ? new Date(Math.max(lastSyncAt.getTime(), candidateEnd.getTime()))
     : candidateEnd;
 
+  const rows = await db
+    .select({
+      setupState: users.setupState,
+      cliTokenHash: users.cliTokenHash,
+      cliLinkedAt: users.cliLinkedAt,
+      cliLastSyncAt: users.cliLastSyncAt,
+    })
+    .from(users)
+    .where(eq(users.id, tenantId))
+    .limit(1);
+
+  const user = rows[0];
+  if (!user) return;
+
+  const nextSetupState = normalizeSetupStateForUser({
+    setupState: user.setupState,
+    cliTokenHash: user.cliTokenHash,
+    cliLinkedAt: user.cliLinkedAt,
+    cliLastSyncAt: nextLastSyncAt,
+  });
   await db
     .update(users)
     .set({
       cliLastSyncAt: nextLastSyncAt,
-      // Add coverage start if no last sync
       ...(!lastSyncAt
         ? { coverageStartDate: new Date(syncWindow.startISO) }
         : {}),
       updatedAt: now,
       onboardingState: 'synced',
+      setupState: nextSetupState,
     })
     .where(eq(users.id, tenantId));
 }
