@@ -20,6 +20,9 @@ export default function CalendarSetupClient({
 }) {
   const router = useRouter();
 
+  const [advancing, setAdvancing] = useState(false);
+  const [advanceError, setAdvanceError] = useState<string | null>(null);
+
   const [status, setStatus] = useState<CalendarStatusResponse | null>(
     initialStatus ?? null
   );
@@ -32,6 +35,41 @@ export default function CalendarSetupClient({
 
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  async function getBootstrapJobStatus() {
+    const qs = new URLSearchParams({
+      kind: 'setup_bootstrap_recent',
+      dedupeKey: 'bootstrap_recent',
+    });
+    const res = await fetch(`/api/jobs/status?${qs.toString()}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Job status failed: ${res.status}`);
+    const { data } = await res.json();
+    return (data?.job ?? null) as any;
+  }
+
+  async function enqueueBootstrapJob() {
+    const res = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'setup_bootstrap_recent',
+        dedupeKey: 'bootstrap_recent',
+        priority: 10,
+        nextRunAt: new Date().toISOString(),
+        payload: { lookbackDays: 14 },
+      }),
+    });
+    if (!res.ok) throw new Error(`Enqueue failed: ${res.status}`);
+    const { data } = await res.json();
+    return data?.job;
+  }
+
+  async function kickBootstrapJob() {
+    const res = await fetch('/api/jobs/kick-bootstrap', { method: 'POST' });
+    if (!res.ok) throw new Error(`Kick failed: ${res.status}`);
+  }
 
   async function refreshStatus() {
     setLoadingStatus(true);
@@ -135,9 +173,6 @@ export default function CalendarSetupClient({
       if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
 
       await refreshStatus();
-
-      const link = isFromSettings ? '/settings' : '/onboarding/complete';
-      setTimeout(() => router.push(link), 900);
     } catch (err) {
       setSyncError(
         'Calendar sync failed. Try again, or reconnect Google Calendar.'
@@ -147,11 +182,38 @@ export default function CalendarSetupClient({
     }
   }
 
-  function handleSkip() {
+  async function handleAdvance(opts?: { requireSync?: boolean }) {
     if (isFromSettings) {
       router.push('/settings');
-    } else {
-      router.push('/onboarding/complete');
+      return;
+    }
+
+    const requireSync = opts?.requireSync ?? false;
+    if (requireSync && !syncComplete) return;
+
+    setAdvancing(true);
+    setAdvanceError(null);
+
+    try {
+      const job = await getBootstrapJobStatus();
+
+      if (job?.status === 'succeeded') {
+        router.push('/onboarding/complete');
+        return;
+      }
+
+      if (!job || !['queued', 'running'].includes(job.status)) {
+        await enqueueBootstrapJob();
+      }
+
+      await kickBootstrapJob();
+
+      router.push('/onboarding/loading');
+    } catch (e) {
+      console.error('[CAL SETUP ADVANCE] failed', e);
+      setAdvanceError('Could not start setup. Please try again.');
+    } finally {
+      setAdvancing(false);
     }
   }
 
@@ -182,6 +244,7 @@ export default function CalendarSetupClient({
       status.state === 'synced');
 
   const syncInProgress = syncing || status?.state === 'syncing';
+  const syncComplete = status?.state === 'synced';
 
   if (loadingStatus && !status) {
     return (
@@ -434,14 +497,40 @@ export default function CalendarSetupClient({
         )}
       </div>
       {!isFromSettings && (
-        <div className="mt-8 flex items-center justify-between text-sm text-text-secondary">
+        <div className="mt-8 flex items-center justify-between gap-3">
           <button
-            onClick={handleSkip}
-            className="text-sky-600 hover:text-sky-400"
+            type="button"
+            onClick={() => handleAdvance({ requireSync: false })}
+            disabled={advancing}
+            className="text-sky-600 hover:text-sky-400 text-sm"
           >
-            Skip for now - insights and prep will be more limited
+            Skip for now — insights and prep will be more limited
           </button>
-          <span>You can connect later from Settings.</span>
+
+          <div className="flex items-center gap-3">
+            {advanceError && (
+              <span className="text-xs text-red-300">{advanceError}</span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => handleAdvance({ requireSync: true })}
+              disabled={!syncComplete || advancing}
+              className="inline-flex h-9 items-center justify-center rounded-full bg-sky-500 px-4 text-xs font-medium text-slate-950 shadow-sm hover:bg-sky-400 disabled:opacity-60"
+              title={
+                !syncComplete ? 'Sync your calendar to continue' : undefined
+              }
+            >
+              {advancing ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Preparing…
+                </span>
+              ) : (
+                'Next'
+              )}
+            </button>
+          </div>
         </div>
       )}
     </section>

@@ -3,6 +3,7 @@ import { JobHandlerInput, JobHandlerResult } from '../types';
 import { BootstrapCursor } from './types';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { SetupStateV1 } from '@/types/api/cli';
 
 export async function stepWeeklySummary(
   input: JobHandlerInput,
@@ -25,6 +26,34 @@ export async function stepWeeklySummary(
     tenantId,
     timezone: user.timezone,
   });
+
+  const [row] = await db
+    .select({ setupState: users.setupState })
+    .from(users)
+    .where(eq(users.id, tenantId))
+    .limit(1);
+
+  const prev = row.setupState;
+
+  const nextSetupState: SetupStateV1 = {
+    ...prev,
+    v: 1,
+    bootstrapRecent: {
+      status: 'succeeded',
+      updatedAt: now.toISOString(),
+      lastError: undefined,
+    },
+    ready: true,
+    updatedAt: now.toISOString(),
+  };
+
+  await db
+    .update(users)
+    .set({
+      setupState: nextSetupState,
+      updatedAt: now,
+    })
+    .where(eq(users.id, tenantId));
 
   const nextCursor: BootstrapCursor = {
     ...cursor,

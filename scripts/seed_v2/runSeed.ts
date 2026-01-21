@@ -61,7 +61,11 @@ export async function loadSeedCalendarEvents(
   return parsed;
 }
 
-async function seedAccount(tenantId: string, githubUsername: string) {
+async function seedAccount(
+  tenantId: string,
+  githubUsername: string,
+  skipSummaries: boolean = false
+) {
   const timeCtx = buildSeedTimeContext();
 
   const prSeedPath = path.join(
@@ -207,27 +211,29 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       })
       .returning({ id: pullRequests.id });
 
-    await tx
-      .insert(prSummaries)
-      .values(summaryRows)
-      .onConflictDoUpdate({
-        target: [prSummaries.prId],
-        set: {
-          repoFullName: sql`excluded.repo_full_name`,
-          prNumber: sql`excluded.pr_number`,
-          shortSummary: sql`excluded.short_summary`,
-          longSummary: sql`excluded.long_summary`,
-          highlights: sql`excluded.highlights`,
-          typeTags: sql`excluded.type_tags`,
-          domainTags: sql`excluded.domain_tags`,
-          reviewFrictionTags: sql`excluded.review_friction_tags`,
-          inputHash: sql`excluded.input_hash`,
-          model: sql`excluded.model`,
-          promptVersion: sql`excluded.prompt_version`,
-          prUpdatedAt: sql`excluded.pr_updated_at`,
-          updatedAt: sql`excluded.updated_at`,
-        },
-      });
+    if (!skipSummaries) {
+      await tx
+        .insert(prSummaries)
+        .values(summaryRows)
+        .onConflictDoUpdate({
+          target: [prSummaries.prId],
+          set: {
+            repoFullName: sql`excluded.repo_full_name`,
+            prNumber: sql`excluded.pr_number`,
+            shortSummary: sql`excluded.short_summary`,
+            longSummary: sql`excluded.long_summary`,
+            highlights: sql`excluded.highlights`,
+            typeTags: sql`excluded.type_tags`,
+            domainTags: sql`excluded.domain_tags`,
+            reviewFrictionTags: sql`excluded.review_friction_tags`,
+            inputHash: sql`excluded.input_hash`,
+            model: sql`excluded.model`,
+            promptVersion: sql`excluded.prompt_version`,
+            prUpdatedAt: sql`excluded.pr_updated_at`,
+            updatedAt: sql`excluded.updated_at`,
+          },
+        });
+    }
 
     await tx
       .insert(githubReviews)
@@ -325,46 +331,46 @@ async function seedAccount(tenantId: string, githubUsername: string) {
       .returning({ id: calendarEvents.id });
   });
 
-  console.log('deriving activity events from source tables');
-  const { upserted: aecal, skipped: aecalSkipped } =
-    await deriveActivityEventsFromCalendarEvents({
-      tenantId,
-      pastOnly: true,
-    });
-  const { upserted: aepr, skipped: aeprSkipped } =
-    await deriveActivityEventsFromPullRequests({
-      tenantId,
-      authoredOnly: true,
-    });
-  const { upserted: aereview, skipped: aereviewSkipped } =
-    await deriveActivityEventsFromReviews({
-      tenantId,
-      joinPrTitle: true,
-    });
+  // console.log('deriving activity events from source tables');
+  // const { upserted: aecal, skipped: aecalSkipped } =
+  //   await deriveActivityEventsFromCalendarEvents({
+  //     tenantId,
+  //     pastOnly: true,
+  //   });
+  // const { upserted: aepr, skipped: aeprSkipped } =
+  //   await deriveActivityEventsFromPullRequests({
+  //     tenantId,
+  //     authoredOnly: true,
+  //   });
+  // const { upserted: aereview, skipped: aereviewSkipped } =
+  //   await deriveActivityEventsFromReviews({
+  //     tenantId,
+  //     joinPrTitle: true,
+  //   });
 
-  console.log('Running thread pipeline');
-  const { eligible, ineligible, threaded } = await runThreadingPipeline({
-    tenantId,
-    lookbackDays: 90,
-  });
+  // console.log('Running thread pipeline');
+  // const { eligible, ineligible, threaded } = await runThreadingPipeline({
+  //   tenantId,
+  //   lookbackDays: 90,
+  // });
 
   return {
     prsSeeded: prRows.length,
     summariesSeeded: summaryRows.length,
     reviewsSeeded: reviewRows.length,
-    activityEvents: {
-      calendarUpserted: aecal,
-      calendarSkipped: aecalSkipped,
-      prsUpserted: aepr,
-      prsSkipped: aeprSkipped,
-      reviewsUpserted: aereview,
-      reviewsSkipped: aereviewSkipped,
-    },
-    threading: {
-      eligible,
-      ineligible,
-      threaded,
-    },
+    // activityEvents: {
+    //   calendarUpserted: aecal,
+    //   calendarSkipped: aecalSkipped,
+    //   prsUpserted: aepr,
+    //   prsSkipped: aeprSkipped,
+    //   reviewsUpserted: aereview,
+    //   reviewsSkipped: aereviewSkipped,
+    // },
+    // threading: {
+    //   eligible,
+    //   ineligible,
+    //   threaded,
+    // },
     calendarEventsSeeded: calendarEventRows.length,
     startMondayISO: timeCtx.startMonday.toISOString(),
   };
@@ -376,6 +382,7 @@ const hasFlag = (f: string) => argv.includes(f);
 async function main() {
   try {
     const reset = hasFlag('--reset');
+    const skipSummaries = hasFlag('--skipSummaries');
     const [me] = await db
       .select()
       .from(users)
@@ -391,7 +398,11 @@ async function main() {
       await resetTenantData(tenantId);
     }
 
-    const response = await seedAccount(tenantId, me.githubUsername);
+    const response = await seedAccount(
+      tenantId,
+      me.githubUsername,
+      skipSummaries
+    );
     console.log(response);
   } catch (err) {
     console.error('❌ Seed failed:', err);

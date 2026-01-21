@@ -10,20 +10,32 @@ import {
   githubPrs,
   githubRepos,
   prSummaries,
+  prepItems,
 } from '@/lib/db/schema';
 import {
   activityEvents,
   threadEvents,
   threads,
+  threadSummaryBullets,
 } from '@/lib/db/schema/activity';
 import {
   calendarEvents,
   calendarSelections,
   calendarSyncRuns,
 } from '@/lib/db/schema/gcal';
+import { weeklySummaries } from '@/lib/db/schema/weekly-summary';
 import { eq } from 'drizzle-orm';
 
 export async function resetTenantData(tenantId: string) {
+  await db
+    .delete(weeklySummaries)
+    .where(eq(weeklySummaries.tenantId, tenantId));
+
+  await db.delete(prepItems).where(eq(prepItems.tenantId, tenantId));
+
+  await db
+    .delete(threadSummaryBullets)
+    .where(eq(threadSummaryBullets.tenantId, tenantId));
   await db.delete(threadEvents).where(eq(threadEvents.tenantId, tenantId));
   await db.delete(threads).where(eq(threads.tenantId, tenantId));
   await db.delete(activityEvents).where(eq(activityEvents.tenantId, tenantId));

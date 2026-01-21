@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { jobs } from '@/lib/db/schema/jobs';
+import { Job, jobs } from '@/lib/db/schema/jobs';
 
 export async function claimEligibleJobs(
   db: PostgresJsDatabase<any>,
@@ -9,9 +9,19 @@ export async function claimEligibleJobs(
     limit: number;
     dispatcherId: string;
     lockTtlMs: number;
+    jobId?: string;
+    status?: 'queued' | 'running';
   }
-): Promise<(typeof jobs.$inferSelect)[]> {
-  const { limit, dispatcherId, lockTtlMs } = opts;
+): Promise<Job[]> {
+  const { limit, dispatcherId, lockTtlMs, jobId, status } = opts;
+
+  const extra = sql.join(
+    [
+      jobId ? sql`AND ${jobs.id} = ${jobId}` : null,
+      status ? sql`AND ${jobs.status} = ${status}` : null,
+    ].filter(Boolean) as any[],
+    sql` `
+  );
 
   const q = sql`
     WITH candidate AS (
@@ -29,6 +39,7 @@ export async function claimEligibleJobs(
           AND ${jobs.lockExpiresAt} <= now()
         )
       AND ${jobs.attempts} < ${jobs.maxAttempts}
+      ${extra}
       ORDER BY ${jobs.priority} ASC, ${jobs.nextRunAt} ASC
       LIMIT ${limit}
       FOR UPDATE SKIP LOCKED
