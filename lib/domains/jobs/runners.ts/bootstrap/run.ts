@@ -38,12 +38,24 @@ export async function handleSetupBootstrapRecent(
   }
 
   const nowISO = now.toISOString();
-  const cursorParsed = BootstrapCursorSchema.safeParse(job.cursor);
-  const cursor = cursorParsed.success
-    ? cursorParsed.data
-    : initBootstrapCursor(nowISO);
-  if (!cursorParsed.success) {
-    throw new Error(`handleSetupBootstrapRecent parsing cursor failed`);
+
+  const rawCursor = job.cursor as unknown;
+  const isEmptyObject =
+    rawCursor &&
+    typeof rawCursor === 'object' &&
+    !Array.isArray(rawCursor) &&
+    Object.keys(rawCursor as any).length === 0;
+
+  let cursor: BootstrapCursor;
+
+  if (rawCursor == null || isEmptyObject) {
+    cursor = initBootstrapCursor(nowISO);
+  } else {
+    const parsed = BootstrapCursorSchema.safeParse(rawCursor);
+    if (!parsed.success) {
+      throw new Error('handleSetupBootstrapRecent parsing cursor failed');
+    }
+    cursor = parsed.data;
   }
 
   switch (cursor.step) {

@@ -88,7 +88,8 @@ export async function markFailedOrRetry(job: Job, err: unknown) {
         ? err
         : 'Job error';
 
-  const willExceedMax = job.attempts >= job.maxAttempts; // attempts already incremented on claim
+  const nextAttempts = (job.attempts ?? 0) + 1;
+  const willExceedMax = nextAttempts >= job.maxAttempts;
 
   if (willExceedMax) {
     await db
@@ -96,6 +97,7 @@ export async function markFailedOrRetry(job: Job, err: unknown) {
       .set({
         status: 'failed',
         lastError: message,
+        attempts: nextAttempts,
         lastErrorAt: now,
         finishedAt: now,
         updatedAt: now,
@@ -105,7 +107,7 @@ export async function markFailedOrRetry(job: Job, err: unknown) {
     return { outcome: 'failed' as const, nextRunAt: null as Date | null };
   }
 
-  const backoffMs = computeBackoffMs(job.attempts);
+  const backoffMs = computeBackoffMs(nextAttempts);
   const nextRunAt = new Date(now.getTime() + backoffMs);
 
   await db
@@ -114,6 +116,7 @@ export async function markFailedOrRetry(job: Job, err: unknown) {
       status: 'queued',
       nextRunAt,
       lastError: message,
+      attempts: nextAttempts,
       lastErrorAt: now,
       updatedAt: now,
       ...clearLockFields(),

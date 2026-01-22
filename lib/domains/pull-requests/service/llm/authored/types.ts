@@ -67,7 +67,7 @@ export interface PRSummarizationInput {
     body: string;
   }[];
   context?: {
-    perspective: 'author' | 'reviewer';
+    perspective: 'author';
   };
 }
 
@@ -127,5 +127,4 @@ export interface PrSummaryResult {
   highlights: string[]; // bullet points you can show in tooltips / weekly recap
   typeTags: string[]; // e.g. ["refactor", "infra", "onboarding", "performance"]
   domainTags: string[]; // e.g. ["refactor", "infra", "onboarding", "performance"]
-  reviewFrictionTags: string[]; // e.g. ["refactor", "infra", "onboarding", "performance"]
 }

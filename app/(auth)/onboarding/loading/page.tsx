@@ -3,7 +3,7 @@ import { db } from '@/lib/db/client';
 import { getJobStatusForTenant } from '@/lib/domains/jobs/db/getJobStatus';
 import { redirect } from 'next/navigation';
 import { LoadingClient } from './LoadingClient';
-import { JobPublicSchema } from '@/types/api/jobs';
+import { serializeJobPublic } from '@/lib/domains/jobs/api/serializers';
 
 export default async function LoadingPage() {
   const session = await auth();
@@ -18,12 +18,7 @@ export default async function LoadingPage() {
     dedupeKey: 'bootstrap_recent',
   });
 
-  const parsed = jobRow ? JobPublicSchema.safeParse(jobRow) : null;
-  const initialJob = parsed?.success ? parsed.data : null;
-
-  if (parsed && !parsed.success) {
-    console.error('[LOADING PAGE] Invalid job row shape', parsed.error);
-  }
+  const initialJob = jobRow ? serializeJobPublic(jobRow) : null;
 
   if (initialJob?.status === 'succeeded') redirect('/onboarding/complete');
 

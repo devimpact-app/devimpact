@@ -143,7 +143,7 @@ export function buildPRSummarizationInput(args: {
     reviewComments: reviewCommentsOut,
     firstBlockingReview,
     context: {
-      perspective: normPr.authorIsTenant ? 'author' : 'reviewer',
+      perspective: 'author',
     },
   };
 }

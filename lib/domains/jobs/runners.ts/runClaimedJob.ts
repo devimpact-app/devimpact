@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { jobs } from '@/lib/db/schema/jobs';
+import { Job, jobs } from '@/lib/db/schema/jobs';
 import { JobHandlerInput, JobHandlerResult } from './types';
 import {
   markFailedNoRetry,
@@ -8,10 +8,8 @@ import {
   markSucceeded,
 } from '../db/updateJobStatus';
 
-type JobRow = typeof jobs.$inferSelect;
-
 export async function runClaimedJob(opts: {
-  job: JobRow;
+  job: Job;
   db: PostgresJsDatabase<any>;
   dispatcherId: string;
   jobHandlers: Record<
@@ -21,7 +19,7 @@ export async function runClaimedJob(opts: {
   now?: Date;
 }): Promise<{
   id: string;
-  kind: JobRow['kind'];
+  kind: Job['kind'];
   outcome: 'succeeded' | 'requeued' | 'retry' | 'failed';
   ms: number;
   nextRunAtISO?: string | null;

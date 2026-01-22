@@ -1,10 +1,12 @@
+'use client';
+
 import {
   BootstrapCursor,
   BootstrapCursorSchema,
   BootstrapProgress,
 } from '@/lib/domains/jobs/runners.ts/bootstrap/types';
 import { JobPublic, JobPublicSchema } from '@/types/api/jobs';
-import { AlertTriangle, CheckCircle2, Loader2, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -92,7 +94,7 @@ function stepIndexFor(step?: BootstrapCursor['step'] | null) {
   return idx >= 0 ? idx : 0;
 }
 
-export async function LoadingClient({
+export function LoadingClient({
   initialJob,
 }: {
   initialJob: JobPublic | null;
@@ -102,6 +104,7 @@ export async function LoadingClient({
   const [job, setJob] = useState<JobPublic | null>(initialJob);
   const [pollError, setPollError] = useState<string | null>(null);
   const [kicking, setKicking] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   const lastKickAtRef = useRef<number>(0);
   const kickedOnceRef = useRef<boolean>(false);
@@ -168,7 +171,7 @@ export async function LoadingClient({
     }
     return (
       progress?.message ??
-      'DevImpact is preparing your dashboard. This should only take a moment.'
+      'DevImpact is preparing your dashboard. This could take a minute or two.'
     );
   }, [job?.status, job?.lastError, progress?.message]);
 
@@ -199,6 +202,42 @@ export async function LoadingClient({
     }
   }
 
+  async function enqueueBootstrapBestEffort() {
+    const res = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'setup_bootstrap_recent',
+        dedupeKey: 'bootstrap_recent',
+        priority: 10,
+        nextRunAt: new Date().toISOString(),
+        payload: { lookbackDays: 14 },
+      }),
+    });
+
+    if (!res.ok && res.status !== 409) {
+      throw new Error(`Enqueue failed: ${res.status}`);
+    }
+  }
+
+  async function retrySetup() {
+    setRetrying(true);
+    setPollError(null);
+
+    try {
+      await enqueueBootstrapBestEffort();
+      kickedOnceRef.current = false;
+      await kickBootstrapBestEffort('manual_retry');
+      const fresh = await fetchStatus();
+      setJob(fresh);
+    } catch (e) {
+      console.error('[LOADING] retry setup failed', e);
+      setPollError('Could not restart setup. Please try again.');
+    } finally {
+      setRetrying(false);
+    }
+  }
+
   useEffect(() => {
     if (job?.status === 'succeeded') {
       router.replace('/onboarding/complete');
@@ -215,13 +254,25 @@ export async function LoadingClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const jobRef = useRef<JobPublic | null>(job);
+  useEffect(() => {
+    jobRef.current = job;
+  }, [job]);
+
   useEffect(() => {
     let cancelled = false;
-    if (jobTerminal(job)) return;
 
     const tick = async () => {
+      if (jobTerminal(jobRef.current)) return;
+
       try {
         const fresh = await fetchStatus();
+        if (!fresh) {
+          await enqueueBootstrapBestEffort();
+          await kickBootstrapBestEffort('poll_found_no_job');
+          // Let next poll observe it
+          return;
+        }
         if (cancelled) return;
 
         setJob(fresh);
@@ -252,7 +303,27 @@ export async function LoadingClient({
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [job, qs, router]);
+  }, [qs, router]);
+
+  // Handle no job yet
+  useEffect(() => {
+    if (job) return;
+    if (kickedOnceRef.current) return;
+
+    (async () => {
+      try {
+        await enqueueBootstrapBestEffort();
+        kickedOnceRef.current = true;
+        await kickBootstrapBestEffort('no_job_on_load');
+        const fresh = await fetchStatus();
+        setJob(fresh);
+      } catch (e) {
+        console.error('[LOADING] no-job bootstrap init failed', e);
+        setPollError('Could not start setup. Please refresh.');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job]);
 
   const showSpinner = job?.status !== 'failed' && job?.status !== 'succeeded';
 
@@ -353,7 +424,7 @@ export async function LoadingClient({
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           {job?.status === 'failed' ? (
             <>
-              {/* <button
+              <button
                 type="button"
                 onClick={retrySetup}
                 disabled={retrying}
@@ -374,7 +445,7 @@ export async function LoadingClient({
                 className="inline-flex h-11 items-center justify-center rounded-xl px-6 text-sm font-medium text-white/50 shadow-sm hover:bg-slate-900 transition border border-white/10"
               >
                 View settings
-              </Link> */}
+              </Link>
             </>
           ) : (
             <>

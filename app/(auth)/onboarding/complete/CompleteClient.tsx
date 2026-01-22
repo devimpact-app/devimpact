@@ -12,8 +12,6 @@ export default function CompleteClient({
   userName?: string | null;
   calendarConnected: boolean;
 }) {
-  const router = useRouter();
-
   const firstName = useMemo(() => {
     if (!userName) return null;
     return userName.split(' ')[0] ?? null;
@@ -27,52 +25,23 @@ export default function CompleteClient({
             <CheckCircle2 className="h-6 w-6 text-emerald-300" />
           </div>
 
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <h1 className="text-3xl font-semibold tracking-tight mt-2">
             You’re all set{firstName ? `, ${firstName}` : ''}
           </h1>
 
-          <p className="text-sm text-text-secondary">
-            DevImpact is now quietly working in the background. As your GitHub
-            {calendarConnected ? ' and calendar' : ''} data syncs, it will
-            surface patterns about where your time and leverage actually go.
+          <p className="mt-4 text-sm text-text-secondary max-w-md mx-auto">
+            DevImpact will quietly keep track of your work over time, so your
+            accomplishments aren’t forgotten and meeting prep gets easier.
           </p>
 
-          <div className="flex flex-col mt-5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 items-center">
-            <p className="text-xs font-medium text-text-primary mb-3">
-              What’s now active
-            </p>
-
-            <ul className="space-y-2">
-              {[
-                'Weekly summaries',
-                'In-app meeting prep',
-                'Private impact log',
-                'Work rhythm & deep work detection',
-              ].map((item) => (
-                <li
-                  key={item}
-                  className="flex items-center gap-2 text-xs text-text-secondary"
-                >
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  </span>
-                  {item}
-                </li>
-              ))}
-
-              {calendarConnected && (
-                <li className="flex items-center gap-2 text-xs text-text-secondary">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  </span>
-                  Calendar-aware focus protection
-                </li>
-              )}
-            </ul>
-          </div>
+          <p className="mt-2 text-sm text-text-secondary leading-relaxed max-w-md mx-auto">
+            What’s now active: Weekly summaries · In-app meeting prep · Private
+            impact log · Work rhythm
+            {calendarConnected ? ' · Calendar focus awareness' : ''}
+          </p>
 
           <p className="mt-4 text-xs text-text-secondary">
-            You can revisit GitHub or calendar settings anytime from Settings.
+            You can revisit your integration settings anytime.
           </p>
         </div>
 

@@ -81,7 +81,6 @@ export async function getOrGeneratePrSummary(opts: {
     highlights: result.highlights,
     typeTags: result.typeTags,
     domainTags: result.domainTags,
-    reviewFrictionTags: result.reviewFrictionTags,
     inputHash,
   };
 
@@ -97,7 +96,6 @@ export async function getOrGeneratePrSummary(opts: {
         highlights: result.highlights,
         typeTags: result.typeTags,
         domainTags: result.domainTags,
-        reviewFrictionTags: result.reviewFrictionTags,
         model: AiConfig.models.summarize,
         prUpdatedAt: prUpdatedAt,
         updatedAt: new Date(),

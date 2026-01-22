@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 import { Job, jobs } from '@/lib/db/schema/jobs';
+import { deserializeJobRows } from './deserialize';
 
 export async function claimEligibleJobs(
   db: PostgresJsDatabase<any>,
@@ -50,7 +51,6 @@ export async function claimEligibleJobs(
       locked_at = now(),
       locked_by = ${dispatcherId},
       lock_expires_at = now() + (${lockTtlMs} * interval '1 millisecond'),
-      attempts = j.attempts + 1,
       started_at = COALESCE(j.started_at, now()),
       updated_at = now()
     FROM candidate
@@ -59,6 +59,5 @@ export async function claimEligibleJobs(
   `;
 
   const res: any = await db.execute(q);
-
-  return (res?.rows ?? res) as (typeof jobs.$inferSelect)[];
+  return deserializeJobRows(res);
 }
