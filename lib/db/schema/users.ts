@@ -45,7 +45,6 @@ export const users = pgTable('users', {
       bootstrapRecent: { status: 'not_started' },
       backfill90d: { status: 'not_started' },
       ready: false,
-      updatedAt: new Date().toISOString(),
     }),
 });
 

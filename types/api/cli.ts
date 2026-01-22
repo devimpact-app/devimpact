@@ -20,7 +20,7 @@ export type SetupStateV1 = {
   bootstrapRecent: SetupStep;
   backfill90d: SetupStep;
   ready: boolean;
-  updatedAt: string;
+  updatedAt?: string;
 };
 
 export type OnboardingState =

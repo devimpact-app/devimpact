@@ -120,6 +120,13 @@
       "when": 1769037763342,
       "tag": "0016_vengeful_sharon_carter",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1769107247723,
+      "tag": "0017_stale_echo",
+      "breakpoints": true
     }
   ]
 }
