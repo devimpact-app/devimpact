@@ -15,11 +15,13 @@ export async function getPrsToSummarize({
   start,
   end,
   limit,
+  beforeSortAt,
 }: {
   tenantId: string;
   start: Date;
   end: Date;
   limit?: number;
+  beforeSortAt?: Date | null;
 }) {
   const authoredPrs = await getAuthoredPrs({
     tenantId,
@@ -71,14 +73,18 @@ export async function getPrsToSummarize({
     return bt - at;
   });
 
-  const prIds = ordered.map((i) => i.prId);
+  const paged = beforeSortAt
+    ? ordered.filter((i) => (i.sortAt?.getTime() ?? 0) < beforeSortAt.getTime())
+    : ordered;
+
+  const prIds = paged.map((i) => i.prId);
   const summariesByPrId = (await getPrSummariesByPrIds(
     tenantId,
     prIds
   )) as Record<string, PrSummary | undefined>;
 
   const needs: PRItem[] = [];
-  for (const item of ordered) {
+  for (const item of paged) {
     const summary = summariesByPrId[item.prId];
     const summaryPrUpdatedAt = summary?.prUpdatedAt
       ? new Date(summary.prUpdatedAt)
@@ -98,5 +104,5 @@ export async function getPrsToSummarize({
     }
   }
 
-  return needs.map(({ prId, mode }) => ({ prId, mode }));
+  return needs.map(({ prId, mode, sortAt }) => ({ prId, mode, sortAt }));
 }

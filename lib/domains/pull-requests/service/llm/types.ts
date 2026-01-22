@@ -5,29 +5,20 @@ export interface PRSummarizationInput {
     htmlUrl: string;
     state: string;
     createdAt: Date;
-    updatedAt: Date | null;
+    updatedAt: Date;
     mergedAt: Date | null;
-    closedAt: Date | null;
     authorLogin: string;
     title: string;
     body: string;
   };
   metrics: {
-    linesChangedTotal: number;
     filesChanged: number;
     additions: number;
     deletions: number;
-    reviewCount: number;
-    approvalCount: number;
-    commentCount: number;
     reviewRounds: number;
-    blockingReviewCount: number;
   };
   timeline: {
-    timeToFirstReviewSeconds: number | null;
-    reviewToMergeSeconds: number | null;
     leadTimeSeconds: number | null;
-    timeToFirstApprovalSeconds: number | null;
   };
   topFiles: {
     path: string;
@@ -48,26 +39,17 @@ export interface PRSummarizationInput {
     submittedAt: Date;
     state: 'commented' | 'changes_requested';
     body: string;
-    comments: {
-      createdAt: Date;
-      body: string;
-    }[];
+    topInlineComments?: { createdAt: Date; body: string }[];
   } | null;
-  reviews: {
-    reviewerLogin: string;
-    submittedAt: Date | null;
-    state: string;
-    body: string;
-    isBlocking: boolean;
-    reviewCommentsCount: number;
-  }[];
-  reviewComments: {
-    reviewerLogin: string;
+  notableComments: {
+    authorLogin: string;
     createdAt: Date;
     body: string;
+    kind?: 'review' | 'inline_comment';
+    state?: 'commented' | 'changes_requested' | 'approved';
   }[];
   context?: {
-    perspective: 'author';
+    perspective: 'author' | 'reviewer';
   };
 }
 

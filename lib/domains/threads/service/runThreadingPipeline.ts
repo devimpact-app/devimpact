@@ -156,12 +156,14 @@ export async function runThreadingPipelineOnce({
   end,
   now,
   limit = DEFAULT_LIMIT,
+  order = 'asc',
 }: {
   tenantId: string;
   since: Date;
   end: Date;
   now: Date;
   limit?: number;
+  order?: 'asc' | 'desc';
 }): Promise<{
   claimedCount: number;
   eligibleCount: number;
@@ -176,6 +178,7 @@ export async function runThreadingPipelineOnce({
     end,
     limit,
     claimedBy: workerId,
+    order,
   });
   if (events.length === 0) {
     return {

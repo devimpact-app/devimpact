@@ -27,11 +27,14 @@ export default async function DashboardPage() {
     staleSyncDays = daysDiff;
   }
 
+  const backfillLoading = user.setupState.backfill90d.status !== 'succeeded';
+
   return (
     <DashboardClient
       fullName={user.fullName!}
       cliDisconnected={cliDisconnected}
       staleSyncDays={staleSyncDays}
+      backfillLoading={backfillLoading}
     />
   );
 }

@@ -3,7 +3,11 @@ import { stepDeriveEvents } from './derive';
 import { stepNormalize } from './normalize';
 import { stepSummarizePrs } from './summarizePrs';
 import { stepThreading } from './threading';
-import { BootstrapCursor, BootstrapCursorSchema } from './types';
+import {
+  BootstrapCursor,
+  BootstrapCursorSchema,
+  BootstrapProgress,
+} from './types';
 import { stepWeeklySummary } from './weeklySummary';
 
 function initBootstrapCursor(nowISO: string): BootstrapCursor {
@@ -16,7 +20,7 @@ function initBootstrapCursor(nowISO: string): BootstrapCursor {
       items: [],
       idx: 0,
       pass: 0,
-      perRun: 5,
+      perRun: 10,
       concurrency: 5,
       succeeded: 0,
       failed: 0,
@@ -47,6 +51,7 @@ export async function handleSetupBootstrapRecent(
     Object.keys(rawCursor as any).length === 0;
 
   let cursor: BootstrapCursor;
+  let progress: BootstrapProgress;
 
   if (rawCursor == null || isEmptyObject) {
     cursor = initBootstrapCursor(nowISO);

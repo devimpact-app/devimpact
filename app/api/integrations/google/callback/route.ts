@@ -6,6 +6,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { listCalendarsWithToken } from '@/lib/integrations/gcal/api';
 import { GoogleCalendarListItem } from '@/lib/integrations/gcal/types';
 import { calendarSelections } from '@/lib/db/schema/gcal';
+import { encryptTokenPacked } from '@/lib/utils/crypto';
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -112,14 +113,20 @@ export async function GET(req: NextRequest) {
   const refreshToken =
     tokens.refresh_token ?? existing[0]?.refreshToken ?? null;
 
+  const accessTokenEnc = encryptTokenPacked(tokens.access_token, 'v1');
+  const refreshTokenEnc = refreshToken
+    ? encryptTokenPacked(refreshToken, 'v1')
+    : null;
   const [savedToken] = await db
     .insert(integrationTokens)
     .values({
       userId: session.user.id,
       provider: 'google_calendar',
       tokenType: 'oauth',
-      accessToken: tokens.access_token,
-      refreshToken,
+      accessToken: '',
+      accessTokenEnc,
+      refreshTokenEnc,
+      tokenEncKid: 'v1',
       expiresAt,
     })
     .onConflictDoUpdate({
@@ -129,8 +136,9 @@ export async function GET(req: NextRequest) {
         integrationTokens.tokenType,
       ],
       set: {
-        accessToken: tokens.access_token,
-        refreshToken,
+        accessToken: '',
+        accessTokenEnc,
+        refreshTokenEnc,
         expiresAt,
         updatedAt: new Date(),
       },

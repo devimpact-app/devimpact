@@ -4,6 +4,7 @@ import { BootstrapCursor } from './types';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { SetupStateV1 } from '@/types/api/cli';
+import { enqueueJob } from '../../enqueue';
 
 export async function stepWeeklySummary(
   input: JobHandlerInput,
@@ -54,6 +55,13 @@ export async function stepWeeklySummary(
       updatedAt: now,
     })
     .where(eq(users.id, tenantId));
+
+  // Queue up rest of 90 day backfill
+  await enqueueJob(db, {
+    tenantId,
+    kind: 'setup_backfill_90d',
+    dedupeKey: 'backfill_90d',
+  });
 
   const nextCursor: BootstrapCursor = {
     ...cursor,

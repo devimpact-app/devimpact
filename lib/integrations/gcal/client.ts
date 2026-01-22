@@ -2,6 +2,7 @@ import 'server-only';
 import { db } from '@/lib/db/client';
 import { integrationTokens } from '@/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
+import { decryptTokenPacked, encryptTokenPacked } from '@/lib/utils/crypto';
 
 type GoogleTokenRow = typeof integrationTokens.$inferSelect;
 
@@ -27,9 +28,11 @@ async function loadGoogleToken(userId: string): Promise<GoogleTokenRow | null> {
 }
 
 async function refreshGoogleAccessToken(row: GoogleTokenRow) {
-  if (!row.refreshToken) {
+  if (!row.refreshTokenEnc) {
     throw new Error('No refresh token stored for Google Calendar integration.');
   }
+
+  const refreshToken = decryptTokenPacked(row.refreshTokenEnc);
 
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -38,7 +41,7 @@ async function refreshGoogleAccessToken(row: GoogleTokenRow) {
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
       grant_type: 'refresh_token',
-      refresh_token: row.refreshToken,
+      refresh_token: refreshToken,
     }),
   });
 
@@ -61,11 +64,13 @@ async function refreshGoogleAccessToken(row: GoogleTokenRow) {
       ? new Date(Date.now() + json.expires_in * 1000)
       : null;
 
+  const kid = (row.tokenEncKid as 'v1') ?? 'v1';
+  const accessTokenEnc = encryptTokenPacked(json.access_token, kid);
   // persist
   await db
     .update(integrationTokens)
     .set({
-      accessToken: json.access_token,
+      accessTokenEnc,
       expiresAt,
       updatedAt: new Date(),
     })
@@ -83,7 +88,10 @@ export async function getGoogleCalendarAccessToken(userId: string) {
     ? row.expiresAt.getTime() < Date.now() + 60_000
     : false; // refresh if expiring within 60s
 
-  if (!needsRefresh) return row.accessToken;
+  if (!needsRefresh) {
+    if (!row.accessTokenEnc) return null;
+    return decryptTokenPacked(row.accessTokenEnc);
+  }
 
   const refreshed = await refreshGoogleAccessToken(row);
   return refreshed.accessToken;

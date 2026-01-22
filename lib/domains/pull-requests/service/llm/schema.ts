@@ -1,4 +1,4 @@
-export const AUTHORED_PR_SUMMARY_SCHEMA = {
+export const PR_SUMMARY_SCHEMA = {
   type: 'object',
   properties: {
     shortSummary: { type: 'string' },
@@ -6,7 +6,6 @@ export const AUTHORED_PR_SUMMARY_SCHEMA = {
     highlights: { type: 'array', items: { type: 'string' } },
     typeTags: { type: 'array', items: { type: 'string' } },
     domainTags: { type: 'array', items: { type: 'string' } },
-    reviewFrictionTags: { type: 'array', items: { type: 'string' } },
   },
   required: [
     'shortSummary',

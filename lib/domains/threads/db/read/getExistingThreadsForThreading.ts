@@ -1,6 +1,6 @@
 import { db } from '@/lib/db/client';
 import { threads, threadSummaryBullets } from '@/lib/db/schema/activity';
-import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull } from 'drizzle-orm';
 import {
   ExistingThreadContext,
   ThreadSummaryBulletInput,
@@ -9,11 +9,20 @@ import { isBulletEditable } from '../../helpers';
 
 export async function getExistingThreadsForThreading({
   tenantId,
-  limit = 50,
+  limit = 25,
+  activeSinceDays = 90,
 }: {
   tenantId: string;
   limit?: number;
+  activeSinceDays?: number;
 }): Promise<ExistingThreadContext[]> {
+  const since = new Date(Date.now() - activeSinceDays * 24 * 60 * 60 * 1000);
+
+  const baseWhere = and(
+    eq(threads.tenantId, tenantId),
+    eq(threads.status, 'active')
+  );
+
   const threadRows = await db
     .select({
       id: threads.id,
@@ -24,7 +33,7 @@ export async function getExistingThreadsForThreading({
       lastActivityAt: threads.lastActivityAt,
     })
     .from(threads)
-    .where(and(eq(threads.tenantId, tenantId), eq(threads.status, 'active')))
+    .where(and(baseWhere, gt(threads.lastActivityAt, since)))
     .orderBy(desc(threads.lastActivityAt), desc(threads.updatedAt))
     .limit(limit);
 

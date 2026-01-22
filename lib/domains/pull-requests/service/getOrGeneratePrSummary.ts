@@ -2,10 +2,10 @@ import { prSummaries, pullRequests } from '@/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { createHash } from 'crypto';
-import { generateAuthoredPrSummary } from './llm/authored/generate';
-import { PRSummarizationInput } from './llm/authored/types';
-import { loadPrSummaryContext } from './llm/authored/context';
-import { buildPRSummarizationInput } from './llm/authored/buildInput';
+import { generatePrSummary } from './llm/generate';
+import { PRSummarizationInput } from './llm/types';
+import { loadPrSummaryContext } from './llm/context';
+import { buildPRSummarizationInput } from './llm/buildInput';
 import { AiConfig } from '@/lib/integrations/openai/config';
 
 function hashPrInput(input: PRSummarizationInput, model: string): string {
@@ -22,7 +22,7 @@ export async function getOrGeneratePrSummary(opts: {
   useReviewedPrompt?: boolean;
   force?: boolean; // if we want to always re-generate
 }) {
-  const { tenantId, prId, force, useReviewedPrompt = false } = opts;
+  const { tenantId, prId, force } = opts;
 
   const results = await db
     .select({
@@ -64,7 +64,7 @@ export async function getOrGeneratePrSummary(opts: {
     reviewComments: ctx.reviewComments,
   });
 
-  const result = await generateAuthoredPrSummary(input);
+  const result = await generatePrSummary(input);
 
   const prUpdatedAt = input.pr.updatedAt ?? new Date();
   const inputHash = hashPrInput(input, AiConfig.models.summarize);

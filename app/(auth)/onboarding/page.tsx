@@ -43,6 +43,10 @@ export default async function OnboardingPage({
     redirect('/login');
   }
 
+  const bootstrapLoading =
+    user.setupState.bootstrapRecent.status !== 'succeeded' ||
+    !user.setupState.ready;
+
   const state = user.onboardingState ?? 'account_created';
 
   switch (state) {
@@ -53,7 +57,10 @@ export default async function OnboardingPage({
     case 'syncing':
       redirect('/onboarding/cli');
     case 'synced':
-      redirect('/dashboard');
+      if (bootstrapLoading) {
+        redirect('/onboarding/loading');
+      }
+      redirect('/onboarding/complete');
     default:
       // Ensure we catch new states at build time
       assertNever(state as never);

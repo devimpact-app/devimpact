@@ -1,6 +1,6 @@
 import { db } from '@/lib/db/client';
 import { activityEvents } from '@/lib/db/schema/activity';
-import { and, asc, eq, gt, inArray, lte, lt, or } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, lte, lt, or, desc } from 'drizzle-orm';
 import type { ActivityEvent } from '@/lib/db/schema/activity';
 
 export async function claimThreadingActivityEvents({
@@ -10,6 +10,7 @@ export async function claimThreadingActivityEvents({
   limit = 50,
   claimedBy = 'threading_pipeline_v1',
   claimTtlMs = 5 * 60 * 1000, // 5 minutes
+  order = 'asc',
 }: {
   tenantId: string;
   since: Date;
@@ -17,10 +18,15 @@ export async function claimThreadingActivityEvents({
   limit?: number;
   claimedBy?: string;
   claimTtlMs?: number;
+  order?: 'asc' | 'desc';
 }): Promise<ActivityEvent[]> {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + claimTtlMs);
 
+  const orderBy =
+    order === 'desc'
+      ? [desc(activityEvents.occurredAt), desc(activityEvents.id)]
+      : [asc(activityEvents.occurredAt), asc(activityEvents.id)];
   return db.transaction(async (tx) => {
     const picked = await tx
       .select({ id: activityEvents.id })
@@ -40,7 +46,7 @@ export async function claimThreadingActivityEvents({
           )
         )
       )
-      .orderBy(asc(activityEvents.occurredAt), asc(activityEvents.id))
+      .orderBy(...orderBy)
       .limit(limit);
 
     const ids = picked.map((r) => r.id);
@@ -70,7 +76,7 @@ export async function claimThreadingActivityEvents({
           inArray(activityEvents.id, ids)
         )
       )
-      .orderBy(asc(activityEvents.occurredAt), asc(activityEvents.id));
+      .orderBy(...orderBy);
 
     return claimed;
   });

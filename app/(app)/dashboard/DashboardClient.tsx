@@ -12,12 +12,14 @@ type Props = {
   fullName: string;
   cliDisconnected: boolean;
   staleSyncDays: number | null;
+  backfillLoading: boolean;
 };
 
 export default function DashboardClient({
   fullName,
   cliDisconnected,
   staleSyncDays,
+  backfillLoading,
 }: Props) {
   const firstName = useMemo(
     () => (fullName ? fullName.split(' ')[0] : 'there'),
@@ -28,6 +30,7 @@ export default function DashboardClient({
     <>
       <main className="">
         <DashboardAlerts
+          backfillLoading={backfillLoading}
           cliDisconnected={cliDisconnected}
           staleSyncDays={staleSyncDays}
         />

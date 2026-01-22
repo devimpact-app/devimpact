@@ -7,7 +7,7 @@ import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { buildTagFrequencyMap } from '../../../weekly-activity/service/focusAreas';
 import { HighlightedReview, ShippedItem } from '@/types/api/weekly-activity';
 import { PullRequest, Review } from '@/lib/db/schema';
-import { PR_TYPE_LABELS } from '@/lib/domains/pull-requests/service/llm/authored/types';
+import { PR_TYPE_LABELS } from '@/lib/domains/pull-requests/service/llm/types';
 
 export type FetchPrepActivityResponse = {
   llm: {

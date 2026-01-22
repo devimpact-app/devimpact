@@ -6,6 +6,11 @@ import {
 } from '@/lib/db/schema';
 import { PRSummarizationInput } from './types';
 
+function clip(s: string | null | undefined, max = 500) {
+  const t = (s ?? '').trim();
+  return t.length > max ? t.slice(0, max - 1) + '…' : t;
+}
+
 export function buildPRSummarizationInput(args: {
   normPr: PullRequest;
   files: GithubPRFile[];
@@ -14,23 +19,15 @@ export function buildPRSummarizationInput(args: {
 }): PRSummarizationInput {
   const { normPr, files, reviews, reviewComments } = args;
 
-  const metrics = {
-    linesChangedTotal: normPr.linesChanged ?? 0,
+  const metrics: PRSummarizationInput['metrics'] = {
     filesChanged: normPr.filesChanged ?? 0,
     additions: normPr.linesAdded ?? 0,
     deletions: normPr.linesDeleted ?? 0,
-    reviewCount: normPr.reviewsCount ?? 0,
-    approvalCount: normPr.approvalsCount ?? 0,
-    commentCount: normPr.reviewCommentsCount ?? 0,
     reviewRounds: normPr.reviewRounds ?? 0,
-    blockingReviewCount: normPr.blockingReviewCount ?? 0,
   };
 
-  const timeline = {
-    timeToFirstReviewSeconds: normPr.timeToFirstReviewSeconds ?? null,
-    reviewToMergeSeconds: normPr.reviewToMergeSeconds ?? null,
+  const timeline: PRSummarizationInput['timeline'] = {
     leadTimeSeconds: normPr.leadTimeSeconds ?? null,
-    timeToFirstApprovalSeconds: normPr.timeToFirstApprovalSeconds ?? null,
   };
 
   const totalFiles = files.length;
@@ -70,22 +67,6 @@ export function buildPRSummarizationInput(args: {
       deletions: f.deletions,
     }));
 
-  const reviewsOut: PRSummarizationInput['reviews'] = reviews.map((r) => ({
-    reviewerLogin: r.reviewerLogin,
-    submittedAt: r.submittedAt,
-    state: r.state,
-    body: r.body ?? '',
-    isBlocking: r.isBlockingReview ?? false,
-    reviewCommentsCount: r.reviewCommentsCount ?? 0,
-  }));
-
-  const reviewCommentsOut: PRSummarizationInput['reviewComments'] =
-    reviewComments.map((c) => ({
-      reviewerLogin: c.authorGithubLogin,
-      createdAt: c.createdAt,
-      body: c.body,
-    }));
-
   // Find first blocking review (earliest submittedAt where isBlockingReview = true)
   const blockingReviews = reviews
     .filter((r) => r.isBlockingReview && r.submittedAt)
@@ -100,34 +81,44 @@ export function buildPRSummarizationInput(args: {
   if (blockingReviews.length > 0) {
     const first = blockingReviews[0];
 
-    // Pull just the comments for this review
-    const commentsForFirst = reviewComments
+    const topInlineComments = reviewComments
       .filter((c) => c.reviewId === first.githubReviewId)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-      .slice(0, 10) // safety cap
+      .slice(0, 3)
       .map((c) => ({
         createdAt: c.createdAt,
-        body: c.body,
+        body: clip(c.body, 400),
       }));
 
     firstBlockingReview = {
       reviewerLogin: first.reviewerLogin,
       submittedAt: first.submittedAt!,
       state: first.state as 'commented' | 'changes_requested',
-      body: first.body ?? '',
-      comments: commentsForFirst,
+      body: clip(first.body, 700),
+      ...(topInlineComments.length ? { topInlineComments } : {}),
     };
   }
+
+  const notableComments: PRSummarizationInput['notableComments'] =
+    reviewComments
+      .filter((c) => (c.body?.trim()?.length ?? 0) >= 50)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .slice(0, 6)
+      .map((c) => ({
+        authorLogin: c.authorGithubLogin,
+        createdAt: c.createdAt,
+        body: clip(c.body, 400),
+        kind: 'inline_comment' as const,
+      }));
 
   const prInfo: PRSummarizationInput['pr'] = {
     repoFullName: normPr.repoFullName,
     prNumber: normPr.prNumber,
     htmlUrl: normPr.htmlUrl ?? '',
+    updatedAt: normPr.sourceUpdatedAt,
     state: normPr.state,
     createdAt: normPr.createdAt,
-    updatedAt: normPr.sourceUpdatedAt,
     mergedAt: normPr.mergedAt,
-    closedAt: normPr.closedAt,
     authorLogin: normPr.prAuthorLogin,
     title: normPr.title,
     body: normPr.body ?? '',
@@ -139,11 +130,10 @@ export function buildPRSummarizationInput(args: {
     timeline,
     topFiles,
     fileSummary,
-    reviews: reviewsOut,
-    reviewComments: reviewCommentsOut,
     firstBlockingReview,
+    notableComments,
     context: {
-      perspective: 'author',
+      perspective: normPr.authorIsTenant ? 'author' : 'reviewer',
     },
   };
 }

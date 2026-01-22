@@ -3,7 +3,7 @@ import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import Credentials from 'next-auth/providers/credentials';
 import { db } from './db/client';
-import { users, integrationTokens } from './db/schema';
+import { users } from './db/schema';
 import { eq } from 'drizzle-orm';
 import { jwtVerify } from 'jose';
 
@@ -107,7 +107,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             .update(users)
             .set({
               fullName,
-              githubUsername: githubLogin,
+              ...(githubLogin ? { githubUsername: githubLogin } : {}),
               updatedAt: new Date(),
             })
             .where(eq(users.id, found.id));
@@ -115,35 +115,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
         return userId;
       });
-
-      if (account?.access_token) {
-        const expiresAt = account.expires_at
-          ? new Date(account.expires_at * 1000)
-          : null;
-        await db
-          .insert(integrationTokens)
-          .values({
-            userId: result,
-            provider: 'github',
-            tokenType: 'oauth',
-            accessToken: account.access_token,
-            refreshToken: account.refresh_token ?? null,
-            expiresAt,
-          })
-          .onConflictDoUpdate({
-            target: [
-              integrationTokens.userId,
-              integrationTokens.provider,
-              integrationTokens.tokenType,
-            ],
-            set: {
-              accessToken: account.access_token,
-              refreshToken: account.refresh_token ?? null,
-              expiresAt,
-              updatedAt: new Date(),
-            },
-          });
-      }
 
       (account as any).__userId = result;
       (account as any).__githubLogin = githubLogin;
