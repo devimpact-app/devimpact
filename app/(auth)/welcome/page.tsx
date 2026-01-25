@@ -31,7 +31,7 @@ export default async function WelcomePage({
 }) {
   const params = await searchParams;
   const session = await auth();
-  if (session) redirect('/onboarding');
+  // if (session) redirect('/onboarding');
   const betaCode = params.code;
   const isValid = betaCode === process.env.BETA_ACCESS_CODE;
   if (!isValid) {

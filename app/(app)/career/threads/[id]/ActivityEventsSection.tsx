@@ -79,7 +79,7 @@ export function ActivityEventsSection({
     <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="text-[13px] font-medium text-white/85">{title}</div>
+          <div className="text-sm font-medium text-white/85">{title}</div>
           <div className="mt-1 text-xs text-white/55">{subtitle}</div>
         </div>
 

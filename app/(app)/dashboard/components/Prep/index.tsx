@@ -43,6 +43,7 @@ export function UpcomingPrepCardContainer({
     <UpcomingPrepCard
       calendarConnected={data?.calendarConnected ?? false}
       events={data?.items ?? []}
+      nextPrepSupported={data?.nextPrepSupported}
       isLoading={isLoading}
       error={error?.message ?? null}
       hideOpen={variant === 'prep'}

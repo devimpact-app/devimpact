@@ -88,7 +88,7 @@ export function SettingsClient({
     setSuccess(null);
 
     const confirmed = window.prompt(
-      'This will delete all synced PRs, reviews, and activity from DevImpact.\n\nType DELETE to confirm.'
+      'This will permanently delete all DevImpact data for your account, including PRs, reviews, activity, threads, meeting prep, and weekly summaries.\n\nIntegrations will remain connected. You can re-sync later.\n\nType DELETE to confirm.'
     );
     if (confirmed !== 'DELETE') return;
 
@@ -96,7 +96,7 @@ export function SettingsClient({
     try {
       await postJson('/api/settings/delete-data');
       setSuccess(
-        'All synced data deleted. You can resync from the CLI at any time.'
+        'All DevImpact data has been reset. Your integrations are still connected, and you can re-sync at any time.'
       );
     } catch (e: any) {
       setError(e.message ?? 'Failed to delete data.');
@@ -161,7 +161,7 @@ export function SettingsClient({
             </h2>
             <p className="text-[13px] text-white/65">
               These controls affect DevImpact&apos;s own database only. Your
-              GitHub data and permissions stay under your control.
+              external data stays under your control.
             </p>
           </div>
         </div>
@@ -174,13 +174,12 @@ export function SettingsClient({
               </div>
               <div className="space-y-1">
                 <p className="text-[15px] font-medium text-rose-200">
-                  Delete all synced data
+                  Reset DevImpact data
                 </p>
                 <p className="text-[13px] text-red-200/80">
-                  Permanently removes all metadata about PRs, reviews, activity
-                  and summaries stored by DevImpact for your account. This does{' '}
-                  <span className="font-semibold">not</span> affect GitHub or
-                  any repositories.
+                  Deletes all DevImpact data (synced + generated): PRs, reviews,
+                  calendar events, threads, meeting prep, and summaries.
+                  Integrations stay connected; re-sync will rebuild.
                 </p>
               </div>
             </div>

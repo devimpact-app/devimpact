@@ -34,8 +34,7 @@ export default async function CalendarSetupPage({
             </h1>
             <p className="mt-2 text-sm text-text-secondary max-w-xl">
               DevImpact uses your calendar to power automatic meeting prep and
-              understand how meetings shape your focus and output — alongside
-              your GitHub activity.
+              provide context for your work — alongside your GitHub activity.
             </p>
           </div>
         </header>

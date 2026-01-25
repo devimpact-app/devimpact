@@ -1,7 +1,20 @@
 import { useState } from 'react';
-import Link from 'next/link';
-import { ChevronDown, Calendar, Activity } from 'lucide-react';
-import type { WeeklyActivity } from '@/types/api/weekly-activity';
+import {
+  User,
+  Users,
+  Building2,
+  Briefcase,
+  AlertTriangle,
+  Target,
+  Plane,
+  Calendar,
+  ChevronDown,
+  Activity,
+} from 'lucide-react';
+import type {
+  CalendarEventCategory,
+  WeeklyActivity,
+} from '@/types/api/weekly-activity';
 import { formatMinutes } from '@/lib/utils/date';
 import { TeamMeetingSubtype } from '@/types/api/prep';
 import { ActivityEvent } from '@/types/api/timeline';
@@ -51,6 +64,51 @@ export const TEAM_MEETING_SUBTYPE_DISPLAY: Record<
   },
 };
 
+export const CALENDAR_CATEGORY_DISPLAY: Record<
+  CalendarEventCategory,
+  {
+    label: string;
+    icon: React.ComponentType<{ size?: number }>;
+  }
+> = {
+  personal: {
+    label: 'Personal',
+    icon: User,
+  },
+  ooo: {
+    label: 'Out of office',
+    icon: Plane,
+  },
+  focus: {
+    label: 'Focus time',
+    icon: Target,
+  },
+  oneOnOne: {
+    label: '1:1',
+    icon: User,
+  },
+  team: {
+    label: 'Team meeting',
+    icon: Users,
+  },
+  org: {
+    label: 'Org meeting',
+    icon: Building2,
+  },
+  interview: {
+    label: 'Interview',
+    icon: Briefcase,
+  },
+  incident: {
+    label: 'Incident',
+    icon: AlertTriangle,
+  },
+  other: {
+    label: 'Other meeting',
+    icon: Calendar,
+  },
+};
+
 function StatPill({
   label,
   value,
@@ -61,8 +119,8 @@ function StatPill({
   muted?: boolean;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/75">
-      <span className="text-white/50">{label}</span>
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-white/75">
+      <span className="text-white/55">{label}</span>
       <span
         className={`font-medium ${muted ? 'text-white/60' : 'text-white/85'} tabular-nums`}
       >
@@ -102,7 +160,7 @@ export function WeeklyActivitySection({
   if (!hasAny) return null;
 
   return (
-    <div className="mt-6 border-t border-white/10 pt-3">
+    <div className="mt-8 border-t border-white/10 pt-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -111,11 +169,11 @@ export function WeeklyActivitySection({
       >
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <div className="text-xs font-medium text-white/80">
+            <div className="text-sm font-medium text-white/80">
               This week at a glance
             </div>
           </div>
-          <div className="mt-0.5 text-[11px] text-white/45">
+          <div className="mt-0.5 text-xs text-white/45">
             Aggregated metrics and trends from this week
           </div>
         </div>
@@ -140,10 +198,10 @@ export function WeeklyActivitySection({
                 <StatPill label="Reviews" value={s.prsReviewed} />
               ) : null}
               {typeof s.activeDays === 'number' ? (
-                <StatPill label="Coding days" value={s.activeDays} muted />
+                <StatPill label="Coding days" value={s.activeDays} />
               ) : null}
               {s.mostActiveDay ? (
-                <StatPill label="Most active" value={s.mostActiveDay} muted />
+                <StatPill label="Most active" value={s.mostActiveDay} />
               ) : null}
             </div>
           ) : null}
@@ -155,7 +213,7 @@ export function WeeklyActivitySection({
                 Calendar
               </div>
 
-              <div className="mt-1 text-xs text-white/65">
+              <div className="mt-2 pb-1 text-[13px] text-white/65">
                 {typeof calendar.meetingCount === 'number' ? (
                   <>
                     {calendar.meetingCount} meeting
@@ -195,17 +253,23 @@ export function WeeklyActivitySection({
                     const remaining =
                       (c.subcategories?.length ?? 0) - subs.length;
 
+                    const categoryInfo = CALENDAR_CATEGORY_DISPLAY[c.key];
+                    const Icon = categoryInfo.icon;
+
                     return (
                       <div
                         key={c.key}
-                        className="flex items-center justify-between rounded-lg px-2 py-1 text-xs text-white/6"
+                        className="flex items-center justify-between rounded-lg px-2 py-1 text-[13px] text-white/6"
                       >
-                        <div className="min-w-0 truncate">
-                          <span className="text-white/70">{c.key}</span>
-                          <span className="text-white/35"> · {c.count}</span>
+                        <div className="min-w-0 truncate flex flex-row items-center gap-1">
+                          <Icon size={14} />
+                          <span className="ml-1 text-white/80">
+                            {categoryInfo.label}
+                          </span>
+                          <span className="text-white/55"> · {c.count}</span>
 
                           {subLabel ? (
-                            <span className="text-white/30">
+                            <span className="text-white/50">
                               {' '}
                               · {subLabel}
                               {remaining > 0 ? ` (+${remaining})` : ''}
@@ -213,7 +277,7 @@ export function WeeklyActivitySection({
                           ) : null}
                         </div>
 
-                        <div className="shrink-0 tabular-nums text-white/50">
+                        <div className="shrink-0 tabular-nums text-white/80">
                           {formatMinutes(c.minutes ?? 0)}
                         </div>
                       </div>
@@ -231,7 +295,7 @@ export function WeeklyActivitySection({
                 Potential follow-ups
               </div>
 
-              <ul className="mt-2 space-y-1.5">
+              <ul className="mt-2">
                 {frictionItems.map((item, idx) => {
                   const pr = item.relatedPr;
                   const repo = pr?.meta?.repoFullName;
@@ -241,8 +305,8 @@ export function WeeklyActivitySection({
                     <li key={(item as any).id ?? idx}>
                       <button
                         className={[
-                          'group w-full flex gap-2 rounded-lg px-2 py-1.5',
-                          'text-xs text-white/65',
+                          'group w-full flex gap-2 rounded-lg px-2 py-1',
+                          'text-[13px] text-white/65',
                           'hover:bg-white/[0.04] hover:text-white/80',
                           'focus:outline-none focus:ring-2 focus:ring-white/15',
                           'transition',

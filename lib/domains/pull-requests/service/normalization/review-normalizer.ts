@@ -9,7 +9,6 @@ import {
   GithubReviewComment,
 } from '@/lib/db/schema/github-raw';
 import {
-  inferredTeamMemberships,
   PullRequest,
   pullRequests,
   reviews,
@@ -25,46 +24,12 @@ import {
   sortAndBound,
 } from './helpers';
 
-async function getInferredTeams({
-  userId,
-  username,
-}: {
-  userId: string;
-  username: string;
-}): Promise<Set<string>> {
-  const memberships = await db
-    .select()
-    .from(inferredTeamMemberships)
-    .where(
-      and(
-        eq(inferredTeamMemberships.tenantId, userId),
-        eq(inferredTeamMemberships.githubLogin, username)
-      )
-    );
-
-  const activeTeamMemberships = memberships.filter((m) => {
-    if (m.confidence === 'high') return true;
-    if (m.confidence === 'medium') {
-      const score = m.score ?? 0;
-      const total = m.evidenceCounts?.totalReviewsAfterAnyTeamRequest ?? 0;
-      return score >= 0.55 && total >= 3;
-    }
-    return false;
-  });
-
-  return new Set(activeTeamMemberships.map((m) => `${m.org}/${m.teamSlug}`));
-}
-
 export async function batchNormalizeUserReviews(
   userId: string,
   username: string
 ): Promise<{
   touchedReviewIds: string[];
 }> {
-  const inferredTeamsSet = await getInferredTeams({
-    userId,
-    username,
-  });
   const reviewsNeedingNormalization = await db
     .select({
       raw: githubReviews,
@@ -157,7 +122,6 @@ export async function batchNormalizeUserReviews(
         allReviews: reviewsByPrId[review.prId] || [],
         reviewComments: commentsByReviewId[review.id] || [],
         userGithubLogin: username,
-        inferredTeams: inferredTeamsSet,
       });
 
       return {
@@ -246,7 +210,6 @@ interface CalculateMetricsInput {
   allReviews: GithubReview[];
   reviewComments: GithubReviewComment[];
   userGithubLogin: string;
-  inferredTeams: Set<string>; // "org/teamSlug"
 }
 
 function calculateMetrics(input: CalculateMetricsInput) {
@@ -341,7 +304,6 @@ export function computeReviewAnchorAt({
   pr,
   timeline,
   review,
-  inferredTeams,
 }: CalculateMetricsInput): {
   anchorAt: Date;
   anchorType: AnchorType;
@@ -396,9 +358,7 @@ export function computeReviewAnchorAt({
       e.createdAt >= cycle.start &&
       e.createdAt <= cycle.end &&
       e.eventType === 'review_requested' &&
-      e.requestedTargetType === 'team' &&
-      (inferredTeams.size === 0 ||
-        inferredTeams.has(`${e.requestedTeamOrg}/${e.requestedTeamSlug}`))
+      e.requestedTargetType === 'team'
   );
   if (teamReq) {
     const laterRemoval = lastBefore(

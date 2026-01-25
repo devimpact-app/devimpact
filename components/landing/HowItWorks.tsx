@@ -28,7 +28,12 @@ export default function HowItWorks() {
               <li>
                 • Optionally connect Google Calendar to improve preparation
               </li>
-              <li>• Your data stays private - no team setup, no managers </li>
+              <li>
+                <b>
+                  • Private by default — no team setup, no managers, no
+                  reporting
+                </b>
+              </li>
             </ul>
           </li>
 
@@ -37,7 +42,7 @@ export default function HowItWorks() {
               2
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              See what's shaping your impact
+              Get a clearer picture of your work
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>• Where your best focus time actually happens</li>
@@ -65,11 +70,7 @@ export default function HowItWorks() {
                 • Show what’s blocking output: meetings, review load, context
                 switching
               </li>
-              <li>• Plan your week around your best focus windows</li>
-              <li>
-                • Build a running record you can reuse for reviews and promotion
-                packets
-              </li>
+              <li>• Build a running record you can reuse when it matters</li>
             </ul>
           </li>
         </ol>

@@ -4,11 +4,11 @@ export default function Features() {
       <div className="mx-auto max-w-4xl flex flex-col gap-10">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
-            Stay in control of your career narrative
+            A clearer picture of your work
           </h2>
           <p className="mt-3 text-base text-white/70 leading-relaxed">
-            DevImpact keeps your work organized, summarized, and ready — so you
-            can show impact clearly in meetings, reviews, and promotion
+            DevImpact keeps your work organized, summarized, and easy to revisit
+            — so you can bring context into meetings, reviews, and key
             conversations.
           </p>
         </div>
@@ -16,7 +16,7 @@ export default function Features() {
         <div className="grid gap-6 md:grid-cols-2">
           {[
             {
-              title: 'Always know what to say in 1:1s',
+              title: 'Show up to 1:1s with context',
               body: 'DevImpact prepares focused talking points for 1:1s and standups — grounded in what you actually shipped, reviewed, and discussed since the last meeting.',
             },
             {
@@ -24,12 +24,12 @@ export default function Features() {
               body: 'Contributions automatically roll up into threads — giving you a clean, searchable record of projects, decisions, and impact as they evolve.',
             },
             {
-              title: 'Your weekly brag doc, automatically',
+              title: 'Your weekly work recap',
               body: 'Every week, DevImpact turns your real work into a concise narrative and delivers it straight to your inbox — ready for 1:1s, reviews, or saving for later.',
             },
             {
               title: 'Understand your work rhythm',
-              body: 'Visualize when you tend to do deep work, where meetings land, and how your weeks actually unfold — so you can protect focus and plan intentionally.',
+              body: 'Visualize when you tend to do deep work, where meetings land, and how your weeks actually unfold — so you can plan with more intention.',
             },
           ].map((item) => (
             <div

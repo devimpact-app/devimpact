@@ -92,7 +92,7 @@ export default function PrivacyPage() {
           <ul className="list-disc list-inside space-y-1">
             <li>Your weekly pulse and engineering patterns</li>
             <li>Work rhythm and focus-time analysis</li>
-            <li>1:1 preparation and highlight summaries</li>
+            <li>Meeting preparation and highlight summaries</li>
             <li>Collaboration, review behavior, and trend insights</li>
             <li>Timeline and activity analysis</li>
           </ul>

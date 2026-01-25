@@ -51,12 +51,12 @@ export function HeroSection() {
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-white">
-          Never forget your impact
+          A memory for your engineering work
         </h1>
 
         <p className="max-w-2xl text-lg sm:text-xl text-white/80 leading-relaxed">
-          DevImpact turns your real work into clear talking points for meetings
-          and performance moments.
+          Weekly summaries, meeting prep, and work organized over time —
+          automatically, so you can track what you did and why it mattered.
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">

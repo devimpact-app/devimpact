@@ -126,7 +126,7 @@ export default function PrepDetailClient({
           } else {
             setStatus('error');
             const text = await res.text().catch(() => '');
-            setErrorMessage(text || 'Failed to load this 1:1 prep.');
+            setErrorMessage(text || 'Failed to load this meeting prep.');
           }
           return;
         }
@@ -164,7 +164,7 @@ export default function PrepDetailClient({
         }
       } catch (err) {
         setStatus('error');
-        setErrorMessage('Network error while loading this 1:1 prep.');
+        setErrorMessage('Network error while loading this meeting prep.');
       }
     }
 
@@ -179,14 +179,14 @@ export default function PrepDetailClient({
     };
   }, [id]);
 
-  async function handleDeleteClick(oneOnOneId: string) {
+  async function handleDeleteClick(prepId: string) {
     try {
       const confirmed = window.confirm(
-        'Delete this 1:1 prep? This cannot be undone.'
+        'Delete this meeting prep? This cannot be undone.'
       );
       if (!confirmed) return;
 
-      const res = await fetch(`/api/one-on-ones/${oneOnOneId}`, {
+      const res = await fetch(`/api/prep/items/${prepId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -198,14 +198,14 @@ export default function PrepDetailClient({
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         setStatus('error');
-        setErrorMessage(text || 'Failed to delete this 1:1 prep.');
+        setErrorMessage(text || 'Failed to delete this prep.');
         return;
       }
 
       router.push('/prep');
     } catch (err) {
       setStatus('error');
-      setErrorMessage('Network error while deleting this 1:1 prep.');
+      setErrorMessage('Network error while deleting this prep.');
     }
   }
 
@@ -226,7 +226,7 @@ export default function PrepDetailClient({
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         setStatus('error');
-        setErrorMessage(text || 'Failed to regenerate this 1:1 prep.');
+        setErrorMessage(text || 'Failed to regenerate this prep.');
         return;
       }
 
@@ -235,7 +235,7 @@ export default function PrepDetailClient({
       setStatus('ready');
     } catch (err) {
       setStatus('error');
-      setErrorMessage('Network error while regenerating this 1:1 prep.');
+      setErrorMessage('Network error while regenerating this prep.');
     }
   }
 
@@ -265,8 +265,8 @@ export default function PrepDetailClient({
   if (status === 'not_found') {
     return (
       <ProblemState
-        title="This 1:1 prep couldn’t be found"
-        body="It may have been deleted, or the link is incorrect. You can create a new 1:1 prep from the prep home."
+        title="This meeting prep couldn’t be found"
+        body="It may have been deleted, or the link is incorrect. You can create a new meeting prep from the prep home."
       />
     );
   }
@@ -274,7 +274,7 @@ export default function PrepDetailClient({
   if (status === 'error' || !prep) {
     return (
       <ProblemState
-        title="We couldn’t load this 1:1 prep"
+        title="We couldn’t load this meeting prep"
         body={
           errorMessage ??
           'Something went wrong while fetching this prep. Try refreshing the page or going back to the prep home.'

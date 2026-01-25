@@ -19,9 +19,9 @@ function StatPill({
 }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-white/75">
-      <span className="text-white/50">{label}</span>
+      <span className="text-white/55">{label}</span>
       <span
-        className={`font-medium ${muted ? 'text-white/80' : 'text-white/85'} tabular-nums`}
+        className={`font-medium ${muted ? 'text-white/60' : 'text-white/85'} tabular-nums`}
       >
         {value}
       </span>

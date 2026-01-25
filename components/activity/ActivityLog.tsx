@@ -107,7 +107,7 @@ export function ActivityLog({
       )}
 
       {!loading && displayEvents.length === 0 && (
-        <div className="pt-1 text-[11px] text-slate-400">
+        <div className="pt-1 text-[13px] text-slate-400">
           No activity found for this period. Once you sync with the CLI, your
           PRs, reviews, and commits will appear here.
         </div>

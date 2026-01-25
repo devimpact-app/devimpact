@@ -222,27 +222,6 @@ export function WeeklySummaryDetailPage({
                     Regenerate
                   </div>
                 </div>
-
-                <div className="relative group">
-                  <button
-                    type="button"
-                    onClick={() => {}}
-                    className="flex items-center justify-center h-9 w-9 rounded-full
-                 bg-red-400/20 text-red-300 hover:bg-red-400/30 transition
-                 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-
-                  <div
-                    className="pointer-events-none absolute right-0 top-full mt-1
-                 opacity-0 group-hover:opacity-100 transition
-                 whitespace-nowrap rounded-md px-2 py-1 text-xs text-text-primary
-                 shadow-lg"
-                  >
-                    Delete
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -258,8 +237,8 @@ export function WeeklySummaryDetailPage({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="h-4 w-1 bg-indigo-600/70 rounded-full" />
-                    <div className="text-[13px] font-semibold text-white/95">
-                      Weekly Summary
+                    <div className="text-[15px] font-semibold text-white/95">
+                      Highlights
                     </div>
                   </div>
                 </div>
@@ -273,7 +252,7 @@ export function WeeklySummaryDetailPage({
                   ) : (
                     <>
                       {headline ? (
-                        <p className="text-[14px] font-medium text-white/70">
+                        <p className="text-[15px] font-medium text-white/70">
                           {headline}
                         </p>
                       ) : summary.status === 'ready' ? (
@@ -308,7 +287,7 @@ export function WeeklySummaryDetailPage({
                       {bullets.map((b, idx) => (
                         <li
                           key={`${idx}-${b.text.slice(0, 16)}`}
-                          className="text-[13px] leading-relaxed text-white/70"
+                          className="text-sm leading-relaxed text-white/70"
                         >
                           {b.text}
                         </li>

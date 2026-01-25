@@ -20,12 +20,12 @@ export async function GET(req: NextRequest) {
     });
   }
   const { searchParams } = new URL(req.url);
-  const lookaheadDays = Number(searchParams.get('days') ?? '7');
+  const timezone = searchParams.get('timezone') ?? 'America/Los_Angeles';
   const limit = Number(searchParams.get('limit') ?? '10');
 
   const payload = await getUpcomingCalendarEvents({
     tenantId: session.user.id,
-    lookaheadDays: Number.isFinite(lookaheadDays) ? lookaheadDays : 7,
+    timezone,
     limit: Number.isFinite(limit) ? limit : 10,
   });
 

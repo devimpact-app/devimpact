@@ -34,7 +34,7 @@ export function BasedOnThreads({
       >
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <div className="text-xs font-medium text-white/80">
+            <div className="text-sm font-medium text-white/80">
               Based on threads
             </div>
             <div className="text-[11px] text-white/45">· {countLabel}</div>

@@ -326,9 +326,13 @@ export default function CalendarSetupClient({
               </div>
               <ul className="list-disc list-inside space-y-1">
                 <li>Start/end times (time blocks)</li>
+                <li>Event titles</li>
                 <li>Your RSVP status (yes/no/maybe)</li>
                 <li>Attendee count</li>
-                <li>Derived meeting context (e.g. 1:1s, team meetings)</li>
+                <li>
+                  Derived categorization from title/description (e.g. 1:1s, team
+                  meetings)
+                </li>
               </ul>
             </div>
             <div>
@@ -336,7 +340,7 @@ export default function CalendarSetupClient({
                 We don’t store
               </div>
               <ul className="list-disc list-inside space-y-1">
-                <li>Event titles or descriptions</li>
+                <li>Event descriptions</li>
                 <li>Guest emails or lists</li>
                 <li>Meeting links, notes, or attachments</li>
               </ul>
@@ -498,14 +502,16 @@ export default function CalendarSetupClient({
       </div>
       {!isFromSettings && (
         <div className="mt-8 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => handleAdvance({ requireSync: false })}
-            disabled={advancing}
-            className="text-sky-600 hover:text-sky-400 text-sm"
-          >
-            Skip for now — insights and prep will be more limited
-          </button>
+          {!syncComplete && (
+            <button
+              type="button"
+              onClick={() => handleAdvance({ requireSync: false })}
+              disabled={advancing}
+              className="text-sky-600 hover:text-sky-400 text-sm"
+            >
+              Skip for now — insights and prep will be more limited
+            </button>
+          )}
 
           <div className="flex items-center gap-3">
             {advanceError && (

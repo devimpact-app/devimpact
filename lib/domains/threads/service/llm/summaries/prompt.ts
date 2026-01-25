@@ -40,8 +40,20 @@ export function buildThreadSummaryPrompt(
       - Keep it calm and engineer-native. No hype. No motivational language.
       - referencedEventIds MUST be drawn from the input events' IDs. No other IDs.
 
+      TITLE GOVERNANCE (CRITICAL):
+      - Titles must be durable buckets, not single-instance records.
+      - Do NOT include a person’s full name in the title or headline (e.g., "Interview with Bill Todd" is not allowed).
+      - Avoid hyperspecific titles tied to one meeting/event ("Sync w/ X", "Chat with Y", "Interview with Z", "1:1 with ...").
+      - If events are interview-related, title should be category-level, e.g.:
+        - "Interviewing"
+        - "Candidate interviews"
+        - "Hiring pipeline"
+      - If events are incident-related, title should be category-level (e.g., "Incident response", "On-call incident handling").
+      - If the input only supports a single meeting with no related work, bias toward a generic category ("Meetings & coordination") and LOWER confidence.
+
       STYLE TARGET:
       - Title: 4–9 words. Concrete, specific, stable across updates.
+        - Must still make sense if new related events arrive next week (no single-person titles).
       - Headline: 1 sentence, <= 25 words. A compact "what this thread is about" statement.
       - Bullets: 3–6 bullets max.
         - Each bullet <= 20 words.
@@ -52,7 +64,9 @@ export function buildThreadSummaryPrompt(
       EVENT INTERPRETATION GUIDELINES:
       - PR events: Prefer the PR summary (short + highlights/tags). Use size/process signals sparingly ("large change", "multi-round review") only if it clarifies impact.
       - Review events: Treat as collaboration. Mention themes (quality bar, unblocking, architectural feedback) only if strongly implied by input.
-      - Meeting events: Only include if they are high-signal (incident, interview, architecture/design review, demo w/ ownership cues, org alignment). Routine meetings should not dominate.
+      - Meeting events: Only include if they are high-signal AND repeatable as a theme.
+        - "Interview" meetings should be grouped into an "Interviewing/Hiring" thread (never the candidate’s name).
+        - If there is only one interview meeting and no other supporting work, keep it generic and lower confidence.
       - If newEvents contain mixed unrelated items, keep the thread scoped to the strongest common theme; de-emphasize outliers (but do not omit them from referencedEventIds if used).
 
       BULLET GOVERNANCE (IMPORTANT):

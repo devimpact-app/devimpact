@@ -37,6 +37,7 @@ export function WeeklySummaryDashboardCard({
       return 'generating' as const;
     if (summary.status === 'failed') return 'failed' as const;
     if (summary.status === 'ready') return 'ready' as const;
+    if (summary.status === 'skipped') return 'skipped' as const;
 
     return 'empty' as const;
   }, [error, isLoading, summary]);
@@ -81,6 +82,9 @@ export function WeeklySummaryDashboardCard({
             {state === 'empty' ? (
               <StatusPill kind="neutral" label="Not created yet" />
             ) : null}
+            {state === 'skipped' ? (
+              <StatusPill kind="neutral" label="Skipped" />
+            ) : null}
             {state === 'loading' ? (
               <StatusPill kind="neutral" label="Loading" />
             ) : null}
@@ -103,6 +107,15 @@ export function WeeklySummaryDashboardCard({
               <ActionButton href={detailHref} variant="primary">
                 View <ArrowRight className="h-4 w-4" />
               </ActionButton>
+              <ActionButton variant="secondary" href={allSummariesHref}>
+                <List className="h-4 w-4" />
+                See all summaries
+              </ActionButton>
+            </>
+          ) : null}
+
+          {state === 'skipped' ? (
+            <>
               <ActionButton variant="secondary" href={allSummariesHref}>
                 <List className="h-4 w-4" />
                 See all summaries
@@ -179,6 +192,20 @@ export function WeeklySummaryDashboardCard({
             calendar activity. You can create last week's summary now, or wait
             for the next scheduled run.
           </p>
+        </div>
+      ) : null}
+
+      {state === 'skipped' && summary ? (
+        <div className="text-[13px] leading-relaxed text-white/70">
+          <p>
+            There wasn’t enough activity last week to generate a meaningful
+            summary. DevImpact creates weekly summaries only when there’s
+            something worth capturing.
+          </p>
+          <WeeklySummaryActivitySnippet
+            activity={summary.activity}
+            summaryId={summary.id}
+          />
         </div>
       ) : null}
 

@@ -66,8 +66,8 @@ export type UpcomingCalendarEvent = z.infer<typeof UpcomingCalendarEventSchema>;
 
 export const UpcomingCalendarEventsResponseSchema = z.object({
   nowISO: z.string(),
-  lookaheadDays: z.number().int().positive(),
   items: z.array(UpcomingCalendarEventSchema),
+  nextPrepSupported: UpcomingCalendarEventSchema.optional(),
   calendarConnected: z.boolean(),
   refreshed: z.boolean(),
 });
@@ -196,3 +196,8 @@ export const PrepItemListResponse = z.object({
   nextCursor: z.string().nullable().optional(),
 });
 export type TPrepItemListResponse = z.infer<typeof PrepItemListResponse>;
+
+export const UpdatePrepItemInput = z.object({
+  status: PrepItemStatusEnum.optional(),
+});
+export type TUpdatePrepItemInput = z.infer<typeof UpdatePrepItemInput>;

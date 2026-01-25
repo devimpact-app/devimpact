@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { EventRow } from './EventRow';
 import { PrepDashboardQuickActions } from './QuickActions';
 import { ActionButton } from '../../../../../components/ui/ActionButton';
+import { formatDateTime } from '@/lib/utils/date';
 
 type UpcomingPrepCardProps = {
   calendarConnected: boolean;
   events: UpcomingCalendarEvent[];
+  nextPrepSupported?: UpcomingCalendarEvent;
   isLoading?: boolean;
   error?: string | null;
   hideOpen?: boolean;
@@ -86,16 +88,37 @@ function CalendarConnectFooter() {
   );
 }
 
-function EmptyCalendarState({ hideOpen }: { hideOpen?: boolean }) {
+function EmptyCalendarState({
+  hideOpen,
+  nextPrepSupported,
+}: {
+  hideOpen?: boolean;
+  nextPrepSupported?: UpcomingCalendarEvent;
+}) {
+  const hasNext = !!nextPrepSupported;
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm text-white/85 font-medium">
-          No meetings coming up
+          {hasNext ? 'Nothing to prep today' : 'No meetings coming up'}
         </p>
-        <p className="mt-1 text-[11px] text-white/45 leading-snug">
-          If something lands on your calendar, it’ll show up here with a prep
-          shortcut.
+        <p className="mt-1 text-[13px] text-white/45 leading-snug">
+          {hasNext ? (
+            <>
+              Your next prep-supported meeting is{' '}
+              <span className="text-white/65">{nextPrepSupported!.title}</span>{' '}
+              on{' '}
+              <span className="text-white/65">
+                {formatDateTime(nextPrepSupported!.startAtISO)}
+              </span>
+              .
+            </>
+          ) : (
+            <>
+              If something lands on your calendar, it’ll show up here with a
+              prep shortcut.
+            </>
+          )}
         </p>
       </div>
 
@@ -120,6 +143,7 @@ function EmptyCalendarState({ hideOpen }: { hideOpen?: boolean }) {
 export function UpcomingPrepCard({
   calendarConnected,
   events,
+  nextPrepSupported,
   isLoading,
   error,
   hideOpen = false,
@@ -179,7 +203,10 @@ export function UpcomingPrepCard({
             <ErrorState message={error} />
           ) : calendarConnected ? (
             !hasEvents ? (
-              <EmptyCalendarState hideOpen={hideOpen} />
+              <EmptyCalendarState
+                hideOpen={hideOpen}
+                nextPrepSupported={nextPrepSupported}
+              />
             ) : (
               <EventList events={events} />
             )

@@ -129,12 +129,6 @@ export function ThreadDetailPage({
                         Archived
                       </span>
                     ) : null}
-
-                    {confidence ? (
-                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/70">
-                        Confidence {confidence}
-                      </span>
-                    ) : null}
                   </div>
 
                   <h1 className="mt-2 truncate text-xl font-semibold tracking-tight sm:text-2xl">
@@ -179,9 +173,9 @@ export function ThreadDetailPage({
             </div>
 
             <div className="mt-5 rounded-2xl border border-white/10 bg-slate-900/30 p-4 backdrop-blur">
-              <div className="flex flex-row">
-                <div className="text-xs font-medium text-white/80 mr-1">
-                  Summary
+              <div className="flex flex-row items-center">
+                <div className="text-[13px] font-medium text-white/80 mr-1">
+                  Highlights
                 </div>
                 <div className="text-xs font-medium text-white/40">
                   {lastGeneratedAt
@@ -189,19 +183,22 @@ export function ThreadDetailPage({
                     : ''}
                 </div>
               </div>
-              <div className="mt-2 text-[13px] leading-relaxed text-white/70">
+              <div className="text-xs mt-1 mb-4 font-medium text-white/50">
+                Auto-generated summary of this thread
+              </div>
+              <div className="mt-2 text-sm leading-relaxed text-white/70">
                 {t.summaryHeadline?.trim() ? (
                   <p>{t.summaryHeadline}</p>
                 ) : (
                   <p className="text-white/45">No summary yet.</p>
                 )}
-                <ul className="mt-2 space-y-2 pl-5 list-disc">
+                <ul className="mt-3 space-y-2">
                   {bullets.map((b) => (
-                    <li
-                      key={b.id}
-                      className="text-[13px] leading-relaxed text-white/70"
-                    >
-                      {b.text}
+                    <li key={b.id} className="flex gap-3">
+                      <span className="mt-1 w-[2px] rounded-full bg-white/30" />
+                      <span className="text-sm leading-relaxed text-white/70">
+                        {b.text}
+                      </span>
                     </li>
                   ))}
                 </ul>

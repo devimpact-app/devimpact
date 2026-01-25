@@ -37,7 +37,7 @@ export function ThreadsSection({
               Recent Work Threads
             </h2>
             <span className="text-xs text-white/40">
-              Showing 3 of {totalThreads}
+              Showing {threads.length} of {totalThreads}
             </span>
           </div>
 
@@ -84,7 +84,7 @@ export function ThreadsSection({
             Load more
           </button>
         </div>
-      ) : onViewAll ? (
+      ) : onViewAll && !isLoading && hasMore ? (
         <button
           className="mt-2 text-white/70 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-3 hover:bg-white/[0.03] hover:text-white
 hover:border-white/20"

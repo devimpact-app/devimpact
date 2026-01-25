@@ -75,15 +75,8 @@ ${!step4Enabled ? 'opacity-40 pointer-events-none' : ''}
 
               <p className="text-sm text-text-secondary leading-snug">
                 We only read PRs, reviews, and commits for the repo you choose
-                via <code className="text-xs">gh api</code>. You can see every
-                call in your terminal and stop syncing at any time.
-              </p>
-
-              <p className="text-sm text-text-secondary leading-snug">
-                Once this finishes, your dashboard will unlock with your{' '}
-                <span className="font-medium">weekly pulse</span>,{' '}
-                <span className="font-medium">work rhythm heatmap</span>, and{' '}
-                <span className="font-medium">1:1 prep view</span>.
+                via <code className="text-xs">gh api</code>. You can see the
+                progress in your terminal and stop syncing at any time.
               </p>
             </>
           ) : repoSelectionSupported && hasSelectedRepos ? (
@@ -99,10 +92,6 @@ ${!step4Enabled ? 'opacity-40 pointer-events-none' : ''}
                 them to your account. You stay in control of your GitHub auth
                 and can revoke access at any time.
               </p>
-              <p className="text-sm text-text-secondary leading-snug">
-                After your first sync, DevImpact will start building your work
-                timeline from code activity.
-              </p>
             </>
           ) : (
             <>
@@ -117,10 +106,6 @@ ${!step4Enabled ? 'opacity-40 pointer-events-none' : ''}
                 read metadata about your PRs, reviews, and commits and attach
                 them to your account. You stay in control of your GitHub auth
                 and can revoke access at any time.
-              </p>
-              <p className="text-sm text-text-secondary leading-snug">
-                After your first sync, head to the Dashboard to see your
-                activity timeline, highlights, and work rhythm.
               </p>
             </>
           )}

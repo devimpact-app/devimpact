@@ -10,6 +10,7 @@ export async function attachPrepLinks({
   tenantId: string;
   events: UpcomingCalendarEvent[];
 }): Promise<UpcomingCalendarEvent[]> {
+  if (events.length === 0) return events;
   const googleEventIds = events.map((e) => e.googleEventId);
   const existingPrep = await db
     .select({

@@ -127,7 +127,7 @@ export default function PrepClient({ user }: Props) {
         <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/80 shadow-sm shadow-black/40">
           {loading ? (
             <div className="px-4 py-6 text-xs text-slate-400 animate-pulse">
-              Loading your past 1:1 preps…
+              Loading your past preps…
             </div>
           ) : !items || items.length === 0 ? (
             <div className="px-4 py-6 text-xs text-slate-400">
@@ -168,7 +168,7 @@ export default function PrepClient({ user }: Props) {
                       ].join(' ')}
                     >
                       <td className="px-4 py-3 text-slate-100">
-                        {item.title || 'Untitled 1:1 prep'}
+                        {item.title || 'Untitled meeting prep'}
                       </td>
                       <td className="px-4 py-3 text-slate-300">
                         {item.startAt ? formatDateTime(item.startAt) : '—'}
