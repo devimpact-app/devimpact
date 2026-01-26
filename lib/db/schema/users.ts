@@ -1,16 +1,17 @@
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm'
+import { SetupStateV1 } from '@/types/api/cli';
+import { InferSelectModel } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
   text,
   timestamp,
   unique,
-  index,
   boolean,
-} from 'drizzle-orm/pg-core'
+  jsonb,
+} from 'drizzle-orm/pg-core';
 
-export type Provider = 'github'
-export type TokenType = 'oauth'
+export type Provider = 'github' | 'gcal';
+export type TokenType = 'oauth';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -27,9 +28,27 @@ export const users = pgTable('users', {
   coverageStartDate: timestamp('coverage_start_date', { withTimezone: true }),
   // Are they an approved user
   betaAllowed: boolean('beta_allowed').default(false),
-})
+  // Preferences
+  weeklySummaryEmailEnabled: boolean('weekly_summary_email_enabled')
+    .notNull()
+    .default(true),
+  timezone: text('timezone'),
+  setupState: jsonb('setup_state')
+    .$type<SetupStateV1>()
+    .notNull()
+    .default({
+      v: 1,
+      github: {
+        cliTokenGenerated: false,
+        cliTokenLinked: false,
+      },
+      bootstrapRecent: { status: 'not_started' },
+      backfill90d: { status: 'not_started' },
+      ready: false,
+    }),
+});
 
-export type User = InferSelectModel<typeof users>
+export type User = InferSelectModel<typeof users>;
 
 export const integrationTokens = pgTable(
   'integration_tokens',
@@ -42,6 +61,9 @@ export const integrationTokens = pgTable(
     tokenType: text('token_type').notNull(),
     accessToken: text('access_token').notNull(),
     refreshToken: text('refresh_token'),
+    tokenEncKid: text('token_enc_kid').notNull().default('v1'),
+    accessTokenEnc: text('access_token_enc'),
+    refreshTokenEnc: text('refresh_token_enc'),
     expiresAt: timestamp('expires_at'),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
@@ -53,6 +75,6 @@ export const integrationTokens = pgTable(
       table.tokenType
     ),
   })
-)
+);
 
-export type IntegrationToken = InferSelectModel<typeof integrationTokens>
+export type IntegrationToken = InferSelectModel<typeof integrationTokens>;

@@ -197,6 +197,7 @@ export const githubReviews = pgTable(
 );
 
 export type GithubReview = typeof githubReviews.$inferSelect;
+export type NewGithubReview = typeof githubReviews.$inferInsert;
 
 export const githubReviewComments = pgTable(
   'github_review_comments',

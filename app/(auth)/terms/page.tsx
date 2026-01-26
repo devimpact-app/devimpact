@@ -36,7 +36,7 @@ export default function TermsPage() {
             DevImpact analyzes activity data you choose to connect—such as
             GitHub metadata (pull requests, reviews, comments, and related
             metadata) and, if you enable it, Google Calendar read-only event
-            metadata—to generate insights, summaries, and work patterns.
+            metadata—to create insights, summaries, and work patterns.
           </p>
           <p>DevImpact does not modify your GitHub or Google Calendar data.</p>
         </section>

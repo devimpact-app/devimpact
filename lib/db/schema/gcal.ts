@@ -58,6 +58,7 @@ export const calendarSyncStatusEnum = pgEnum('calendar_sync_status', [
 export const calendarSyncModeEnum = pgEnum('calendar_sync_mode', [
   'initial', // first-ever backfill
   'manual', // user-triggered
+  'dashboard_refresh',
   'scheduled', // future
 ]);
 
@@ -130,7 +131,7 @@ export const calendarEvents = pgTable(
     originalStartAt: timestamp('original_start_at', { withTimezone: true }),
     isAllDay: boolean('is_all_day').notNull().default(false),
     eventTimeZone: text('event_time_zone'),
-    titleRedacted: text('title_redacted'), // only keywords
+    title: text('title_redacted'), // only keywords
 
     attendeesTotal: integer('attendees_total').notNull().default(0),
     attendeesAccepted: integer('attendees_accepted').notNull().default(0),
@@ -171,3 +172,4 @@ export const calendarEvents = pgTable(
 );
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type NewCalendarEvent = typeof calendarEvents.$inferInsert;

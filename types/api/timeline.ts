@@ -6,9 +6,10 @@ export const ActivityEventKindSchema = z.enum([
   'pr_commit',
   'commit_cluster',
   'review_submitted',
+  'meeting',
 ]);
 
-export const ActivitySourceSchema = z.enum(['github']);
+export const ActivitySourceSchema = z.enum(['github', 'gcal']);
 
 export const ActivityEventMetaSchema = z
   .object({
@@ -22,6 +23,11 @@ export const ActivityEventMetaSchema = z
     isFirstResponder: z.boolean().optional(),
     stateLabel: z.string().optional(), // "merged", "open", etc.
     commitCount: z.number().int().optional(),
+    // Meeting data
+    endAt: z.iso.datetime().optional(),
+    eventTitle: z.string().optional(),
+    isAllDay: z.boolean().optional(),
+    meetingKind: z.enum(['meeting', 'ooo', 'all_day']).optional(),
   })
   .optional();
 
@@ -36,25 +42,20 @@ export const ActivityEventSchema = z.object({
   kind: ActivityEventKindSchema,
   source: ActivitySourceSchema,
   occurredAt: z.string().datetime(), // ISO string
-
   actor: z.object({
     login: z.string(),
     avatarUrl: z.string().url().optional(),
   }),
-
   title: z.string(),
   subtitle: z.string().optional(),
-
   meta: ActivityEventMetaSchema,
   links: ActivityEventLinksSchema,
 });
 
-// Response wrapper if you want a standard shape
 export const ActivityEventsResponseSchema = z.object({
   events: z.array(ActivityEventSchema),
 });
 
-// TS inferred types
 export type ActivityEventKind = z.infer<typeof ActivityEventKindSchema>;
 export type ActivitySource = z.infer<typeof ActivitySourceSchema>;
 export type ActivityEvent = z.infer<typeof ActivityEventSchema>;

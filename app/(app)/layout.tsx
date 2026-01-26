@@ -27,6 +27,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const state = user.onboardingState ?? null;
   if (state !== 'synced') redirect('/onboarding');
 
+  const bootstrapLoading =
+    user.setupState.bootstrapRecent.status !== 'succeeded' ||
+    !user.setupState.ready;
+  if (bootstrapLoading) {
+    redirect('/onboarding/loading');
+  }
+
   return (
     <SentryUserBridge
       user={{

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Calendar, MoreHorizontal } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Calendar, MoreHorizontal } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
   userName?: string | null;
@@ -18,8 +18,8 @@ export function PrepHero({
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const firstName = useMemo(
-    () => (userName ? userName.split(" ")[0] : "there"),
-    [userName],
+    () => (userName ? userName.split(' ')[0] : 'there'),
+    [userName]
   );
 
   useEffect(() => {
@@ -30,8 +30,8 @@ export function PrepHero({
         setMenuOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
   return (
@@ -39,11 +39,11 @@ export function PrepHero({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
-            Prepare for reviews and growth
+            Meeting hub
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Your centralized space for review packets, 1:1 preparation, career
-            narratives, and job-search readiness.
+            Your centralized space to prepare and reflect on meetings like
+            standups, 1:1s, and sprint rituals
           </p>
         </div>
 

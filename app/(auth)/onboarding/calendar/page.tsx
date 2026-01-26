@@ -30,11 +30,11 @@ export default async function CalendarSetupPage({
         <header className="flex flex-col mb-10 gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">
-              Connect your calendar (optional)
+              Connect your calendar (recommended)
             </h1>
             <p className="mt-2 text-sm text-text-secondary max-w-xl">
-              Add calendar context to understand meeting load and focus time
-              alongside your GitHub activity.
+              DevImpact uses your calendar to power automatic meeting prep and
+              provide context for your work — alongside your GitHub activity.
             </p>
           </div>
         </header>

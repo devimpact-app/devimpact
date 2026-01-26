@@ -1,0 +1,19 @@
+{
+  "scenario": {
+    "id": "avg_senior_engineer_90d_v1",
+    "title": "Average Senior Engineer – 90 days",
+    "durationDays": 90,
+    "seedVersion": 1
+  },
+  "projects": [
+    { "key": "prep_threads", "title": "Prep + Threads Foundation" },
+    { "key": "timeline", "title": "Timeline & accomplishment surfaces" },
+    { "key": "on_call_week", "title": "On-call Week" },
+    { "key": "export", "title": "export & career artifacts" }
+  ],
+  "inputs": {
+    "pullRequests": "./pull_requests.json",
+    "reviews": "./reviews.json",
+    "meetings": "./meetings.json"
+  }
+}

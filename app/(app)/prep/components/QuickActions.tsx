@@ -2,36 +2,29 @@
 
 import { ReactNode } from 'react';
 import {
-  ClipboardList,
   MessageSquare,
-  ArrowUpCircle,
-  Briefcase,
-  Sparkles,
   Hourglass,
   ChevronRight,
+  Calendar1,
+  ListChecks,
+  RotateCcw,
 } from 'lucide-react';
 
 type QuickActionsProps = {
-  onPerformanceReviewClick?: () => void;
   onOneOnOnePrepClick?: () => void;
-  onPromotionPrepClick?: () => void;
-  onJobSearchPrepClick?: () => void;
-  onCustomPacketClick?: () => void;
+  onStandupPrepClick?: () => void;
+  onRetroPrepClick?: () => void;
+  onPlanningPrepClick?: () => void;
+  disableActions: boolean;
 };
 
-type ActionKey =
-  | 'performance_review'
-  | 'one_on_one'
-  | 'promotion'
-  | 'job_search'
-  | 'custom_packet';
+type ActionKey = 'one_on_one' | 'standup' | 'retro' | 'planning';
 
 type ActionConfig = {
   key: ActionKey;
   label: string;
   description: string;
   icon: ReactNode;
-  // whether this is fully implemented or not
   status: 'ready' | 'coming_soon';
   primaryCtaLabel: string;
 };
@@ -47,59 +40,56 @@ const ACTIONS: ActionConfig[] = [
     primaryCtaLabel: 'Open 1:1 prep',
   },
   {
-    key: 'performance_review',
-    label: 'Performance review packet',
+    key: 'standup',
+    label: 'Prep for team standup',
     description:
-      'Summarize your recent work, impact, and feedback into a clean packet you can share.',
-    icon: <ClipboardList className="h-5 w-5" />,
-    status: 'coming_soon',
-    primaryCtaLabel: 'Start review packet (soon)',
+      'Summarize what happened yesterday, what today will look like, and any notable blockers',
+    icon: <Calendar1 className="h-5 w-5" />,
+    status: 'ready',
+    primaryCtaLabel: 'Open standup prep',
   },
-  // {
-  //   key: 'promotion',
-  //   label: 'Promotion readiness',
-  //   description:
-  //     'Map your recent work to expectations for the next level and spot evidence gaps.',
-  //   icon: <ArrowUpCircle className="h-5 w-5" />,
-  //   status: 'coming_soon',
-  //   primaryCtaLabel: 'View readiness (soon)',
-  // },
   {
-    key: 'job_search',
-    label: 'Job search packet',
+    key: 'planning',
+    label: 'Prep for sprint planning',
     description:
-      'Turn your real work into interview-ready stories, highlights, and impact summaries.',
-    icon: <Briefcase className="h-5 w-5" />,
+      'Review recent work, capacity constraints, and upcoming commitments before planning the next sprint.',
+    icon: <ListChecks className="h-5 w-5" />,
     status: 'coming_soon',
-    primaryCtaLabel: 'Build packet (soon)',
+    primaryCtaLabel: 'Open planning prep',
+  },
+  {
+    key: 'retro',
+    label: 'Prep for sprint retro',
+    description:
+      'Reflect on what went well, what slowed things down, and which improvements are worth carrying forward.',
+    icon: <RotateCcw className="h-5 w-5" />,
+    status: 'coming_soon',
+    primaryCtaLabel: 'Open retro prep',
   },
 ];
 
 export function PrepQuickActions({
-  onPerformanceReviewClick,
   onOneOnOnePrepClick,
-  onPromotionPrepClick,
-  onJobSearchPrepClick,
-  onCustomPacketClick,
+  onStandupPrepClick,
+  onRetroPrepClick,
+  onPlanningPrepClick,
+  disableActions,
 }: QuickActionsProps) {
   const handleClick = (key: ActionKey, status: ActionConfig['status']) => {
     if (status === 'coming_soon') return; // no-op for now
 
     switch (key) {
-      case 'performance_review':
-        onPerformanceReviewClick?.();
+      case 'standup':
+        onStandupPrepClick?.();
         break;
       case 'one_on_one':
         onOneOnOnePrepClick?.();
         break;
-      case 'promotion':
-        onPromotionPrepClick?.();
+      case 'retro':
+        onRetroPrepClick?.();
         break;
-      case 'job_search':
-        onJobSearchPrepClick?.();
-        break;
-      case 'custom_packet':
-        onCustomPacketClick?.();
+      case 'planning':
+        onPlanningPrepClick?.();
         break;
     }
   };
@@ -122,9 +112,9 @@ export function PrepQuickActions({
 
       <div className="relative my-3 h-px bg-gradient-to-r from-transparent via-[#2A3350] to-transparent" />
 
-      <div className="relative grid gap-6 pt-2 md:grid-cols-2 xl:grid-cols-3">
+      <div className="relative grid gap-6 pt-2 md:grid-cols-3 xl:grid-cols-4">
         {ACTIONS.map((action) => {
-          const isDisabled = action.status === 'coming_soon';
+          const isDisabled = action.status === 'coming_soon' || disableActions;
 
           return (
             <button
@@ -178,14 +168,14 @@ export function PrepQuickActions({
                 )}
               </div>
 
-              <p className="mt-4 text-[11px] leading-snug text-[#A1A8C7]">
+              <p className="my-4 text-[13px] leading-snug text-[#A1A8C7]">
                 {action.description}
               </p>
 
               <span
                 className={`
-                  mt-4 inline-flex items-center gap-1.5 rounded-full 
-                  border px-2.5 py-1.5 text-[11px] font-medium
+                  mt-auto inline-flex items-center gap-1.5 rounded-full 
+                  border px-2.5 py-1.5 text-xs font-medium
                   ${
                     isDisabled
                       ? 'border-[#30384A] bg-[#151925] text-[#737A94]'

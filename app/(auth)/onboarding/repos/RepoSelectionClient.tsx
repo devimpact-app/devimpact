@@ -225,7 +225,7 @@ export default function RepoSelectionClient({
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 sm:w-64"
             />
-            <div className="flex gap-2 text-[11px] text-slate-400">
+            <div className="flex gap-2 text-xs text-slate-400">
               <button
                 type="button"
                 className="rounded-full border border-slate-700/80 px-2 py-[3px] hover:bg-slate-800"
@@ -263,9 +263,7 @@ export default function RepoSelectionClient({
                         checked={repo.isSelected}
                         onChange={() => toggleRepo(repo.id)}
                       />
-                      <span className="font-mono text-[11px]">
-                        {repo.fullName}
-                      </span>
+                      <span className="font-mono text-xs">{repo.fullName}</span>
                     </div>
                     <div className="flex items-center gap-3 text-[10px] text-slate-500">
                       {repo.isPrivate && (
@@ -289,7 +287,7 @@ export default function RepoSelectionClient({
         {error && <p className="mt-3 text-xs text-red-300">{error}</p>}
 
         <div className="mt-5 flex flex-col gap-2 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[11px] text-slate-400">
+          <p className="text-xs text-slate-400">
             When you run{' '}
             <code className="rounded bg-slate-950 px-1 py-[1px] font-mono">
               devimpact sync

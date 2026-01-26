@@ -1,4 +1,3 @@
-import FAQ from '@/components/landing/Faq';
 import Features from '@/components/landing/Features';
 import Footer from '@/components/landing/Footer';
 import { HeroSection } from '@/components/landing/Hero';
@@ -12,7 +11,6 @@ export default function LandingPage() {
       <HeroSection />
       <Features />
       <HowItWorks />
-      <FAQ />
       <Footer />
     </div>
   );

@@ -7,8 +7,8 @@ import {
   jsonServerError,
 } from '@/app/api/_lib/http';
 import { withSentryUser } from '@/lib/withSentryUser';
-import { batchNormalizeUserPRs } from '@/lib/analysis/normalizers/pr-normalizer';
-import { batchNormalizeUserReviews } from '@/lib/analysis/normalizers/review-normalizer';
+import { batchNormalizeUserPRs } from '@/lib/domains/pull-requests/service/normalization/pr-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/pull-requests/service/normalization/review-normalizer';
 
 const ADMIN_TENANT_ID = 'f7586fab-ea2d-4a9d-be3c-04be29ba071e';
 
@@ -33,8 +33,8 @@ export const GET = withSentryUser(async (req: NextRequest) => {
 
     const startedAt = Date.now();
 
-    const normalizedPrIds = await batchNormalizeUserPRs(tenantId, username);
-    await batchNormalizeUserReviews(tenantId, username, normalizedPrIds);
+    await batchNormalizeUserPRs(tenantId, username);
+    await batchNormalizeUserReviews(tenantId, username);
 
     return jsonOK({
       ok: true,

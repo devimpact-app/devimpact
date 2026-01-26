@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
-import { integrationTokens } from '@/lib/db/schema';
+import { integrationTokens, users } from '@/lib/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 import { listCalendarsWithToken } from '@/lib/integrations/gcal/api';
 import { GoogleCalendarListItem } from '@/lib/integrations/gcal/types';
 import { calendarSelections } from '@/lib/db/schema/gcal';
+import { encryptTokenPacked } from '@/lib/utils/crypto';
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -112,14 +113,20 @@ export async function GET(req: NextRequest) {
   const refreshToken =
     tokens.refresh_token ?? existing[0]?.refreshToken ?? null;
 
+  const accessTokenEnc = encryptTokenPacked(tokens.access_token, 'v1');
+  const refreshTokenEnc = refreshToken
+    ? encryptTokenPacked(refreshToken, 'v1')
+    : null;
   const [savedToken] = await db
     .insert(integrationTokens)
     .values({
       userId: session.user.id,
       provider: 'google_calendar',
       tokenType: 'oauth',
-      accessToken: tokens.access_token,
-      refreshToken,
+      accessToken: '',
+      accessTokenEnc,
+      refreshTokenEnc,
+      tokenEncKid: 'v1',
       expiresAt,
     })
     .onConflictDoUpdate({
@@ -129,8 +136,9 @@ export async function GET(req: NextRequest) {
         integrationTokens.tokenType,
       ],
       set: {
-        accessToken: tokens.access_token,
-        refreshToken,
+        accessToken: '',
+        accessTokenEnc,
+        refreshTokenEnc,
         expiresAt,
         updatedAt: new Date(),
       },
@@ -141,6 +149,31 @@ export async function GET(req: NextRequest) {
   if (!integrationTokenId) {
     return handleError(redirectBase, 'token_save_failed');
   }
+
+  const nowISO = new Date().toISOString();
+
+  await db
+    .update(users)
+    .set({
+      setupState: sql`
+      jsonb_set(
+        jsonb_set(
+          COALESCE(${users.setupState}, '{"v":1}'::jsonb),
+          '{gcal}',
+          jsonb_build_object(
+            'connected', true,
+            'lastSyncAt', COALESCE((${users.setupState} #>> '{gcal,lastSyncAt}'), NULL)
+          ),
+          true
+        ),
+        '{updatedAt}',
+        to_jsonb(${nowISO}::text),
+        true
+      )
+    `,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, session.user.id));
 
   let calendars: GoogleCalendarListItem[] = [];
   try {

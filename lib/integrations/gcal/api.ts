@@ -54,7 +54,44 @@ export async function listCalendars(userId: string) {
 const MAX_PAGES = 20;
 const MAX_EVENTS = 10_000;
 
-export async function listEvents(
+type ListEventsParams = {
+  calendarId: string;
+  pageSize?: number;
+  pageToken?: string;
+  // windowed
+  timeMinISO?: string;
+  timeMaxISO?: string;
+  // behavior
+  singleEvents?: boolean;
+  showDeleted?: boolean;
+  orderBy?: 'startTime' | undefined;
+};
+
+async function listEventsPaged(
+  accessToken: string,
+  params: ListEventsParams
+): Promise<GoogleEventsListResponse> {
+  const url = new URL(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
+      params.calendarId
+    )}/events`
+  );
+
+  if (params.timeMinISO) url.searchParams.set('timeMin', params.timeMinISO);
+  if (params.timeMaxISO) url.searchParams.set('timeMax', params.timeMaxISO);
+
+  url.searchParams.set('singleEvents', String(params.singleEvents ?? true));
+  url.searchParams.set('showDeleted', String(params.showDeleted ?? false));
+  url.searchParams.set('maxResults', String(params.pageSize ?? 250));
+
+  if (params.orderBy) url.searchParams.set('orderBy', params.orderBy);
+
+  if (params.pageToken) url.searchParams.set('pageToken', params.pageToken);
+
+  return googleFetch<GoogleEventsListResponse>(accessToken, url.toString());
+}
+
+export async function listEventsWindow(
   userId: string,
   calendarId: string,
   opts: {
@@ -70,34 +107,33 @@ export async function listEvents(
   let pageToken: string | undefined;
 
   for (let i = 0; i < MAX_PAGES; i++) {
-    const url = new URL(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-        calendarId
-      )}/events`
-    );
-
-    url.searchParams.set('timeMin', opts.timeMinISO);
-    url.searchParams.set('timeMax', opts.timeMaxISO);
-    url.searchParams.set('singleEvents', 'true');
-    url.searchParams.set('orderBy', 'startTime');
-    url.searchParams.set('maxResults', String(opts.pageSize ?? 250));
-    url.searchParams.set('showDeleted', 'false');
-
-    if (pageToken) url.searchParams.set('pageToken', pageToken);
-
-    const resp = await googleFetch<GoogleEventsListResponse>(
-      accessToken,
-      url.toString()
-    );
+    const resp = await listEventsPaged(accessToken, {
+      calendarId,
+      timeMinISO: opts.timeMinISO,
+      timeMaxISO: opts.timeMaxISO,
+      pageSize: opts.pageSize,
+      pageToken,
+      singleEvents: true,
+      showDeleted: false,
+      orderBy: 'startTime',
+    });
 
     if (resp.items?.length) {
       all.push(...resp.items);
       if (all.length >= MAX_EVENTS) break;
     }
-    if (!resp.nextPageToken) break;
+    if (!resp.nextPageToken) {
+      return {
+        items: all,
+        truncated: all.length >= MAX_EVENTS,
+      };
+    }
 
     pageToken = resp.nextPageToken;
   }
 
-  return { items: all, truncated: all.length >= MAX_EVENTS };
+  return {
+    items: all,
+    truncated: true,
+  };
 }

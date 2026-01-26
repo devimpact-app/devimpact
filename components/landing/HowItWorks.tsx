@@ -7,10 +7,10 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-5xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-text-primary">
-            How the beta works
+            How it works
           </h2>
           <p className="mt-3 text-text-secondary text-lg">
-            Set up in minutes. Get a clear view of your time, focus, and impact.
+            Set up is clear and takes less than 5 minutes
           </p>
         </div>
 
@@ -23,13 +23,15 @@ export default function HowItWorks() {
               Connect your work data (2-5 mins)
             </h3>
             <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>• Sign in with Github (work or personal)</li>
-              <li>• Run the CLI once to sync your activity metadata</li>
+              <li>• Sign in with Github</li>
+              <li>• Run a quick sync to pull recent work</li>
               <li>
-                • Optional: connect Google Calendar to map meeting load + deep
-                work time
+                • Optionally connect Google Calendar to improve context and
+                preparation
               </li>
-              <li>• Your data stays private - no team setup, no managers </li>
+              <li>
+                <b>• Private by default — no team setup, no managers</b>
+              </li>
             </ul>
           </li>
 
@@ -38,20 +40,21 @@ export default function HowItWorks() {
               2
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Get your leverage signals
+              Get a clearer picture of your work
             </h3>
-            <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>• Your work rhythm: where focus time actually happens</li>
+            <p className="text-sm text-text-secondary mt-4">
+              See how your work, meetings, and follow-ups actually add up over
+              time — without having to reconstruct it yourself.
+            </p>
+            {/* <ul className="mt-4 space-y-1 text-sm text-text-secondary">
+              <li>• Where your best focus time actually happens</li>
+              <li>• How meetings and reviews reshape your week</li>
               <li>
-                • Meeting pressure overlay (calendar beta) + deep work blocks
+                • A weekly record of shipped work and follow-ups — delivered to
+                your inbox
               </li>
-              <li>
-                • Weekly summary: shipped work + follow-ups you can use in 1:1s
-              </li>
-              <li>
-                • Trends over time (Ex: drift toward coordination vs building)
-              </li>
-            </ul>
+              <li>• Early signs of drift before they surface in reviews</li>
+            </ul> */}
           </li>
 
           <li className="group rounded-xl border border-border bg-surface p-6 transition-shadow hover:shadow-[0_0_0_1px_var(--color-accent)]">
@@ -59,22 +62,22 @@ export default function HowItWorks() {
               3
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Use it before 1:1s, reviews, and planning
+              Walk into meetings prepared
             </h3>
-            <ul className="mt-4 space-y-1 text-sm text-text-secondary">
+            <p className="text-sm text-text-secondary mt-4">
+              Go into 1:1s and standups with clear talking points, grounded in
+              what you’ve actually been working on.
+            </p>
+            {/* <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>
-                • Walk into 1:1s with a clean narrative: wins, blockers, themes
+                • Go into 1:1s with a clear narrative: wins, blockers, themes
               </li>
               <li>
-                • Spot what’s blocking output: meetings, review load, context
+                • Show what’s blocking output: meetings, review load, context
                 switching
               </li>
-              <li>
-                • Protect your best windows and adjust your week before it
-                drifts
-              </li>
-              <li>• Export/share a packet (optional — coming soon)</li>
-            </ul>
+              <li>• Build a running record you can reuse when it matters</li>
+            </ul> */}
           </li>
         </ol>
       </div>

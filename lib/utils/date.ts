@@ -1,5 +1,12 @@
+import { format, isSameMinute, isValid } from 'date-fns';
+
 export function toDate(d: Date | string): Date {
   return d instanceof Date ? d : new Date(d);
+}
+
+export function toIso(d: Date | null | undefined): string | null {
+  if (!d) return null;
+  return d.toISOString();
 }
 
 export function formatDateTime(iso: string | Date | null) {
@@ -14,6 +21,35 @@ export function formatDateTime(iso: string | Date | null) {
     hour: 'numeric',
     minute: '2-digit',
   }).format(d);
+}
+
+export function formatDateOnly(iso: string | Date | null) {
+  if (!iso) return null;
+  const d = typeof iso === 'string' ? new Date(iso) : iso;
+  if (Number.isNaN(d.getTime())) return null;
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+  }).format(d);
+}
+
+export function formatUpcomingTime(startIso: string) {
+  const d = new Date(startIso);
+  const now = new Date();
+  const diffMin = Math.round((d.getTime() - now.getTime()) / 60000);
+
+  if (diffMin >= 0 && diffMin < 60) return `In ${diffMin} min`;
+  if (diffMin >= 60 && diffMin < 24 * 60) {
+    const hrs = Math.round(diffMin / 60);
+    return `In ${hrs} hr${hrs === 1 ? '' : 's'}`;
+  }
+
+  return d.toLocaleString(undefined, {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export function getWeekdayIndex(value: string | Date): number {
@@ -43,6 +79,11 @@ export function minutesBetween(start: Date | null, end: Date | null) {
   if (!Number.isFinite(ms)) return null;
   const mins = Math.round(ms / 60000);
   return mins >= 0 ? mins : null;
+}
+
+export function hoursSince(a?: Date | null, now = new Date()) {
+  if (!a) return Number.POSITIVE_INFINITY;
+  return (now.getTime() - a.getTime()) / (60 * 60 * 1000);
 }
 
 /**
@@ -109,6 +150,21 @@ export function formatRange(start: Date, end: Date) {
   return ySame
     ? `${fmt.format(start)}–${fmt.format(end)}, ${y(end)}`
     : `${fmt.format(start)} ${y(start)}–${fmt.format(end)} ${y(end)}`;
+}
+
+export function formatTimeRange(start: Date, end: Date) {
+  if (isSameMinute(start, end)) return format(start, 'h:mm a');
+
+  const startMeridiem = format(start, 'a'); // AM/PM
+  const endMeridiem = format(end, 'a');
+
+  // Same AM/PM -> "1:00–1:30 PM"
+  if (startMeridiem === endMeridiem) {
+    return `${format(start, 'h:mm')}–${format(end, 'h:mm a')}`;
+  }
+
+  // Different -> "11:30 AM–1:00 PM"
+  return `${format(start, 'h:mm a')}–${format(end, 'h:mm a')}`;
 }
 
 export function getDefaultWeekOffset(): number {
@@ -190,13 +246,27 @@ export function truncateToDay(d: Date) {
   return nd;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const SECOND_MS = 1000;
+
 export function getDaysDiff(start: Date, end: Date) {
   const ms = end.getTime() - start.getTime();
-  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+  const days = Math.round(ms / DAY_MS);
   return days;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+export function getHoursDiff(start: Date, end: Date) {
+  const ms = end.getTime() - start.getTime();
+  const hours = Math.round(ms / HOUR_MS);
+  return hours;
+}
+
+export function getSecondsDiff(start: Date, end: Date) {
+  const ms = end.getTime() - start.getTime();
+  const hours = Math.round(ms / SECOND_MS);
+  return hours;
+}
 
 export function computeWindowEnd(start: Date, windowWeeks: number): Date {
   const duration = windowWeeks * 7 * DAY_MS;
@@ -221,4 +291,16 @@ export function getTimezone(): string {
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
       : 'UTC';
   return timezone;
+}
+
+export function nextHalfHourBoundary(now: Date) {
+  const d = new Date(now);
+  d.setSeconds(0, 0);
+
+  const minutes = d.getMinutes();
+  const remainder = minutes % 30;
+
+  const addMinutes = remainder === 0 ? 30 : 30 - remainder;
+  d.setMinutes(minutes + addMinutes);
+  return d;
 }

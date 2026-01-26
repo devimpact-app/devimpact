@@ -1,10 +1,6 @@
 import { minutesBetween } from '@/lib/utils/date';
 import { GoogleEventsListItem } from '../types';
-import {
-  parseGoogleDateTime,
-  redactTitle,
-  summarizeAttendees,
-} from './helpers';
+import { parseGoogleDateTime, summarizeAttendees } from './helpers';
 import { db } from '@/lib/db/client';
 import { calendarEvents } from '@/lib/db/schema/gcal';
 import { sql } from 'drizzle-orm';
@@ -74,7 +70,7 @@ export async function upsertCalendarEvents({
         isAllDay,
         eventTimeZone: tz,
 
-        titleRedacted: redactTitle(e.summary ?? null),
+        title: e.summary?.trim() ?? null,
 
         ...attendeeAgg,
         ...categoryInfo,
@@ -94,11 +90,12 @@ export async function upsertCalendarEvents({
   // chunk to avoid gigantic inserts
   const CHUNK = 500;
   let total = 0;
+  const touchedEventIds: string[] = [];
 
   for (let i = 0; i < rows.length; i += CHUNK) {
     const chunk = rows.slice(i, i + CHUNK);
 
-    await db
+    const returned = await db
       .insert(calendarEvents)
       .values(chunk)
       .onConflictDoUpdate({
@@ -122,7 +119,7 @@ export async function upsertCalendarEvents({
           originalStartAt: sql`excluded.original_start_at`,
           isAllDay: sql`excluded.is_all_day`,
           eventTimeZone: sql`excluded.event_time_zone`,
-          titleRedacted: sql`excluded.title_redacted`,
+          title: sql`excluded.title_redacted`,
 
           attendeesTotal: sql`excluded.attendees_total`,
           attendeesAccepted: sql`excluded.attendees_accepted`,
@@ -138,10 +135,12 @@ export async function upsertCalendarEvents({
           deletedAt: null, // revive if previously soft-deleted
           updatedAt: new Date(),
         },
-      });
+      })
+      .returning({ id: calendarEvents.id });
 
+    touchedEventIds.push(...returned.map((r) => r.id));
     total += chunk.length;
   }
 
-  return { upserted: total };
+  return { upserted: total, touchedEventIds };
 }

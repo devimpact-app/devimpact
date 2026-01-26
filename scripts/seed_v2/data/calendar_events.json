@@ -1,0 +1,335 @@
+{
+  "recurringSeries": [
+    {
+      "seriesKey": "standup_team_alpha",
+      "kind": "meeting",
+      "title": "Team Standup",
+      "category": "team",
+      "subtype": "standup",
+      "daysOfWeek": [0, 1, 2, 3],
+      "startTime": "09:30",
+      "durationMinutes": 15,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "planning_team_alpha",
+      "kind": "meeting",
+      "title": "Team Planning",
+      "category": "team",
+      "subtype": "planning",
+      "daysOfWeek": [0],
+      "startTime": "10:00",
+      "durationMinutes": 60,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 0,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "retro_team_alpha",
+      "kind": "meeting",
+      "title": "Team Retro",
+      "category": "team",
+      "subtype": "retro",
+      "daysOfWeek": [4],
+      "startTime": "14:00",
+      "durationMinutes": 60,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 1,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "mgr_1on1",
+      "kind": "meeting",
+      "title": "1:1 (Manager)",
+      "category": "oneOnOne",
+      "daysOfWeek": [2],
+      "startTime": "11:00",
+      "durationMinutes": 30,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 0,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "seriesKey": "peer_1on1",
+      "kind": "meeting",
+      "title": "1:1 (Peer)",
+      "category": "oneOnOne",
+      "daysOfWeek": [2],
+      "startTime": "11:00",
+      "durationMinutes": 30,
+      "window": { "startDayIndex": 0, "endDayIndex": 104 },
+      "everyNWeeks": 2,
+      "weekOffset": 1,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    }
+  ],
+  "oneOffEvents": [
+    {
+      "dayIndex": 4,
+      "kind": "meeting",
+      "title": "Design Review: Threads + Categories (v1)",
+      "category": "team",
+      "subtype": "designReview",
+      "startTime": "13:30",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 7,
+      "kind": "meeting",
+      "title": "Architecture Review: Activity Ledger + Derivation Pipeline",
+      "category": "team",
+      "subtype": "architecture",
+      "startTime": "14:00",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 12,
+      "kind": "meeting",
+      "title": "Design Review: Timeline Feed Grouping + Thread Cards",
+      "category": "team",
+      "subtype": "designReview",
+      "startTime": "15:00",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 14,
+      "kind": "meeting",
+      "title": "Demo: Threading Pipeline (Cold Start → Persisted Threads)",
+      "category": "team",
+      "subtype": "demo",
+      "startTime": "16:00",
+      "durationMinutes": 30,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": true
+    },
+    {
+      "dayIndex": 18,
+      "kind": "meeting",
+      "title": "Interview Loop: Phone Screen (Frontend)",
+      "category": "interview",
+      "startTime": "10:30",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 19,
+      "kind": "meeting",
+      "title": "Interview Loop: Onsite Panel (Systems Design)",
+      "category": "interview",
+      "startTime": "13:00",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 22,
+      "kind": "meeting",
+      "title": "Architecture Review: LLM Thread Assignment + Validation Rules",
+      "category": "team",
+      "subtype": "architecture",
+      "startTime": "11:00",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 26,
+      "kind": "meeting",
+      "title": "Org Update: Q4 Product Metrics + Roadmap",
+      "category": "org",
+      "startTime": "10:00",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+
+    {
+      "dayIndex": 29,
+      "kind": "meeting",
+      "title": "Design Review: Career Tab (Accomplishments v1)",
+      "category": "team",
+      "subtype": "designReview",
+      "startTime": "12:00",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 31,
+      "kind": "meeting",
+      "title": "Architecture Review: Timeline Read Model + Pagination Strategy",
+      "category": "team",
+      "subtype": "architecture",
+      "startTime": "14:30",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 35,
+      "kind": "meeting",
+      "title": "Demo: Timeline + Thread Detail End-to-End",
+      "category": "team",
+      "subtype": "demo",
+      "startTime": "16:30",
+      "durationMinutes": 30,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": true
+    },
+    {
+      "dayIndex": 41,
+      "kind": "meeting",
+      "title": "Status: Beta Readiness (Timeline + Career)",
+      "category": "team",
+      "subtype": "status",
+      "startTime": "10:30",
+      "durationMinutes": 30,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+
+    {
+      "dayIndex": 49,
+      "kind": "meeting",
+      "title": "On-Call Handoff: Known Issues + Alert Triage",
+      "category": "team",
+      "subtype": "status",
+      "startTime": "09:15",
+      "durationMinutes": 30,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 50,
+      "kind": "meeting",
+      "title": "Incident: API Latency + Request Pileups",
+      "category": "incident",
+      "startTime": "14:00",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 51,
+      "kind": "meeting",
+      "title": "Incident: Mitigation Review + Follow-ups",
+      "category": "incident",
+      "startTime": "11:00",
+      "durationMinutes": 30,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 52,
+      "kind": "meeting",
+      "title": "Incident Retro: API Latency (Root Cause + Action Items)",
+      "category": "incident",
+      "startTime": "15:30",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+
+    {
+      "dayIndex": 57,
+      "kind": "meeting",
+      "title": "Architecture Review: Career Export + Redaction Model",
+      "category": "team",
+      "subtype": "architecture",
+      "startTime": "10:30",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 60,
+      "kind": "meeting",
+      "title": "Design Review: Export Flow (Select → Preview → Share)",
+      "category": "team",
+      "subtype": "designReview",
+      "startTime": "13:30",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 67,
+      "kind": "meeting",
+      "title": "Org All-Hands: Security + Compliance Update",
+      "category": "org",
+      "startTime": "11:00",
+      "durationMinutes": 60,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 72,
+      "kind": "meeting",
+      "title": "Interview Loop: Onsite Panel (Behavioral)",
+      "category": "interview",
+      "startTime": "14:00",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 73,
+      "kind": "meeting",
+      "title": "Interview Loop: Onsite Panel (Hiring Manager)",
+      "category": "interview",
+      "startTime": "10:00",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 76,
+      "kind": "meeting",
+      "title": "Demo: Career Export Artifacts (PDF + Share Link)",
+      "category": "team",
+      "subtype": "demo",
+      "startTime": "16:00",
+      "durationMinutes": 30,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": true
+    },
+    {
+      "dayIndex": 83,
+      "kind": "meeting",
+      "title": "Design Review: Final Export Copy + External Share UX",
+      "category": "team",
+      "subtype": "designReview",
+      "startTime": "12:30",
+      "durationMinutes": 45,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    },
+    {
+      "dayIndex": 89,
+      "kind": "meeting",
+      "title": "Status: Beta Launch Checklist (Career + Export)",
+      "category": "team",
+      "subtype": "status",
+      "startTime": "10:30",
+      "durationMinutes": 30,
+      "selfResponseStatus": "accepted",
+      "isOrganizerSelf": false
+    }
+  ]
+}

@@ -52,11 +52,26 @@ export const POST = withSentryUser(async (req: NextRequest) => {
             onboardingState: 'cli_linked',
           }
         : {};
+
+    const nowISO = new Date().toISOString();
+
+    const prev = (user.setupState as any) ?? { v: 1 };
+    const nextSetupState = {
+      ...prev,
+      v: 1,
+      github: {
+        ...(prev.github ?? {}),
+        cliTokenLinked: true,
+        cliTokenGenerated: true,
+      },
+      updatedAt: nowISO,
+    };
     await db
       .update(users)
       .set({
         cliLinkedAt: new Date(),
         ...newOnboardingState,
+        setupState: nextSetupState,
       })
       .where(eq(users.id, user.id));
 

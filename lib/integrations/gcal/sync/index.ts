@@ -1,12 +1,26 @@
 import { db } from '@/lib/db/client';
 import { calendarSelections, calendarSyncRuns } from '@/lib/db/schema/gcal';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { getIntegrationTokenId } from './sync-status';
-import { daysAgo } from '@/lib/utils/date';
-import { listEvents } from '../api';
+import { daysAgo, hoursSince } from '@/lib/utils/date';
+import { listEventsWindow } from '../api';
 import { upsertCalendarEvents } from '../storage/store-events';
+import { addDays, subHours } from 'date-fns';
+import { deriveActivityEventsFromCalendarEvents } from '@/lib/domains/activity/derive/from-calendar-events';
+import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreadingPipeline';
+import { users } from '@/lib/db/schema';
+import { SetupStateV1 } from '@/types/api/cli';
+import { enqueueJob, hourlyDedupeKey } from '@/lib/domains/jobs/enqueue';
 
-const LOOKBACK_DAYS_DEFAULT = 90;
+const LOOKBACK_DAYS_INITIAL = 90;
+const FUTURE_LOOKAHEAD_DAYS = 14;
+
+// For incremental-ish runs (no syncToken), we still overlap a bit
+const OVERLAP_PAST_HOURS = 12;
+
+// Safety net if sync hasn’t run in a while
+const STALE_SYNC_THRESHOLD_HOURS = 48;
+const STALE_LOOKBACK_DAYS = 14;
 
 export type SyncResponse = {
   error?: {
@@ -44,16 +58,7 @@ export async function checkCurrentlyRunningSync(
   return !!running;
 }
 
-export async function getSelectedCalendars(
-  userId: string,
-  tokenId: string
-): Promise<
-  {
-    id: string;
-    calendarId: string;
-    summary: string;
-  }[]
-> {
+export async function getSelectedCalendars(userId: string, tokenId: string) {
   const selected = await db
     .select({
       id: calendarSelections.id,
@@ -111,12 +116,13 @@ export async function runSync(userId: string): Promise<SyncResponse> {
     };
   }
 
+  const now = new Date();
+  const windowEndAt = addDays(now, FUTURE_LOOKAHEAD_DAYS);
+
   const [lastRun] = await db
     .select({
       windowEndAt: calendarSyncRuns.windowEndAt,
       completedAt: calendarSyncRuns.completedAt,
-      mode: calendarSyncRuns.mode,
-      lookbackDays: calendarSyncRuns.lookbackDays,
     })
     .from(calendarSyncRuns)
     .where(
@@ -129,24 +135,25 @@ export async function runSync(userId: string): Promise<SyncResponse> {
     .orderBy(desc(calendarSyncRuns.completedAt))
     .limit(1);
 
-  const isFirstSync = !lastRun;
+  const isFirstSync = !lastRun?.completedAt;
+  let windowStartAt: Date;
 
-  const now = new Date();
-  const hardFloor = daysAgo(now, LOOKBACK_DAYS_DEFAULT);
-  const OVERLAP_HOURS = 12;
+  if (isFirstSync) {
+    windowStartAt = daysAgo(now, LOOKBACK_DAYS_INITIAL);
+  } else {
+    const hoursSinceLast = hoursSince(
+      lastRun.completedAt ?? lastRun.windowEndAt ?? now,
+      now
+    );
 
-  const cursor = lastRun?.windowEndAt ?? null;
+    if (hoursSinceLast >= STALE_SYNC_THRESHOLD_HOURS) {
+      windowStartAt = daysAgo(now, STALE_LOOKBACK_DAYS);
+    } else {
+      const cursor = lastRun.windowEndAt ?? now;
+      windowStartAt = subHours(cursor, OVERLAP_PAST_HOURS);
+    }
+  }
 
-  const windowStartAt = cursor
-    ? new Date(
-        Math.max(
-          hardFloor.getTime(),
-          cursor.getTime() - OVERLAP_HOURS * 60 * 60 * 1000
-        )
-      )
-    : hardFloor;
-
-  const windowEndAt = now;
   const timeMinISO = windowStartAt.toISOString();
   const timeMaxISO = windowEndAt.toISOString();
 
@@ -157,7 +164,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       integrationTokenId: tokenId,
       status: 'running',
       mode: isFirstSync ? 'initial' : 'manual',
-      lookbackDays: isFirstSync ? LOOKBACK_DAYS_DEFAULT : null,
+      lookbackDays: isFirstSync ? LOOKBACK_DAYS_INITIAL : null,
       windowStartAt,
       windowEndAt,
       startedAt: now,
@@ -172,7 +179,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
 
   try {
     for (const cal of selected) {
-      const resp = await listEvents(userId, cal.calendarId, {
+      const resp = await listEventsWindow(userId, cal.calendarId, {
         timeMinISO,
         timeMaxISO,
         pageSize: 250,
@@ -204,11 +211,49 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       })
       .where(eq(calendarSyncRuns.id, run.id));
 
+    const [row] = await db
+      .select({ setupState: users.setupState })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const prev = (row?.setupState as SetupStateV1) ?? { v: 1 };
+    if (!prev.ready) {
+      const nowISO = new Date().toISOString();
+      await db
+        .update(users)
+        .set({
+          setupState: sql`
+            jsonb_set(
+              jsonb_set(
+                COALESCE(${users.setupState}, '{"v":1}'::jsonb),
+                '{gcal,lastSyncAt}',
+                to_jsonb(${nowISO}::text),
+                true
+              ),
+              '{updatedAt}',
+              to_jsonb(${nowISO}::text),
+              true
+            )
+          `,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+      // Rest of processing will be picked up in bootstrap job
+    } else {
+      await enqueueJob(db, {
+        tenantId: userId,
+        kind: 'threading_recent',
+        dedupeKey: hourlyDedupeKey(),
+      });
+    }
+
     return {
       run: {
         runId: run.id,
         status: 'completed',
-        lookbackDays: LOOKBACK_DAYS_DEFAULT,
+        lookbackDays: isFirstSync ? LOOKBACK_DAYS_INITIAL : null,
         timeMinISO,
         timeMaxISO,
         calendarsSelectedCount: selected.length,
@@ -218,6 +263,7 @@ export async function runSync(userId: string): Promise<SyncResponse> {
       },
     };
   } catch (err: any) {
+    console.log('err', err.message);
     await db
       .update(calendarSyncRuns)
       .set({

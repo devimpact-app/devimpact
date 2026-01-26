@@ -60,6 +60,7 @@ export const prSummaries = pgTable(
 );
 
 export type PrSummary = typeof prSummaries.$inferSelect;
+export type NewPrSummary = typeof prSummaries.$inferInsert;
 
 export const pullRequests = pgTable(
   'pull_requests',
@@ -83,6 +84,14 @@ export const pullRequests = pgTable(
     htmlUrl: text('html_url').notNull(),
     body: text('body').default('').notNull(),
     authorIsTenant: boolean('author_is_tenant').default(false).notNull(),
+
+    // Review requests to tenant
+    tenantReviewRequested: boolean('tenant_review_requested')
+      .notNull()
+      .default(false),
+    tenantReviewRequestedAt: timestamp('tenant_review_requested_at', {
+      withTimezone: true,
+    }),
 
     // Key timestamps
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
@@ -149,18 +158,6 @@ export const pullRequests = pgTable(
       .default(false)
       .notNull(),
     hadForcePushes: boolean('had_force_pushes').default(false).notNull(),
-
-    // TODO: Add later
-    // - ciFailuresCount
-    // - wasReverted
-    // - causedIncident
-    // - hadBlockingReview
-    // - participantsCount
-    // - issueCommentsCount
-    // - totalConversations
-    // - churnRate (files / lines ratio)
-    // - fileExtensions (jsonb)
-
     normalizedAt: timestamp('normalized_at', {
       withTimezone: true,
     })
@@ -179,10 +176,17 @@ export const pullRequests = pgTable(
     stateIdx: index('pull_requests_state_idx').on(table.state),
     createdAtIdx: index('pull_requests_created_at_idx').on(table.createdAt),
     mergedAtIdx: index('pull_requests_merged_at_idx').on(table.mergedAt),
+    tenantReviewRequestIdx: index('pull_requests_tenant_rev_req_idx').on(
+      table.tenantId,
+      table.state,
+      table.tenantReviewRequested,
+      table.tenantReviewRequestedAt
+    ),
   })
 );
 
 export type PullRequest = typeof pullRequests.$inferSelect;
+export type NewPullRequest = typeof pullRequests.$inferInsert;
 
 export const reviews = pgTable(
   'reviews',
@@ -236,12 +240,6 @@ export const reviews = pgTable(
       .notNull(),
     reviewCommentsCount: integer('review_comments_count').default(0).notNull(), // number of code comments in this review
 
-    // TODO: add later
-    // - suggestion count
-    // - feedbackStyle (LLM)
-    // - feedback themes (LLM)
-    // - code areas (directories/extensions)
-
     // Metadata
     normalizedAt: timestamp('normalized_at', {
       withTimezone: true,
@@ -270,6 +268,12 @@ export const reviews = pgTable(
       t.reviewAnchorType,
       t.submittedAt
     ),
+    reviewerIsTenantIdx: index('reviews_reviewer_is_tenant_idx').on(
+      t.tenantId,
+      t.prId,
+      t.reviewerIsTenant,
+      t.submittedAt
+    ),
     prIdx: index('reviews_pr_idx').on(t.tenantId, t.prId, t.submittedAt),
     stateIdx: index('reviews_state_idx').on(t.tenantId, t.state),
     submittedAtIdx: index('reviews_submitted_at_idx').on(
@@ -280,77 +284,4 @@ export const reviews = pgTable(
 );
 
 export type Review = typeof reviews.$inferSelect;
-
-// Enums
-export const teamConfidenceEnum = pgEnum('team_confidence', [
-  'low',
-  'medium',
-  'high',
-]);
-export const membershipSourceEnum = pgEnum('membership_source', [
-  'heuristic',
-  'api',
-]);
-
-export const inferredTeamMemberships = pgTable(
-  'inferred_team_memberships',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-
-    // ownership (tenant=user for now)
-    tenantId: uuid('tenant_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-
-    // identity
-    githubLogin: text('github_login').notNull(),
-    org: text('org').notNull(), // GitHub org login
-    teamSlug: text('team_slug').notNull(), // team slug within org
-
-    // provenance
-    source: membershipSourceEnum('source').notNull().default('heuristic'),
-    algoVersion: text('algo_version').notNull().default('v1'),
-
-    // scoring
-    score: real('score').notNull(), // 0..1 normalized
-    confidence: teamConfidenceEnum('confidence').notNull(), // 'low'|'medium'|'high'
-
-    // evidence snapshot (counts we used to compute score)
-    evidenceCounts: jsonb('evidence_counts').notNull().$type<{
-      reqToReview: number; // user reviewed when this team was requested
-      userDirectRequests: number; // user was individually requested on those PRs
-      totalReviewsAfterAnyTeamRequest: number; // denominator across all teams
-      totalDirectRequestsAfterTeamRequest: number;
-    }>(),
-
-    // timestamps
-    firstSeenAt: timestamp('first_seen_at', { withTimezone: true }),
-    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-  },
-  (t) => ({
-    // One row per (tenant, login, org, team, source)
-    uniqPerSource: unique('itm_unique_per_source').on(
-      t.tenantId,
-      t.githubLogin,
-      t.org,
-      t.teamSlug,
-      t.source
-    ),
-
-    // Helpful indexes
-    byTenantLogin: index('itm_tenant_login_idx').on(t.tenantId, t.githubLogin),
-    byTenantTeam: index('itm_tenant_team_idx').on(
-      t.tenantId,
-      t.org,
-      t.teamSlug
-    ),
-    byTenantScore: index('itm_tenant_score_idx').on(t.tenantId, t.score),
-  })
-);
-
-// Optional: Type helper
-export type InferredTeamMembership =
-  typeof inferredTeamMemberships.$inferSelect;
-export type NewInferredTeamMembership =
-  typeof inferredTeamMemberships.$inferInsert;
+export type NewReview = typeof reviews.$inferInsert;

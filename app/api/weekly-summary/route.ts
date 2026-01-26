@@ -1,42 +1,82 @@
-import { buildWeeklySummary } from '@/lib/analysis/weekly-summary';
-import { jsonBadRequest, jsonOK, jsonUnauthorized } from '../_lib/http';
-import { auth } from '@/lib/auth';
 import { NextRequest } from 'next/server';
+import { auth } from '@/lib/auth';
 import { withSentryUser } from '@/lib/withSentryUser';
+import { jsonBadRequest, jsonOK, jsonUnauthorized } from '@/app/api/_lib/http';
+
+import { GetWeeklySummariesResponseSchema } from '@/types/api/weekly-summary';
+import { serializeWeeklySummaryRow } from '@/lib/domains/weekly-summary/api/serializers';
+import {
+  decodeWeeklySummaryCursor,
+  encodeWeeklySummaryCursor,
+} from '@/lib/domains/weekly-summary/db/read/cursor';
+import { listWeeklySummariesPage } from '@/lib/domains/weekly-summary/db/read/listWeeklySummaries';
+import { buildWeeklyActivity } from '@/lib/domains/weekly-activity/service/buildWeeklyActivity';
+import { WeeklyActivity } from '@/types/api/weekly-activity';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
   const session = await auth();
   if (!session?.user?.id) return jsonUnauthorized('Unauthorized');
-  const userId = session.user.id;
 
-  const { searchParams } = new URL(req.url);
-  const startISO = searchParams.get('start');
-  const endISO = searchParams.get('end');
-  const timezone = searchParams.get('timezone') ?? 'UTC';
-  const start = startISO ? new Date(startISO) : null;
-  const end = endISO ? new Date(endISO) : null;
-  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
-    return jsonBadRequest('Start and end must be valid ISO date strings');
-  }
+  const tenantId = session.user.id;
 
-  const diffMs = end.getTime() - start.getTime();
-  const dayMs = 24 * 60 * 60 * 1000;
-  const diffDays = diffMs / dayMs;
-  if (diffDays <= 0) {
-    return jsonBadRequest('End date must be after start date');
-  }
-  const MAX_DAYS = 14;
-  if (diffDays > MAX_DAYS) {
-    return jsonBadRequest(
-      `Weekly summary supports at most ${MAX_DAYS} days. Try a narrower range.`
-    );
-  }
+  const url = new URL(req.url);
+  const sp = url.searchParams;
 
-  const summary = await buildWeeklySummary({
-    userId,
-    rangeStart: start,
-    rangeEnd: end,
-    timezone,
+  const limitParam = sp.get('limit');
+  const cursor = sp.get('cursor');
+  const oldestFirstParam = sp.get('oldestFirst');
+  const oldestFirst = !!oldestFirstParam && oldestFirstParam === 'true';
+
+  const limitRaw = limitParam ? Number(limitParam) : 20;
+  const limit = Number.isFinite(limitRaw)
+    ? Math.min(Math.max(limitRaw, 1), 50)
+    : 20;
+  const expandActivity = limit === 1;
+
+  const decoded = cursor ? decodeWeeklySummaryCursor(cursor) : null;
+  if (cursor && !decoded) return jsonBadRequest('Invalid cursor');
+
+  const { rows, nextCursor, total } = await listWeeklySummariesPage({
+    tenantId,
+    limit,
+    oldestFirst,
+    cursor: decoded
+      ? {
+          sortAtIso: decoded.sortAt.toISOString(),
+          id: decoded.id,
+        }
+      : undefined,
   });
-  return jsonOK(summary);
+
+  let activity: WeeklyActivity | undefined = undefined;
+  if (expandActivity && rows.length === 1) {
+    activity = await buildWeeklyActivity({
+      userId: tenantId,
+      rangeStart: new Date(rows[0].rangeStartUtc),
+      rangeEnd: new Date(rows[0].rangeEndUtc),
+      timezone: rows[0].timezone,
+    });
+  }
+
+  const items = rows.map((r) => {
+    const serialized = serializeWeeklySummaryRow(r);
+    if (activity) {
+      serialized.activity = activity;
+    }
+    return serialized;
+  });
+
+  const parsed = GetWeeklySummariesResponseSchema.safeParse({
+    items,
+    totalSummaries: Number(total),
+    nextCursor: nextCursor
+      ? encodeWeeklySummaryCursor(nextCursor.sortAtIso, nextCursor.id)
+      : null,
+  });
+
+  if (!parsed.success) {
+    return jsonBadRequest('Failed to parse weekly summaries response');
+  }
+
+  return jsonOK(parsed.data);
 });

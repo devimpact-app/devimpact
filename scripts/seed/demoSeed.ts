@@ -7,7 +7,6 @@ import {
   githubReviewComments,
   githubReviews,
   githubTimelineEvents,
-  inferredTeamMemberships,
   pullRequests,
   githubRepos,
   reviews,
@@ -17,22 +16,13 @@ import { eq } from 'drizzle-orm';
 import { seedRepositories } from './helpers/seedRepositories';
 import { seedAuthoredPRs } from './helpers/seedAuthoredPRs';
 import { seedReviewedPRs } from './helpers/seedReviewedPRs';
-import { inferTeamMemberships } from '@/lib/integrations/github/sync/enrichment/inferTeamMemberships/inferTeamMemberships';
-import { batchNormalizeUserPRs } from '@/lib/analysis/normalizers/pr-normalizer';
-import { batchNormalizeUserReviews } from '@/lib/analysis/normalizers/review-normalizer';
+import { batchNormalizeUserPRs } from '@/lib/domains/pull-requests/service/normalization/pr-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/pull-requests/service/normalization/review-normalizer';
 
 const argv = process.argv.slice(2);
 const hasFlag = (f: string) => argv.includes(f);
-// const getArg = (name: string) => {
-//   const i = argv.indexOf(`--${name}`);
-//   return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : undefined;
-// };
 
 async function resetTenantData(tenantId: string) {
-  // delete child tables first
-  await db
-    .delete(inferredTeamMemberships)
-    .where(eq(inferredTeamMemberships.tenantId, tenantId));
   await db.delete(reviews).where(eq(reviews.tenantId, tenantId));
   await db.delete(pullRequests).where(eq(pullRequests.tenantId, tenantId));
   await db
@@ -80,18 +70,11 @@ async function seedGithubActivity(
     lookbackDays: 90,
   });
 
-  console.log('Inferring team memberships');
-  await inferTeamMemberships({
-    tenantId,
-    since: new Date(Date.now() - 90 * 864e5),
-    username: githubUsername,
-  });
-
   console.log('Normalizing PRs and reviews');
-  const prIds = await batchNormalizeUserPRs(tenantId, githubUsername);
-  await batchNormalizeUserReviews(tenantId, githubUsername, prIds);
+  await batchNormalizeUserPRs(tenantId, githubUsername);
+  await batchNormalizeUserReviews(tenantId, githubUsername);
 }
-
+``;
 async function main() {
   try {
     const reset = hasFlag('--reset');

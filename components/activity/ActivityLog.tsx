@@ -2,6 +2,8 @@ import { ActivityEvent } from '@/types/api/timeline';
 import { clusterCommitEvents } from './clusterEvents';
 import { ActivityLogRow } from './ActivityLogRow';
 import { useMemo } from 'react';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { ArrowRight } from 'lucide-react';
 
 type ActivityLogMode = 'preview' | 'full';
 
@@ -9,7 +11,6 @@ type ActivityLogProps = {
   events: ActivityEvent[];
   loading: boolean;
   mode?: ActivityLogMode;
-  onViewAllClick?: () => void;
   onEventClick?: (event: ActivityEvent) => void;
 };
 
@@ -19,14 +20,12 @@ export function ActivityLog({
   events,
   loading,
   mode = 'preview',
-  onViewAllClick,
   onEventClick,
 }: ActivityLogProps) {
   const clustered = clusterCommitEvents(events);
-  const displayEvents = mode === 'preview' ? clustered.slice(0, 4) : clustered;
+  const displayEvents = mode === 'preview' ? clustered.slice(0, 5) : clustered;
 
-  const showViewAll =
-    mode === 'preview' && onViewAllClick && displayEvents.length > 0;
+  const showViewAll = mode === 'preview' && displayEvents.length > 0;
 
   const grouped = useMemo(() => {
     if (loading || mode !== 'full') return [];
@@ -67,26 +66,26 @@ export function ActivityLog({
     return result;
   }, [loading, mode, displayEvents]);
 
+  const timelineHref = '/timeline';
+  const subtitle =
+    mode === 'full'
+      ? 'Recent work across pull requests and reviews.'
+      : 'Recent work across pull requests, reviews, and meetings.';
+
   return (
     <section className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-950/70 px-5 py-4 shadow-sm shadow-black/30">
       <header className="mb-3 flex items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <h2 className="text-sm font-semibold tracking-tight text-slate-50">
+          <h2 className="text-[15px] font-semibold tracking-tight text-slate-50">
             Recent activity
           </h2>
-          <p className="text-[11px] text-slate-400">
-            PRs, reviews, and commits for the current dashboard window.
-          </p>
+          <p className="text-[13px] text-white/60">{subtitle}</p>
         </div>
 
         {showViewAll && (
-          <button
-            type="button"
-            onClick={onViewAllClick}
-            className="text-[11px] font-medium text-sky-300 hover:text-sky-200"
-          >
-            View full timeline →
-          </button>
+          <ActionButton href={timelineHref} variant="primary">
+            View full timeline <ArrowRight className="h-4 w-4" />
+          </ActionButton>
         )}
       </header>
 
@@ -108,7 +107,7 @@ export function ActivityLog({
       )}
 
       {!loading && displayEvents.length === 0 && (
-        <div className="pt-1 text-[11px] text-slate-400">
+        <div className="pt-1 text-[13px] text-slate-400">
           No activity found for this period. Once you sync with the CLI, your
           PRs, reviews, and commits will appear here.
         </div>
@@ -119,12 +118,10 @@ export function ActivityLog({
           {mode === 'full'
             ? grouped.map((group) => (
                 <div key={group.dayLabel} className="space-y-1.5">
-                  {/* Day header */}
-                  <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500/80 px-0.5">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-white/60 px-0.5">
                     {group.dayLabel}
                   </div>
 
-                  {/* Events for that day */}
                   {group.events.map((ev) => (
                     <ActivityLogRow
                       key={ev.id}
@@ -143,7 +140,7 @@ export function ActivityLog({
       )}
 
       {mode === 'full' && !loading && displayEvents.length > 0 && (
-        <p className="mt-3 text-[10px] text-slate-500">
+        <p className="mt-3 text-xs text-slate-500">
           Showing all activity in the selected range.
         </p>
       )}

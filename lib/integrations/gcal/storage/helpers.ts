@@ -84,15 +84,3 @@ export function summarizeAttendees(
     selfEmail,
   };
 }
-
-// TODO: make this better
-export function redactTitle(summary?: string | null) {
-  if (!summary) return null;
-  const s = summary.trim();
-  if (!s) return null;
-
-  return s
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email]')
-    .replace(/\s+/g, ' ')
-    .slice(0, 140);
-}

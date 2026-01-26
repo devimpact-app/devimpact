@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'DevImpact - For Engineers',
+  title: 'DevImpact - Work Memory',
   icons: {
     icon: '/devimpact-logo-32.png',
   },

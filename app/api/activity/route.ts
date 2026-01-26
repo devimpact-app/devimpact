@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivityEventsForRange } from '@/lib/analysis/activity/getActivityEventsForRange';
+import { getActivityEventsForRange } from '@/lib/domains/timeline/service/getActivityEventsForRange';
 import { auth } from '@/lib/auth'; // if using NextAuth
-import { jsonOK, jsonUnauthorized } from '../_lib/http';
+import { jsonOK, jsonServerError, jsonUnauthorized } from '../_lib/http';
 import {
   ActivityEvent,
   ActivityEventsResponseSchema,
 } from '@/types/api/timeline';
 import { withSentryUser } from '@/lib/withSentryUser';
+import { getRecentActivityEvents } from '@/lib/domains/timeline/service/getRecentActivityEvents';
 
 export const GET = withSentryUser(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
@@ -19,35 +20,53 @@ export const GET = withSentryUser(async (req: NextRequest) => {
   const startParam = searchParams.get('start');
   const endParam = searchParams.get('end');
   const limitParam = searchParams.get('limit');
+  const includeMeetingsParam = searchParams.get('includeMeetings');
+  const showRecentParam = searchParams.get('showRecent');
+  const showRecent = showRecentParam === 'true';
+  const includeMeetings = includeMeetingsParam === 'true';
 
-  if (!startParam || !endParam) {
+  if ((!startParam || !endParam) && !showRecent) {
     return NextResponse.json(
-      { error: 'Missing required query params: tenantId, start, end' },
+      { error: 'Missing required query params: start, end or showRecent' },
       { status: 400 }
     );
   }
 
-  const start = new Date(startParam);
-  const end = new Date(endParam);
-  const limit = limitParam ? Number(limitParam) : undefined;
+  let events: ActivityEvent[] = [];
+  if (startParam && endParam) {
+    const start = new Date(startParam);
+    const end = new Date(endParam);
+    const limit = limitParam ? Number(limitParam) : undefined;
 
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return NextResponse.json(
-      { error: 'Invalid start or end date' },
-      { status: 400 }
-    );
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid start or end date' },
+        { status: 400 }
+      );
+    }
+
+    events = await getActivityEventsForRange({
+      tenantId: session.user.id,
+      start,
+      end,
+      limit,
+      includeMeetings,
+    });
+  } else {
+    events = await getRecentActivityEvents({
+      tenantId: session.user.id,
+      limit: limitParam ? Number(limitParam) : undefined,
+      includeMeetings,
+    });
   }
 
-  const events: ActivityEvent[] = await getActivityEventsForRange({
-    tenantId: session.user.id,
-    start,
-    end,
-    limit,
-  });
-
-  const parsed = ActivityEventsResponseSchema.parse({
+  const parsed = ActivityEventsResponseSchema.safeParse({
     events,
   });
+  if (!parsed.success) {
+    console.log(parsed.error);
+    return jsonServerError('Failed to parse response');
+  }
 
-  return jsonOK({ events: parsed.events });
+  return jsonOK({ events: parsed.data.events });
 });

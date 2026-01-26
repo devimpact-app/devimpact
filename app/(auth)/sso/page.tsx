@@ -153,7 +153,7 @@ export default function SsoHelpPage() {
             <li>
               Pull request metadata (titles, numbers, timestamps, reviews).
             </li>
-            <li>Review and comment bodies (sanitized for insights).</li>
+            <li>Review and comment bodies.</li>
             <li>Commit metadata and file-level statistics.</li>
           </ul>
           <p>

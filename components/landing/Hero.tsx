@@ -45,49 +45,32 @@ export function HeroSection() {
 
       {/* Content */}
       <div className="mx-auto max-w-4xl text-center flex flex-col items-center gap-6">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wide text-white/70">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
           <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
           For software engineers
         </div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-white">
-          Protect your leverage
-          <br className="hidden sm:block" />
-          as engineering evolves
+          A memory for your engineering work
         </h1>
 
-        <p className="max-w-2xl text-base sm:text-lg text-white/80 leading-relaxed">
-          DevImpact shows you how your time, focus, and impact actually unfold,
-          so you can adapt faster than the role itself is changing.
+        <p className="max-w-2xl text-lg sm:text-xl text-white/80 leading-relaxed">
+          Weekly summaries, meeting prep, and work organized over time — so you
+          don’t lose track of what you worked on.
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
           <a
-            href="/beta-request"
+            href="mailto:ian@devimpact.app"
             className="
               rounded-lg bg-blue-500 px-6 py-3
-              text-sm font-medium text-white
+              text-sm font-semibold text-white
               hover:bg-blue-400 transition
             "
           >
-            Request beta access
-          </a>
-
-          <a
-            href="#how-it-works"
-            className="
-              rounded-lg border border-white/15 px-6 py-3
-              text-sm font-medium text-white/80
-              hover:bg-white/5 transition
-            "
-          >
-            See how it works
+            Interested? Reach out
           </a>
         </div>
-
-        <p className="mt-2 text-[11px] text-white/40">
-          Early private beta · Individual engineers only
-        </p>
       </div>
     </section>
   );

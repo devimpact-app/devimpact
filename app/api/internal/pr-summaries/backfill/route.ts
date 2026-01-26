@@ -5,8 +5,8 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { pullRequests, prSummaries } from '@/lib/db/schema';
 import { jsonOK, jsonUnauthorized } from '@/app/api/_lib/http';
-import { getOrGeneratePrSummary } from '@/lib/integrations/openai/services/summarizePR';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
+import { getOrGeneratePrSummary } from '@/lib/domains/pull-requests/service/getOrGeneratePrSummary';
 
 const DEFAULT_LOOKBACK_DAYS = 90;
 const DEFAULT_BATCH_SIZE = 5;

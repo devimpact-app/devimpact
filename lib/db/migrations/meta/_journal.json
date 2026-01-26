@@ -50,6 +50,90 @@
       "when": 1765834607002,
       "tag": "0006_add_calendar_event_subtype",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766015489893,
+      "tag": "0007_add_calendar_sync_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766198531808,
+      "tag": "0008_create_prep_items_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767386281854,
+      "tag": "0009_create_activity_events_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1767815000812,
+      "tag": "0010_create_thread_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1767987332868,
+      "tag": "0011_add_threading_state_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1768155084217,
+      "tag": "0012_add_thread_summary_bullets",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1768254511175,
+      "tag": "0013_add_weekly_summary_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1768435839488,
+      "tag": "0014_add_tenant_requested_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1768764806741,
+      "tag": "0015_add_summary_and_tz_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1769037763342,
+      "tag": "0016_vengeful_sharon_carter",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1769107247723,
+      "tag": "0017_stale_echo",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1769384982581,
+      "tag": "0018_drop_team_memberships",
+      "breakpoints": true
     }
   ]
 }

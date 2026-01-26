@@ -1,0 +1,1 @@
+ALTER TYPE "public"."calendar_sync_mode" ADD VALUE 'dashboard_refresh' BEFORE 'scheduled';

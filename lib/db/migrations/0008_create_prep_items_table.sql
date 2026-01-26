@@ -1,0 +1,40 @@
+CREATE TABLE "prep_items" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	"calendar_event_id" uuid,
+	"source" text DEFAULT 'calendar' NOT NULL,
+	"manual_key" text,
+	"calendar_id" text,
+	"google_event_id" text,
+	"recurring_event_id" text,
+	"start_at" timestamp with time zone NOT NULL,
+	"end_at" timestamp with time zone,
+	"duration_minutes" integer,
+	"is_all_day" boolean DEFAULT false NOT NULL,
+	"title_redacted" text,
+	"timezone" text NOT NULL,
+	"primary_window_start_at" timestamp with time zone NOT NULL,
+	"primary_window_end_at" timestamp with time zone NOT NULL,
+	"primary_window_source" text NOT NULL,
+	"secondary_window_start_at" timestamp with time zone NOT NULL,
+	"secondary_window_end_at" timestamp with time zone NOT NULL,
+	"secondary_window_source" text NOT NULL,
+	"category" text,
+	"category_subtype" text,
+	"category_confidence" real,
+	"category_source" text,
+	"meeting_type" text NOT NULL,
+	"status" text DEFAULT 'ready' NOT NULL,
+	"content" jsonb,
+	"last_error" text,
+	"generation_version" integer DEFAULT 1 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "prep_items_tenant_id_calendar_id_google_event_id_unique" UNIQUE("tenant_id","calendar_id","google_event_id"),
+	CONSTRAINT "prep_items_tenant_id_manual_key_unique" UNIQUE("tenant_id","manual_key"),
+	CONSTRAINT "prep_items_tenant_id_calendar_event_id_unique" UNIQUE("tenant_id","calendar_event_id")
+);
+--> statement-breakpoint
+ALTER TABLE "prep_items" ADD CONSTRAINT "prep_items_calendar_event_id_calendar_events_id_fk" FOREIGN KEY ("calendar_event_id") REFERENCES "public"."calendar_events"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "prep_items_tenant_start_idx" ON "prep_items" USING btree ("tenant_id","start_at");--> statement-breakpoint
+CREATE INDEX "prep_items_tenant_recurring_idx" ON "prep_items" USING btree ("tenant_id","recurring_event_id");

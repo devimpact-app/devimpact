@@ -135,7 +135,7 @@ export function InsightPanel({
                   key={`${s.label}-${s.value}`}
                   className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-2"
                 >
-                  <div className="text-[12px] font-semibold text-slate-50">
+                  <div className="text-xs font-semibold text-slate-50">
                     {s.value}
                   </div>
                   <div className="mt-0.5 text-[11px] text-slate-400">
@@ -169,7 +169,7 @@ export function InsightPanel({
               Why this surfaced
             </h3>
 
-            <p className="text-[12px] leading-relaxed text-slate-300">
+            <p className="text-xs leading-relaxed text-slate-300">
               {insight.transparency.summary}
             </p>
 
@@ -196,7 +196,7 @@ export function InsightPanel({
                       <div className="text-[10px] font-medium text-slate-400">
                         {t.label}
                       </div>
-                      <div className="mt-0.5 text-[12px] font-semibold text-slate-50">
+                      <div className="mt-0.5 text-xs font-semibold text-slate-50">
                         {t.actual}
                       </div>
                       <div className="mt-0.5 text-[10px] text-slate-500">
@@ -224,7 +224,7 @@ export function InsightPanel({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-[12px] font-medium text-slate-100 line-clamp-2">
+                      <div className="text-xs font-medium text-slate-100 line-clamp-2">
                         {item.title}
                       </div>
                       {item.subtitle && (

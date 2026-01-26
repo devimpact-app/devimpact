@@ -20,6 +20,9 @@ export default function CalendarSetupClient({
 }) {
   const router = useRouter();
 
+  const [advancing, setAdvancing] = useState(false);
+  const [advanceError, setAdvanceError] = useState<string | null>(null);
+
   const [status, setStatus] = useState<CalendarStatusResponse | null>(
     initialStatus ?? null
   );
@@ -32,6 +35,41 @@ export default function CalendarSetupClient({
 
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  async function getBootstrapJobStatus() {
+    const qs = new URLSearchParams({
+      kind: 'setup_bootstrap_recent',
+      dedupeKey: 'bootstrap_recent',
+    });
+    const res = await fetch(`/api/jobs/status?${qs.toString()}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`Job status failed: ${res.status}`);
+    const { data } = await res.json();
+    return (data?.job ?? null) as any;
+  }
+
+  async function enqueueBootstrapJob() {
+    const res = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'setup_bootstrap_recent',
+        dedupeKey: 'bootstrap_recent',
+        priority: 10,
+        nextRunAt: new Date().toISOString(),
+        payload: { lookbackDays: 14 },
+      }),
+    });
+    if (!res.ok) throw new Error(`Enqueue failed: ${res.status}`);
+    const { data } = await res.json();
+    return data?.job;
+  }
+
+  async function kickBootstrapJob() {
+    const res = await fetch('/api/jobs/kick-bootstrap', { method: 'POST' });
+    if (!res.ok) throw new Error(`Kick failed: ${res.status}`);
+  }
 
   async function refreshStatus() {
     setLoadingStatus(true);
@@ -135,9 +173,6 @@ export default function CalendarSetupClient({
       if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
 
       await refreshStatus();
-
-      const link = isFromSettings ? '/settings' : '/onboarding/complete';
-      setTimeout(() => router.push(link), 900);
     } catch (err) {
       setSyncError(
         'Calendar sync failed. Try again, or reconnect Google Calendar.'
@@ -147,11 +182,38 @@ export default function CalendarSetupClient({
     }
   }
 
-  function handleSkip() {
+  async function handleAdvance(opts?: { requireSync?: boolean }) {
     if (isFromSettings) {
       router.push('/settings');
-    } else {
-      router.push('/onboarding/complete');
+      return;
+    }
+
+    const requireSync = opts?.requireSync ?? false;
+    if (requireSync && !syncComplete) return;
+
+    setAdvancing(true);
+    setAdvanceError(null);
+
+    try {
+      const job = await getBootstrapJobStatus();
+
+      if (job?.status === 'succeeded') {
+        router.push('/onboarding/complete');
+        return;
+      }
+
+      if (!job || !['queued', 'running'].includes(job.status)) {
+        await enqueueBootstrapJob();
+      }
+
+      await kickBootstrapJob();
+
+      router.push('/onboarding/loading');
+    } catch (e) {
+      console.error('[CAL SETUP ADVANCE] failed', e);
+      setAdvanceError('Could not start setup. Please try again.');
+    } finally {
+      setAdvancing(false);
     }
   }
 
@@ -182,6 +244,7 @@ export default function CalendarSetupClient({
       status.state === 'synced');
 
   const syncInProgress = syncing || status?.state === 'syncing';
+  const syncComplete = status?.state === 'synced';
 
   if (loadingStatus && !status) {
     return (
@@ -244,43 +307,47 @@ export default function CalendarSetupClient({
                 href={`/api/integrations/google/start${isFromSettings ? '?fromSettings=true' : ''}`}
                 className="inline-flex h-9 items-center justify-center rounded-full bg-sky-500 px-4 text-xs font-medium text-slate-950 shadow-sm hover:bg-sky-400"
               >
-                Connect Google Calendar
+                Enable calendar features
               </Link>
             )}
           </div>
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-4">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
             <Shield className="h-3.5 w-3.5 text-slate-400" />
             What we use (and what we don’t)
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 text-xs text-slate-400">
             <div>
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-300">
                 We store
               </div>
               <ul className="list-disc list-inside space-y-1">
                 <li>Start/end times (time blocks)</li>
+                <li>Event titles</li>
                 <li>Your RSVP status (yes/no/maybe)</li>
                 <li>Attendee count</li>
-                <li>Derived event categories (e.g. 1:1s, team meetings)</li>
+                <li>
+                  Derived categorization from title/description (e.g. 1:1s, team
+                  meetings)
+                </li>
               </ul>
             </div>
             <div>
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-300">
                 We don’t store
               </div>
               <ul className="list-disc list-inside space-y-1">
-                <li>Event titles or descriptions</li>
+                <li>Event descriptions</li>
                 <li>Guest emails or lists</li>
                 <li>Meeting links, notes, or attachments</li>
               </ul>
             </div>
           </div>
 
-          <p className="mt-3 text-[11px] text-slate-500">
+          <p className="mt-3 text-xs text-slate-500">
             You can disconnect anytime in Settings to immediately stop calendar
             reads.
           </p>
@@ -290,7 +357,7 @@ export default function CalendarSetupClient({
           <div className="mt-6">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                   Calendar selection
                 </div>
                 <div className="text-xs text-slate-400">
@@ -336,7 +403,7 @@ export default function CalendarSetupClient({
                               checked={Boolean(c.isSelected)}
                               onChange={() => toggleCalendar(c.id)}
                             />
-                            <span className="font-mono text-[11px]">
+                            <span className="font-mono text-xs">
                               {c.summary}
                             </span>
                           </div>
@@ -367,7 +434,7 @@ export default function CalendarSetupClient({
                               checked={Boolean(c.isSelected)}
                               onChange={() => toggleCalendar(c.id)}
                             />
-                            <span className="font-mono text-[11px]">
+                            <span className="font-mono text-xs">
                               {c.summary}
                             </span>
                           </div>
@@ -417,13 +484,13 @@ export default function CalendarSetupClient({
             </div>
 
             {selectedCount === 0 && (
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-xs text-slate-500">
                 Select at least one calendar above to enable sync.
               </p>
             )}
 
             {status?.lastSyncRun && (
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-xs text-slate-500">
                 Last synced:{' '}
                 <span className="text-slate-300">
                   {new Date(status.lastSyncRun.startedAt).toLocaleString()}
@@ -434,14 +501,42 @@ export default function CalendarSetupClient({
         )}
       </div>
       {!isFromSettings && (
-        <div className="mt-8 flex items-center justify-between text-sm text-text-secondary">
-          <button
-            onClick={handleSkip}
-            className="text-sky-600 hover:text-sky-400"
-          >
-            Skip for now
-          </button>
-          <span>You can connect later from Settings.</span>
+        <div className="mt-8 flex items-center justify-between gap-3">
+          {!syncComplete && (
+            <button
+              type="button"
+              onClick={() => handleAdvance({ requireSync: false })}
+              disabled={advancing}
+              className="text-sky-600 hover:text-sky-400 text-sm"
+            >
+              Skip for now — insights and prep will be more limited
+            </button>
+          )}
+
+          <div className="flex items-center gap-3">
+            {advanceError && (
+              <span className="text-xs text-red-300">{advanceError}</span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => handleAdvance({ requireSync: true })}
+              disabled={!syncComplete || advancing}
+              className="inline-flex h-9 items-center justify-center rounded-full bg-sky-500 px-4 text-xs font-medium text-slate-950 shadow-sm hover:bg-sky-400 disabled:opacity-60"
+              title={
+                !syncComplete ? 'Sync your calendar to continue' : undefined
+              }
+            >
+              {advancing ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Preparing…
+                </span>
+              ) : (
+                'Next'
+              )}
+            </button>
+          </div>
         </div>
       )}
     </section>

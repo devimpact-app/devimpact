@@ -1,0 +1,1140 @@
+{
+  "plan": [
+    "51 total PRs",
+    "12 PRs for project A (0-28)",
+    "10 PRs for project B (days 28-46)",
+    "8 PRs for project C (days 56-90)",
+    "8 PRs for on call week (days 49-55)",
+    "8 PRs for scattered tech debt (days 0-90)",
+    "5 PRs for misc fixes/drive bys (days 0-90)"
+  ],
+  "pullRequests": [
+    {
+      "dayIndex": 1,
+      "time": "10:15",
+      "repo": "acme/api",
+      "number": 401,
+      "title": "Add activity_events base table + enums (v1)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Introduced the activity_events ledger schema and initial constraints for v1 threading.",
+        "highlights": [
+          "Added activity event schema + enums",
+          "Created indexes for tenant/time queries",
+          "Set up uniqueness constraints for derived events"
+        ],
+        "typeTags": ["feature", "backend", "data-model"],
+        "domainTags": ["activity", "ledger", "threads"]
+      }
+    },
+    {
+      "dayIndex": 3,
+      "time": "15:40",
+      "repo": "acme/web",
+      "number": 402,
+      "title": "Thread categories + table scaffolding for v1",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added thread table scaffolding and category keys to support basic thread creation.",
+        "highlights": [
+          "Introduced thread schema + status",
+          "Added minimal indexes for tenant/category queries",
+          "Aligned types between DB + app layer"
+        ],
+        "typeTags": ["feature", "ui", "infra"],
+        "domainTags": ["threads", "schema", "types"]
+      }
+    },
+    {
+      "dayIndex": 8,
+      "time": "11:05",
+      "repo": "acme/api",
+      "number": 403,
+      "title": "Derive calendar meetings into activity ledger (attended/ooo)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Derived meeting and OOO events from gcal into the unified activity ledger with metadata.",
+        "highlights": [
+          "Mapped meeting_attended + ooo event types",
+          "Stored participation and classification metadata",
+          "Added filtering for low-signal meeting types"
+        ],
+        "typeTags": ["feature", "backend", "integration"],
+        "domainTags": ["gcal", "activity", "meetings"]
+      }
+    },
+    {
+      "dayIndex": 10,
+      "time": "14:10",
+      "repo": "acme/web",
+      "number": 404,
+      "title": "Activity timeline query + feed grouping (v1)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented initial timeline queries against activity_events and grouped results for UI consumption.",
+        "highlights": [
+          "Added timeline query helpers",
+          "Grouped by day and kind",
+          "Improved default sort and pagination"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["timeline", "activity", "queries"]
+      }
+    },
+    {
+      "dayIndex": 15,
+      "time": "09:35",
+      "repo": "acme/api",
+      "number": 405,
+      "title": "Normalize PRs into activity events (created/merged signals)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Derived PR activity events with stable metadata (size/process) to support thread candidate evaluation.",
+        "highlights": [
+          "Mapped PR merged events into ledger",
+          "Added size/process metadata (files/lines/reviewRounds)",
+          "Ensured idempotent upserts via unique constraints"
+        ],
+        "typeTags": ["feature", "backend", "normalization"],
+        "domainTags": ["github", "prs", "ledger"]
+      }
+    },
+    {
+      "dayIndex": 16,
+      "time": "16:25",
+      "repo": "acme/api",
+      "number": 406,
+      "title": "Normalize reviews into activity events (decision + role signals)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Derived review_submitted events and captured decision/role metadata needed for candidate scoring.",
+        "highlights": [
+          "Mapped approvals/CR/comment-only into metadata",
+          "Captured wasDirectlyRequested + first responder signals",
+          "Standardized event titles/subtitles for UI"
+        ],
+        "typeTags": ["feature", "backend", "normalization"],
+        "domainTags": ["github", "reviews", "threads"]
+      }
+    },
+    {
+      "dayIndex": 17,
+      "time": "13:20",
+      "repo": "acme/web",
+      "number": 407,
+      "title": "Thread candidate policy (PR/review/meeting gating)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added deterministic eligibility scoring to decide which activity events get sent to LLM threading.",
+        "highlights": [
+          "Eligible PR merges by default",
+          "Review gating based on decision + comment depth",
+          "Meeting gating for incident/interview/arch/design"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["policy", "threads", "eligibility"]
+      }
+    },
+    {
+      "dayIndex": 22,
+      "time": "10:50",
+      "repo": "acme/api",
+      "number": 408,
+      "title": "Thread assignment input shaping (join PR summaries + signals)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Shaped high-signal LLM input objects for threading by joining PR summaries and key metadata signals.",
+        "highlights": [
+          "Joined PR summaries for richer bucketing",
+          "Normalized signals across PR/review/meeting",
+          "Added cold-start vs incremental threading modes"
+        ],
+        "typeTags": ["feature", "backend", "llm"],
+        "domainTags": ["threads", "summaries", "bucketing"]
+      }
+    },
+    {
+      "dayIndex": 23,
+      "time": "15:05",
+      "repo": "acme/api",
+      "number": 409,
+      "title": "Persist thread assignments + update thread aggregates",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented transactional persistence for thread creation and thread_events joins with aggregate updates.",
+        "highlights": [
+          "Created threads from LLM newThread descriptors",
+          "Inserted thread_events with confidence + reasons",
+          "Recomputed first/last activity timestamps for affected threads"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["threads", "persistence", "aggregates"]
+      }
+    },
+    {
+      "dayIndex": 24,
+      "time": "11:30",
+      "repo": "acme/api",
+      "number": 410,
+      "title": "Thread summary prompt + schema (create/update)",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added thread summary schema and prompt scaffolding to generate compact, engineer-voice thread summaries.",
+        "highlights": [
+          "Schema compatible with response_format constraints",
+          "Create vs update modes in prompt",
+          "ReferencedEventIds support for explainability"
+        ],
+        "typeTags": ["feature", "backend", "llm"],
+        "domainTags": ["threads", "summaries", "prompting"]
+      }
+    },
+    {
+      "dayIndex": 25,
+      "time": "17:10",
+      "repo": "acme/api",
+      "number": 411,
+      "title": "Index and query optimizations for activity/thread queries",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Tuned key indexes and query patterns for activity lookbacks and thread views.",
+        "highlights": [
+          "Improved tenant+occurredAt query plans",
+          "Added recurring event index path",
+          "Reduced N+1 lookups in threading pipeline"
+        ],
+        "typeTags": ["performance", "backend"],
+        "domainTags": ["indexes", "queries", "threads"]
+      }
+    },
+    {
+      "dayIndex": 26,
+      "time": "13:55",
+      "repo": "acme/web",
+      "number": 412,
+      "title": "Cleanup: tighten thread UI hierarchy + copy polish",
+      "projectKey": "activity_threading_foundations",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": false,
+      "summary": {
+        "short": "Follow-up cleanup to improve thread/timeline UI hierarchy and reduce visual noise.",
+        "highlights": [
+          "Improved card hierarchy and spacing",
+          "Adjusted CTA emphasis and microcopy",
+          "Reduced overuse of accent color"
+        ],
+        "typeTags": ["cleanup", "ui"],
+        "domainTags": ["threads", "timeline", "design"]
+      }
+    },
+
+    {
+      "dayIndex": 28,
+      "time": "10:05",
+      "repo": "acme/api",
+      "number": 413,
+      "title": "Add timeline read model (threads + unthreaded events)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented a timeline read model that combines threads with unthreaded high-signal activity into a single feed.",
+        "highlights": [
+          "Joined threads + thread_events + activity_events into one query path",
+          "Added pagination + stable ordering by occurredAt",
+          "Included unthreaded eligible events for completeness"
+        ],
+        "typeTags": ["feature", "backend", "queries"],
+        "domainTags": ["timeline", "threads", "read-model"]
+      }
+    },
+    {
+      "dayIndex": 30,
+      "time": "14:25",
+      "repo": "acme/web",
+      "number": 414,
+      "title": "Timeline feed UI v2 (grouped by day + thread cards)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Shipped a new timeline feed UI with day grouping and thread-first cards for clearer narrative scanning.",
+        "highlights": [
+          "Grouped activity by day with clear headers",
+          "Rendered thread cards with summary + last activity",
+          "Improved empty/loading states for first-time users"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["timeline", "feed", "threads"]
+      }
+    },
+    {
+      "dayIndex": 32,
+      "time": "11:10",
+      "repo": "acme/api",
+      "number": 415,
+      "title": "Thread detail query (events + summaries + metadata)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added backend query helpers for thread detail pages, including ordered events and summary metadata.",
+        "highlights": [
+          "Fetched thread + recent events with stable ordering",
+          "Included LLM confidence and referenced event ids where available",
+          "Reduced N+1 lookups with a single join path"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["threads", "detail", "queries"]
+      }
+    },
+    {
+      "dayIndex": 33,
+      "time": "16:05",
+      "repo": "acme/web",
+      "number": 416,
+      "title": "Thread detail page (summary, updates, related events)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented the thread detail UI with a clear summary header and an event list supporting narrative drill-down.",
+        "highlights": [
+          "Rendered thread summary + optional last update block",
+          "Added event list with compact PR/review/meeting rendering",
+          "Linked out to source URLs where available"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["threads", "detail", "timeline"]
+      }
+    },
+    {
+      "dayIndex": 35,
+      "time": "09:45",
+      "repo": "acme/web",
+      "number": 417,
+      "title": "Career tab: accomplishments v1 (threads as units of impact)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added an initial accomplishments view in the Career tab using threads as the primary unit of work.",
+        "highlights": [
+          "Displayed active threads with titles and summaries",
+          "Added basic filtering (recent vs all)",
+          "Introduced simple empty state and onboarding copy"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["career", "accomplishments", "threads"]
+      }
+    },
+    {
+      "dayIndex": 36,
+      "time": "13:30",
+      "repo": "acme/api",
+      "number": 418,
+      "title": "Accomplishments API (week/month grouping + ordering)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented an accomplishments endpoint that groups thread activity into week/month buckets for narrative review.",
+        "highlights": [
+          "Grouped threads by lastActivityAt week with stable ordering",
+          "Included minimal aggregates for UI (event counts, date ranges)",
+          "Handled pagination for long histories without heavy joins"
+        ],
+        "typeTags": ["feature", "backend", "queries"],
+        "domainTags": ["career", "accomplishments", "timeline"]
+      }
+    },
+    {
+      "dayIndex": 38,
+      "time": "15:20",
+      "repo": "acme/web",
+      "number": 419,
+      "title": "Accomplishments UI polish (filters, density, empty states)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": false,
+      "summary": {
+        "short": "Polished accomplishments UI for scanability with small filters, tighter density, and clearer empty states.",
+        "highlights": [
+          "Added timeframe filter chips",
+          "Improved card density and typography hierarchy",
+          "Refined empty-state guidance and copy"
+        ],
+        "typeTags": ["ui", "cleanup"],
+        "domainTags": ["career", "accomplishments", "design"]
+      }
+    },
+    {
+      "dayIndex": 40,
+      "time": "10:50",
+      "repo": "acme/api",
+      "number": 420,
+      "title": "Timeline query performance pass (avoid over-fetch + tighter selects)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Optimized timeline and thread detail queries by reducing selected fields and removing redundant joins.",
+        "highlights": [
+          "Tightened selects for timeline rows",
+          "Removed redundant joins for thread metadata",
+          "Improved pagination stability under load"
+        ],
+        "typeTags": ["performance", "backend"],
+        "domainTags": ["timeline", "queries", "optimization"]
+      }
+    },
+    {
+      "dayIndex": 43,
+      "time": "14:10",
+      "repo": "acme/web",
+      "number": 421,
+      "title": "Timeline navigation + deep links into threads",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added navigation improvements and deep links so users can move cleanly between timeline, threads, and accomplishments.",
+        "highlights": [
+          "Deep-linked thread cards from timeline to thread detail",
+          "Added back/forward-friendly routing structure",
+          "Improved URL stability for sharing and bookmarking"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["navigation", "timeline", "threads"]
+      }
+    },
+    {
+      "dayIndex": 46,
+      "time": "17:05",
+      "repo": "acme/web",
+      "number": 422,
+      "title": "Copy + framing pass for timeline/accomplishments (engineer voice)",
+      "projectKey": "timeline",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "small",
+      "touchedTests": false,
+      "summary": {
+        "short": "Refined copy and framing across timeline and accomplishments to stay factual, calm, and non-performative.",
+        "highlights": [
+          "Reduced “AI-ish” phrasing in labels and empty states",
+          "Clarified what threads represent (themes, not tasks)",
+          "Improved onboarding hints for first-time users"
+        ],
+        "typeTags": ["copy", "ui"],
+        "domainTags": ["timeline", "career", "onboarding"]
+      }
+    },
+
+    {
+      "dayIndex": 49,
+      "time": "10:35",
+      "repo": "acme/api",
+      "number": 423,
+      "title": "Hotfix: cap expensive search queries (rate + guardrails)",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added guardrails to prevent expensive search queries from overwhelming the API during peak load.",
+        "highlights": [
+          "Added server-side rate limits for high-cost query patterns",
+          "Introduced query cost caps with safe fallbacks",
+          "Logged guardrail triggers for follow-up tuning"
+        ],
+        "typeTags": ["bugfix", "backend", "reliability"],
+        "domainTags": ["search", "rate-limiting", "latency"]
+      }
+    },
+    {
+      "dayIndex": 49,
+      "time": "16:20",
+      "repo": "acme/infra",
+      "number": 424,
+      "title": "Tune autoscaling thresholds for API workers",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "small",
+      "touchedTests": false,
+      "summary": {
+        "short": "Adjusted autoscaling thresholds and alarms to reduce latency spikes during sudden traffic bursts.",
+        "highlights": [
+          "Updated HPA target thresholds for worker pools",
+          "Refined alert thresholds to reduce noise",
+          "Documented rollback plan and expected behavior"
+        ],
+        "typeTags": ["infra", "reliability"],
+        "domainTags": ["autoscaling", "alerts", "k8s"]
+      }
+    },
+    {
+      "dayIndex": 50,
+      "time": "11:15",
+      "repo": "acme/web",
+      "number": 425,
+      "title": "Fix: timeline feed crash on missing event subtitle",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "small",
+      "touchedTests": true,
+      "summary": {
+        "short": "Patched a client crash caused by assuming subtitle was always present for activity events.",
+        "highlights": [
+          "Hardened rendering for null/empty subtitle",
+          "Added regression test around malformed event rows",
+          "Improved fallback formatting for edge cases"
+        ],
+        "typeTags": ["bugfix", "ui"],
+        "domainTags": ["timeline", "rendering", "stability"]
+      }
+    },
+    {
+      "dayIndex": 50,
+      "time": "15:40",
+      "repo": "acme/api",
+      "number": 426,
+      "title": "Add incident logging for slow thread summary generation",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Instrumented thread summary generation to surface slow paths and enable incident triage.",
+        "highlights": [
+          "Added timing + structured logs around summary pipeline",
+          "Captured affected tenant/thread counts for debugging",
+          "Introduced basic sampling to limit log volume"
+        ],
+        "typeTags": ["reliability", "backend", "observability"],
+        "domainTags": ["threads", "llm", "instrumentation"]
+      }
+    },
+    {
+      "dayIndex": 51,
+      "time": "09:50",
+      "repo": "acme/api",
+      "number": 427,
+      "title": "Mitigation: add timeout + fallback for long-running DB queries",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added timeouts and safer fallbacks for long-running queries to prevent request pileups during incidents.",
+        "highlights": [
+          "Introduced query-level timeouts for known heavy endpoints",
+          "Added fallback responses with partial data where safe",
+          "Created metrics for timeout rate and affected routes"
+        ],
+        "typeTags": ["bugfix", "backend", "reliability"],
+        "domainTags": ["database", "timeouts", "latency"]
+      }
+    },
+    {
+      "dayIndex": 52,
+      "time": "13:10",
+      "repo": "acme/mobile",
+      "number": 428,
+      "title": "Fix: auth token refresh edge case after long idle",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Resolved a mobile auth refresh edge case that caused sporadic logout loops after extended idle sessions.",
+        "highlights": [
+          "Handled refresh race condition on app resume",
+          "Added retry/backoff for transient failures",
+          "Added regression coverage for idle-resume path"
+        ],
+        "typeTags": ["bugfix", "mobile"],
+        "domainTags": ["auth", "tokens", "session"]
+      }
+    },
+    {
+      "dayIndex": 53,
+      "time": "10:25",
+      "repo": "acme/data",
+      "number": 429,
+      "title": "Backfill fix: correct timezone handling in daily rollups",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Fixed timezone handling in daily rollups and backfilled affected partitions to correct reporting drift.",
+        "highlights": [
+          "Corrected day-boundary logic for multi-timezone tenants",
+          "Added validation checks for rollup completeness",
+          "Backfilled recent partitions with safe throttling"
+        ],
+        "typeTags": ["bugfix", "data"],
+        "domainTags": ["timezones", "rollups", "backfill"]
+      }
+    },
+    {
+      "dayIndex": 54,
+      "time": "11:30",
+      "repo": "acme/security",
+      "number": 430,
+      "title": "Patch dependency advisory + tighten CSP defaults",
+      "projectKey": "on_call_week",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "small",
+      "touchedTests": false,
+      "summary": {
+        "short": "Patched a dependency advisory and tightened default CSP settings as part of on-call hardening.",
+        "highlights": [
+          "Updated vulnerable dependency to patched version",
+          "Tightened CSP defaults to reduce script injection risk",
+          "Documented change + rollout notes for verification"
+        ],
+        "typeTags": ["security", "infra"],
+        "domainTags": ["dependencies", "csp", "hardening"]
+      }
+    },
+
+    {
+      "dayIndex": 56,
+      "time": "10:20",
+      "repo": "acme/api",
+      "number": 451,
+      "title": "Export thread summaries to PDF (backend scaffolding)",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added backend support for exporting thread summaries to PDF for career and review use cases.",
+        "highlights": [
+          "Introduced export_threads endpoint",
+          "Rendered thread title, summary, and events into PDF-friendly structure",
+          "Added basic pagination and layout rules"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["export", "threads", "pdf"]
+      }
+    },
+    {
+      "dayIndex": 59,
+      "time": "14:35",
+      "repo": "acme/web",
+      "number": 452,
+      "title": "Career export UI: thread selection + preview",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": false,
+      "summary": {
+        "short": "Added UI flow for selecting threads and previewing career exports before download.",
+        "highlights": [
+          "Thread multi-select with summary preview",
+          "Preview layout aligned with PDF export",
+          "Clear copy for performance review use case"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["export", "career", "threads"]
+      }
+    },
+    {
+      "dayIndex": 62,
+      "time": "11:10",
+      "repo": "acme/api",
+      "number": 453,
+      "title": "Redaction rules for exported career artifacts",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Implemented redaction controls to remove sensitive details from exported thread summaries.",
+        "highlights": [
+          "Optional hiding of repo names and PR numbers",
+          "Redacted meeting titles by category",
+          "Safe defaults for sharing outside the org"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["export", "privacy", "redaction"]
+      }
+    },
+    {
+      "dayIndex": 66,
+      "time": "15:50",
+      "repo": "acme/web",
+      "number": 454,
+      "title": "Export formatting pass for performance reviews",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": false,
+      "summary": {
+        "short": "Refined export formatting to better match performance review and promotion packet expectations.",
+        "highlights": [
+          "Improved section hierarchy and spacing",
+          "Added date ranges and confidence indicators",
+          "Adjusted tone for non-technical audiences"
+        ],
+        "typeTags": ["ui", "polish"],
+        "domainTags": ["export", "career", "formatting"]
+      }
+    },
+    {
+      "dayIndex": 70,
+      "time": "09:40",
+      "repo": "acme/api",
+      "number": 455,
+      "title": "Generate career snapshot (last 30/60/90 days)",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added backend support for generating time-bounded career snapshots across threads and activity.",
+        "highlights": [
+          "Aggregated threads by configurable lookback windows",
+          "Included key impact signals and summaries",
+          "Designed snapshot output for reuse in exports"
+        ],
+        "typeTags": ["feature", "backend"],
+        "domainTags": ["career", "snapshots", "aggregation"]
+      }
+    },
+    {
+      "dayIndex": 74,
+      "time": "13:25",
+      "repo": "acme/web",
+      "number": 456,
+      "title": "Shareable read-only links for exported threads",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added support for generating shareable, read-only links to exported thread views.",
+        "highlights": [
+          "Time-limited access tokens",
+          "Read-only UI variant with redaction enforced",
+          "Clear affordances for external sharing"
+        ],
+        "typeTags": ["feature", "ui"],
+        "domainTags": ["sharing", "export", "security"]
+      }
+    },
+    {
+      "dayIndex": 81,
+      "time": "16:10",
+      "repo": "acme/api",
+      "number": 457,
+      "title": "Audit logging for career exports and shares",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added audit logging for career exports and shared artifact access.",
+        "highlights": [
+          "Logged export creation and access events",
+          "Captured redaction settings used at export time",
+          "Prepared hooks for future compliance features"
+        ],
+        "typeTags": ["backend", "infra"],
+        "domainTags": ["export", "audit", "compliance"]
+      }
+    },
+    {
+      "dayIndex": 87,
+      "time": "11:45",
+      "repo": "acme/web",
+      "number": 458,
+      "title": "Polish: career export copy, empty states, and affordances",
+      "projectKey": "export",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "small",
+      "touchedTests": false,
+      "summary": {
+        "short": "Final polish pass on career export UX, copy, and edge states.",
+        "highlights": [
+          "Clarified export value proposition in copy",
+          "Improved empty and loading states",
+          "Reduced friction in export flow"
+        ],
+        "typeTags": ["cleanup", "ui"],
+        "domainTags": ["export", "ux", "polish"]
+      }
+    },
+
+    {
+      "dayIndex": 6,
+      "time": "11:20",
+      "repo": "acme/api",
+      "number": 470,
+      "title": "Refactor: standardize db error handling + typed errors",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Standardized DB error handling and introduced typed error helpers to reduce noisy try/catch patterns.",
+        "highlights": [
+          "Added shared DbError utilities",
+          "Improved logging context for failed queries",
+          "Reduced duplicated error-mapping code"
+        ],
+        "typeTags": ["tech-debt", "backend", "refactor"],
+        "domainTags": ["db", "errors", "infra"]
+      }
+    },
+    {
+      "dayIndex": 13,
+      "time": "15:05",
+      "repo": "acme/web",
+      "number": 471,
+      "title": "Cleanup: unify date/time formatting + timezone helpers",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "small",
+      "touchedTests": false,
+      "summary": {
+        "short": "Consolidated date/time formatting into a single utility and removed inconsistent timezone conversions.",
+        "highlights": [
+          "Replaced ad-hoc formatters with shared helpers",
+          "Fixed DST edge cases in relative time strings",
+          "Reduced duplicated date logic across pages"
+        ],
+        "typeTags": ["tech-debt", "ui", "cleanup"],
+        "domainTags": ["dates", "timezone", "utils"]
+      }
+    },
+    {
+      "dayIndex": 20,
+      "time": "10:10",
+      "repo": "acme/api",
+      "number": 472,
+      "title": "DB: add compound indexes for activity lookback queries",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Added targeted compound indexes and verified query plans for common activity lookback paths.",
+        "highlights": [
+          "Added tenant+occurredAt and tenant+type+occurredAt indexes",
+          "Validated with EXPLAIN on high-cardinality tenants",
+          "Reduced slow query risk for threading pipeline reads"
+        ],
+        "typeTags": ["tech-debt", "performance", "backend"],
+        "domainTags": ["indexes", "activity", "queries"]
+      }
+    },
+    {
+      "dayIndex": 29,
+      "time": "16:30",
+      "repo": "acme/web",
+      "number": 473,
+      "title": "Refactor: simplify timeline grouping + remove double-sorts",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Simplified timeline grouping logic and removed redundant sorts/passes to reduce UI overhead.",
+        "highlights": [
+          "Collapsed grouping into a single stable pass",
+          "Removed repeated sorting of already-ordered data",
+          "Improved readability of timeline data transforms"
+        ],
+        "typeTags": ["tech-debt", "ui", "performance"],
+        "domainTags": ["timeline", "grouping", "rendering"]
+      }
+    },
+    {
+      "dayIndex": 37,
+      "time": "09:50",
+      "repo": "acme/api",
+      "number": 474,
+      "title": "Hardening: make activity derivation fully idempotent",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Hardened activity derivation so replays and backfills are strictly idempotent across sources and versions.",
+        "highlights": [
+          "Tightened unique keys and conflict handling",
+          "Normalized derivedVersion semantics across event types",
+          "Added tests for replay and partial backfill scenarios"
+        ],
+        "typeTags": ["tech-debt", "backend", "infra"],
+        "domainTags": ["activity", "idempotency", "backfill"]
+      }
+    },
+    {
+      "dayIndex": 58,
+      "time": "13:15",
+      "repo": "acme/api",
+      "number": 475,
+      "title": "Threads: reduce duplicate thread creation in cold-start runs",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Reduced duplicate thread creation during cold-start by tightening clustering inputs and dedupe rules.",
+        "highlights": [
+          "Improved newThreadKey handling and dedupe guards",
+          "Added deterministic tie-breakers for similar clusters",
+          "Reduced near-duplicate thread titles in early data"
+        ],
+        "typeTags": ["tech-debt", "backend", "llm"],
+        "domainTags": ["threads", "bucketing", "cold-start"]
+      }
+    },
+    {
+      "dayIndex": 68,
+      "time": "10:45",
+      "repo": "acme/web",
+      "number": 476,
+      "title": "Timeline (Project B): tighten filters + event badges",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "small",
+      "touchedTests": false,
+      "summary": {
+        "short": "Follow-up tech debt on timeline UI: improved filtering semantics and clarified event badges.",
+        "highlights": [
+          "Fixed edge cases in type/category filters",
+          "Standardized badge labels for PR/review/meeting events",
+          "Reduced visual clutter in dense days"
+        ],
+        "typeTags": ["tech-debt", "ui", "cleanup"],
+        "domainTags": ["timeline", "filters", "badges"]
+      }
+    },
+    {
+      "dayIndex": 82,
+      "time": "15:35",
+      "repo": "acme/api",
+      "number": 477,
+      "title": "Threads: improve matching signals for cross-repo work",
+      "projectKey": "scattered_tech_debt",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Improved thread assignment matching for cross-repo work by weighting tags and domain overlap more heavily.",
+        "highlights": [
+          "Boosted domainTags/typeTags overlap scoring",
+          "Added fallback matching based on stable keywords",
+          "Reduced incorrect splits between API + Web work"
+        ],
+        "typeTags": ["tech-debt", "backend", "llm"],
+        "domainTags": ["threads", "matching", "signals"]
+      }
+    },
+
+    {
+      "dayIndex": 11,
+      "time": "12:25",
+      "repo": "acme/cli",
+      "number": 478,
+      "title": "Fix: CLI auth token refresh on expired sessions",
+      "projectKey": "misc_drive_bys",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "small",
+      "touchedTests": true,
+      "summary": {
+        "short": "Fixed an edge case where the CLI failed to refresh auth tokens after long idle periods.",
+        "highlights": [
+          "Handled refresh failure paths cleanly",
+          "Improved user-facing error message",
+          "Added regression test for expired session flow"
+        ],
+        "typeTags": ["bugfix", "cli"],
+        "domainTags": ["auth", "tokens", "sessions"]
+      }
+    },
+    {
+      "dayIndex": 34,
+      "time": "09:40",
+      "repo": "acme/mobile",
+      "number": 479,
+      "title": "UI: reduce jank on activity list scroll (virtualization tweak)",
+      "projectKey": "misc_drive_bys",
+      "state": "merged",
+      "reviewIntensity": "light",
+      "size": "medium",
+      "touchedTests": false,
+      "summary": {
+        "short": "Improved scroll performance on the activity list by adjusting virtualization thresholds and row measurement.",
+        "highlights": [
+          "Reduced re-measure churn on fast scroll",
+          "Fixed occasional blank row render",
+          "Tweaked prefetch window for smoother UX"
+        ],
+        "typeTags": ["performance", "ui"],
+        "domainTags": ["mobile", "virtualization", "rendering"]
+      }
+    },
+    {
+      "dayIndex": 46,
+      "time": "17:05",
+      "repo": "acme/infra",
+      "number": 480,
+      "title": "CI: tighten lint rules + fix flaky test runner config",
+      "projectKey": "misc_drive_bys",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "medium",
+      "touchedTests": true,
+      "summary": {
+        "short": "Tightened lint rules and addressed a flaky CI test runner configuration that caused intermittent failures.",
+        "highlights": [
+          "Pinned runner versions for stability",
+          "Fixed parallelism config causing race conditions",
+          "Added CI-only regression coverage"
+        ],
+        "typeTags": ["infra", "maintenance"],
+        "domainTags": ["ci", "lint", "tests"]
+      }
+    },
+    {
+      "dayIndex": 63,
+      "time": "10:30",
+      "repo": "acme/billing",
+      "number": 481,
+      "title": "Fix: invoice PDF generation rounding mismatch",
+      "projectKey": "misc_drive_bys",
+      "state": "merged",
+      "reviewIntensity": "normal",
+      "size": "small",
+      "touchedTests": true,
+      "summary": {
+        "short": "Fixed a rounding mismatch between line items and totals in invoice PDF generation.",
+        "highlights": [
+          "Standardized rounding strategy across components",
+          "Added test cases for fractional tax amounts",
+          "Prevented negative-zero display in PDFs"
+        ],
+        "typeTags": ["bugfix", "backend"],
+        "domainTags": ["billing", "invoices", "pdf"]
+      }
+    },
+    {
+      "dayIndex": 88,
+      "time": "14:45",
+      "repo": "acme/security",
+      "number": 482,
+      "title": "Hardening: rotate signing keys + update JWKS cache behavior",
+      "projectKey": "misc_drive_bys",
+      "state": "merged",
+      "reviewIntensity": "heavy",
+      "size": "large",
+      "touchedTests": true,
+      "summary": {
+        "short": "Rotated signing keys and updated JWKS caching behavior to reduce auth risk during key rollovers.",
+        "highlights": [
+          "Implemented dual-key overlap window",
+          "Adjusted JWKS cache TTL + refresh strategy",
+          "Added rollover simulation tests"
+        ],
+        "typeTags": ["security", "infra"],
+        "domainTags": ["auth", "jwks", "keys"]
+      }
+    }
+  ]
+}

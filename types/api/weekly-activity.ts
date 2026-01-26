@@ -1,0 +1,156 @@
+import { z } from 'zod';
+import { CalendarEventCategorySchema, TeamMeetingSubtypeSchema } from './prep';
+import { ActivityEventSchema } from './timeline';
+
+export const WeekRangeSchema = z.object({
+  startISO: z.string(),
+  endISO: z.string(),
+  label: z.string(), // e.g. "Last week · Oct 14–18"
+});
+
+export const StatsSchema = z
+  .object({
+    prsAuthored: z.number().int().nonnegative(),
+    prsReviewed: z.number().int().nonnegative(),
+    activeDays: z.number().int().nonnegative(),
+    mostActiveDay: z
+      .enum(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+      .optional(),
+    meetingMinutes: z.number().optional(),
+    meetingCount: z.number().optional(),
+  })
+  .catchall(z.any());
+
+export const PRReferenceSchema = z.object({
+  prId: z.string(),
+  repo: z.string().optional(),
+  number: z.number().int().optional(),
+  title: z.string(),
+  htmlUrl: z.string(),
+});
+
+export const HighlightReasonSchema = z.enum([
+  'impact', // big / important work
+  'friction', // slow, blocked, lots of back-and-forth
+  'fast_loop', // small + fast wins
+  'other',
+]);
+export type HighlightReason = z.infer<typeof HighlightReasonSchema>;
+
+export const ShippedItemSchema = PRReferenceSchema.extend({
+  shortSummary: z.string(), // from LLM
+  tags: z.array(z.string()).default([]), // "feature-x", "infra", "tests"
+  occurredAt: z.string().datetime().optional(),
+
+  leadTimeHours: z.number().nullable().optional(), // first commit -> merge
+  timeToFirstReviewHours: z.number().nullable().optional(), // ready -> first review
+  timeReviewToMergeHours: z.number().nullable().optional(), // first review -> merge
+
+  linesChanged: z.number().int().nullable().optional(),
+  filesChanged: z.number().int().nullable().optional(),
+  reviewRounds: z.number().int().nullable().optional(),
+  approvalsCount: z.number().int().nullable().optional(),
+  touchedTests: z.boolean().optional(),
+
+  highlightReason: HighlightReasonSchema.optional(),
+}).catchall(z.any());
+export type ShippedItem = z.infer<typeof ShippedItemSchema>;
+
+export const HighlightedReviewSchema = PRReferenceSchema.extend({
+  shortSummary: z.string(), // from LLM
+  tags: z.array(z.string()).default([]), // "architecture", "tests"
+  submittedAt: z.string().optional(),
+
+  reviewLatencyHours: z.number().nullable().optional(),
+  reviewCommentsCount: z.number().int().nullable().optional(),
+  isApproval: z.boolean().optional(),
+  isBlocking: z.boolean().optional(),
+  isFirstReview: z.boolean().optional(),
+
+  highlightReason: HighlightReasonSchema.optional(),
+}).catchall(z.any());
+export type HighlightedReview = z.infer<typeof HighlightedReviewSchema>;
+
+export const ReviewsCollabSchema = z
+  .object({
+    totalReviewed: z.number().int().nonnegative(),
+    firstResponderCount: z.number().int().nonnegative(),
+    highlightedReview: HighlightedReviewSchema.optional(),
+    // Future fields: reviewLatencyStats, crossTeamCount, etc.
+  })
+  .catchall(z.any());
+
+export const WhatYouWorkedOnSchema = z
+  .object({
+    // Optional short narrative, e.g.
+    // "Most of your work was in auth, billing, and infra refactors."
+    textSummary: z.string().optional(),
+
+    // Domains / skills / systems you touched.
+    // Think: "auth", "billing", "infra", "tests", "frontend"
+    focusAreas: z.array(z.string()).default([]),
+  })
+  .catchall(z.any());
+
+const FrictionItemBaseSchema = z.object({
+  id: z.string().optional(), // for stable keys in the UI
+  text: z.string(),
+  relatedPr: ActivityEventSchema.optional(),
+  severity: z.enum(['low', 'medium', 'high']).optional(),
+});
+
+export const FrictionItemSchema = z.discriminatedUnion('kind', [
+  FrictionItemBaseSchema.extend({
+    kind: z.literal('iteration'), // multi-round changes, back-and-forth
+    // Future: fields like iterationCount, rounds, etc.
+  }),
+  FrictionItemBaseSchema.extend({
+    kind: z.literal('latency'), // slow reviews / waits
+    // Future: fields like waitTimeHours, phase ("pre-review", "post-review")
+  }),
+  FrictionItemBaseSchema.extend({
+    kind: z.literal('theme'), // recurring feedback theme
+    themeTags: z.array(z.string()).default([]), // "tests", "architecture"
+  }),
+  FrictionItemBaseSchema.extend({
+    kind: z.literal('other'), // for anything that doesn't fit yet
+  }),
+]);
+
+export type FrictionItem = z.infer<typeof FrictionItemSchema>;
+
+export const FrictionFollowupsSchema = z
+  .object({
+    items: z.array(FrictionItemSchema).default([]),
+  })
+  .catchall(z.any());
+
+export type CalendarEventCategory = z.infer<typeof CalendarEventCategorySchema>;
+export const WeeklyCalendarSummarySchema = z.object({
+  meetingMinutes: z.number(), // total minutes scheduled (excludes declined, excludes personal if you want)
+  meetingCount: z.number(),
+  deepWorkBlocksCount: z.number().optional(),
+  categories: z
+    .array(
+      z.object({
+        key: CalendarEventCategorySchema,
+        count: z.number(),
+        minutes: z.number().optional(),
+        subcategories: z.array(TeamMeetingSubtypeSchema).optional(),
+        subcategoryCountTotal: z.number().int().optional(),
+      })
+    )
+    .optional(),
+});
+export type WeeklyCalendarSummary = z.infer<typeof WeeklyCalendarSummarySchema>;
+
+export const WeeklyActivitySchema = z
+  .object({
+    softStats: StatsSchema,
+    frictionFollowups: FrictionFollowupsSchema.optional(),
+    calendar: WeeklyCalendarSummarySchema.optional(),
+  })
+  // Allow additional top-level keys in future without breaking older clients
+  .catchall(z.any());
+
+export type WeeklyActivity = z.infer<typeof WeeklyActivitySchema>;
