@@ -14,7 +14,7 @@ function initBootstrapCursor(nowISO: string): BootstrapCursor {
   return {
     v: 1,
     step: 'normalize',
-    lookbackDays: 14,
+    lookbackDays: 28,
     startedAtISO: nowISO,
     summarize: {
       items: [],

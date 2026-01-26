@@ -447,23 +447,7 @@ export function LoadingClient({
                 View settings
               </Link>
             </>
-          ) : (
-            <>
-              <Link
-                href="/dashboard"
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-500/50 px-6 text-sm font-medium text-white shadow-sm hover:bg-indigo-400/50 transition"
-              >
-                Go to Dashboard →
-              </Link>
-
-              <Link
-                href="/settings"
-                className="inline-flex h-11 items-center justify-center rounded-xl px-6 text-sm font-medium text-white/50 shadow-sm hover:bg-slate-900 transition border border-white/10"
-              >
-                View settings
-              </Link>
-            </>
-          )}
+          ) : null}
         </div>
       </div>
     </main>

@@ -502,7 +502,7 @@ export default function CalendarSetupClient({
       </div>
       {!isFromSettings && (
         <div className="mt-8 flex items-center justify-between gap-3">
-          {!syncComplete && (
+          {!syncComplete && !showSyncPanel ? (
             <button
               type="button"
               onClick={() => handleAdvance({ requireSync: false })}
@@ -511,6 +511,8 @@ export default function CalendarSetupClient({
             >
               Skip for now — insights and prep will be more limited
             </button>
+          ) : (
+            <div className="w-1 h-1 bg-transparent" />
           )}
 
           <div className="flex items-center gap-3">
