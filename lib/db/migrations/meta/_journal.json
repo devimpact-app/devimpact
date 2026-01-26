@@ -134,6 +134,13 @@
       "when": 1769384982581,
       "tag": "0018_drop_team_memberships",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1769450959735,
+      "tag": "0019_drop_one_on_one_sessions_table",
+      "breakpoints": true
     }
   ]
 }

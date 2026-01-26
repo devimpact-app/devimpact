@@ -1,10 +1,10 @@
 import { PullRequest, Review } from '@/lib/db/schema';
-import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
 import {
   HighlightedReview,
   HighlightReason,
   ShippedItem,
 } from '@/types/api/weekly-activity';
+import { PR_TYPE_LABELS } from '../../pull-requests/service/llm/types';
 
 export function serializeShippedItem(
   pr: PullRequest,

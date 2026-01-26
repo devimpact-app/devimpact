@@ -1,4 +1,4 @@
-import { PR_TYPE_LABELS } from '@/lib/integrations/openai/prompts/prSummary';
+import { PR_TYPE_LABELS } from '../../pull-requests/service/llm/types';
 
 export function buildTagFrequencyMap(tags: string[]): Map<string, number> {
   const freq = new Map<string, number>();

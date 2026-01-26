@@ -15,7 +15,7 @@ import {
   prSummaries,
 } from '@/lib/db/schema/github-normalized';
 import { eq } from 'drizzle-orm';
-import { oneOnOneSessions, prepItems } from '../db/schema';
+import { prepItems } from '../db/schema';
 import {
   calendarEvents,
   calendarSelections,
@@ -51,9 +51,6 @@ export async function deleteUserSyncedData(tenantId: string) {
       .where(eq(activityEvents.tenantId, tenantId));
 
     // Prep feature
-    await tx
-      .delete(oneOnOneSessions)
-      .where(eq(oneOnOneSessions.tenantId, tenantId));
     await tx.delete(prepItems).where(eq(prepItems.tenantId, tenantId));
 
     // Calendar integration

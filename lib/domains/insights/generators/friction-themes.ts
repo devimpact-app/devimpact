@@ -1,5 +1,4 @@
 import { InsightContext, InsightDraft } from '../types';
-import { REVIEW_TAG_VOCAB } from '@/lib/integrations/openai/prompts/prSummary';
 import {
   MAX_HOURS_CUTOFF,
   REVIEW_TAG_DESCRIPTION,
@@ -11,6 +10,7 @@ import { computeMedianClamped } from '@/lib/utils/math';
 import { Insight, InsightRelatedItem } from '@/types/api/insights';
 import { scoreInsightBase } from '../scoring';
 import { formatRangeServer } from '@/lib/utils/server-date';
+import { REVIEW_TAG_VOCAB } from '../../pull-requests/service/llm/types';
 
 type TagStats = {
   tag: ReviewTag;

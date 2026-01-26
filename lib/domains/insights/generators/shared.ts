@@ -1,4 +1,4 @@
-import { REVIEW_TAG_VOCAB } from '@/lib/integrations/openai/prompts/prSummary';
+import { REVIEW_TAG_VOCAB } from '../../pull-requests/service/llm/types';
 
 export const MAX_HOURS_CUTOFF = 24 * 14; // clamp at 14 days
 
