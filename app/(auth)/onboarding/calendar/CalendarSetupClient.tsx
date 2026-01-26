@@ -314,14 +314,14 @@ export default function CalendarSetupClient({
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-4">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
             <Shield className="h-3.5 w-3.5 text-slate-400" />
             What we use (and what we don’t)
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 text-xs text-slate-400">
             <div>
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-300">
                 We store
               </div>
               <ul className="list-disc list-inside space-y-1">
@@ -336,7 +336,7 @@ export default function CalendarSetupClient({
               </ul>
             </div>
             <div>
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-300">
                 We don’t store
               </div>
               <ul className="list-disc list-inside space-y-1">
@@ -347,7 +347,7 @@ export default function CalendarSetupClient({
             </div>
           </div>
 
-          <p className="mt-3 text-[11px] text-slate-500">
+          <p className="mt-3 text-xs text-slate-500">
             You can disconnect anytime in Settings to immediately stop calendar
             reads.
           </p>
@@ -357,7 +357,7 @@ export default function CalendarSetupClient({
           <div className="mt-6">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                   Calendar selection
                 </div>
                 <div className="text-xs text-slate-400">
@@ -403,7 +403,7 @@ export default function CalendarSetupClient({
                               checked={Boolean(c.isSelected)}
                               onChange={() => toggleCalendar(c.id)}
                             />
-                            <span className="font-mono text-[11px]">
+                            <span className="font-mono text-xs">
                               {c.summary}
                             </span>
                           </div>
@@ -434,7 +434,7 @@ export default function CalendarSetupClient({
                               checked={Boolean(c.isSelected)}
                               onChange={() => toggleCalendar(c.id)}
                             />
-                            <span className="font-mono text-[11px]">
+                            <span className="font-mono text-xs">
                               {c.summary}
                             </span>
                           </div>
@@ -484,13 +484,13 @@ export default function CalendarSetupClient({
             </div>
 
             {selectedCount === 0 && (
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-xs text-slate-500">
                 Select at least one calendar above to enable sync.
               </p>
             )}
 
             {status?.lastSyncRun && (
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-xs text-slate-500">
                 Last synced:{' '}
                 <span className="text-slate-300">
                   {new Date(status.lastSyncRun.startedAt).toLocaleString()}

@@ -108,7 +108,7 @@ export default function PrepClient({ user }: Props) {
 
       <div className="min-w-0">
         {error && (
-          <p className="mt-1 text-[11px] text-rose-300/90 truncate">{error}</p>
+          <p className="mt-1 text-xs text-rose-300/90 truncate">{error}</p>
         )}
       </div>
 
@@ -118,9 +118,7 @@ export default function PrepClient({ user }: Props) {
             Past preps
           </h2>
           {items && items.length > 0 && (
-            <span className="text-[11px] text-slate-500">
-              {items.length} saved
-            </span>
+            <span className="text-xs text-slate-500">{items.length} saved</span>
           )}
         </div>
 
@@ -130,10 +128,10 @@ export default function PrepClient({ user }: Props) {
               Loading your past preps…
             </div>
           ) : !items || items.length === 0 ? (
-            <div className="px-4 py-6 text-xs text-slate-400">
+            <div className="px-4 py-6 text-sm text-slate-400">
               You haven&apos;t generated any meeting prep yet.
               <br />
-              <span className="text-slate-500">
+              <span className="text-slate-500 text-[13px]">
                 Start with quick actions above and they&apos;ll show up here
                 once saved.
               </span>
@@ -142,13 +140,13 @@ export default function PrepClient({ user }: Props) {
             <table className="min-w-full text-[13px]">
               <thead className="bg-slate-950/90 border-b border-slate-800/80">
                 <tr>
-                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
                     Title
                   </th>
-                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
                     Meeting date
                   </th>
-                  <th className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
                     Created
                   </th>
                 </tr>

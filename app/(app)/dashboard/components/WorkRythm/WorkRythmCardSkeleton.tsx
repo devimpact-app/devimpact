@@ -32,7 +32,7 @@ export function WorkRhythmCardSkeleton() {
           </div>
         </div>
 
-        <div className="inline-flex items-center gap-1 text-[11px] text-indigo-300">
+        <div className="inline-flex items-center gap-1 text-xs text-indigo-300">
           View timeline
           <ChevronRight className="h-3.5 w-3.5" />
         </div>
@@ -71,7 +71,7 @@ export function WorkRhythmCardSkeleton() {
       </div>
 
       <div className="mt-3 space-y-2">
-        <p className="text-[11px] text-[#4C5B86]">
+        <p className="text-xs text-[#4C5B86]">
           Building your typical week based on {windowLabel}…
         </p>
         <div className="space-y-1">

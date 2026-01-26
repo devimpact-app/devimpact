@@ -153,6 +153,7 @@ export function DayColumn({
                         : cur
                     );
                   }}
+                  // onClick={() => onEventClick?.(b.meeting.event)}
                   aria-label={
                     b.meeting.title ? `Meeting: ${b.meeting.title}` : 'Meeting'
                   }
@@ -213,28 +214,28 @@ export function DayColumn({
             >
               {hovered.type === 'dot' ? (
                 <>
-                  <div className="mb-1 text-[11px] text-white/60">
+                  <div className="mb-1 text-xs text-white/60">
                     {kindLabel(hovered.dot.event.kind)} ·{' '}
                     {formatTimeIso(hovered.dot.event.occurredAt)}
                   </div>
-                  <div className="text-xs font-medium text-white/90 line-clamp-2">
+                  <div className="text-[13px] font-medium text-white/90 line-clamp-2">
                     {hovered.dot.event.title}
                   </div>
                   {hovered.dot.event.subtitle && (
-                    <div className="mt-0.5 text-[11px] text-white/60">
+                    <div className="mt-0.5 text-xs text-white/60">
                       {hovered.dot.event.subtitle}
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <div className="mb-1 text-[11px] text-white/60">Meeting</div>
-                  <div className="text-xs font-medium text-white/90 line-clamp-2">
+                  <div className="mb-1 text-xs text-white/60">Meeting</div>
+                  <div className="text-[13px] font-medium text-white/90 line-clamp-2">
                     {hovered.block.meeting.title?.trim()
                       ? hovered.block.meeting.title
                       : 'Meeting'}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-white/60">
+                  <div className="mt-0.5 text-xs text-white/60">
                     {formatTimeRange(
                       new Date(hovered.block.meeting.startAt),
                       new Date(hovered.block.meeting.endAt)

@@ -38,7 +38,6 @@ export default function OnboardingCheckpoint() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-24 text-center">
-        {/* pill */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wide text-white/70">
           <span className="h-1.5 w-1.5 rounded-full bg-indigo-300" />
           Setup checkpoint
@@ -55,7 +54,6 @@ export default function OnboardingCheckpoint() {
           needed.
         </p>
 
-        {/* 3 cards */}
         <div className="mt-10 grid w-full gap-4 text-left sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">
@@ -95,7 +93,6 @@ export default function OnboardingCheckpoint() {
           </div>
         </div>
 
-        {/* trust note */}
         <div className="mt-8 w-full rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left">
           <p className="text-[13px] leading-relaxed text-white/65">
             <span className="text-white/85 font-medium">Privacy note:</span>{' '}
@@ -105,7 +102,6 @@ export default function OnboardingCheckpoint() {
           </p>
         </div>
 
-        {/* CTA */}
         <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
           <Link
             href="/onboarding/cli"

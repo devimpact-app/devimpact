@@ -162,7 +162,7 @@ export function WeeklySummaryDetailPage({
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={[
-                      'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium',
+                      'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
                       statusPill(summary.status),
                     ].join(' ')}
                   >
@@ -178,7 +178,7 @@ export function WeeklySummaryDetailPage({
                   </span>
 
                   {summary.status === 'failed' && summary.lastError ? (
-                    <span className="inline-flex items-center rounded-full border border-rose-400/20 bg-rose-400/5 px-2.5 py-1 text-[11px] font-medium text-rose-200">
+                    <span className="inline-flex items-center rounded-full border border-rose-400/20 bg-rose-400/5 px-2.5 py-1 text-xs font-medium text-rose-200">
                       Error
                     </span>
                   ) : null}

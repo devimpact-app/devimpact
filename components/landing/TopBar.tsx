@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { NavAuthButton } from './AuthButton';
 
 export default function TopBar({ code }: { code?: string }) {
   return (
@@ -30,18 +31,7 @@ export default function TopBar({ code }: { code?: string }) {
           </a>
 
           <nav className="flex items-center gap-4">
-            <a
-              href={`/login${code ? `?code=${encodeURIComponent(code)}` : ''}`}
-              className="
-                rounded-xl border border-[#283047]
-                bg-transparent px-4 py-2
-                text-sm font-medium text-[#E2E6FF]
-                hover:bg-white/5 hover:border-[#3B4A78]
-                transition
-              "
-            >
-              Log in
-            </a>
+            <NavAuthButton />
           </nav>
         </div>
       </div>

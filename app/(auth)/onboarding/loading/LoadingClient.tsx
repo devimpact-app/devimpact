@@ -387,7 +387,7 @@ export function LoadingClient({
                         {s.label}
                       </span>
                       {s.sub ? (
-                        <span className="text-[11px] text-white/40 font-mono">
+                        <span className="text-xs text-white/40 font-mono">
                           {s.sub}
                         </span>
                       ) : null}
@@ -398,7 +398,7 @@ export function LoadingClient({
             </ul>
 
             <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="text-[11px] text-white/40">
+              <div className="text-xs text-white/40">
                 {pollError ? (
                   <span className="text-red-300">{pollError}</span>
                 ) : job?.status === 'queued' ? (

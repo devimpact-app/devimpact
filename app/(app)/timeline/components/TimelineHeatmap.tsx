@@ -46,6 +46,7 @@ export function TimelineHeatmap({
         title: ev.meta?.eventTitle || 'Meeting',
         isAllDay: ev.meta?.isAllDay || false,
         kind: ev.meta?.meetingKind || 'meeting',
+        event: ev,
       }));
     const nonMeetings = events.filter((ev) => ev.kind !== 'meeting');
     return { meetings, nonMeetings };

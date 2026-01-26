@@ -84,7 +84,7 @@ export function ActivityEventsSection({
         </div>
 
         <div className="shrink-0">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/70">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-white/70">
             <Activity className="h-3.5 w-3.5" />
             {total} total
           </span>
@@ -105,7 +105,7 @@ export function ActivityEventsSection({
                     <Calendar className="h-3.5 w-3.5 text-white/45" />
                     {fmtDayLabel(g.date)}
                   </div>
-                  <div className="text-[11px] text-white/45">
+                  <div className="text-xs text-white/45">
                     {g.items.length} {g.items.length === 1 ? 'event' : 'events'}
                   </div>
                 </div>

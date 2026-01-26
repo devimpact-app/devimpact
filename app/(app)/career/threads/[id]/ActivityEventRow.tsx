@@ -106,7 +106,7 @@ export function ActivityEventRow({
             </div>
 
             <div className="flex shrink-0 items-center gap-2 pl-2">
-              <div className="text-[11px] text-white/45 tabular-nums">
+              <div className="text-xs text-white/45 tabular-nums">
                 {timeLabel}
               </div>
               <ChevronRight className="h-4 w-4 text-white/25 transition group-hover:text-white/40" />

@@ -10,7 +10,7 @@ function formatDateShort(iso: string | null) {
 
 function MetricChip({ label, value }: { label: string; value: number }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
+    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70">
       <span className="tabular-nums text-white/80">{value}</span>
       <span>{label}</span>
     </div>
@@ -44,7 +44,7 @@ export function ThreadCard({
           <div className="flex items-center gap-2">
             <span
               className={[
-                'inline-flex items-center rounded-full border px-2 py-1 text-[11px] leading-none',
+                'inline-flex items-center rounded-full border px-2 py-1 text-xs leading-none',
                 categoryPillClasses(thread.categoryKey),
               ].join(' ')}
             >
@@ -52,7 +52,7 @@ export function ThreadCard({
             </span>
 
             {thread.status === 'archived' ? (
-              <span className="text-[11px] text-white/45">Archived</span>
+              <span className="text-xs text-white/45">Archived</span>
             ) : null}
           </div>
 
@@ -62,7 +62,7 @@ export function ThreadCard({
         </div>
 
         <div className="flex flex-col items-end gap-2 pt-1">
-          <div className="text-[11px] text-white/55">
+          <div className="text-xs text-white/55">
             <span className="text-white/45 mr-1">Last activity</span>{' '}
             <span className="tabular-nums text-white/70">
               {formatDateShort(lastActive)}
@@ -71,7 +71,7 @@ export function ThreadCard({
         </div>
       </div>
 
-      <div className="mt-2 text-[13px] leading-relaxed text-white/70">
+      <div className="mt-2 text-sm leading-relaxed text-white/70">
         <p>{thread.summaryHeadline ?? 'No summary yet'}</p>
       </div>
 
@@ -86,7 +86,7 @@ export function ThreadCard({
         <div className="mx-1 h-3 w-px bg-white/10" />
 
         {thread.lastEvent ? (
-          <div className="flex items-center justify-between gap-3 text-xs text-white/50">
+          <div className="flex items-center justify-between gap-3 text-[13px] text-white/50">
             <div className="truncate">
               <span className="text-white/45">Last:</span>{' '}
               <span className="text-white/65">{thread.lastEvent.title}</span>

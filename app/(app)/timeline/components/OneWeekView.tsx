@@ -56,7 +56,7 @@ export function OneWeekView({
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
           {label ? label : 'Activity this week'}
         </h3>
-        <div className="flex items-center gap-3 text-[11px] text-text-secondary">
+        <div className="flex items-center gap-3 text-xs text-text-secondary">
           <span className="inline-flex items-center gap-1.5">
             <LegendDot className="bg-red-400 border-red-300" />
             <span>Commits</span>

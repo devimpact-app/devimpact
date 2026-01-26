@@ -4,7 +4,7 @@ import { formatWeekRangeForWeeklySummary } from './helpers';
 
 function StatusPill({ status }: { status: WeeklySummaryItem['status'] }) {
   const base =
-    'inline-flex items-center rounded-full border px-2 py-1 text-[11px] leading-none';
+    'inline-flex items-center rounded-full border px-2 py-1 text-xs leading-none';
 
   const cls =
     status === 'ready'
@@ -33,7 +33,7 @@ function StatusPill({ status }: { status: WeeklySummaryItem['status'] }) {
 
 function MetricChip({ label, value }: { label: string; value: number }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
+    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70">
       <span className="tabular-nums text-white/80">{value}</span>
       <span>{label}</span>
     </div>
@@ -87,20 +87,20 @@ export function WeeklySummaryCard({
           <div className="truncate text-[15px] font-semibold tracking-tight text-white">
             {weekLabel}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/50">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/50">
             <StatusPill status={summary.status} />
             <span className="text-white/25">·</span>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2 pt-1">
-          <div className="text-[11px] text-white/55">
+          <div className="text-xs text-white/55">
             <span className="tabular-nums text-white/70">{rightMeta}</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-2 text-[13px] leading-relaxed text-white/70">
+      <div className="mt-2 text-sm leading-relaxed text-white/70">
         {summary.status === 'failed' ? (
           <p className="line-clamp-2 text-rose-200/70">
             {summary.lastError?.trim()
@@ -128,12 +128,12 @@ export function WeeklySummaryCard({
         <div className="mx-1 h-3 w-px bg-white/10" />
 
         {summary.status === 'ready' && summary.emailedAt ? (
-          <div className="truncate text-[11px] text-white/50">
+          <div className="truncate text-xs text-white/50">
             <span className="text-white/45">Delivery:</span>{' '}
             <span className="text-white/65">Email sent</span>
           </div>
         ) : summary.status === 'ready' ? (
-          <div className="truncate text-[11px] text-white/50">
+          <div className="truncate text-xs text-white/50">
             <span className="text-white/45">Delivery:</span>{' '}
             <span className="text-white/65">Not sent</span>
           </div>

@@ -118,12 +118,10 @@ export function ActivityLog({
           {mode === 'full'
             ? grouped.map((group) => (
                 <div key={group.dayLabel} className="space-y-1.5">
-                  {/* Day header */}
                   <div className="text-[11px] font-medium uppercase tracking-wide text-white/60 px-0.5">
                     {group.dayLabel}
                   </div>
 
-                  {/* Events for that day */}
                   {group.events.map((ev) => (
                     <ActivityLogRow
                       key={ev.id}

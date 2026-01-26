@@ -117,7 +117,7 @@ export function ThreadDetailPage({
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={[
-                        'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium',
+                        'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
                         categoryPillClasses(t.categoryKey),
                       ].join(' ')}
                     >
@@ -125,7 +125,7 @@ export function ThreadDetailPage({
                     </span>
 
                     {t.status === 'archived' ? (
-                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/70">
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-white/70">
                         Archived
                       </span>
                     ) : null}

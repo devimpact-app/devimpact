@@ -4,6 +4,7 @@ import {
   WORKDAY_SPAN_HOURS,
   WORKDAY_START_HOUR,
 } from './DotLogic';
+import { ActivityEvent } from '@/types/api/timeline';
 
 export type TimelineMeeting = {
   id: string;
@@ -12,6 +13,7 @@ export type TimelineMeeting = {
   title?: string | null;
   isAllDay?: boolean;
   kind?: 'meeting' | 'ooo' | 'all_day';
+  event: ActivityEvent;
 };
 
 export type TimelineBlock = {

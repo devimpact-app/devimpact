@@ -147,13 +147,13 @@ export function EventInspectorPanel({
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <div className="inline-flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-border py-[2px] text-[11px] text-text-secondary bg-surface/80 px-2">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border py-[2px] text-xs text-text-secondary bg-surface/80 px-2">
               {kindIcon(event.kind)}
               <span>{kindLabel(event.kind)}</span>
             </span>
           </div>
 
-          <span className="inline-flex items-center gap-1 text-[11px] text-text-tertiary">
+          <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
             <Clock className="h-3 w-3" />
             {formatTime(event.occurredAt)}
           </span>
@@ -173,7 +173,7 @@ export function EventInspectorPanel({
           {event.title}
         </h2>
         {event.subtitle && (
-          <p className="text-[11px] text-text-secondary">{event.subtitle}</p>
+          <p className="text-xs text-text-secondary">{event.subtitle}</p>
         )}
       </div>
 
@@ -188,7 +188,7 @@ export function EventInspectorPanel({
           )}
           <div>
             <div className="text-text-primary text-xs">{event.actor.login}</div>
-            <div className="text-[11px] text-text-tertiary">
+            <div className="text-xs text-text-tertiary">
               {event.kind === 'review_submitted'
                 ? 'Submitted this review'
                 : event.kind === 'pr_commit'
@@ -228,7 +228,7 @@ export function EventInspectorPanel({
                 </p>
 
                 {summary.highlights?.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-[11px] text-text-secondary">
+                  <ul className="mt-2 space-y-1 text-xs text-text-secondary">
                     {summary.highlights.map((h: any) => (
                       <li key={h} className="flex gap-1">
                         <span className="mt-[3px] h-[3px] w-[3px] rounded-full bg-text-tertiary" />
@@ -274,9 +274,7 @@ export function EventInspectorPanel({
             <dl className="grid grid-cols-2 gap-2 text-xs">
               {event.meta?.linesChanged ? (
                 <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-                  <dt className="text-[11px] text-text-tertiary">
-                    Lines changed
-                  </dt>
+                  <dt className="text-xs text-text-tertiary">Lines changed</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                     {event.meta.linesChanged}
                   </dd>
@@ -285,9 +283,7 @@ export function EventInspectorPanel({
 
               {event.meta?.filesChanged ? (
                 <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-                  <dt className="text-[11px] text-text-tertiary">
-                    Files touched
-                  </dt>
+                  <dt className="text-xs text-text-tertiary">Files touched</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                     {event.meta.filesChanged}
                   </dd>
@@ -296,9 +292,7 @@ export function EventInspectorPanel({
 
               {latencyText ? (
                 <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-                  <dt className="text-[11px] text-text-tertiary">
-                    Review latency
-                  </dt>
+                  <dt className="text-xs text-text-tertiary">Review latency</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                     {latencyText}
                   </dd>
@@ -307,7 +301,7 @@ export function EventInspectorPanel({
 
               {event.meta?.isFirstResponder ? (
                 <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-                  <dt className="text-[11px] text-text-tertiary">Role</dt>
+                  <dt className="text-xs text-text-tertiary">Role</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                     First reviewer on this PR
                   </dd>
@@ -316,7 +310,7 @@ export function EventInspectorPanel({
 
               {event.meta?.stateLabel ? (
                 <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-                  <dt className="text-[11px] text-text-tertiary">State</dt>
+                  <dt className="text-xs text-text-tertiary">State</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                     {event.meta.stateLabel}
                   </dd>

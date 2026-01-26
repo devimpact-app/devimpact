@@ -137,7 +137,7 @@ export function DashboardAlerts({
                 onClick={() => {
                   router.push('/settings');
                 }}
-                className="inline-flex items-center rounded-full border border-amber-400/60 bg-amber-400/15 px-3 py-1 text-[11px] font-medium text-amber-50 hover:bg-amber-400/25 transition-colors"
+                className="inline-flex items-center rounded-full border border-amber-400/60 bg-amber-400/15 px-3 py-1 text-xs font-medium text-amber-50 hover:bg-amber-400/25 transition-colors"
               >
                 {buttonText}
               </button>

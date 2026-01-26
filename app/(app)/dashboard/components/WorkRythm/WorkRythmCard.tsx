@@ -170,7 +170,7 @@ export function WorkRhythmCard({
         <WorkRhythmLegend showMeetings={showMeetingsLegend} />
 
         {!showMeetingsLegend && (
-          <span className="text-[11px] text-white/30">
+          <span className="text-xs text-white/30">
             Connect Calendar to overlay meetings.
           </span>
         )}
@@ -342,7 +342,7 @@ export function WorkRhythmCard({
           </div>
         ) : null}
 
-        {error && <p className="text-[11px] text-red-300/80">{error}</p>}
+        {error && <p className="text-xs text-red-300/80">{error}</p>}
       </div>
     </section>
   );

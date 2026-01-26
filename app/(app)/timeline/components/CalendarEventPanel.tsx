@@ -270,17 +270,15 @@ export function CalendarEventInspectorPanel({
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-[2px] text-[11px] text-text-secondary bg-surface/80">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-[2px] text-xs text-text-secondary bg-surface/80">
               <CalendarClock className="h-3.5 w-3.5" />
               <span>{categoryLabel}</span>
             </span>
 
-            {dur && (
-              <span className="text-[11px] text-text-tertiary">{dur}</span>
-            )}
+            {dur && <span className="text-xs text-text-tertiary">{dur}</span>}
           </div>
 
-          <span className="text-[11px] text-text-tertiary">{timeLabel}</span>
+          <span className="text-xs text-text-tertiary">{timeLabel}</span>
         </div>
 
         <button
@@ -298,12 +296,12 @@ export function CalendarEventInspectorPanel({
         </h2>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface/60 px-2 py-[2px] text-[11px] text-text-secondary">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface/60 px-2 py-[2px] text-xs text-text-secondary">
             <Tag className="h-3.5 w-3.5" />
             {event.categorySubtype ? subtypeLabel(event.categorySubtype) : '—'}
           </span>
 
-          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface/60 px-2 py-[2px] text-[11px] text-text-secondary">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface/60 px-2 py-[2px] text-xs text-text-secondary">
             {rsvp.icon}
             {rsvp.label}
           </span>
@@ -349,7 +347,7 @@ export function CalendarEventInspectorPanel({
                 <div className="text-text-primary">
                   {hasPrep ? 'Prep item exists' : 'No prep item yet'}
                 </div>
-                <div className="text-[11px] text-text-tertiary">
+                <div className="text-xs text-text-tertiary">
                   {hasPrep
                     ? 'This meeting has an attached prep draft.'
                     : prepSupported
@@ -359,7 +357,7 @@ export function CalendarEventInspectorPanel({
               </div>
 
               {hasPrep ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-[2px] text-[11px] text-text-secondary shrink-0">
+                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-[2px] text-xs text-text-secondary shrink-0">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Linked
                 </span>
@@ -367,7 +365,7 @@ export function CalendarEventInspectorPanel({
             </div>
 
             {createState === 'error' ? (
-              <p className="mt-2 text-[11px] text-text-secondary">
+              <p className="mt-2 text-xs text-text-secondary">
                 Couldn’t create prep right now. Try again in a moment.
               </p>
             ) : null}
@@ -381,7 +379,7 @@ export function CalendarEventInspectorPanel({
 
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-              <dt className="text-[11px] text-text-tertiary flex items-center gap-1">
+              <dt className="text-xs text-text-tertiary flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
                 Total
               </dt>
@@ -391,21 +389,21 @@ export function CalendarEventInspectorPanel({
             </div>
 
             <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-              <dt className="text-[11px] text-text-tertiary">Accepted</dt>
+              <dt className="text-xs text-text-tertiary">Accepted</dt>
               <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                 {event.attendeesAccepted ?? 0}
               </dd>
             </div>
 
             <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-              <dt className="text-[11px] text-text-tertiary">Declined</dt>
+              <dt className="text-xs text-text-tertiary">Declined</dt>
               <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                 {event.attendeesDeclined ?? 0}
               </dd>
             </div>
 
             <div className="rounded-lg border border-border bg-surface/60 px-2.5 py-2">
-              <dt className="text-[11px] text-text-tertiary">Needs action</dt>
+              <dt className="text-xs text-text-tertiary">Needs action</dt>
               <dd className="mt-0.5 text-sm font-semibold text-text-primary">
                 {event.attendeesNeedsAction ?? 0}
               </dd>
@@ -446,7 +444,7 @@ export function CalendarEventInspectorPanel({
             </div>
 
             {event.isOrganizerSelf ? (
-              <div className="pt-1 text-[11px] text-text-tertiary">
+              <div className="pt-1 text-xs text-text-tertiary">
                 You’re the organizer.
               </div>
             ) : null}

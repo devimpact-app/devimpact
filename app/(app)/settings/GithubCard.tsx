@@ -105,7 +105,7 @@ export function GithubCliCard({
       )}
 
       {cliDisconnected && (
-        <div className="mt-2 text-[11px] text-slate-500">
+        <div className="mt-2 text-xs text-slate-500">
           Connect the DevImpact CLI to start syncing your GitHub activity. Once
           linked, you&apos;ll be able to choose repos and run{' '}
           <code className="text-[10px] text-slate-200">devimpact sync</code>{' '}
@@ -117,11 +117,11 @@ export function GithubCliCard({
       {!cliDisconnected && expanded && (
         <div className="mt-3 rounded-lg border border-slate-800 bg-slate-900/50 px-3 py-2 space-y-3">
           <div>
-            <p className="text-[11px] text-slate-400 mb-1">
+            <p className="text-xs text-slate-400 mb-1">
               Primary sync (uses your selected repos):
             </p>
             <CopyableCode>devimpact sync</CopyableCode>
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-xs text-slate-500">
               DevImpact will sync the repositories you&apos;ve selected in the
               app. You can update that list anytime via{' '}
               <button
@@ -136,7 +136,7 @@ export function GithubCliCard({
           </div>
 
           <div>
-            <p className="text-[11px] text-slate-400 mb-1">
+            <p className="text-xs text-slate-400 mb-1">
               Advanced: sync specific repos:
             </p>
             <CopyableCode>devimpact sync --repo my-org/my-service</CopyableCode>
@@ -144,7 +144,7 @@ export function GithubCliCard({
               devimpact sync --repo org/frontend --repo org/api --repo
               org/mobile
             </CopyableCode>
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-xs text-slate-500">
               Use the <code className="text-[10px] text-slate-200">--repo</code>{' '}
               flag if you want to override your saved repo selection for a
               one-off sync.

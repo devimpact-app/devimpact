@@ -60,7 +60,7 @@ export default async function OnboardingPage({
       if (bootstrapLoading) {
         redirect('/onboarding/loading');
       }
-      redirect('/onboarding/complete');
+      redirect('/dashboard');
     default:
       // Ensure we catch new states at build time
       assertNever(state as never);

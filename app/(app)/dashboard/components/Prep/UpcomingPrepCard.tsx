@@ -45,9 +45,7 @@ function ErrorState({ message }: { message: string }) {
         <p className="text-sm text-red-200/90 font-medium">
           Couldn’t load upcoming meetings
         </p>
-        <p className="text-[11px] text-red-200/60 mt-1 leading-snug">
-          {message}
-        </p>
+        <p className="text-xs text-red-200/60 mt-1 leading-snug">{message}</p>
       </div>
     </div>
   );
@@ -67,7 +65,7 @@ function CalendarConnectFooter() {
         <p className="text-xs font-medium text-white/70">
           Connect calendar for automation
         </p>
-        <p className="mt-0.5 text-[11px] text-white/40">
+        <p className="mt-0.5 text-xs text-white/40">
           Auto-prep scheduled meetings and pull better context. Read-only.
         </p>
       </div>
@@ -267,7 +265,7 @@ function EventList({ events }: { events: UpcomingCalendarEvent[] }) {
         <div className="pt-1">
           <Link
             href="/prep"
-            className="text-[11px] text-white/45 hover:text-white/65 transition"
+            className="text-xs text-white/45 hover:text-white/65 transition"
           >
             + {events.length - 3} more
           </Link>

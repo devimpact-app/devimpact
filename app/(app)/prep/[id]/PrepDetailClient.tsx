@@ -67,7 +67,7 @@ const ProblemState = ({ title, body }: { title: string; body: string }) => {
       <button
         type="button"
         onClick={() => router.push('/prep')}
-        className="mb-4 inline-flex items-center gap-1.5 self-start rounded-full border border-slate-700/80 bg-slate-950/60 px-3 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50 transition-colors"
+        className="mb-4 inline-flex items-center gap-1.5 self-start rounded-full border border-slate-700/80 bg-slate-950/60 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50 transition-colors"
       >
         {/* simple chevron using &larr; to avoid extra import */}
         <span className="text-xs">&larr;</span>

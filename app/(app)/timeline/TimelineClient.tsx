@@ -9,7 +9,6 @@ import { ActivityLogContainer } from '@/components/activity/ActivityLogContainer
 import { useWeekNavigation } from '@/components/dates/useWeekNavigation';
 import { WeekNavigator } from '@/components/dates/WeekPicker';
 import { OneWeekSkeleton } from './components/OneWeekView';
-import { getTimezone } from '@/lib/utils/date';
 
 type Props = {
   user: {
