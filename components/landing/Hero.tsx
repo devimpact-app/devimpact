@@ -55,37 +55,22 @@ export function HeroSection() {
         </h1>
 
         <p className="max-w-2xl text-lg sm:text-xl text-white/80 leading-relaxed">
-          Weekly summaries, meeting prep, and work organized over time —
-          automatically, so you can track what you did and why it mattered.
+          Weekly summaries, meeting prep, and work organized over time — so you
+          don’t lose track of what you worked on.
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
           <a
-            href="/beta-request"
+            href="mailto:ian@devimpact.app"
             className="
               rounded-lg bg-blue-500 px-6 py-3
               text-sm font-semibold text-white
               hover:bg-blue-400 transition
             "
           >
-            Request beta access
-          </a>
-
-          <a
-            href="#how-it-works"
-            className="
-              rounded-lg border border-white/15 px-6 py-3
-              text-sm font-semibold text-white/80
-              hover:bg-white/5 transition
-            "
-          >
-            See how it works
+            Interested? Reach out
           </a>
         </div>
-
-        <p className="mt-2 text-sm text-white/60">
-          Early private beta · Individual engineers only
-        </p>
       </div>
     </section>
   );

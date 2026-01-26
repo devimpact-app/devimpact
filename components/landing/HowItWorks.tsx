@@ -7,10 +7,10 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-5xl px-6 py-20">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-text-primary">
-            How the beta works
+            How it works
           </h2>
           <p className="mt-3 text-text-secondary text-lg">
-            Set up in minutes. Stay prepared without extra work.
+            Set up is clear and takes less than 5 minutes
           </p>
         </div>
 
@@ -26,13 +26,11 @@ export default function HowItWorks() {
               <li>• Sign in with Github</li>
               <li>• Run a quick sync to pull recent work</li>
               <li>
-                • Optionally connect Google Calendar to improve preparation
+                • Optionally connect Google Calendar to improve context and
+                preparation
               </li>
               <li>
-                <b>
-                  • Private by default — no team setup, no managers, no
-                  reporting
-                </b>
+                <b>• Private by default — no team setup, no managers</b>
               </li>
             </ul>
           </li>
@@ -44,7 +42,11 @@ export default function HowItWorks() {
             <h3 className="text-lg font-semibold text-text-primary">
               Get a clearer picture of your work
             </h3>
-            <ul className="mt-4 space-y-1 text-sm text-text-secondary">
+            <p className="text-sm text-text-secondary mt-4">
+              See how your work, meetings, and follow-ups actually add up over
+              time — without having to reconstruct it yourself.
+            </p>
+            {/* <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>• Where your best focus time actually happens</li>
               <li>• How meetings and reviews reshape your week</li>
               <li>
@@ -52,7 +54,7 @@ export default function HowItWorks() {
                 your inbox
               </li>
               <li>• Early signs of drift before they surface in reviews</li>
-            </ul>
+            </ul> */}
           </li>
 
           <li className="group rounded-xl border border-border bg-surface p-6 transition-shadow hover:shadow-[0_0_0_1px_var(--color-accent)]">
@@ -62,7 +64,11 @@ export default function HowItWorks() {
             <h3 className="text-lg font-semibold text-text-primary">
               Walk into meetings prepared
             </h3>
-            <ul className="mt-4 space-y-1 text-sm text-text-secondary">
+            <p className="text-sm text-text-secondary mt-4">
+              Go into 1:1s and standups with clear talking points, grounded in
+              what you’ve actually been working on.
+            </p>
+            {/* <ul className="mt-4 space-y-1 text-sm text-text-secondary">
               <li>
                 • Go into 1:1s with a clear narrative: wins, blockers, themes
               </li>
@@ -71,7 +77,7 @@ export default function HowItWorks() {
                 switching
               </li>
               <li>• Build a running record you can reuse when it matters</li>
-            </ul>
+            </ul> */}
           </li>
         </ol>
       </div>

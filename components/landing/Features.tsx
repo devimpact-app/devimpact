@@ -17,20 +17,20 @@ export default function Features() {
           {[
             {
               title: 'Show up to 1:1s with context',
-              body: 'DevImpact prepares focused talking points for 1:1s and standups — grounded in what you actually shipped, reviewed, and discussed since the last meeting.',
+              body: 'DevImpact prepares focused talking points based on what you’ve worked on since the last meeting.',
             },
             {
               title: 'Your work, organized over time',
-              body: 'Contributions automatically roll up into threads — giving you a clean, searchable record of projects, decisions, and impact as they evolve.',
+              body: 'Contributions roll up into threads — giving you a clean, searchable record of projects and decisions as they evolve.',
             },
             {
               title: 'Your weekly work recap',
-              body: 'Every week, DevImpact turns your real work into a concise narrative and delivers it straight to your inbox — ready for 1:1s, reviews, or saving for later.',
+              body: 'Every week, DevImpact turns your real work into a concise summary — delivered to your inbox for reference later.',
             },
-            {
-              title: 'Understand your work rhythm',
-              body: 'Visualize when you tend to do deep work, where meetings land, and how your weeks actually unfold — so you can plan with more intention.',
-            },
+            // {
+            //   title: 'Understand your work rhythm',
+            //   body: 'Visualize when you tend to do deep work, where meetings land, and how your weeks actually unfold — so you can plan with more intention.',
+            // },
           ].map((item) => (
             <div
               key={item.title}

@@ -6,9 +6,6 @@ export default function Footer() {
           <a href="/" className="text-lg font-semibold text-text-primary">
             DevImpact
           </a>
-          <p className="mt-1 text-sm text-text-secondary">
-            Built for engineers. Controlled by you.
-          </p>
         </div>
 
         <nav className="mt-6 flex justify-center gap-6 text-sm text-text-secondary md:mt-0">
