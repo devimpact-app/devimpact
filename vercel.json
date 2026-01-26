@@ -1,11 +1,5 @@
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/jobs/dispatch",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  "framework": "nextjs"
 }
