@@ -6,6 +6,11 @@ import { runThreadingPipeline } from '@/lib/domains/threads/service/runThreading
 import { getPrsToSummarize } from '../../db/getPrsToSummarize';
 import { mapWithConcurrency } from '@/lib/utils/concurrency';
 import { getOrGeneratePrSummary } from '@/lib/domains/pull-requests/service/getOrGeneratePrSummary';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
+import { batchNormalizeUserPRs } from '@/lib/domains/pull-requests/service/normalization/pr-normalizer';
+import { batchNormalizeUserReviews } from '@/lib/domains/pull-requests/service/normalization/review-normalizer';
 
 export async function handleThreadingRecent(
   input: JobHandlerInput
@@ -19,6 +24,19 @@ export async function handleThreadingRecent(
   }
   const { tenantId } = job;
 
+  const [user] = await db
+    .select({ githubUsername: users.githubUsername })
+    .from(users)
+    .where(eq(users.id, tenantId))
+    .limit(1);
+
+  const username = user.githubUsername;
+
+  // Normalize any new reviews/prs
+  await batchNormalizeUserPRs(tenantId, username);
+  await batchNormalizeUserReviews(tenantId, username);
+
+  // Summarize recent prs
   const lookbackDays = 14;
   const start = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
   const items = await getPrsToSummarize({
@@ -52,6 +70,7 @@ export async function handleThreadingRecent(
     );
   }
 
+  // Threading
   await deriveActivityEventsFromPullRequests({
     tenantId,
     authoredOnly: true,

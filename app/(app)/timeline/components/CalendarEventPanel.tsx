@@ -131,11 +131,7 @@ function rsvpLabel(status?: string | null) {
 function isPrepSupported(e: UpcomingCalendarEvent) {
   if (e.category === 'oneOnOne') return true;
   if (e.category === 'team') {
-    return (
-      e.categorySubtype === 'standup' ||
-      e.categorySubtype === 'planning' ||
-      e.categorySubtype === 'retro'
-    );
+    return e.categorySubtype === 'standup';
   }
   return false;
 }

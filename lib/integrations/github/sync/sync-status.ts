@@ -1,7 +1,7 @@
 import { db } from '@/lib/db/client';
 import { githubRepos, users } from '@/lib/db/schema';
 import { CliStatus, OnboardingState, SetupStateV1 } from '@/types/api/cli';
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 function normalizeSetupStateForUser(user: {
   setupState: any;

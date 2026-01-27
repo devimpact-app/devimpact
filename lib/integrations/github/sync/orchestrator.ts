@@ -4,14 +4,16 @@ import { getSyncStatus, isInitialSync, updateSyncStatus } from './sync-status';
 import { upsertGithubRepoForTenant } from './upsert-repo';
 import { enqueueJob, hourlyDedupeKey } from '@/lib/domains/jobs/enqueue';
 import { db } from '@/lib/db/client';
+import { User } from '@/lib/db/schema';
 
 export async function runSync({
-  tenantId,
+  user,
   payload,
 }: {
-  tenantId: string;
+  user: User;
   payload: RepoSyncPayload;
 }) {
+  const tenantId = user.id;
   const syncStatus = await getSyncStatus(tenantId);
   const initialSync = isInitialSync(syncStatus);
   const username = payload.githubLogin;
@@ -37,7 +39,8 @@ export async function runSync({
     });
   }
 
-  if (initialSync) {
+  const userSetupFinished = !!user.setupState.ready;
+  if (!userSetupFinished) {
     // Rest of processing will be picked up in bootstrap job
   } else {
     await enqueueJob(db, {

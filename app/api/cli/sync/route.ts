@@ -48,7 +48,7 @@ export const POST = withSentryUser(async (req: NextRequest) => {
     });
 
     const results = await runSync({
-      tenantId: user.id,
+      user,
       payload,
     });
 

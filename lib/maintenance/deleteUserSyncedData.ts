@@ -15,7 +15,7 @@ import {
   prSummaries,
 } from '@/lib/db/schema/github-normalized';
 import { eq } from 'drizzle-orm';
-import { prepItems } from '../db/schema';
+import { prepItems, users } from '../db/schema';
 import {
   calendarEvents,
   calendarSelections,
@@ -60,9 +60,6 @@ export async function deleteUserSyncedData(tenantId: string) {
     await tx
       .delete(calendarSyncRuns)
       .where(eq(calendarSyncRuns.tenantId, tenantId));
-    await tx
-      .delete(calendarSelections)
-      .where(eq(calendarSelections.tenantId, tenantId));
 
     // Normalized tables
     await tx.delete(prSummaries).where(eq(prSummaries.tenantId, tenantId));
@@ -84,5 +81,9 @@ export async function deleteUserSyncedData(tenantId: string) {
       .delete(githubTimelineEvents)
       .where(eq(githubTimelineEvents.tenantId, tenantId));
     await tx.delete(githubPrs).where(eq(githubPrs.tenantId, tenantId));
+
+    await tx.update(users).set({
+      cliLastSyncAt: null,
+    });
   });
 }

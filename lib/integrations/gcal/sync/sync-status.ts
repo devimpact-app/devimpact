@@ -1,7 +1,7 @@
 import { CalendarStatusResponse } from '@/types/api/calendar';
 import { db } from '@/lib/db/client';
 import { integrationTokens } from '@/lib/db/schema';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, not, sql } from 'drizzle-orm';
 import { calendarSelections, calendarSyncRuns } from '@/lib/db/schema/gcal';
 
 export async function getIntegrationTokenId(
@@ -66,6 +66,7 @@ export async function getSyncStatus(
     .from(calendarSyncRuns)
     .where(
       and(
+        not(eq(calendarSyncRuns.mode, 'dashboard_refresh')),
         eq(calendarSyncRuns.tenantId, userId),
         eq(calendarSyncRuns.integrationTokenId, tokenId)
       )

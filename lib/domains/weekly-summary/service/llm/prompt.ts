@@ -63,7 +63,7 @@ export function buildWeeklySummaryPrompt(
 
       RANKING / SELECTION RULES:
       - Prefer the top 2–4 threads by weekStats.eventCount and/or most concrete bullets.
-      - If input has "atAGlance", you may include ONE bullet that states a compact factual stat (e.g., "X PRs, Y reviews"), but only if it adds value.
+      - Do not include a generic line about X PRs, Y meetings completed.
       - If there are no meaningful threads/events, output:
         - headline: "Light week."
         - bullets: [] OR 1 bullet about availability/OOO if present.
