@@ -21,12 +21,12 @@ export default function LoginClient({
             DevImpact
           </a>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">
-            {hasValidCode ? 'Welcome!' : 'Beta Access'}
+            {hasValidCode ? 'Welcome!' : 'Early Access'}
           </h1>
           <p className="mt-2 text-text-secondary">
             {hasValidCode
               ? 'Sign in to your private impact workspace'
-              : 'Enter your beta access code to continue'}
+              : 'Enter your access code to continue'}
           </p>
         </div>
 
@@ -61,7 +61,7 @@ export default function LoginClient({
                   type="text"
                   name="code"
                   required
-                  placeholder="Enter your beta access code"
+                  placeholder="Enter your access code"
                   className="
             flex-1 bg-transparent outline-none 
             text-sm text-white placeholder:text-white/40

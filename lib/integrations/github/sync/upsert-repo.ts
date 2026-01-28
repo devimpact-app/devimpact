@@ -8,25 +8,26 @@ export async function upsertGithubRepoForTenant(
   repos: RepoMetadata[],
   isSelected: boolean = true
 ): Promise<number> {
-  const inputs = repos.map((r) => ({
-    tenantId,
-    githubRepoId: String(r.id),
-    isSelected,
-
-    owner: r.ownerLogin,
-    name: r.name,
-    fullName: r.fullName,
-
-    isPrivate: r.private,
-    isArchived: r.archived,
-    visibility: r.visibility,
-
-    defaultBranch: r.defaultBranch,
-    primaryLanguage: r.primaryLanguage,
-
-    createdAtGitHub: r.createdAt ? new Date(r.createdAt) : null,
-    pushedAtGitHub: r.pushedAt ? new Date(r.pushedAt) : null,
-  }));
+  const inputs = repos.map((r) => {
+    const parts = r.fullName.split('/');
+    if (parts.length !== 2) {
+      throw new Error(
+        `Received repo name without a owner and login ${r.fullName}`
+      );
+    }
+    return {
+      tenantId,
+      githubRepoId: String(r.id),
+      isSelected,
+      owner: parts[0],
+      name: parts[1],
+      fullName: r.fullName,
+      isPrivate: r.private,
+      isArchived: r.archived,
+      visibility: r.visibility,
+      pushedAtGitHub: r.pushedAt ? new Date(r.pushedAt) : null,
+    };
+  });
   const rows = await db
     .insert(githubRepos)
     .values(inputs)
@@ -39,8 +40,6 @@ export async function upsertGithubRepoForTenant(
         isPrivate: sql`excluded.is_private`,
         isArchived: sql`excluded.is_archived`,
         visibility: sql`excluded.visibility`,
-        defaultBranch: sql`excluded.default_branch`,
-        primaryLanguage: sql`excluded.primary_language`,
         pushedAtGitHub: sql`excluded.pushed_at_github`,
       },
     })

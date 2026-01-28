@@ -1,5 +1,6 @@
 'use client';
 
+import * as Tooltip from '@radix-ui/react-tooltip';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -83,35 +84,50 @@ export function Sidebar({ userName, avatarUrl }: SidebarProps) {
         {/* <Orbit className="h-7 w-7 text-indigo-400" /> */}
       </div>
 
-      <div className="flex h-full flex-col gap-1">
-        {NAV.map(({ href, label, Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + '/');
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={clsx(
-                'group relative grid place-items-center rounded-xl py-3 transition',
-                active
-                  ? 'bg-white/15 ring-1 ring-white/20 shadow'
-                  : 'hover:bg-white/10'
-              )}
-              aria-label={label}
-              title={label}
-            >
-              <Icon
-                className={clsx(
-                  'h-5 w-5 transition',
-                  active ? 'text-white' : 'text-blue-200 group-hover:text-white'
-                )}
-              />
-              <span className="pointer-events-none absolute left-[84px] z-10 hidden rounded-md bg-indigo-900 px-2 py-1 text-xs text-white shadow group-hover:block">
-                {label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
+      <Tooltip.Provider delayDuration={150}>
+        <div className="flex h-full flex-col gap-1">
+          {NAV.map(({ href, label, Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <Tooltip.Root key={href}>
+                <Tooltip.Trigger asChild>
+                  <Link
+                    key={href}
+                    href={href}
+                    className={clsx(
+                      'group relative grid place-items-center rounded-xl py-3 transition',
+                      active
+                        ? 'bg-white/15 ring-1 ring-white/20 shadow'
+                        : 'hover:bg-white/10'
+                    )}
+                    aria-label={label}
+                    title={label}
+                  >
+                    <Icon
+                      className={clsx(
+                        'h-5 w-5 transition',
+                        active
+                          ? 'text-white'
+                          : 'text-blue-200 group-hover:text-white'
+                      )}
+                    />
+                  </Link>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    side="right"
+                    sideOffset={10}
+                    className="z-[9999] rounded-md bg-indigo-900 px-2 py-1 text-xs text-white shadow"
+                  >
+                    {label}
+                    <Tooltip.Arrow className="fill-indigo-900" />
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            );
+          })}
+        </div>
+      </Tooltip.Provider>
 
       <div className="mt-auto space-y-2 pt-4">
         <div className="relative flex  justify-center items-center">

@@ -25,8 +25,6 @@ export async function runSync({
     tenantId,
     {
       fullName: payload.repo.fullName,
-      owner: payload.repo.ownerLogin,
-      name: payload.repo.name,
     },
     payload.pulls
   );

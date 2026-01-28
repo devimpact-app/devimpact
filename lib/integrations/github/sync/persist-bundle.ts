@@ -9,7 +9,7 @@ import { RepoSyncPayload } from '@/types/api/sync';
 
 export async function persistBundles(
   userId: string,
-  repo: { fullName: string; owner: string; name: string },
+  repo: { fullName: string },
   bundles: RepoSyncPayload['pulls'],
   opts?: {
     saveRaw?: boolean;

@@ -10,20 +10,10 @@ import z from 'zod';
 
 export const RepoMetadataSchema = z.object({
   id: z.number(),
-  ownerLogin: z.string(),
-  name: z.string(),
   fullName: z.string(),
-  htmlUrl: z.string().url(),
-
   private: z.boolean(),
-  fork: z.boolean(),
   archived: z.boolean(),
   visibility: z.enum(['public', 'private', 'internal']),
-
-  defaultBranch: z.string(),
-  primaryLanguage: z.string().nullable(),
-
-  createdAt: z.string().nullable(),
   pushedAt: z.string().nullable(),
 });
 
