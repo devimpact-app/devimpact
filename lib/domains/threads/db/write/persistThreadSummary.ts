@@ -4,6 +4,14 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { ThreadSummaryOutput } from '../../service/llm/summaries/types';
 import { dedupe, isBulletEditable, sameStringArray } from '../../helpers';
 
+type PersistThreadSummaryResult = {
+  updatedThreads: number;
+  insertedBullets: number;
+  updatedBullets: number;
+  reorderedLockedBullets: number;
+  softDeletedBullets: number;
+};
+
 export async function persistThreadSummary({
   tenantId,
   threadId,
@@ -14,7 +22,7 @@ export async function persistThreadSummary({
   threadId: string;
   output: ThreadSummaryOutput;
   llm: { model: string; promptVersion: string };
-}) {
+}): Promise<PersistThreadSummaryResult> {
   const now = new Date();
 
   const outBullets = [...output.bullets]
@@ -52,7 +60,7 @@ export async function persistThreadSummary({
     const nextHeadline = headlineLocked ? t.summaryHeadline : output.headline;
 
     // Update thread row
-    await tx
+    const updatedThreadRows = await tx
       .update(threads)
       .set({
         title: nextTitle,
@@ -63,7 +71,15 @@ export async function persistThreadSummary({
         promptVersion: llm.promptVersion,
         updatedAt: now,
       })
-      .where(and(eq(threads.tenantId, tenantId), eq(threads.id, threadId)));
+      .where(and(eq(threads.tenantId, tenantId), eq(threads.id, threadId)))
+      .returning({ id: threads.id });
+
+    const updatedThreads = updatedThreadRows.length;
+    if (updatedThreads !== 1) {
+      throw new Error(
+        `persistThreadSummary: thread_update_expected_1_got_${updatedThreads}:${threadId}`
+      );
+    }
 
     // Validate bullet output
     const outputBulletIds = new Set(
@@ -82,6 +98,11 @@ export async function persistThreadSummary({
       }
     }
 
+    let insertedBullets = 0;
+    let updatedBullets = 0;
+    let reorderedLockedBullets = 0;
+    let softDeletedBullets = 0;
+
     // Insert brand new bullets
     const toInsert = outBullets
       .filter((b) => !b.bulletId)
@@ -98,7 +119,11 @@ export async function persistThreadSummary({
       }));
 
     if (toInsert.length) {
-      await tx.insert(threadSummaryBullets).values(toInsert);
+      const inserted = await tx
+        .insert(threadSummaryBullets)
+        .values(toInsert)
+        .returning({ id: threadSummaryBullets.id });
+      insertedBullets = inserted.length;
     }
 
     // Loop for editing bullets
@@ -127,7 +152,7 @@ export async function persistThreadSummary({
         }
 
         if (existing.sortIndex !== b.sortIndex) {
-          await tx
+          const reordered = await tx
             .update(threadSummaryBullets)
             .set({
               sortIndex: b.sortIndex,
@@ -139,13 +164,15 @@ export async function persistThreadSummary({
                 eq(threadSummaryBullets.threadId, threadId),
                 eq(threadSummaryBullets.id, b.bulletId)
               )
-            );
+            )
+            .returning({ id: threadSummaryBullets.id });
+          reorderedLockedBullets += reordered.length;
         }
         continue;
       }
 
       // Editable can update everything
-      await tx
+      const updated = await tx
         .update(threadSummaryBullets)
         .set({
           sortIndex: b.sortIndex,
@@ -163,7 +190,9 @@ export async function persistThreadSummary({
             eq(threadSummaryBullets.threadId, threadId),
             eq(threadSummaryBullets.id, b.bulletId)
           )
-        );
+        )
+        .returning({ id: threadSummaryBullets.id });
+      updatedBullets += updated.length;
     }
 
     // Handle soft deletion of bullets that aren't in output
@@ -183,7 +212,7 @@ export async function persistThreadSummary({
     }
 
     if (toSoftDelete.length) {
-      await tx
+      const deleted = await tx
         .update(threadSummaryBullets)
         .set({ deletedAt: now, updatedAt: now })
         .where(
@@ -192,7 +221,17 @@ export async function persistThreadSummary({
             eq(threadSummaryBullets.threadId, threadId),
             inArray(threadSummaryBullets.id, toSoftDelete)
           )
-        );
+        )
+        .returning({ id: threadSummaryBullets.id });
+      softDeletedBullets = deleted.length;
     }
+
+    return {
+      updatedThreads,
+      insertedBullets,
+      updatedBullets,
+      reorderedLockedBullets,
+      softDeletedBullets,
+    };
   });
 }

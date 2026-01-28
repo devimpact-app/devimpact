@@ -155,7 +155,12 @@ async function processThreadingChunk({
           `Error during validation of thread summary llm response ${v.error}`
         );
       }
-      await persistThreadSummary({
+      console.log(logPrefix, {
+        phase: 'summary_persist_start',
+        tenantId,
+        threadId,
+      });
+      const persistRes = await persistThreadSummary({
         tenantId,
         threadId: input.threadId,
         output: v.value,
@@ -163,6 +168,12 @@ async function processThreadingChunk({
           model: AiConfig.models.summarize,
           promptVersion: '1',
         },
+      });
+      console.log(logPrefix, {
+        phase: 'summary_persist_done',
+        tenantId,
+        threadId,
+        persistRes,
       });
       results.push({ threadId, ok: true });
     } catch (err: any) {
