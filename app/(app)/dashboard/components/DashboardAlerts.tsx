@@ -80,7 +80,7 @@ export function DashboardAlerts({
       : (issues[0] ?? 'DevImpact status');
 
   const description = isBackfill
-    ? 'We’re backfilling older PR summaries and threads. Recent activity is available; older history will fill in shortly.'
+    ? 'We’re backfilling older PR summaries and workstreams. Recent activity is available; older history will fill in shortly.'
     : issues.length > 1
       ? issues.join(' · ')
       : cliDisconnected

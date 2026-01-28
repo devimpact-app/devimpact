@@ -88,7 +88,7 @@ export function SettingsClient({
     setSuccess(null);
 
     const confirmed = window.prompt(
-      'This will permanently delete all DevImpact data for your account, including PRs, reviews, activity, threads, meeting prep, and weekly summaries.\n\nIntegrations will remain connected. You can re-sync later.\n\nType DELETE to confirm.'
+      'This will permanently delete all DevImpact data for your account, including PRs, reviews, activity, workstreams, meeting prep, and weekly summaries.\n\nIntegrations will remain connected. You can re-sync later.\n\nType DELETE to confirm.'
     );
     if (confirmed !== 'DELETE') return;
 
@@ -178,7 +178,7 @@ export function SettingsClient({
                 </p>
                 <p className="text-[13px] text-red-200/80">
                   Deletes all DevImpact data (synced + generated): PRs, reviews,
-                  calendar events, threads, meeting prep, and summaries.
+                  calendar events, workstreams, meeting prep, and summaries.
                   Integrations stay connected; re-sync will rebuild.
                 </p>
               </div>

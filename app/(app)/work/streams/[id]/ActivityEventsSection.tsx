@@ -64,7 +64,7 @@ function groupEventsByDay(events: ActivityEventListItem[]): DayGroup[] {
 export function ActivityEventsSection({
   events,
   title = 'Events',
-  subtitle = 'Work linked to this thread.',
+  subtitle = 'Work linked to this stream.',
   onSelect,
 }: {
   events: ActivityEventListItem[];

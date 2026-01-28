@@ -56,37 +56,7 @@ export const THREAD_SUMMARY_SCHEMA = {
       description:
         'Confidence that the title/summary accurately represent the thread.',
     },
-    reasons: {
-      type: 'array',
-      items: { type: 'string' },
-      description:
-        'Short reasons for why these events belong together / why this summary is shaped this way.',
-    },
-
-    updates: {
-      type: ['object', 'null'],
-      properties: {
-        headline: { type: ['string', 'null'] },
-        bullets: {
-          type: ['array', 'null'],
-          items: { type: 'string' },
-        },
-        referencedEventIds: {
-          type: 'array',
-          items: { type: 'string' },
-        },
-      },
-      required: ['headline', 'bullets', 'referencedEventIds'],
-      additionalProperties: false,
-    },
   },
-  required: [
-    'title',
-    'headline',
-    'bullets',
-    'confidence',
-    'reasons',
-    'updates',
-  ],
+  required: ['title', 'headline', 'bullets', 'confidence'],
   additionalProperties: false,
 } as const;

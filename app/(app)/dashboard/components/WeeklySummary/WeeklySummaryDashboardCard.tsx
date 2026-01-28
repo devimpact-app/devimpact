@@ -10,7 +10,7 @@ import {
   FilePlus,
 } from 'lucide-react';
 import { formatDateOnly } from '@/lib/utils/date';
-import { formatWeekRangeForWeeklySummary } from '../../../career/components/WeeklySummariesSection/helpers';
+import { formatWeekRangeForWeeklySummary } from '../../../work/components/WeeklySummariesSection/helpers';
 import { WeeklySummaryItem } from '@/types/api/weekly-summary';
 import { WeeklySummaryActivitySnippet } from './WeeklySummaryActivitySnippet';
 import { ActionButton } from '../../../../../components/ui/ActionButton';
@@ -48,7 +48,7 @@ export function WeeklySummaryDashboardCard({
   const headline = summary?.output?.headline?.trim() || null;
   const generated = formatDateOnly(summary?.generatedAt ?? null);
 
-  const allSummariesHref = '/career/weekly-summaries';
+  const allSummariesHref = '/work/weekly-summaries';
   const detailHref = summary?.id
     ? `${allSummariesHref}/${summary.id}`
     : allSummariesHref;
@@ -132,14 +132,14 @@ export function WeeklySummaryDashboardCard({
                 <FilePlus className="h-4 w-4" />
                 Create last week's summary
               </ActionButton>
-              <ActionButton href="/career/weekly-summaries" variant="secondary">
+              <ActionButton href="/work/weekly-summaries" variant="secondary">
                 View all <ArrowRight className="h-4 w-4" />
               </ActionButton>
             </>
           ) : null}
 
           {state === 'generating' ? (
-            <ActionButton href="/career/weekly-summaries" variant="secondary">
+            <ActionButton href="/work/weekly-summaries" variant="secondary">
               View all <ArrowRight className="h-4 w-4" />
             </ActionButton>
           ) : null}
@@ -160,7 +160,7 @@ export function WeeklySummaryDashboardCard({
 
           {state === 'loading' ? (
             <ActionButton
-              href="/career/weekly-summaries"
+              href="/work/weekly-summaries"
               variant="secondary"
               disabled
             >

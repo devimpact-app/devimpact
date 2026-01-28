@@ -21,7 +21,7 @@ function pct(conf?: number | null) {
 
 export function ThreadDetailPage({
   data,
-  backHref = '/career/threads',
+  backHref = '/work/streams',
   isLoading = false,
   error = null,
 }: {
@@ -79,7 +79,7 @@ export function ThreadDetailPage({
                 className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to threads
+                Back to workstreams
               </Link>
             </div>
           </div>
@@ -108,7 +108,7 @@ export function ThreadDetailPage({
                 className="inline-flex px-2 py-1 items-center justify-center text-white/80 transition hover:underline text-xs"
                 aria-label="Back"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back to All Threads
+                <ArrowLeft className="h-4 w-4 mr-2" /> Back to All Workstreams
               </Link>
             </div>
             <div className="flex items-start justify-between gap-4">
@@ -184,7 +184,7 @@ export function ThreadDetailPage({
                 </div>
               </div>
               <div className="text-xs mt-1 mb-4 font-medium text-white/50">
-                Auto-generated summary of this thread
+                Auto-generated summary of this workstream
               </div>
               <div className="mt-2 text-sm leading-relaxed text-white/70">
                 {t.summaryHeadline?.trim() ? (

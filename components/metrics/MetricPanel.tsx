@@ -1,6 +1,6 @@
 'use client';
 
-import { MetricTimeseriesChart } from '@/app/(app)/career/old/MetricTimeseriesChart';
+import { MetricTimeseriesChart } from '@/app/(app)/work/old/MetricTimeseriesChart';
 import { formatMetricValue, MetricsAPI } from '@/lib/domains/metrics/client';
 import { cn } from '@/lib/utils';
 import { getTimezone, formatRange } from '@/lib/utils/date';

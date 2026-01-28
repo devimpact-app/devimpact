@@ -10,6 +10,7 @@ import {
   CalendarClock,
   ClipboardList,
   Compass,
+  Layers,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
@@ -24,8 +25,8 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Home', Icon: Home },
+  { href: '/work', label: 'Your Work', Icon: Layers },
   { href: '/prep', label: 'Prep', Icon: ClipboardList },
-  { href: '/career', label: 'Career', Icon: Compass },
   { href: '/timeline', label: 'Timeline', Icon: CalendarClock },
 ];
 

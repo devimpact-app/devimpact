@@ -1,5 +1,5 @@
 import { ThreadListItem } from '@/types/api/threads';
-import { categoryLabel, categoryPillClasses } from '../../threads/shared';
+import { categoryLabel, categoryPillClasses } from '../../streams/shared';
 
 function formatDateShort(iso: string | null) {
   if (!iso) return '—';

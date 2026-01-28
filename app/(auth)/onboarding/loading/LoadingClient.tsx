@@ -38,7 +38,7 @@ function titleForStep(step?: BootstrapCursor['step'] | null) {
     case 'summarize_prs':
       return 'Summarizing pull requests';
     case 'threading':
-      return 'Connecting work into threads';
+      return 'Grouping work into workstreams';
     case 'weekly_summary':
       return 'Generating your first weekly summary';
     case 'done':

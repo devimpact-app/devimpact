@@ -24,13 +24,6 @@ export function buildThreadSummaryPrompt(
           }
         ],
         "confidence": number, // 0..1
-        "reasons": ["string", "..."],
-        "updates": null | {
-          "headline": "string | null",
-          "bullets": ["string", "..."] | null,
-          "referencedEventIds": ["uuid", "..."] | null,
-          "generatedAt"?: "ISO datetime string"
-        }
       }
 
       HARD CONSTRAINTS:
@@ -54,12 +47,19 @@ export function buildThreadSummaryPrompt(
       STYLE TARGET:
       - Title: 4–9 words. Concrete, specific, stable across updates.
         - Must still make sense if new related events arrive next week (no single-person titles).
-      - Headline: 1 sentence, <= 25 words. A compact "what this thread is about" statement.
+      - Headline: 1 sentence, <= 25 words. Sound natural and specific, not like a label.
+        - Prefer "[verb] [thing] for [purpose]" or "[thing] + [why]" over "Focused on X".
       - Bullets: 3–6 bullets max.
         - Each bullet <= 20 words.
         - Each bullet should represent a distinct facet: scope shipped, refactor, reliability, alignment, etc.
         - Avoid long comma lists. Prefer compact statements.
-      - Reasons: 3–6 short, concrete reasons. No fluff.
+
+      HEADLINE VOICE (IMPORTANT):
+      - Write like a human engineer summarizing the theme to themselves.
+      - Use natural verbs ("shipped", "tightened", "worked through", "rolled out", "cleaned up").
+      - Avoid template-y phrases like "Focused on", "Worked on", "This thread covers", "Involved in".
+      - Avoid proper nouns unless present in input. Avoid naming people.
+      - If evidence is thin, keep it generic ("Hiring loop", "On-call / incident handling", "Team coordination") and lower confidence.
 
       EVENT INTERPRETATION GUIDELINES:
       - PR events: Prefer the PR summary (short + highlights/tags). Use size/process signals sparingly ("large change", "multi-round review") only if it clarifies impact.
@@ -69,29 +69,17 @@ export function buildThreadSummaryPrompt(
         - If there is only one interview meeting and no other supporting work, keep it generic and lower confidence.
       - If newEvents contain mixed unrelated items, keep the thread scoped to the strongest common theme; de-emphasize outliers (but do not omit them from referencedEventIds if used).
 
-      BULLET GOVERNANCE (IMPORTANT):
-      - In update_existing mode, input.thread.bullets contains existing bullets with:
-        { id, sortIndex, text, referencedEventIds, editable }.
-      - You MUST return the full, final bullets array (not a diff).
+      BULLET GOVERNANCE (update_existing):
+      - Return the FULL final bullets array (not a diff).
+      - Bullets have { id, sortIndex, text, referencedEventIds, editable }.
 
-      Editable rules:
-      - If editable=false for a bullet:
-        - You MUST preserve it exactly:
-          - bulletId must equal that bullet's id
-          - text must be identical
-          - referencedEventIds must be identical
-          - sortIndex must remain the same
-        - Do NOT delete it, rewrite it, or move it.
-      - If editable=true for a bullet:
-        - You MAY edit text and referencedEventIds, and you MAY reorder it by changing sortIndex.
-        - Prefer small, conservative edits; do not rewrite everything unless newEvents truly require it.
+      Rules:
+      - If editable=false: preserve EXACTLY (same bulletId=id, same sortIndex, same text, same referencedEventIds). Do not move, edit, or remove.
+      - If editable=true: you may edit text + referencedEventIds and reorder via sortIndex, but keep changes minimal unless newEvents require it.
 
       Creation rules:
       - You MAY create new bullets by setting bulletId = null.
       - New bullets must have sortIndex values that do not conflict with preserved (editable=false) bullets.
-
-      Deletion rules:
-      - Do NOT delete bullets. If you think something should be removed, leave it as-is and lower confidence.
 
       REFERENCING RULES (IMPORTANT):
       - Each bullet MUST include referencedEventIds that justify that bullet.
@@ -107,7 +95,6 @@ export function buildThreadSummaryPrompt(
       1) create_new:
       - Use thread.proposedTitle as a starting point, but improve it if you can make it clearer/more specific.
       - Produce title + headline + bullets reflecting ONLY the provided events.
-      - Set updates = null.
 
       2) update_existing:
       - Preserve the existing thread's intent and wording where possible.
@@ -115,26 +102,11 @@ export function buildThreadSummaryPrompt(
       - Incorporate newEvents without rewriting history.
       - Only change editable=true bullets when necessary to reflect newEvents.
       - You may add new bullets (bulletId=null) when newEvents add meaningful scope.
-      - updates MUST reflect what changed SINCE the last sync (based on newEvents only):
-        - updates.headline: optional, <= 16 words
-        - updates.bullets: optional, max 3 bullets, each <= 14 words
-        - updates.referencedEventIds: include ONLY event IDs from newEvents that justify the updates text
-        - If there is no meaningful change, set updates = null.
 
-      CONFIDENCE SCORING (0..1):
-      - 0.85–1.0: clear single theme + strong supporting details (PR summaries/tags) with low ambiguity.
-      - 0.65–0.84: mostly coherent, minor ambiguity or sparse details.
-      - 0.45–0.64: weak theme, limited evidence, or many mixed items.
-      - <0.45: avoid unless input is extremely noisy; still produce best possible output.
-
-      REASONS:
-      Provide 3–6 short reasons like:
-      - "shared domain tags: auth, billing"
-      - "same repo and feature area"
-      - "multiple PRs advance same feature"
-      - "architecture meeting aligns with related changes"
-      - "review events indicate cross-team unblocking"
-      Keep reasons concrete and grounded.`,
+      CONFIDENCE (0..1):
+      - High (>=0.85): clear single theme + strong evidence.
+      - Medium (0.60–0.84): mostly coherent, some ambiguity.
+      - Low (<0.60): weak/mixed evidence; be generic and conservative.`,
   };
 
   const user: ChatCompletionMessageParam = {
@@ -147,8 +119,6 @@ export function buildThreadSummaryPrompt(
             : `Update the existing thread’s title/headline/bullets with the new events. Preserve prior meaning; include "updates" describing what's new (newEvents only).`,
         input,
         reminders: {
-          outputFormat:
-            'Return ONLY JSON matching the schema. No markdown. No extra keys.',
           evidence:
             'Every bullet must include referencedEventIds drawn from input events.',
           scope:

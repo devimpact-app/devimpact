@@ -8,7 +8,7 @@ import { formatDateOnly } from '@/lib/utils/date';
 import {
   categoryLabel,
   categoryPillClasses,
-} from '../../../career/threads/shared';
+} from '../../../work/streams/shared';
 
 export function ThreadRowCompact({ thread }: { thread: ThreadListItem }) {
   const lastActive = thread.lastActivityAt ?? thread.firstActivityAt;
@@ -16,7 +16,7 @@ export function ThreadRowCompact({ thread }: { thread: ThreadListItem }) {
 
   return (
     <Link
-      href={`/career/threads/${thread.id}`}
+      href={`/work/streams/${thread.id}`}
       className={[
         'group block w-full',
         'rounded-xl border border-white/10 bg-white/[0.02]',
@@ -77,7 +77,7 @@ export function RecentThreadsDashboardCard({
     return 'ready' as const;
   }, [error, isLoading, threads]);
 
-  const allThreadsHref = '/career/threads';
+  const allThreadsHref = '/work/streams';
 
   return (
     <section
@@ -93,10 +93,10 @@ export function RecentThreadsDashboardCard({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-semibold text-white/90">
-              Recent Threads
+              Recent Workstreams
             </h2>
             {state === 'empty' ? (
-              <StatusPill kind="neutral" label="No threads yet" />
+              <StatusPill kind="neutral" label="No workstreams yet" />
             ) : null}
             {state === 'loading' ? (
               <StatusPill kind="neutral" label="Loading" />
@@ -108,7 +108,8 @@ export function RecentThreadsDashboardCard({
 
           {state === 'ready' ? (
             <div className="mt-1 text-[13px] text-white/60">
-              A snapshot of your ongoing work, organized into threads.
+              A snapshot of the workstreams you've been spending time on
+              recently.
             </div>
           ) : null}
         </div>
@@ -118,7 +119,7 @@ export function RecentThreadsDashboardCard({
             <>
               <ActionButton href={allThreadsHref} variant="secondary">
                 <List className="h-4 w-4" />
-                See all threads
+                See all streams
               </ActionButton>
             </>
           ) : null}
@@ -138,7 +139,7 @@ export function RecentThreadsDashboardCard({
 
           {state === 'error' ? (
             <ActionButton href={allThreadsHref} variant="secondary">
-              View threads <ArrowRight className="h-4 w-4" />
+              View workstreams <ArrowRight className="h-4 w-4" />
             </ActionButton>
           ) : null}
         </div>
@@ -155,7 +156,7 @@ export function RecentThreadsDashboardCard({
       {state === 'empty' ? (
         <div className="text-[13px] leading-relaxed text-white/70">
           <p>
-            Threads group your work into longer-running efforts. Once you’ve
+            Workstreams group your work into longer-running efforts. Once you’ve
             synced some activity, we’ll automatically surface them here.
           </p>
         </div>
@@ -167,7 +168,7 @@ export function RecentThreadsDashboardCard({
             <AlertTriangle className="h-4 w-4" />
           </div>
           <div className="text-white/70">
-            <p>Failed to load threads.</p>
+            <p>Failed to load workstreams.</p>
             {error ? (
               <p className="mt-1 text-xs text-white/50">{error}</p>
             ) : null}

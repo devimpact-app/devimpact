@@ -38,6 +38,4 @@ export type ThreadSummaryOutput = {
   headline: string;
   bullets: ThreadSummaryBullet[];
   confidence: number;
-  reasons: string[];
-  updates: ThreadSummaryUpdates | null;
 };

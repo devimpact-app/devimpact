@@ -24,7 +24,7 @@ export function ThreadsSection({
   const router = useRouter();
 
   const onClickThread = (id: string) => {
-    router.push(`/career/threads/${id}`);
+    router.push(`/work/streams/${id}`);
   };
 
   const hasMore = totalThreads > threads.length;
@@ -34,7 +34,7 @@ export function ThreadsSection({
         <header className="flex items-center justify-between">
           <div className="flex items-baseline gap-2">
             <h2 className="text-sm font-semibold text-white/90">
-              Recent Work Threads
+              Recent Workstreams
             </h2>
             <span className="text-xs text-white/40">
               Showing {threads.length} of {totalThreads}
@@ -46,7 +46,7 @@ export function ThreadsSection({
               onClick={onViewAll}
               className="inline-flex items-center gap-1 text-xs font-medium text-indigo-300 hover:text-indigo-200"
             >
-              View all threads
+              View all streams
               <span aria-hidden>→</span>
             </button>
           )}
@@ -91,7 +91,7 @@ hover:border-white/20"
           onClick={onViewAll}
         >
           <div className="flex w-full items-center justify-between text-sm">
-            <span>See {totalThreads - 3} more threads</span>
+            <span>See {totalThreads - 3} more workstreams</span>
             <span className="text-white/40">→</span>
           </div>
         </button>

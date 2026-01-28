@@ -31,7 +31,7 @@ export function WeeklySummariesSection({
   const [generateLoading, setGenerateLoading] = useState(false);
 
   const onClickSummary = (id: string) => {
-    router.push(`/career/weekly-summaries/${id}`);
+    router.push(`/work/weekly-summaries/${id}`);
   };
 
   async function handleGenerateClick() {

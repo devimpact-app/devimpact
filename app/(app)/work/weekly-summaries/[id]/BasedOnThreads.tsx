@@ -6,7 +6,7 @@ import {
   categoryLabel,
   categoryPillClasses,
   threadRangeLabel,
-} from '../../threads/shared';
+} from '../../streams/shared';
 
 export function BasedOnThreads({
   threads,
@@ -35,12 +35,12 @@ export function BasedOnThreads({
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
             <div className="text-sm font-medium text-white/80">
-              Based on threads
+              Based on workstreams
             </div>
             <div className="text-xs text-white/45">· {countLabel}</div>
           </div>
           <div className="mt-0.5 text-xs text-white/45">
-            Threads that informed this summary
+            Workstreams that informed this summary
           </div>
         </div>
 
@@ -65,7 +65,7 @@ export function BasedOnThreads({
               return (
                 <li key={t.id}>
                   <Link
-                    href={`/career/threads/${t.id}`}
+                    href={`/work/streams/${t.id}`}
                     className={[
                       'group/item flex items-center justify-between gap-3 rounded-xl',
                       'px-3 py-3',

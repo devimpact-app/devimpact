@@ -96,7 +96,7 @@ export function WeeklySummaryActivitySnippet({
           <ul className="space-y-1.5">
             {frictionPreview.map((item, idx) => {
               const pr = item.relatedPr;
-              const href = `/career/weekly-summaries/${summaryId}`;
+              const href = `/work/weekly-summaries/${summaryId}`;
 
               return (
                 <li key={item.id ?? idx}>

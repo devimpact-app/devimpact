@@ -13,10 +13,10 @@ export default function CareerPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
-                Career
+                Your Work
               </h1>
               <p className="mt-1 text-sm text-text-secondary">
-                Your ongoing work, organized into meaningful threads.
+                Workstreams and summaries built from your activity
               </p>
             </div>
           </div>
@@ -24,12 +24,12 @@ export default function CareerPage() {
 
         <ThreadsSection
           limit={3}
-          onViewAll={() => router.push('/career/threads')}
+          onViewAll={() => router.push('/work/streams')}
         />
 
         <WeeklySummariesSection
           limit={3}
-          onViewAll={() => router.push('/career/weekly-summaries')}
+          onViewAll={() => router.push('/work/weekly-summaries')}
         />
       </main>
     </>

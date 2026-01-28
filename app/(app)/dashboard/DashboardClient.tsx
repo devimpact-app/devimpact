@@ -50,9 +50,9 @@ export default function DashboardClient({
 
           <UpcomingPrepCardContainer />
 
-          <WeeklySummaryDashboardCardContainer />
-
           <RecentThreadsDashboardCardContainer />
+
+          <WeeklySummaryDashboardCardContainer />
 
           <WorkRhythmCard />
 

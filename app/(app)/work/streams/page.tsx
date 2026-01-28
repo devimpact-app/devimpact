@@ -21,7 +21,7 @@ export default function ThreadsPage() {
 
   const subtitle = useMemo(() => {
     const parts: string[] = [];
-    parts.push('Your ongoing work, organized into meaningful threads.');
+    parts.push('Your ongoing work, organized into meaningful workstreams.');
     if (categoryKey) {
       const label =
         THREAD_CATEGORY_OPTIONS.find((c) => c.value === categoryKey)?.label ??
@@ -45,7 +45,7 @@ export default function ThreadsPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-2xl sm:text-3xl font-semibold text-text-primary">
-                Threads
+                Workstreams
               </h1>
               <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
             </div>

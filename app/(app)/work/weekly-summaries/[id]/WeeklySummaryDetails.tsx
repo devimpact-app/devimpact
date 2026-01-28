@@ -15,8 +15,8 @@ import type {
 } from '@/types/api/weekly-summary';
 import { getStartAndEndDateForWeeklySummary } from '../../components/WeeklySummariesSection/helpers';
 import { formatDateOnly, getTimezone } from '@/lib/utils/date';
-import { ActivityEventsSection } from '../../threads/[id]/ActivityEventsSection';
-import { ActivityEventInspectorPanel } from '../../threads/[id]/ActivityEventInspectorPanel';
+import { ActivityEventsSection } from '../../streams/[id]/ActivityEventsSection';
+import { ActivityEventInspectorPanel } from '../../streams/[id]/ActivityEventInspectorPanel';
 import { BasedOnThreads } from './BasedOnThreads';
 import { WeeklyActivitySection } from './WeeklyActivitySection';
 import { ActivityEvent } from '@/types/api/timeline';
@@ -42,7 +42,7 @@ function statusPill(status: WeeklySummaryItem['status']) {
 
 export function WeeklySummaryDetailPage({
   data,
-  backHref = '/career/weekly-summaries',
+  backHref = '/work/weekly-summaries',
   isLoading = false,
   error = null,
   onRegenerate,
