@@ -23,7 +23,7 @@ export function buildThreadAssignmentPrompt(
         ],
         "newThreads": [
           {
-            "newThreadKey": "string (matches any assignments.newThreadKey)",
+            "newThreadKey": "string (MUST match one-or-more assignments.newThreadKey; EVERY create_new key must have an entry)",
             "categoryKey": "features" | "bugs_incidents" | "tech_debt" | "collaboration" | "alignment" | "skill_growth" | "hiring",
             "title": "string",
             "confidence": number (0..1)
@@ -40,6 +40,12 @@ export function buildThreadAssignmentPrompt(
       6) "newThreadKey" must be unique within this response and stable-looking (e.g. "new_1", "new_2").
       7) "reasons" must be short, diagnostic tokens (e.g. "same_repo_domain", "shared_keywords", "routine_meeting", "ambiguous_demo").
       8) Do not create more than 3 new threads in a single response. Prefer 0–2.
+      9) newThreads must include EXACTLY one entry for every distinct assignments.newThreadKey used.
+        - If any assignment has action="create_new", then newThreads MUST be non-empty.
+        - Every assignments.newThreadKey MUST appear in newThreads.newThreadKey.
+        - newThreads must NOT include unused keys.
+      10) You are NOT allowed to output action="create_new" unless you also output the matching newThreads entry in the same response.
+        If you cannot provide a valid newThreads entry, use action="skip" instead.
 
       COLD_START CLUSTERING RULES (NON-NEGOTIABLE):
       - In mode="cold_start", you may ONLY create_new for threads that will have >= 2 assigned events.

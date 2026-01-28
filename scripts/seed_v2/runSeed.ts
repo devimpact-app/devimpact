@@ -128,7 +128,7 @@ async function seedAccount(
     seedRecurringSeriesToDbRows(series, {
       tenantId,
       timeCtx,
-      integrationTokenId: '7d6d6009-322d-4789-9100-7edf2c914124',
+      integrationTokenId: 'fa061de5-044b-4e3f-8541-54e734b7eb22',
       calendarId: 'seed-calendar',
     })
   );
@@ -137,7 +137,7 @@ async function seedAccount(
     {
       tenantId,
       timeCtx,
-      integrationTokenId: '7d6d6009-322d-4789-9100-7edf2c914124',
+      integrationTokenId: 'fa061de5-044b-4e3f-8541-54e734b7eb22',
       calendarId: 'seed-calendar',
     }
   );
