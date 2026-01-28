@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
   if (!calendarConnected) {
     return jsonOK({
       nowISO: new Date().toISOString(),
-      lookaheadDays: 0,
       items: [],
       calendarConnected: false,
+      refreshed: false,
     });
   }
   const { searchParams } = new URL(req.url);
