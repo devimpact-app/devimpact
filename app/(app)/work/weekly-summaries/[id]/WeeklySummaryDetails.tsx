@@ -144,7 +144,7 @@ export function WeeklySummaryDetailPage({
   return (
     <>
       <div className="min-h-screen text-white">
-        <div className="border-b border-white/10 bg-gradient-to-b from-blue-950/30 via-blue-950/25 to-transparent">
+        <div className="border-b border-white/10 bg-background">
           <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
             <div className="mb-4">
               <Link
@@ -229,17 +229,14 @@ export function WeeklySummaryDetailPage({
               className="
                 mt-5 rounded-2xl
                 border border-white/10
-                bg-slate-900/30 p-4 backdrop-blur
+                bg-white/[0.045] p-5
                 shadow-[0_12px_30px_rgba(0,0,0,0.35)]
               "
             >
               <div className="relative">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="h-4 w-1 bg-indigo-600/70 rounded-full" />
-                    <div className="text-[15px] font-semibold text-white/95">
-                      Highlights
-                    </div>
+                <div className="flex flex-row items-center">
+                  <div className="text-sm font-medium text-white/80 mr-1">
+                    Highlights
                   </div>
                 </div>
 
@@ -252,7 +249,7 @@ export function WeeklySummaryDetailPage({
                   ) : (
                     <>
                       {headline ? (
-                        <p className="text-[15px] font-medium text-white/70">
+                        <p className="text-[15px] font-medium text-white/85">
                           {headline}
                         </p>
                       ) : summary.status === 'ready' ? (
@@ -274,7 +271,7 @@ export function WeeklySummaryDetailPage({
                   )}
 
                   {generateLoading ? (
-                    <ul className="mt-3 space-y-2 pl-5">
+                    <ul className="mt-4 space-y-3 pl-5">
                       {[0, 1, 2].map((i) => (
                         <li
                           key={i}
@@ -283,13 +280,16 @@ export function WeeklySummaryDetailPage({
                       ))}
                     </ul>
                   ) : bullets.length > 0 ? (
-                    <ul className="mt-3 space-y-2 pl-5 list-disc">
+                    <ul className="mt-4 space-y-3">
                       {bullets.map((b, idx) => (
                         <li
                           key={`${idx}-${b.text.slice(0, 16)}`}
-                          className="text-sm leading-relaxed text-white/70"
+                          className="flex gap-3 items-center"
                         >
-                          {b.text}
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/50" />
+                          <span className="text-sm leading-[1.6] text-white/65">
+                            {b.text}
+                          </span>
                         </li>
                       ))}
                     </ul>

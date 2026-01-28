@@ -1,12 +1,15 @@
 'use client';
 
-import { UpcomingCalendarEvent } from '@/types/api/prep';
+import { PrepMeetingType, UpcomingCalendarEvent } from '@/types/api/prep';
 import { ArrowRight, Calendar, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { EventRow } from './EventRow';
 import { PrepDashboardQuickActions } from './QuickActions';
 import { ActionButton } from '../../../../../components/ui/ActionButton';
-import { formatDateTime } from '@/lib/utils/date';
+import { formatDateTime, getTimezone } from '@/lib/utils/date';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createPrepItem } from '@/app/(app)/prep/PrepClient';
 
 type UpcomingPrepCardProps = {
   calendarConnected: boolean;
@@ -146,10 +149,32 @@ export function UpcomingPrepCard({
   error,
   hideOpen = false,
 }: UpcomingPrepCardProps) {
+  const router = useRouter();
   const hasEvents = events.length > 0;
 
   const prepHref = '/prep';
   const showEventList = calendarConnected && hasEvents && !isLoading && !error;
+
+  const [isWorking, setIsWorking] = useState(false);
+  const [prepError, setPrepError] = useState<string | null>(null);
+  async function handleCreatePrep(meetingType: PrepMeetingType) {
+    setPrepError(null);
+
+    try {
+      setIsWorking(true);
+      const timezone = getTimezone();
+      const { prepItemId } = await createPrepItem({
+        timezone,
+        meetingType,
+        manualKey: crypto.randomUUID(),
+      });
+      router.push(`/prep/${encodeURIComponent(prepItemId)}`);
+    } catch (err: any) {
+      setPrepError(err?.message ?? 'Something went wrong');
+    } finally {
+      setIsWorking(false);
+    }
+  }
   return (
     <section
       className="
@@ -226,10 +251,10 @@ export function UpcomingPrepCard({
           <>
             {!hideOpen && (
               <PrepDashboardQuickActions
-                disableActions={false}
+                disableActions={isWorking}
                 calendarConnected={calendarConnected}
-                onOneOnOnePrepClick={() => {}}
-                onStandupPrepClick={() => {}}
+                onOneOnOnePrepClick={() => handleCreatePrep('oneOnOne')}
+                onStandupPrepClick={() => handleCreatePrep('standup')}
               />
             )}
           </>
@@ -237,11 +262,17 @@ export function UpcomingPrepCard({
           <>
             {!hideOpen && (
               <PrepDashboardQuickActions
-                disableActions={false}
+                disableActions={isWorking}
                 calendarConnected={calendarConnected}
-                onOneOnOnePrepClick={() => {}}
-                onStandupPrepClick={() => {}}
+                onOneOnOnePrepClick={() => handleCreatePrep('oneOnOne')}
+                onStandupPrepClick={() => handleCreatePrep('standup')}
               />
+            )}
+
+            {prepError && (
+              <p className="mt-1 text-xs text-rose-300/90 truncate">
+                {prepError}
+              </p>
             )}
 
             {!calendarConnected && <CalendarConnectFooter />}

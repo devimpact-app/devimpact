@@ -100,7 +100,8 @@ export function ThreadDetailPage({
   return (
     <>
       <div className="min-h-screen text-white">
-        <div className="border-b border-white/10 bg-gradient-to-b from-blue-950/30 via-blue-950/25 to-transparent">
+        <div className="relative border-b border-white/10 bg-background">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_55%_at_50%_0%,rgba(255,255,255,0.06),transparent_60%)]" />
           <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
             <div className="mb-4">
               <Link
@@ -172,9 +173,12 @@ export function ThreadDetailPage({
               </div>
             </div>
 
-            <div className="mt-5 rounded-2xl border border-white/10 bg-slate-900/30 p-4 backdrop-blur">
+            <div
+              className="mt-5 rounded-2xl border border-white/10 bg-white/[0.045]
+                shadow-[0_12px_30px_rgba(0,0,0,0.35)] p-5"
+            >
               <div className="flex flex-row items-center">
-                <div className="text-[13px] font-medium text-white/80 mr-1">
+                <div className="text-sm font-medium text-white/80 mr-1">
                   Highlights
                 </div>
                 <div className="text-xs font-medium text-white/40">
@@ -183,20 +187,20 @@ export function ThreadDetailPage({
                     : ''}
                 </div>
               </div>
-              <div className="text-xs mt-1 mb-4 font-medium text-white/50">
-                Auto-generated summary of this workstream
+              <div className="text-xs mt-1 mb-3 text-white/40">
+                Auto-generated summary
               </div>
-              <div className="mt-2 text-sm leading-relaxed text-white/70">
+              <div className="mt-2 text-[15px] font-medium leading-relaxed text-white/85">
                 {t.summaryHeadline?.trim() ? (
                   <p>{t.summaryHeadline}</p>
                 ) : (
                   <p className="text-white/45">No summary yet.</p>
                 )}
-                <ul className="mt-3 space-y-2">
+                <ul className="mt-4 space-y-3">
                   {bullets.map((b) => (
-                    <li key={b.id} className="flex gap-3">
-                      <span className="mt-1 w-[2px] rounded-full bg-white/30" />
-                      <span className="text-sm leading-relaxed text-white/70">
+                    <li key={b.id} className="flex gap-3 items-center">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/50" />
+                      <span className="text-sm leading-[1.6] text-white/65">
                         {b.text}
                       </span>
                     </li>

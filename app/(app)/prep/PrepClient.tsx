@@ -17,7 +17,7 @@ type Props = {
   };
 };
 
-async function createPrepItem(args: {
+export async function createPrepItem(args: {
   meetingType: PrepMeetingType;
   timezone: string;
   manualKey: string;
