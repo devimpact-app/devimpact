@@ -32,206 +32,205 @@ export async function persistThreadSummary({
     }))
     .sort((a, b) => a.sortIndex - b.sortIndex);
 
-  return await db.transaction(async (tx) => {
-    const [t] = await tx
-      .select()
-      .from(threads)
-      .where(and(eq(threads.tenantId, tenantId), eq(threads.id, threadId)))
-      .limit(1);
+  // return await db.transaction(async (tx) => {
+  const [t] = await db
+    .select()
+    .from(threads)
+    .where(and(eq(threads.tenantId, tenantId), eq(threads.id, threadId)))
+    .limit(1);
 
-    if (!t)
-      throw new Error(`persistThreadSummary: thread not found ${threadId}`);
+  if (!t) throw new Error(`persistThreadSummary: thread not found ${threadId}`);
 
-    const existingBulletRows = await tx
-      .select()
-      .from(threadSummaryBullets)
-      .where(
-        and(
-          eq(threadSummaryBullets.tenantId, tenantId),
-          eq(threadSummaryBullets.threadId, threadId)
-        )
-      );
-
-    const existingById = new Map(existingBulletRows.map((b) => [b.id, b]));
-
-    const titleLocked = !!t.titleUserEditedAt;
-    const headlineLocked = !!t.headlineUserEditedAt;
-    const nextTitle = titleLocked ? t.title : output.title;
-    const nextHeadline = headlineLocked ? t.summaryHeadline : output.headline;
-
-    // Update thread row
-    const updatedThreadRows = await tx
-      .update(threads)
-      .set({
-        title: nextTitle,
-        summaryHeadline: nextHeadline,
-        confidence: output.confidence,
-        model: llm.model,
-        lastUpdate: null,
-        promptVersion: llm.promptVersion,
-        updatedAt: now,
-      })
-      .where(and(eq(threads.tenantId, tenantId), eq(threads.id, threadId)))
-      .returning({ id: threads.id });
-
-    const updatedThreads = updatedThreadRows.length;
-    if (updatedThreads !== 1) {
-      throw new Error(
-        `persistThreadSummary: thread_update_expected_1_got_${updatedThreads}:${threadId}`
-      );
-    }
-
-    // Validate bullet output
-    const outputBulletIds = new Set(
-      outBullets.map((b) => b.bulletId).filter((x): x is string => Boolean(x))
+  const existingBulletRows = await db
+    .select()
+    .from(threadSummaryBullets)
+    .where(
+      and(
+        eq(threadSummaryBullets.tenantId, tenantId),
+        eq(threadSummaryBullets.threadId, threadId)
+      )
     );
 
-    for (const b of existingBulletRows) {
-      const editable = isBulletEditable(b);
-      if (!editable && !b.deletedAt) {
-        // Non-editable and currently active must be present in output
-        if (!outputBulletIds.has(b.id)) {
-          throw new Error(
-            `persistThreadSummary: llm_output_missing_locked_bullet:${b.id}`
-          );
-        }
+  const existingById = new Map(existingBulletRows.map((b) => [b.id, b]));
+
+  const titleLocked = !!t.titleUserEditedAt;
+  const headlineLocked = !!t.headlineUserEditedAt;
+  const nextTitle = titleLocked ? t.title : output.title;
+  const nextHeadline = headlineLocked ? t.summaryHeadline : output.headline;
+
+  // Update thread row
+  const updatedThreadRows = await db
+    .update(threads)
+    .set({
+      title: nextTitle,
+      summaryHeadline: nextHeadline,
+      confidence: output.confidence,
+      model: llm.model,
+      lastUpdate: null,
+      promptVersion: llm.promptVersion,
+      updatedAt: now,
+    })
+    .where(and(eq(threads.tenantId, tenantId), eq(threads.id, threadId)))
+    .returning({ id: threads.id });
+
+  const updatedThreads = updatedThreadRows.length;
+  if (updatedThreads !== 1) {
+    throw new Error(
+      `persistThreadSummary: thread_update_expected_1_got_${updatedThreads}:${threadId}`
+    );
+  }
+
+  // Validate bullet output
+  const outputBulletIds = new Set(
+    outBullets.map((b) => b.bulletId).filter((x): x is string => Boolean(x))
+  );
+
+  for (const b of existingBulletRows) {
+    const editable = isBulletEditable(b);
+    if (!editable && !b.deletedAt) {
+      // Non-editable and currently active must be present in output
+      if (!outputBulletIds.has(b.id)) {
+        throw new Error(
+          `persistThreadSummary: llm_output_missing_locked_bullet:${b.id}`
+        );
       }
     }
+  }
 
-    let insertedBullets = 0;
-    let updatedBullets = 0;
-    let reorderedLockedBullets = 0;
-    let softDeletedBullets = 0;
+  let insertedBullets = 0;
+  let updatedBullets = 0;
+  let reorderedLockedBullets = 0;
+  let softDeletedBullets = 0;
 
-    // Insert brand new bullets
-    const toInsert = outBullets
-      .filter((b) => !b.bulletId)
-      .map((b) => ({
-        tenantId,
-        threadId,
+  // Insert brand new bullets
+  const toInsert = outBullets
+    .filter((b) => !b.bulletId)
+    .map((b) => ({
+      tenantId,
+      threadId,
+      sortIndex: b.sortIndex,
+      text: b.text,
+      referencedEventIds: b.referencedEventIds ?? [],
+      source: 'llm' as const,
+      generatedAt: now,
+      model: llm.model,
+      promptVersion: llm.promptVersion,
+    }));
+
+  if (toInsert.length) {
+    const inserted = await db
+      .insert(threadSummaryBullets)
+      .values(toInsert)
+      .returning({ id: threadSummaryBullets.id });
+    insertedBullets = inserted.length;
+  }
+
+  // Loop for editing bullets
+  for (const b of outBullets) {
+    if (!b.bulletId) continue;
+    const existing = existingById.get(b.bulletId);
+    if (!existing) {
+      throw new Error(
+        `persistThreadSummary: unknown_bullet_id_in_output:${b.bulletId}`
+      );
+    }
+
+    const editable = isBulletEditable(existing);
+
+    // Only allow re-order if not editable
+    if (!editable) {
+      const sameText = existing.text === b.text;
+      const sameRefs = sameStringArray(
+        dedupe(existing.referencedEventIds ?? []),
+        dedupe(b.referencedEventIds ?? [])
+      );
+      if (!sameText || !sameRefs) {
+        throw new Error(
+          `persistThreadSummary: attempted_edit_locked_bullet:${b.bulletId}`
+        );
+      }
+
+      if (existing.sortIndex !== b.sortIndex) {
+        const reordered = await db
+          .update(threadSummaryBullets)
+          .set({
+            sortIndex: b.sortIndex,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(threadSummaryBullets.tenantId, tenantId),
+              eq(threadSummaryBullets.threadId, threadId),
+              eq(threadSummaryBullets.id, b.bulletId)
+            )
+          )
+          .returning({ id: threadSummaryBullets.id });
+        reorderedLockedBullets += reordered.length;
+      }
+      continue;
+    }
+
+    // Editable can update everything
+    const updated = await db
+      .update(threadSummaryBullets)
+      .set({
         sortIndex: b.sortIndex,
         text: b.text,
         referencedEventIds: b.referencedEventIds ?? [],
-        source: 'llm' as const,
+        deletedAt: null,
         generatedAt: now,
         model: llm.model,
         promptVersion: llm.promptVersion,
-      }));
-
-    if (toInsert.length) {
-      const inserted = await tx
-        .insert(threadSummaryBullets)
-        .values(toInsert)
-        .returning({ id: threadSummaryBullets.id });
-      insertedBullets = inserted.length;
-    }
-
-    // Loop for editing bullets
-    for (const b of outBullets) {
-      if (!b.bulletId) continue;
-      const existing = existingById.get(b.bulletId);
-      if (!existing) {
-        throw new Error(
-          `persistThreadSummary: unknown_bullet_id_in_output:${b.bulletId}`
-        );
-      }
-
-      const editable = isBulletEditable(existing);
-
-      // Only allow re-order if not editable
-      if (!editable) {
-        const sameText = existing.text === b.text;
-        const sameRefs = sameStringArray(
-          dedupe(existing.referencedEventIds ?? []),
-          dedupe(b.referencedEventIds ?? [])
-        );
-        if (!sameText || !sameRefs) {
-          throw new Error(
-            `persistThreadSummary: attempted_edit_locked_bullet:${b.bulletId}`
-          );
-        }
-
-        if (existing.sortIndex !== b.sortIndex) {
-          const reordered = await tx
-            .update(threadSummaryBullets)
-            .set({
-              sortIndex: b.sortIndex,
-              updatedAt: now,
-            })
-            .where(
-              and(
-                eq(threadSummaryBullets.tenantId, tenantId),
-                eq(threadSummaryBullets.threadId, threadId),
-                eq(threadSummaryBullets.id, b.bulletId)
-              )
-            )
-            .returning({ id: threadSummaryBullets.id });
-          reorderedLockedBullets += reordered.length;
-        }
-        continue;
-      }
-
-      // Editable can update everything
-      const updated = await tx
-        .update(threadSummaryBullets)
-        .set({
-          sortIndex: b.sortIndex,
-          text: b.text,
-          referencedEventIds: b.referencedEventIds ?? [],
-          deletedAt: null,
-          generatedAt: now,
-          model: llm.model,
-          promptVersion: llm.promptVersion,
-          updatedAt: now,
-        })
-        .where(
-          and(
-            eq(threadSummaryBullets.tenantId, tenantId),
-            eq(threadSummaryBullets.threadId, threadId),
-            eq(threadSummaryBullets.id, b.bulletId)
-          )
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(threadSummaryBullets.tenantId, tenantId),
+          eq(threadSummaryBullets.threadId, threadId),
+          eq(threadSummaryBullets.id, b.bulletId)
         )
-        .returning({ id: threadSummaryBullets.id });
-      updatedBullets += updated.length;
+      )
+      .returning({ id: threadSummaryBullets.id });
+    updatedBullets += updated.length;
+  }
+
+  // Handle soft deletion of bullets that aren't in output
+  const allOutputIds = new Set(
+    outBullets.map((b) => b.bulletId).filter((x): x is string => Boolean(x))
+  );
+
+  const toSoftDelete: string[] = [];
+  for (const b of existingBulletRows) {
+    if (b.deletedAt) continue;
+    if (allOutputIds.has(b.id)) continue;
+    const editable = isBulletEditable(b);
+    if (!editable) {
+      continue;
     }
+    toSoftDelete.push(b.id);
+  }
 
-    // Handle soft deletion of bullets that aren't in output
-    const allOutputIds = new Set(
-      outBullets.map((b) => b.bulletId).filter((x): x is string => Boolean(x))
-    );
-
-    const toSoftDelete: string[] = [];
-    for (const b of existingBulletRows) {
-      if (b.deletedAt) continue;
-      if (allOutputIds.has(b.id)) continue;
-      const editable = isBulletEditable(b);
-      if (!editable) {
-        continue;
-      }
-      toSoftDelete.push(b.id);
-    }
-
-    if (toSoftDelete.length) {
-      const deleted = await tx
-        .update(threadSummaryBullets)
-        .set({ deletedAt: now, updatedAt: now })
-        .where(
-          and(
-            eq(threadSummaryBullets.tenantId, tenantId),
-            eq(threadSummaryBullets.threadId, threadId),
-            inArray(threadSummaryBullets.id, toSoftDelete)
-          )
+  if (toSoftDelete.length) {
+    const deleted = await db
+      .update(threadSummaryBullets)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(
+        and(
+          eq(threadSummaryBullets.tenantId, tenantId),
+          eq(threadSummaryBullets.threadId, threadId),
+          inArray(threadSummaryBullets.id, toSoftDelete)
         )
-        .returning({ id: threadSummaryBullets.id });
-      softDeletedBullets = deleted.length;
-    }
+      )
+      .returning({ id: threadSummaryBullets.id });
+    softDeletedBullets = deleted.length;
+  }
 
-    return {
-      updatedThreads,
-      insertedBullets,
-      updatedBullets,
-      reorderedLockedBullets,
-      softDeletedBullets,
-    };
-  });
+  return {
+    updatedThreads,
+    insertedBullets,
+    updatedBullets,
+    reorderedLockedBullets,
+    softDeletedBullets,
+  };
+  // });
 }
