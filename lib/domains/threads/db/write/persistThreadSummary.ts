@@ -59,14 +59,7 @@ export async function persistThreadSummary({
         summaryHeadline: nextHeadline,
         confidence: output.confidence,
         model: llm.model,
-        lastUpdate: output.updates
-          ? {
-              generatedAt: now.toISOString(),
-              headline: output.updates.headline ?? undefined,
-              bullets: output.updates.bullets ?? undefined,
-              referencedEventIds: output.updates.referencedEventIds ?? [],
-            }
-          : null,
+        lastUpdate: null,
         promptVersion: llm.promptVersion,
         updatedAt: now,
       })

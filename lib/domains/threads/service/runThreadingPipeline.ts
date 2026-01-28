@@ -39,6 +39,9 @@ async function processThreadingChunk({
   threadedCount: number;
   deferredCount: number;
 }> {
+  const logPrefix = `[threading] tenant=${tenantId} job=${claimedBy ?? 'unknown'} now=${now.toISOString()}`;
+  console.log(`${logPrefix} eligible=${eligible.length}`);
+
   const prEventIds = eligible
     .filter((e) => e.sourceEntityTable === 'pull_requests')
     .map((e) => e.sourceEntityId);
@@ -50,6 +53,14 @@ async function processThreadingChunk({
   );
   const allPrIds = [...prEventIds, ...Object.values(prIdsByReviewId)];
   const prSummariesByPrId = await getPrSummariesByPrIds(tenantId, allPrIds);
+
+  console.log(
+    `${logPrefix} prEventIds=${prEventIds.length} reviewIds=${Object.keys(prIdsByReviewId).length} allPrIds=${allPrIds.length} uniqueAllPrIds=${new Set(allPrIds).size}`
+  );
+
+  console.log(
+    `${logPrefix} prSummaries fetched=${Object.keys(prSummariesByPrId).length} missing=${new Set(allPrIds).size - Object.keys(prSummariesByPrId).length}`
+  );
 
   const finalEvents = eligible
     .map((e) => shapeEventForLLM(e, prSummariesByPrId, prIdsByReviewId))
@@ -116,6 +127,10 @@ async function processThreadingChunk({
       };
     });
 
+  console.log(
+    `${logPrefix} persist createdThreads=${createdThreads.length} insertedThreadEvents=${insertedThreadEvents.length} threadedCount=${threadedCount} deferredCount=${deferredCount}`
+  );
+
   const summaryInputs = buildThreadSummaryInputs({
     finalEvents,
     createdThreads,
@@ -123,25 +138,57 @@ async function processThreadingChunk({
     existingThreads,
   });
 
+  type SummaryResult =
+    | { threadId: string; ok: true }
+    | { threadId: string; ok: false; error: string };
+
+  const results: SummaryResult[] = [];
   await mapWithConcurrency(summaryInputs, 3, async (input) => {
-    const out = await generateThreadSummary(input);
-    const v = validateThreadSummaryOutput(out, {
-      allowedEventIds: finalEvents.map((e) => e.id),
-    });
-    if (!v.ok) {
-      throw new Error(
-        `Error during validation of thread summary llm response ${v.error}`
-      );
+    const threadId = input.threadId;
+    try {
+      const out = await generateThreadSummary(input);
+      const v = validateThreadSummaryOutput(out, {
+        allowedEventIds: finalEvents.map((e) => e.id),
+      });
+      if (!v.ok) {
+        throw new Error(
+          `Error during validation of thread summary llm response ${v.error}`
+        );
+      }
+      await persistThreadSummary({
+        tenantId,
+        threadId: input.threadId,
+        output: v.value,
+        llm: {
+          model: AiConfig.models.summarize,
+          promptVersion: '1',
+        },
+      });
+      results.push({ threadId, ok: true });
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      results.push({ threadId, ok: false, error: msg });
+
+      console.error(logPrefix, {
+        claimedBy,
+        tenantId,
+        phase: 'summary_failed',
+        threadId,
+        error: msg,
+      });
     }
-    await persistThreadSummary({
-      tenantId,
-      threadId: input.threadId,
-      output: v.value,
-      llm: {
-        model: AiConfig.models.summarize,
-        promptVersion: '1',
-      },
-    });
+  });
+
+  const okCount = results.filter((r) => r.ok).length;
+  const failCount = results.length - okCount;
+
+  console.log(logPrefix, {
+    claimedBy,
+    tenantId,
+    phase: 'summaries_done',
+    total: results.length,
+    ok: okCount,
+    failed: failCount,
   });
 
   return {
@@ -191,7 +238,14 @@ export async function runThreadingPipelineOnce({
   }
   const claimedIds = events.map((e) => e.id);
 
-  console.log('events claimed', events.length);
+  console.log('[threading]', {
+    runId: workerId,
+    tenantId,
+    phase: 'claimed',
+    claimed: events.length,
+    since: since.toISOString(),
+    end: end.toISOString(),
+  });
 
   const eligible: ActivityEvent[] = [];
   const ineligible: { eventId: string; reasons: string[] }[] = [];
@@ -222,6 +276,7 @@ export async function runThreadingPipelineOnce({
         tenantId,
         chunk: eligible,
         now,
+        claimedBy: workerId,
       });
       threadedCount = out.threadedCount;
       deferredCount = out.deferredCount;

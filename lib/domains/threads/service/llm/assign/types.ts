@@ -32,6 +32,17 @@ export type ThreadCandidateEvent = {
   };
 };
 
+export type ThreadEventSample = {
+  kind: 'pr' | 'review' | 'meeting';
+  occurredAt: string;
+  repo?: string;
+  title: string;
+  subtitle?: string;
+  prNumber?: number;
+  meetingCategory?: string;
+  meetingSubtype?: string;
+};
+
 export type ThreadSummaryBulletInput = {
   id: string;
   sortIndex: number;
@@ -48,6 +59,7 @@ export type ExistingThreadContext = {
   bullets?: ThreadSummaryBulletInput[];
   firstActivityAt: string | null;
   lastActivityAt: string | null;
+  recentEventSamples?: ThreadEventSample[];
 };
 
 export type AssignThreadsInput = {

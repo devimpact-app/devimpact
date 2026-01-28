@@ -14,7 +14,6 @@ type BuildThreadSummaryInputsArgs = {
     threadId: string;
     activityEventId: string;
   }>;
-  recentThreadEventsByThreadId?: Map<string, ThreadCandidateEvent[]>;
 };
 
 export function buildThreadSummaryInputs({
@@ -22,7 +21,6 @@ export function buildThreadSummaryInputs({
   existingThreads,
   createdThreads,
   insertedThreadEvents,
-  recentThreadEventsByThreadId,
 }: BuildThreadSummaryInputsArgs): ThreadSummaryLLMInput[] {
   const finalEventsById = new Map(finalEvents.map((e) => [e.id, e]));
   const existingById = new Map(existingThreads.map((t) => [t.id, t]));
@@ -43,7 +41,6 @@ export function buildThreadSummaryInputs({
 
     if (newEvents.length === 0) continue;
 
-    const recentThreadEvents = recentThreadEventsByThreadId?.get(threadId);
     const existing = existingById.get(threadId);
     if (existing) {
       inputs.push({
@@ -51,7 +48,6 @@ export function buildThreadSummaryInputs({
         threadId: existing.id,
         thread: existing,
         newEvents,
-        ...(recentThreadEvents?.length ? { recentThreadEvents } : {}),
       });
       continue;
     }
@@ -66,7 +62,6 @@ export function buildThreadSummaryInputs({
           proposedTitle: created.title,
         },
         newEvents,
-        ...(recentThreadEvents?.length ? { recentThreadEvents } : {}),
       });
       continue;
     }
