@@ -9,15 +9,8 @@ function assertNever(x: never): never {
   throw new Error(`Unhandled onboarding state: ${x}`);
 }
 
-export default async function OnboardingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ beta?: string }>;
-}) {
+export default async function OnboardingPage() {
   noStore();
-
-  const params = await searchParams;
-  const betaCode = params.beta;
 
   const session = await auth();
   const userFromSession = session?.user;
@@ -26,20 +19,13 @@ export default async function OnboardingPage({
     redirect('/login');
   }
 
-  if (betaCode && betaCode === process.env.BETA_ACCESS_CODE) {
-    await db
-      .update(users)
-      .set({ betaAllowed: true })
-      .where(eq(users.id, userFromSession.id));
-  }
-
   const [user] = await db
     .select()
     .from(users)
     .where(eq(users.id, userFromSession.id))
     .limit(1);
 
-  if (!user || !user.betaAllowed) {
+  if (!user) {
     redirect('/login');
   }
 
