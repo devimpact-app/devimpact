@@ -60,7 +60,7 @@ export function HeroSection() {
               hover:bg-blue-400 transition
             "
           >
-            Try the Demo
+            Try it out
           </a>
         </div>
 
