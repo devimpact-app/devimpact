@@ -1,15 +1,11 @@
 export function HeroSection() {
   return (
     <section className="relative w-full overflow-hidden px-6 pt-44 pb-28">
-      {/* Background layers */}
       <div className="absolute inset-0 -z-10">
-        {/* Base */}
         <div className="absolute inset-0 bg-[#070A12]" />
 
-        {/* Top soft wash (adds separation from pure black) */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/30 via-transparent to-black/40" />
 
-        {/* Primary aura (behind headline) */}
         <div
           className="
       absolute left-1/2 top-[32%]
@@ -24,7 +20,6 @@ export function HeroSection() {
           }}
         />
 
-        {/* Secondary aura (subtle depth / “aura spill”) */}
         <div
           className="
       absolute left-[55%] top-[18%]
@@ -39,12 +34,9 @@ export function HeroSection() {
           }}
         />
 
-        {/* Bottom vignette (keeps edges clean) */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.55)_100%)]" />
       </div>
-
-      {/* Content */}
-      <div className="mx-auto max-w-4xl text-center flex flex-col items-center gap-6">
+      <div className="mx-auto max-w-6xl text-center flex flex-col items-center gap-6">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wide text-white/70">
           <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
           For software engineers
@@ -61,15 +53,25 @@ export function HeroSection() {
 
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
           <a
-            href="mailto:ian@devimpact.app"
+            href="/login"
             className="
               rounded-lg bg-blue-500 px-6 py-3
               text-sm font-semibold text-white
               hover:bg-blue-400 transition
             "
           >
-            Interested? Reach out
+            Try the Demo
           </a>
+        </div>
+
+        <div className="mt-16 w-full max-w-5xl">
+          <div className="relative rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl">
+            <img
+              src="/images/beta/devimpact_dashboard.png"
+              alt="DevImpact Dashboard showing meeting prep, workstreams, and weekly summaries"
+              className="w-full h-auto rounded-md"
+            />
+          </div>
         </div>
       </div>
     </section>

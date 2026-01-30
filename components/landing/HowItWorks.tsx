@@ -10,7 +10,8 @@ export default function HowItWorks() {
             How it works
           </h2>
           <p className="mt-3 text-text-secondary text-lg">
-            Set up is clear and takes less than 5 minutes
+            DevImpact automatically captures your work from GitHub and Google
+            Calendar — turning it into organized summaries and meeting prep.
           </p>
         </div>
 
@@ -20,19 +21,12 @@ export default function HowItWorks() {
               1
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Connect your work data (2-5 mins)
+              Automatic tracking
             </h3>
-            <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>• Sign in with Github</li>
-              <li>• Run a quick sync to pull recent work</li>
-              <li>
-                • Optionally connect Google Calendar to improve context and
-                preparation
-              </li>
-              <li>
-                <b>• Private by default — no team setup, no managers</b>
-              </li>
-            </ul>
+            <p className="text-sm text-text-secondary mt-4">
+              Syncs with GitHub and Google Calendar to capture commits, PRs,
+              pull request reviews, and meetings. No manual input required.
+            </p>
           </li>
 
           <li className="group rounded-xl border border-border bg-surface p-6 transition-shadow hover:shadow-[0_0_0_1px_var(--color-accent)]">
@@ -40,21 +34,13 @@ export default function HowItWorks() {
               2
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Get a clearer picture of your work
+              AI-powered organization
             </h3>
             <p className="text-sm text-text-secondary mt-4">
-              See how your work, meetings, and follow-ups actually add up over
-              time — without having to reconstruct it yourself.
+              Groups your work into threads and generates summaries
+              automatically. Always know what you've been working on without
+              digging through Git history.
             </p>
-            {/* <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>• Where your best focus time actually happens</li>
-              <li>• How meetings and reviews reshape your week</li>
-              <li>
-                • A weekly record of shipped work and follow-ups — delivered to
-                your inbox
-              </li>
-              <li>• Early signs of drift before they surface in reviews</li>
-            </ul> */}
           </li>
 
           <li className="group rounded-xl border border-border bg-surface p-6 transition-shadow hover:shadow-[0_0_0_1px_var(--color-accent)]">
@@ -62,22 +48,13 @@ export default function HowItWorks() {
               3
             </div>
             <h3 className="text-lg font-semibold text-text-primary">
-              Walk into meetings prepared
+              Ready when you need it
             </h3>
             <p className="text-sm text-text-secondary mt-4">
-              Go into 1:1s and standups with clear talking points, grounded in
-              what you’ve actually been working on.
+              Prepares talking points before 1:1s and standups based on your
+              recent work. Get weekly recaps to stay on top of what you've
+              shipped.
             </p>
-            {/* <ul className="mt-4 space-y-1 text-sm text-text-secondary">
-              <li>
-                • Go into 1:1s with a clear narrative: wins, blockers, themes
-              </li>
-              <li>
-                • Show what’s blocking output: meetings, review load, context
-                switching
-              </li>
-              <li>• Build a running record you can reuse when it matters</li>
-            </ul> */}
           </li>
         </ol>
       </div>

@@ -5,146 +5,123 @@ export default function TermsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Terms of Service</h1>
 
         <p className="text-sm text-text-secondary">
-          Last updated: December 2025 • DevImpact (operated by ExportLogic LLC)
+          Last updated: January 2026
         </p>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
-          <h2 className="text-base font-semibold text-text-primary">
-            1. Acceptance of Terms
-          </h2>
           <p>
-            By accessing or using DevImpact (the “Service”), you agree to these
-            Terms of Service. If you do not agree, do not use the Service.
+            DevImpact is a personal project built by Ian Richard. By using it,
+            you agree to these terms.
           </p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            2. Private Beta
+            What DevImpact does
           </h2>
           <p>
-            DevImpact is currently in a closed, invite-only beta. Access may be
-            granted or revoked at our discretion.
+            DevImpact connects to GitHub and Google Calendar (if you choose) to
+            analyze your work activity. It creates summaries, meeting prep, and
+            organizes your work into threads. It doesn't modify any of your
+            data.
           </p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            3. Description of the Service
+            This is demo software
           </h2>
           <p>
-            DevImpact analyzes activity data you choose to connect—such as
-            GitHub metadata (pull requests, reviews, comments, and related
-            metadata) and, if you enable it, Google Calendar read-only event
-            metadata—to create insights, summaries, and work patterns.
+            DevImpact is provided "as is" with no guarantees. It's experimental
+            software that may have bugs, change without notice, or be
+            discontinued. Don't rely on it for critical work.
           </p>
-          <p>DevImpact does not modify your GitHub or Google Calendar data.</p>
-        </section>
-
-        <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
-          <h2 className="text-base font-semibold text-text-primary">
-            4. Beta Software Disclaimer
-          </h2>
           <p>
-            The Service is experimental and provided “as is.” DevImpact may
-            contain bugs, may be incomplete, and may change or be discontinued
-            without notice. No guarantees of accuracy, reliability, or uptime
-            are provided.
+            Data may be reset periodically as I continue development. Back up
+            anything important.
           </p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            5. AI-Generated Insights
+            AI-generated content
           </h2>
           <p>
-            Some DevImpact features may generate summaries or suggestions using
-            automated systems. These outputs may be inaccurate or incomplete and
-            should not be relied on for critical decisions.
+            Some features use AI to generate summaries and insights. These may
+            be inaccurate or incomplete. Review them before using them for
+            important decisions.
           </p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            6. User Responsibilities
+            Your responsibilities
           </h2>
-          <p>You agree not to misuse the Service in any way, including:</p>
+          <p>Don't:</p>
           <ul className="list-disc list-inside space-y-1">
-            <li>Attempting to access other users’ data.</li>
-            <li>Reverse engineering or copying the Service.</li>
-            <li>Automating actions that overload or disrupt the Service.</li>
+            <li>Try to access other people's data</li>
+            <li>Abuse or overload the service</li>
+            <li>Use it for anything illegal</li>
           </ul>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            7. Your Data
+            Your data
           </h2>
           <p>
-            You give DevImpact permission to retrieve and analyze data from
-            integrations you explicitly connect (such as GitHub and Google
-            Calendar). You can revoke access at any time by disconnecting an
-            integration in the app.
+            You give DevImpact permission to access and analyze data from GitHub
+            and Google Calendar when you connect them. You can disconnect
+            anytime from settings.
           </p>
           <p>
-            See our{' '}
+            See the{' '}
             <a href="/privacy" className="text-accent underline">
               Privacy Policy
             </a>{' '}
-            for details.
+            for details on how your data is used.
           </p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            8. Intellectual Property
+            Ownership
+          </h2>
+          <p>You own your data. I own the DevImpact software and design.</p>
+        </section>
+
+        <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
+          <h2 className="text-base font-semibold text-text-primary">
+            Stopping use
           </h2>
           <p>
-            All DevImpact software and designs are owned by ExportLogic LLC. You
-            retain ownership of your GitHub content and synced data.
+            You can stop using DevImpact anytime. Disconnect your integrations
+            or email me to delete your account and data.
           </p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <h2 className="text-base font-semibold text-text-primary">
-            9. Termination
+            Liability
           </h2>
           <p>
-            You may stop using DevImpact at any time. We may suspend access for
-            misuse. Data may be deleted upon request.
+            DevImpact is provided as-is with no warranties. I'm not responsible
+            for any issues that arise from using it.
           </p>
-        </section>
-
-        <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
-          <h2 className="text-base font-semibold text-text-primary">
-            10. Limitation of Liability
-          </h2>
-          <p>
-            To the fullest extent permitted by law, DevImpact and ExportLogic
-            LLC are not liable for any damages arising from use of the Service.
-          </p>
-        </section>
-
-        <section className="space-y-4 text-sm text-text-secondary leading-relaxed">
-          <h2 className="text-base font-semibold text-text-primary">
-            11. Governing Law
-          </h2>
-          <p>These Terms are governed by the laws of Arizona, USA.</p>
         </section>
 
         <section className="space-y-4 text-sm text-text-secondary leading-relaxed pb-12">
           <h2 className="text-base font-semibold text-text-primary">
-            12. Contact
+            Questions?
           </h2>
           <p>
-            For questions or concerns, contact{' '}
+            Email me at{' '}
             <a
               href="mailto:ian@devimpact.app"
               className="text-accent underline"
             >
               ian@devimpact.app
             </a>
-            .
           </p>
         </section>
       </div>

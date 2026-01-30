@@ -21,7 +21,7 @@ export default function LoginClient({
             DevImpact
           </a>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">
-            {hasValidCode ? 'Welcome!' : 'Early Access'}
+            {hasValidCode ? 'Welcome!' : 'Access Code Required'}
           </h1>
           <p className="mt-2 text-text-secondary">
             {hasValidCode
