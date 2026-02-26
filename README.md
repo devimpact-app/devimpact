@@ -2,6 +2,8 @@
 
 DevImpact is a TypeScript and Postgres-based developer activity platform that ingests calendar and GitHub data, organizes work into structured buckets, and generates narrative summaries for weekly reviews and meeting prep.
 
+Try it out here: [DevImpact](https://devimpact.app)
+
 ## What It Does
 
 DevImpact connects to external developer tools and transforms raw activity into structured, reviewable insight:
