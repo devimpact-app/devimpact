@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevImpact
 
-## Getting Started
+DevImpact is a TypeScript and Postgres-based developer activity platform that ingests calendar and GitHub data, organizes work into structured buckets, and generates narrative summaries for weekly reviews and meeting prep.
 
-First, run the development server:
+## What It Does
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+DevImpact connects to external developer tools and transforms raw activity into structured, reviewable insight:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Ingests GitHub and calendar events
+- Normalizes and stores activity in Postgres
+- Groups events into "work buckets"
+- Generates weekly work summaries
+- Produces structured meeting prep for 1:1s and standups
+- Exposes a full activity timeline across systems
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## System Overview
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The system follows a pipeline model:
 
-## Learn More
+External APIs → Normalized Activity Store → Work Bucketing → Aggregations → Narrative Summaries → API + UI
 
-To learn more about Next.js, take a look at the following resources:
+The design emphasizes:
+- Idempotent ingestion
+- Safe background reprocessing
+- Schema clarity
+- Observable job execution
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Activity Ingestion
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+GitHub and calendar events are fetched and normalized into structured activity tables. 
 
-## Deploy on Vercel
+Ingestion jobs are:
+- Retry-safe and idempotent
+- Designed for partial failure handling
+- Re-runnable for backfills and schema evolution
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Weekly Summaries and Meeting Prep
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+From structured buckets, the system generates:
+
+- Weekly summaries of completed work
+- Standup-ready bullet points
+- 1:1 preparation notes
+- A chronological activity timeline
+
+Summaries are derived from structured activity rather than raw event streams, ensuring coherence and reducing duplication.
+
+## Tech Stack
+
+- TypeScript (API + frontend)
+- Postgres
+- Background cron job workers
+- Structured logging
