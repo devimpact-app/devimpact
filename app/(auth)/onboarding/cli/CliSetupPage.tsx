@@ -1,6 +1,6 @@
 'use client';
 
-import { CopyableCode } from '@/components/CopyableCode';
+import { CopyableCode } from '@/components/ui/CopyableCode';
 import { CliStatus } from '@/types/api/cli';
 import {
   CheckCircle2,

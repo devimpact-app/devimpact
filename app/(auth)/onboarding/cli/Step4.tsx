@@ -1,4 +1,4 @@
-import { CopyableCode } from '@/components/CopyableCode';
+import { CopyableCode } from '@/components/ui/CopyableCode';
 import { Loader2, RefreshCw } from 'lucide-react';
 
 export function Step4(params: {

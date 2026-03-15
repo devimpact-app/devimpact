@@ -1,4 +1,4 @@
-import { CopyableCode } from '@/components/CopyableCode';
+import { CopyableCode } from '@/components/ui/CopyableCode';
 import { Check, Terminal } from 'lucide-react';
 
 export function Step2(params: {

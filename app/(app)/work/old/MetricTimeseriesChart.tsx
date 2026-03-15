@@ -11,8 +11,8 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { toChartPoints } from './utils';
-import { InfoTooltip } from '@/components/InfoTooltip';
-import { ChartTooltip } from '@/components/ChartTooltip';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { ChartTooltip } from '@/components/ui/ChartTooltip';
 import { formatMetricValue } from '@/lib/domains/metrics/client';
 import { cn } from '@/lib/utils';
 

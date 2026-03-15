@@ -1,4 +1,4 @@
-import { CopyableCode } from '@/components/CopyableCode';
+import { CopyableCode } from '@/components/ui/CopyableCode';
 import { Check, KeyRound, RefreshCw } from 'lucide-react';
 
 export function Step1(params: {

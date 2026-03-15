@@ -1,10 +1,3 @@
-import { TMetricResult } from '@/types/api/metrics';
-import type { TooltipProps } from 'recharts';
-import {
-  ValueType,
-  NameType,
-} from 'recharts/types/component/DefaultTooltipContent';
-
 type ChartTooltipProps = {
   active?: boolean;
   payload?: Array<{

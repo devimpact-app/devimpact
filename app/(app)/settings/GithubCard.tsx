@@ -3,7 +3,7 @@
 import { Github, TerminalSquare, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CopyableCode } from '@/components/CopyableCode';
+import { CopyableCode } from '@/components/ui/CopyableCode';
 
 type GithubCliCardProps = {
   cliDisconnected: boolean;
